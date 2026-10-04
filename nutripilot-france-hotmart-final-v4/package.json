@@ -1,0 +1,15 @@
+{
+  "name": "nutripilot-france-hotmart-v3",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "NODE_ENV=development node server.mjs",
+    "check": "node --check server.mjs && node --check app.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "description": "NutriPilot France PWA with Hotmart subscription checkout/webhook integration"
+}
