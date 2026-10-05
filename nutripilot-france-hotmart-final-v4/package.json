@@ -1,6 +1,6 @@
 {
-  "name": "nutripilot-france-hotmart-v3",
-  "version": "3.0.0",
+  "name": "nutripilot-france-hotmart-v7-premium",
+  "version": "7.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,5 +11,5 @@
   "engines": {
     "node": ">=20"
   },
-  "description": "NutriPilot France PWA with Hotmart subscription checkout/webhook integration"
+  "description": "NutriPilot France — closed Premium PWA with Hotmart entitlement, AI meal scanner, adaptive weight-loss planning, recipes, grocery list, coach and progress analytics"
 }
