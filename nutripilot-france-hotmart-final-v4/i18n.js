@@ -15602,5 +15602,663 @@ export const DICT = {
 "pt": "Aulas",
 "de": "Lektionen",
 "it": "Lezioni"
+},
+"Vos 7 premiers jours": {
+"en": "Your first 7 days",
+"es": "Tus primeros 7 días",
+"pt": "Seus primeiros 7 dias",
+"de": "Deine ersten 7 Tage",
+"it": "I tuoi primi 7 giorni"
+},
+"Vos 7 premiers jours · jour {n}": {
+"en": "Your first 7 days · day {n}",
+"es": "Tus primeros 7 días · día {n}",
+"pt": "Seus primeiros 7 dias · dia {n}",
+"de": "Deine ersten 7 Tage · Tag {n}",
+"it": "I tuoi primi 7 giorni · giorno {n}"
+},
+"{d} sur {t} étapes": {
+"en": "{d} of {t} steps",
+"es": "{d} de {t} pasos",
+"pt": "{d} de {t} etapas",
+"de": "{d} von {t} Schritten",
+"it": "{d} di {t} passi"
+},
+"Masquer": {
+"en": "Hide",
+"es": "Ocultar",
+"pt": "Ocultar",
+"de": "Ausblenden",
+"it": "Nascondi"
+},
+"Content de vous revoir, {name}": {
+"en": "Good to see you again, {name}",
+"es": "Qué bien verte de nuevo, {name}",
+"pt": "Que bom ver você de novo, {name}",
+"de": "Schön, dich wiederzusehen, {name}",
+"it": "Che bello rivederti, {name}"
+},
+"Content de vous revoir": {
+"en": "Good to see you again",
+"es": "Qué bien verte de nuevo",
+"pt": "Que bom ver você de novo",
+"de": "Schön, dich wiederzusehen",
+"it": "Che bello rivederti"
+},
+"Rien à rattraper : on repart d’aujourd’hui, simplement. Un repas noté suffit pour reprendre le fil.": {
+"en": "Nothing to catch up on: we simply start again from today. Logging one meal is enough to pick up the thread.",
+"es": "Nada que recuperar: empezamos de nuevo desde hoy, sin más. Registrar una comida basta para retomar el hilo.",
+"pt": "Nada para compensar: recomeçamos a partir de hoje, simplesmente. Registrar uma refeição basta para retomar o ritmo.",
+"de": "Nichts nachzuholen: Wir starten einfach ab heute neu. Eine erfasste Mahlzeit reicht, um wieder einzusteigen.",
+"it": "Niente da recuperare: si riparte semplicemente da oggi. Basta registrare un pasto per riprendere il filo."
+},
+"Noter un repas": {
+"en": "Log a meal",
+"es": "Registrar una comida",
+"pt": "Registrar uma refeição",
+"de": "Mahlzeit erfassen",
+"it": "Registra un pasto"
+},
+"Plus tard": {
+"en": "Later",
+"es": "Más tarde",
+"pt": "Mais tarde",
+"de": "Später",
+"it": "Più tardi"
+},
+"Envie de grignoter ou besoin d’une pause ?": {
+"en": "Craving a snack or need a break?",
+"es": "¿Ganas de picar o necesitas una pausa?",
+"pt": "Vontade de beliscar ou precisa de uma pausa?",
+"de": "Lust zu naschen oder eine Pause nötig?",
+"it": "Voglia di spizzicare o bisogno di una pausa?"
+},
+"1 minute de respiration guidée, puis on décide ensemble.": {
+"en": "1 minute of guided breathing, then we decide together.",
+"es": "1 minuto de respiración guiada y luego decidimos juntos.",
+"pt": "1 minuto de respiração guiada e depois decidimos juntos.",
+"de": "1 Minute geführtes Atmen, dann entscheiden wir gemeinsam.",
+"it": "1 minuto di respirazione guidata, poi decidiamo insieme."
+},
+"Une minute pour vous": {
+"en": "A minute for you",
+"es": "Un minuto para ti",
+"pt": "Um minuto para você",
+"de": "Eine Minute für dich",
+"it": "Un minuto per te"
+},
+"Suivez le cercle : inspirez quand il grandit, expirez quand il diminue.": {
+"en": "Follow the circle: breathe in as it grows, breathe out as it shrinks.",
+"es": "Sigue el círculo: inspira cuando crece, espira cuando se reduce.",
+"pt": "Siga o círculo: inspire quando ele cresce, expire quando ele diminui.",
+"de": "Folge dem Kreis: einatmen, wenn er wächst, ausatmen, wenn er kleiner wird.",
+"it": "Segui il cerchio: inspira quando si allarga, espira quando si restringe."
+},
+"Respiration guidée : inspirez 4 secondes, expirez 6 secondes": {
+"en": "Guided breathing: breathe in for 4 seconds, out for 6 seconds",
+"es": "Respiración guiada: inspira 4 segundos, espira 6 segundos",
+"pt": "Respiração guiada: inspire por 4 segundos, expire por 6 segundos",
+"de": "Geführtes Atmen: 4 Sekunden einatmen, 6 Sekunden ausatmen",
+"it": "Respirazione guidata: inspira per 4 secondi, espira per 6 secondi"
+},
+"Inspirez": {
+"en": "Breathe in",
+"es": "Inspira",
+"pt": "Inspire",
+"de": "Einatmen",
+"it": "Inspira"
+},
+"Expirez": {
+"en": "Breathe out",
+"es": "Espira",
+"pt": "Expire",
+"de": "Ausatmen",
+"it": "Espira"
+},
+"Buvez un grand verre d’eau.": {
+"en": "Drink a big glass of water.",
+"es": "Bebe un buen vaso de agua.",
+"pt": "Beba um copo grande de água.",
+"de": "Trink ein großes Glas Wasser.",
+"it": "Bevi un bel bicchiere d’acqua."
+},
+"Demandez-vous : faim du ventre, ou fatigue, stress, ennui ?": {
+"en": "Ask yourself: real hunger, or tiredness, stress, boredom?",
+"es": "Pregúntate: ¿hambre de verdad, o cansancio, estrés, aburrimiento?",
+"pt": "Pergunte-se: fome de verdade, ou cansaço, estresse, tédio?",
+"de": "Frag dich: echter Hunger oder Müdigkeit, Stress, Langeweile?",
+"it": "Chiediti: fame vera, o stanchezza, stress, noia?"
+},
+"Si c’est la faim, mangez sans culpabilité : une collation qui tient au corps aide à retrouver le calme.": {
+"en": "If it is hunger, eat without guilt: a filling snack helps you feel calm again.",
+"es": "Si es hambre, come sin culpa: un tentempié que sacia ayuda a recuperar la calma.",
+"pt": "Se for fome, coma sem culpa: um lanche que sustenta ajuda a recuperar a calma.",
+"de": "Wenn es Hunger ist, iss ohne schlechtes Gewissen: Ein sättigender Snack hilft, wieder zur Ruhe zu kommen.",
+"it": "Se è fame, mangia senza sensi di colpa: uno spuntino che sazia aiuta a ritrovare la calma."
+},
+"Collations qui calent": {
+"en": "Filling snacks",
+"es": "Tentempiés que sacian",
+"pt": "Lanches que sustentam",
+"de": "Sättigende Snacks",
+"it": "Spuntini che saziano"
+},
+"protéines": {
+"en": "protein",
+"es": "proteína",
+"pt": "proteína",
+"de": "Eiweiß",
+"it": "proteine"
+},
+"J’ai bu un verre d’eau (+250 ml)": {
+"en": "I drank a glass of water (+250 ml)",
+"es": "He bebido un vaso de agua (+250 ml)",
+"pt": "Bebi um copo de água (+250 ml)",
+"de": "Ich habe ein Glas Wasser getrunken (+250 ml)",
+"it": "Ho bevuto un bicchiere d’acqua (+250 ml)"
+},
+"Jour d’entraînement : prévoyez une source de protéines dans le repas qui suit la séance et buvez un peu plus d’eau.": {
+"en": "Training day: include a protein source in the meal after your session and drink a little more water.",
+"es": "Día de entrenamiento: incluye una fuente de proteína en la comida después de la sesión y bebe un poco más de agua.",
+"pt": "Dia de treino: inclua uma fonte de proteína na refeição após o treino e beba um pouco mais de água.",
+"de": "Trainingstag: Plane eine Eiweißquelle in der Mahlzeit nach dem Training ein und trink etwas mehr Wasser.",
+"it": "Giorno di allenamento: inserisci una fonte di proteine nel pasto dopo la seduta e bevi un po’ più d’acqua."
+},
+"Vos repas récents apparaîtront ici pour les ajouter en un geste.": {
+"en": "Your recent meals will appear here so you can add them in one tap.",
+"es": "Tus comidas recientes aparecerán aquí para añadirlas con un toque.",
+"pt": "Suas refeições recentes aparecerão aqui para adicionar com um toque.",
+"de": "Deine letzten Mahlzeiten erscheinen hier, damit du sie mit einem Tipp hinzufügen kannst.",
+"it": "I tuoi pasti recenti appariranno qui per aggiungerli con un tocco."
+},
+"Reprendre la journée d’hier": {
+"en": "Repeat yesterday",
+"es": "Repetir el día de ayer",
+"pt": "Repetir o dia de ontem",
+"de": "Gestern wiederholen",
+"it": "Ripeti la giornata di ieri"
+},
+"{n} repas · {k} kcal": {
+"en": "{n} meals · {k} kcal",
+"es": "{n} comidas · {k} kcal",
+"pt": "{n} refeições · {k} kcal",
+"de": "{n} Mahlzeiten · {k} kcal",
+"it": "{n} pasti · {k} kcal"
+},
+"Ajouter aujourd’hui": {
+"en": "Add for today",
+"es": "Añadir hoy",
+"pt": "Adicionar hoje",
+"de": "Für heute hinzufügen",
+"it": "Aggiungi per oggi"
+},
+"Évolution": {
+"en": "Trend",
+"es": "Evolución",
+"pt": "Evolução",
+"de": "Verlauf",
+"it": "Andamento"
+},
+"Notez vos symptômes au moins 2 jours pour voir la courbe.": {
+"en": "Log your symptoms on at least 2 days to see the curve.",
+"es": "Registra tus síntomas al menos 2 días para ver la curva.",
+"pt": "Registre seus sintomas por pelo menos 2 dias para ver a curva.",
+"de": "Erfasse deine Symptome an mindestens 2 Tagen, um die Kurve zu sehen.",
+"it": "Registra i sintomi per almeno 2 giorni per vedere la curva."
+},
+"0 = aucun · 3 = fort": {
+"en": "0 = none · 3 = strong",
+"es": "0 = ninguno · 3 = fuerte",
+"pt": "0 = nenhum · 3 = forte",
+"de": "0 = keine · 3 = stark",
+"it": "0 = nessuno · 3 = forte"
+},
+"jour avec facteurs notés": {
+"en": "day with factors logged",
+"es": "día con factores anotados",
+"pt": "dia com fatores anotados",
+"de": "Tag mit erfassten Faktoren",
+"it": "giorno con fattori annotati"
+},
+"Vos déclencheurs possibles": {
+"en": "Your possible triggers",
+"es": "Tus posibles desencadenantes",
+"pt": "Seus possíveis gatilhos",
+"de": "Deine möglichen Auslöser",
+"it": "I tuoi possibili fattori scatenanti"
+},
+"Notez vos facteurs quelques jours (au moins 3 avec et 3 sans) : NutriPilot vous montrera les liens qui ressortent pour vous.": {
+"en": "Log your factors for a few days (at least 3 with and 3 without): NutriPilot will show you the links that stand out for you.",
+"es": "Anota tus factores unos días (al menos 3 con y 3 sin): NutriPilot te mostrará las relaciones que destacan en tu caso.",
+"pt": "Anote seus fatores por alguns dias (pelo menos 3 com e 3 sem): o NutriPilot mostrará as relações que se destacam para você.",
+"de": "Erfasse deine Faktoren ein paar Tage lang (mindestens 3 mit und 3 ohne): NutriPilot zeigt dir die Zusammenhänge, die bei dir auffallen.",
+"it": "Annota i tuoi fattori per qualche giorno (almeno 3 con e 3 senza): NutriPilot ti mostrerà i legami che emergono per te."
+},
+"Observation personnelle à partir de vos notes, pas un diagnostic. Parlez-en à votre médecin si besoin.": {
+"en": "A personal observation based on your notes, not a diagnosis. Talk to your doctor if needed.",
+"es": "Observación personal a partir de tus notas, no un diagnóstico. Coméntalo con tu médico si lo necesitas.",
+"pt": "Observação pessoal a partir das suas anotações, não um diagnóstico. Converse com seu médico se precisar.",
+"de": "Persönliche Beobachtung aus deinen Notizen, keine Diagnose. Sprich bei Bedarf mit deiner Ärztin oder deinem Arzt.",
+"it": "Osservazione personale basata sulle tue note, non una diagnosi. Parlane con il tuo medico se serve."
+},
+"Facteurs du jour": {
+"en": "Today’s factors",
+"es": "Factores del día",
+"pt": "Fatores do dia",
+"de": "Faktoren heute",
+"it": "Fattori di oggi"
+},
+"facultatif": {
+"en": "optional",
+"es": "opcional",
+"pt": "opcional",
+"de": "optional",
+"it": "facoltativo"
+},
+"Journal ménopause": {
+"en": "Menopause journal",
+"es": "Diario de menopausia",
+"pt": "Diário da menopausa",
+"de": "Menopause-Tagebuch",
+"it": "Diario della menopausa"
+},
+"Imprimer / enregistrer en PDF": {
+"en": "Print / save as PDF",
+"es": "Imprimir / guardar en PDF",
+"pt": "Imprimir / salvar em PDF",
+"de": "Drucken / als PDF speichern",
+"it": "Stampa / salva in PDF"
+},
+"Journal ménopause — 30 derniers jours": {
+"en": "Menopause journal — last 30 days",
+"es": "Diario de menopausia — últimos 30 días",
+"pt": "Diário da menopausa — últimos 30 dias",
+"de": "Menopause-Tagebuch — letzte 30 Tage",
+"it": "Diario della menopausa — ultimi 30 giorni"
+},
+"Généré le {d}": {
+"en": "Generated on {d}",
+"es": "Generado el {d}",
+"pt": "Gerado em {d}",
+"de": "Erstellt am {d}",
+"it": "Generato il {d}"
+},
+"{n} jours renseignés": {
+"en": "{n} days logged",
+"es": "{n} días registrados",
+"pt": "{n} dias registrados",
+"de": "{n} erfasste Tage",
+"it": "{n} giorni compilati"
+},
+"Moyennes": {
+"en": "Averages",
+"es": "Promedios",
+"pt": "Médias",
+"de": "Durchschnittswerte",
+"it": "Medie"
+},
+"Symptôme": {
+"en": "Symptom",
+"es": "Síntoma",
+"pt": "Sintoma",
+"de": "Symptom",
+"it": "Sintomo"
+},
+"30 jours": {
+"en": "30 days",
+"es": "30 días",
+"pt": "30 dias",
+"de": "30 Tage",
+"it": "30 giorni"
+},
+"1re moitié": {
+"en": "1st half",
+"es": "1.ª mitad",
+"pt": "1ª metade",
+"de": "1. Hälfte",
+"it": "1ª metà"
+},
+"2e moitié": {
+"en": "2nd half",
+"es": "2.ª mitad",
+"pt": "2ª metade",
+"de": "2. Hälfte",
+"it": "2ª metà"
+},
+"Facteurs notés": {
+"en": "Factors logged",
+"es": "Factores anotados",
+"pt": "Fatores anotados",
+"de": "Erfasste Faktoren",
+"it": "Fattori annotati"
+},
+"Détail par jour": {
+"en": "Day by day",
+"es": "Detalle por día",
+"pt": "Detalhe por dia",
+"de": "Tag für Tag",
+"it": "Dettaglio per giorno"
+},
+"Document établi à partir de vos propres notes dans NutriPilot. Il ne constitue pas un diagnostic et ne remplace pas l’avis d’un professionnel de santé.": {
+"en": "This document is based on your own notes in NutriPilot. It is not a diagnosis and does not replace advice from a health professional.",
+"es": "Documento elaborado a partir de tus propias notas en NutriPilot. No constituye un diagnóstico ni sustituye la opinión de un profesional de la salud.",
+"pt": "Documento elaborado a partir das suas próprias anotações no NutriPilot. Não constitui diagnóstico e não substitui a orientação de um profissional de saúde.",
+"de": "Dieses Dokument basiert auf deinen eigenen Notizen in NutriPilot. Es ist keine Diagnose und ersetzt nicht den Rat einer medizinischen Fachperson.",
+"it": "Documento redatto a partire dalle tue note in NutriPilot. Non costituisce una diagnosi e non sostituisce il parere di un professionista sanitario."
+},
+"Rapport pour mon médecin": {
+"en": "Report for my doctor",
+"es": "Informe para mi médico",
+"pt": "Relatório para meu médico",
+"de": "Bericht für meine Ärztin/meinen Arzt",
+"it": "Report per il mio medico"
+},
+"Export CSV": {
+"en": "Export CSV",
+"es": "Exportar CSV",
+"pt": "Exportar CSV",
+"de": "CSV exportieren",
+"it": "Esporta CSV"
+},
+"Vos données": {
+"en": "Your data",
+"es": "Tus datos",
+"pt": "Seus dados",
+"de": "Deine Daten",
+"it": "I tuoi dati"
+},
+"Vos repas, mesures et journaux servent uniquement à votre suivi. Les photos de progression restent sur votre appareil. Pour améliorer l’application, nous comptons de façon anonyme quelques étapes (par exemple « page des formules vue »), sans identifiant ni contenu personnel.": {
+"en": "Your meals, measurements and journals are used only for your own tracking. Progress photos stay on your device. To improve the app, we anonymously count a few steps (for example “plans page viewed”), with no identifier or personal content.",
+"es": "Tus comidas, medidas y diarios solo sirven para tu seguimiento. Las fotos de progreso se quedan en tu dispositivo. Para mejorar la app contamos de forma anónima algunos pasos (por ejemplo «página de planes vista»), sin identificador ni contenido personal.",
+"pt": "Suas refeições, medidas e diários servem apenas para o seu acompanhamento. As fotos de progresso ficam no seu aparelho. Para melhorar o app, contamos de forma anônima algumas etapas (por exemplo “página de planos vista”), sem identificador nem conteúdo pessoal.",
+"de": "Deine Mahlzeiten, Maße und Tagebücher dienen nur deinem eigenen Tracking. Fortschrittsfotos bleiben auf deinem Gerät. Um die App zu verbessern, zählen wir anonym einige Schritte (zum Beispiel „Tarifseite angesehen“), ohne Kennung oder persönliche Inhalte.",
+"it": "I tuoi pasti, misure e diari servono solo al tuo monitoraggio. Le foto dei progressi restano sul tuo dispositivo. Per migliorare l’app contiamo in forma anonima alcuni passaggi (ad esempio «pagina dei piani vista»), senza identificativi né contenuti personali."
+},
+"Limites de l’IA": {
+"en": "AI limits",
+"es": "Límites de la IA",
+"pt": "Limites da IA",
+"de": "Grenzen der KI",
+"it": "Limiti dell’IA"
+},
+"Le coach et l’analyse photo utilisent une IA qui peut se tromper. Ils ne posent pas de diagnostic et ne prescrivent ni médicament ni traitement hormonal.": {
+"en": "The coach and photo analysis use AI that can make mistakes. They do not diagnose and do not prescribe medication or hormone treatment.",
+"es": "El coach y el análisis de fotos usan una IA que puede equivocarse. No hacen diagnósticos ni prescriben medicamentos ni tratamientos hormonales.",
+"pt": "O coach e a análise de fotos usam uma IA que pode errar. Eles não fazem diagnóstico nem prescrevem medicamentos ou tratamento hormonal.",
+"de": "Coach und Fotoanalyse nutzen eine KI, die sich irren kann. Sie stellen keine Diagnosen und verschreiben weder Medikamente noch Hormontherapien.",
+"it": "Il coach e l’analisi delle foto usano un’IA che può sbagliare. Non fanno diagnosi e non prescrivono farmaci né terapie ormonali."
+},
+"≈ {n} % de confiance": {
+"en": "≈ {n}% confidence",
+"es": "≈ {n} % de confianza",
+"pt": "≈ {n}% de confiança",
+"de": "≈ {n} % Sicherheit",
+"it": "≈ {n}% di affidabilità"
+},
+"Repas analysé": {
+"en": "Analysed meal",
+"es": "Comida analizada",
+"pt": "Refeição analisada",
+"de": "Analysierte Mahlzeit",
+"it": "Pasto analizzato"
+},
+"Fourchette initiale ≈ {a}–{b} kcal": {
+"en": "Initial range ≈ {a}–{b} kcal",
+"es": "Rango inicial ≈ {a}–{b} kcal",
+"pt": "Faixa inicial ≈ {a}–{b} kcal",
+"de": "Anfangsbereich ≈ {a}–{b} kcal",
+"it": "Intervallo iniziale ≈ {a}–{b} kcal"
+},
+"Cet écran n’a pas pu s’afficher": {
+"en": "This screen could not be displayed",
+"es": "No se ha podido mostrar esta pantalla",
+"pt": "Não foi possível exibir esta tela",
+"de": "Dieser Bildschirm konnte nicht angezeigt werden",
+"it": "Impossibile visualizzare questa schermata"
+},
+"Vos données sont intactes. Revenez à l’accueil ou réessayez.": {
+"en": "Your data is safe. Go back home or try again.",
+"es": "Tus datos están intactos. Vuelve al inicio o inténtalo de nuevo.",
+"pt": "Seus dados estão intactos. Volte ao início ou tente novamente.",
+"de": "Deine Daten sind sicher. Geh zur Startseite oder versuch es erneut.",
+"it": "I tuoi dati sono al sicuro. Torna alla home o riprova."
+},
+"Réessayer": {
+"en": "Try again",
+"es": "Reintentar",
+"pt": "Tentar novamente",
+"de": "Erneut versuchen",
+"it": "Riprova"
+},
+"Accueil": {
+"en": "Home",
+"es": "Inicio",
+"pt": "Início",
+"de": "Start",
+"it": "Home"
+},
+"Vous retrouverez tout dans le menu.": {
+"en": "You’ll find everything in the menu.",
+"es": "Lo encontrarás todo en el menú.",
+"pt": "Você encontra tudo no menu.",
+"de": "Du findest alles im Menü.",
+"it": "Troverai tutto nel menu."
+},
+"+250 ml ✓": {
+"en": "+250 ml ✓",
+"es": "+250 ml ✓",
+"pt": "+250 ml ✓",
+"de": "+250 ml ✓",
+"it": "+250 ml ✓"
+},
+"{n} repas ajoutés ✓": {
+"en": "{n} meals added ✓",
+"es": "{n} comidas añadidas ✓",
+"pt": "{n} refeições adicionadas ✓",
+"de": "{n} Mahlzeiten hinzugefügt ✓",
+"it": "{n} pasti aggiunti ✓"
+},
+"Petit souci technique, réessayez. Vos données sont sauvegardées.": {
+"en": "Small technical issue, please try again. Your data is saved.",
+"es": "Pequeño problema técnico, inténtalo de nuevo. Tus datos están guardados.",
+"pt": "Pequeno problema técnico, tente novamente. Seus dados estão salvos.",
+"de": "Kleines technisches Problem, bitte erneut versuchen. Deine Daten sind gespeichert.",
+"it": "Piccolo problema tecnico, riprova. I tuoi dati sono salvati."
+},
+"Enregistrer mon premier repas": {
+"en": "Log my first meal",
+"es": "Registrar mi primera comida",
+"pt": "Registrar minha primeira refeição",
+"de": "Meine erste Mahlzeit erfassen",
+"it": "Registra il mio primo pasto"
+},
+"Une photo suffit, vous ajustez ensuite.": {
+"en": "A photo is enough; you adjust afterwards.",
+"es": "Basta una foto; luego la ajustas.",
+"pt": "Basta uma foto; depois você ajusta.",
+"de": "Ein Foto reicht, anpassen kannst du danach.",
+"it": "Basta una foto, poi la sistemi."
+},
+"Activer les rappels d’eau": {
+"en": "Turn on water reminders",
+"es": "Activar los recordatorios de agua",
+"pt": "Ativar os lembretes de água",
+"de": "Wasser-Erinnerungen aktivieren",
+"it": "Attiva i promemoria per l’acqua"
+},
+"Un petit signal, aux heures que vous choisissez.": {
+"en": "A gentle nudge, at the times you choose.",
+"es": "Un pequeño aviso, a las horas que elijas.",
+"pt": "Um pequeno aviso, nos horários que você escolher.",
+"de": "Ein kleiner Hinweis, zu den Zeiten deiner Wahl.",
+"it": "Un piccolo segnale, agli orari che scegli tu."
+},
+"Générer mon plan 7 jours": {
+"en": "Generate my 7-day plan",
+"es": "Generar mi plan de 7 días",
+"pt": "Gerar meu plano de 7 dias",
+"de": "Meinen 7-Tage-Plan erstellen",
+"it": "Genera il mio piano di 7 giorni"
+},
+"Adapté à votre cuisine et vos goûts.": {
+"en": "Adapted to your cuisine and tastes.",
+"es": "Adaptado a tu cocina y tus gustos.",
+"pt": "Adaptado à sua culinária e aos seus gostos.",
+"de": "Angepasst an deine Küche und deinen Geschmack.",
+"it": "Adattato alla tua cucina e ai tuoi gusti."
+},
+"Noter mon poids ou mes mesures": {
+"en": "Log my weight or measurements",
+"es": "Anotar mi peso o mis medidas",
+"pt": "Registrar meu peso ou minhas medidas",
+"de": "Gewicht oder Maße erfassen",
+"it": "Registra il peso o le misure"
+},
+"Votre point de départ, pour voir le chemin.": {
+"en": "Your starting point, to see how far you go.",
+"es": "Tu punto de partida, para ver el camino.",
+"pt": "Seu ponto de partida, para ver o caminho.",
+"de": "Dein Ausgangspunkt, um den Weg zu sehen.",
+"it": "Il tuo punto di partenza, per vedere il percorso."
+},
+"Découvrir une séance": {
+"en": "Try a workout",
+"es": "Descubrir una sesión",
+"pt": "Conhecer um treino",
+"de": "Ein Training entdecken",
+"it": "Scopri un allenamento"
+},
+"Exercices animés, à la maison ou en salle.": {
+"en": "Animated exercises, at home or at the gym.",
+"es": "Ejercicios animados, en casa o en el gimnasio.",
+"pt": "Exercícios animados, em casa ou na academia.",
+"de": "Animierte Übungen, zu Hause oder im Studio.",
+"it": "Esercizi animati, a casa o in palestra."
+},
+"Lire une leçon de 3 minutes": {
+"en": "Read a 3-minute lesson",
+"es": "Leer una lección de 3 minutos",
+"pt": "Ler uma aula de 3 minutos",
+"de": "Eine 3-Minuten-Lektion lesen",
+"it": "Leggi una lezione di 3 minuti"
+},
+"Les bases qui font la différence.": {
+"en": "The basics that make the difference.",
+"es": "Las bases que marcan la diferencia.",
+"pt": "O básico que faz a diferença.",
+"de": "Die Grundlagen, die den Unterschied machen.",
+"it": "Le basi che fanno la differenza."
+},
+"Faire mon premier bilan": {
+"en": "Do my first check-in",
+"es": "Hacer mi primer balance",
+"pt": "Fazer meu primeiro check-in",
+"de": "Meinen ersten Check-in machen",
+"it": "Fai il mio primo check-in"
+},
+"Un check-in rapide : faim et énergie.": {
+"en": "A quick check-in: hunger and energy.",
+"es": "Un check-in rápido: hambre y energía.",
+"pt": "Um check-in rápido: fome e energia.",
+"de": "Ein kurzer Check-in: Hunger und Energie.",
+"it": "Un check-in veloce: fame ed energia."
+},
+"Caféine": {
+"en": "Caffeine",
+"es": "Cafeína",
+"pt": "Cafeína",
+"de": "Koffein",
+"it": "Caffeina"
+},
+"Alcool": {
+"en": "Alcohol",
+"es": "Alcohol",
+"pt": "Álcool",
+"de": "Alkohol",
+"it": "Alcol"
+},
+"Plat épicé": {
+"en": "Spicy food",
+"es": "Comida picante",
+"pt": "Comida apimentada",
+"de": "Scharfes Essen",
+"it": "Cibo piccante"
+},
+"Stress": {
+"en": "Stress",
+"es": "Estrés",
+"pt": "Estresse",
+"de": "Stress",
+"it": "Stress"
+},
+"Chaleur": {
+"en": "Heat",
+"es": "Calor",
+"pt": "Calor",
+"de": "Hitze",
+"it": "Caldo"
+},
+"Nuit courte": {
+"en": "Short night",
+"es": "Noche corta",
+"pt": "Noite curta",
+"de": "Kurze Nacht",
+"it": "Notte corta"
+},
+"Activité physique": {
+"en": "Physical activity",
+"es": "Actividad física",
+"pt": "Atividade física",
+"de": "Bewegung",
+"it": "Attività fisica"
+},
+"Récents": {
+"en": "Recent",
+"es": "Recientes",
+"pt": "Recentes",
+"de": "Zuletzt",
+"it": "Recenti"
+},
+"Valeurs indicatives pour 100 g.": {
+"en": "Indicative values per 100 g.",
+"es": "Valores orientativos por 100 g.",
+"pt": "Valores indicativos por 100 g.",
+"de": "Richtwerte pro 100 g.",
+"it": "Valori indicativi per 100 g."
+},
+"Ajustez la quantité réellement consommée.": {
+"en": "Adjust to the amount you actually ate.",
+"es": "Ajusta la cantidad realmente consumida.",
+"pt": "Ajuste a quantidade realmente consumida.",
+"de": "Passe die tatsächlich gegessene Menge an.",
+"it": "Regola la quantità effettivamente consumata."
+},
+"Les jours avec « {f} » : {s} plus marqués en moyenne ({a} contre {b}).": {
+"en": "On days with “{f}”: {s} stronger on average ({a} vs {b}).",
+"es": "Los días con «{f}»: {s} más intensos de media ({a} frente a {b}).",
+"pt": "Nos dias com “{f}”: {s} mais intensos em média ({a} contra {b}).",
+"de": "An Tagen mit „{f}“: {s} im Schnitt stärker ({a} gegenüber {b}).",
+"it": "Nei giorni con «{f}»: {s} più intensi in media ({a} contro {b})."
+},
+"Les jours avec « {f} » : {s} plus légers en moyenne ({a} contre {b}).": {
+"en": "On days with “{f}”: {s} milder on average ({a} vs {b}).",
+"es": "Los días con «{f}»: {s} más leves de media ({a} frente a {b}).",
+"pt": "Nos dias com “{f}”: {s} mais leves em média ({a} contra {b}).",
+"de": "An Tagen mit „{f}“: {s} im Schnitt schwächer ({a} gegenüber {b}).",
+"it": "Nei giorni con «{f}»: {s} più lievi in media ({a} contro {b})."
+},
+"Ajouter un repas": {
+"en": "Add a meal",
+"es": "Añadir una comida",
+"pt": "Adicionar uma refeição",
+"de": "Mahlzeit hinzufügen",
+"it": "Aggiungi un pasto"
+},
+"{s} — jours avec « {f} » : {a} en moyenne, contre {b} les autres jours.": {
+"en": "{s} — days with “{f}”: {a} on average, vs {b} on other days.",
+"es": "{s} — días con «{f}»: {a} de media, frente a {b} los demás días.",
+"pt": "{s} — dias com “{f}”: {a} em média, contra {b} nos outros dias.",
+"de": "{s} — Tage mit „{f}“: im Schnitt {a}, gegenüber {b} an anderen Tagen.",
+"it": "{s} — giorni con «{f}»: {a} in media, contro {b} negli altri giorni."
 }
 };

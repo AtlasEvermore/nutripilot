@@ -96,6 +96,21 @@ function clientIp(req) {
   return fwd || req.socket?.remoteAddress || 'unknown';
 }
 
+const FUNNEL_EVENTS = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated']);
+let funnelBuffer = {};
+let funnelTimer = null;
+function scheduleFunnelFlush() { if (!funnelTimer) funnelTimer = setTimeout(() => { funnelTimer = null; flushFunnel().catch(() => {}); }, 30_000); }
+async function flushFunnel() {
+  const pending = funnelBuffer; funnelBuffer = {};
+  if (!Object.keys(pending).length) return;
+  await ensureData();
+  const file = path.join(DATA_DIR, 'funnel.json');
+  let counts = {};
+  try { counts = JSON.parse(await fs.readFile(file, 'utf8')); } catch {}
+  for (const [k, n] of Object.entries(pending)) counts[k] = (counts[k] || 0) + n;
+  await fs.writeFile(file, JSON.stringify(counts));
+}
+
 function rateLimit(key, limit, windowMs) {
   const now = Date.now();
   if (now - lastRateSweep > 5 * 60 * 1000 || rateBuckets.size > MAX_RATE_BUCKETS) {
@@ -1363,6 +1378,29 @@ const server = http.createServer(async (req, res) => {
       let list = {};
       try { list = JSON.parse(await fs.readFile(path.join(DATA_DIR, 'waitlist.json'), 'utf8')); } catch {}
       return send(res, 200, { count: Object.keys(list).length, list });
+    }
+
+    // Anonymous funnel counters: event name + day + language only. No identifiers are stored.
+    if (url.pathname === '/api/event' && req.method === 'POST') {
+      if (!rateLimit(`event:${clientIp(req)}`, 120, 60 * 60 * 1000)) return send(res, 204, {});
+      const body = await readJson(req);
+      const name = String(body.name || '');
+      if (!FUNNEL_EVENTS.has(name)) return send(res, 204, {});
+      const day = new Date().toISOString().slice(0, 10);
+      const langCode = /^[a-z]{2}$/.test(String(body.lang || '')) ? body.lang : 'xx';
+      const detail = safeText(body.detail || '', 24).replace(/[^a-z0-9_-]/gi, '');
+      funnelBuffer[`${day}|${name}|${langCode}${detail ? '|' + detail : ''}`] = (funnelBuffer[`${day}|${name}|${langCode}${detail ? '|' + detail : ''}`] || 0) + 1;
+      scheduleFunnelFlush();
+      return send(res, 204, {});
+    }
+    if (url.pathname === '/api/admin/funnel' && req.method === 'GET') {
+      const key = process.env.ADMIN_KEY || '';
+      const given = String(req.headers['x-admin-key'] || url.searchParams.get('key') || '');
+      if (!key || key.length < 16 || !safeTokenEqual(given, key)) return send(res, 404, { error: 'API introuvable' });
+      await flushFunnel();
+      let counts = {};
+      try { counts = JSON.parse(await fs.readFile(path.join(DATA_DIR, 'funnel.json'), 'utf8')); } catch {}
+      return send(res, 200, { counts });
     }
 
     if (url.pathname === '/api/waitlist' && req.method === 'POST') {

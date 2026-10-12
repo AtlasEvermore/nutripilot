@@ -616,6 +616,10 @@ const defaultState = {
   menoLog: {},
   menoTasks: {},
   menoStart: '',
+  menoFactors: {},
+  journeyStart: '',
+  journeyHidden: false,
+  welcomeBackSeen: '',
   measures: {},
   shoppingExtra: [],
   gridDraft: null,
@@ -727,7 +731,7 @@ function syncSafeState() {
 
 function saveState(remote = true) {
   state.updatedAt = new Date().toISOString();
-  localStorage.setItem('nutripilot_v7', JSON.stringify(state));
+  try { localStorage.setItem('nutripilot_v7', JSON.stringify(state)); } catch { /* storage full or blocked: remote sync still runs */ }
   if (remote && state.premium && state.accessToken) {
     clearTimeout(syncTimer);
     syncTimer = setTimeout(syncRemote, 900);
@@ -783,7 +787,14 @@ function track(name, params = {}) {
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event: name, ...params });
   try { window.fbq?.('trackCustom', name, params); } catch {}
+  if (FUNNEL.has(name)) {
+    try {
+      const body = JSON.stringify({ name, lang: lang(), detail: params.plan || params.source || params.feature || params.from || '' });
+      if (!navigator.sendBeacon?.('/api/event', new Blob([body], { type: 'application/json' }))) fetch('/api/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => {});
+    } catch { /* analytics must never break the app */ }
+  }
 }
+const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated']);
 
 function logo() {
   return `<div class="logo"><span class="logo-mark"></span>${esc(config.brand)}</div>`;
@@ -791,7 +802,9 @@ function logo() {
 
 function nav(next) {
   route = next;
-  location.hash = next;
+  closeDrawer(true);
+  if (history.state?.npOverlay) history.replaceState(null, '', '#' + next);
+  else location.hash = next;
   render();
   scrollTo(0, 0);
 }
@@ -951,6 +964,9 @@ async function init() {
   if (valid && state.onboarding && ['access', 'plan', 'onboarding', 'paywall', 'welcome'].includes(route)) route = 'app';
   guardRoute();
 
+  const today = todayKey();
+  if (state.lastOpen && state.lastOpen !== today) awayDays = Math.round((new Date(`${today}T12:00:00`) - new Date(`${state.lastOpen}T12:00:00`)) / 86400000);
+  state.lastOpen = today;
   saveState(false);
   render();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -959,7 +975,20 @@ async function init() {
 
 window.addEventListener('hashchange', () => {
   route = location.hash.replace('#', '') || 'app';
+  closeDrawer(true);
   render();
+});
+
+// Phone back button closes the open sheet or menu instead of leaving the screen.
+const overlayOpen = () => !!document.querySelector('.modal-wrap, .drawer-wrap');
+new MutationObserver(() => {
+  if (overlayOpen()) { if (!history.state?.npOverlay) history.pushState({ npOverlay: 1 }, '', location.href); return; }
+  setTimeout(() => { if (!overlayOpen() && history.state?.npOverlay) history.back(); }, 0);
+}).observe(document.body, { childList: true });
+window.addEventListener('popstate', () => {
+  if (!overlayOpen()) return;
+  if (document.querySelector('.drawer-wrap')) closeDrawer();
+  if (document.querySelector('.modal-wrap')) { const refresh = modal?.refresh; modal = null; document.querySelector('.modal-wrap')?.remove(); if (refresh) render(); }
 });
 
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -1934,6 +1963,80 @@ function recipeIdeas() {
     <div class="idea-strip">${ideas.map((r) => `<button class="idea-card r-${r.type}" data-recipe-id="${esc(r.id)}"><span class="rc-flag">${CUISINE_FLAG[r.cuisine] || '🍽️'}</span><b>${esc(L(r.name))}</b><small>${fmt(r.kcal)} kcal · ${fmt(r.protein)} g ${L('prot.')}</small></button>`).join('')}</div>`;
 }
 
+// v11 — activation journey, welcome back, SOS, training-day tip
+let awayDays = 0;
+const JOURNEY = [
+  ['fork', 'Enregistrer mon premier repas', 'Une photo suffit, vous ajustez ensuite.', () => state.meals.length > 0, 'add'],
+  ['drop', 'Activer les rappels d’eau', 'Un petit signal, aux heures que vous choisissez.', () => Boolean(state.reminders?.water?.on) || Object.keys(state.water || {}).length >= 2, 'reminders'],
+  ['calendar', 'Générer mon plan 7 jours', 'Adapté à votre cuisine et vos goûts.', () => (state.weekPlan || []).length > 0, 'program'],
+  ['scale', 'Noter mon poids ou mes mesures', 'Votre point de départ, pour voir le chemin.', () => (state.weights || []).length > 1 || Object.keys(state.measures || {}).length > 0, 'progress'],
+  ['dumbbell', 'Découvrir une séance', 'Exercices animés, à la maison ou en salle.', () => (state.workoutLog || []).length > 0 || (state.customPrograms || []).length > 0, 'training'],
+  ['book', 'Lire une leçon de 3 minutes', 'Les bases qui font la différence.', () => (state.guidesRead || []).length > 0, 'guides'],
+  ['check', 'Faire mon premier bilan', 'Un check-in rapide : faim et énergie.', () => Object.keys(state.checkins || {}).length > 0, 'checkin'],
+];
+function journeyCard() {
+  if (!state.premium || state.journeyHidden) return '';
+  if (!state.journeyStart) { state.journeyStart = state.meals.length > 20 ? '' : todayKey(); if (!state.journeyStart) { state.journeyHidden = true; } saveState(false); if (state.journeyHidden) return ''; }
+  const day = Math.floor((new Date(`${todayKey()}T12:00:00`) - new Date(`${state.journeyStart}T12:00:00`)) / 86400000) + 1;
+  const steps = JOURNEY.map(([ico, title, sub, ok, go]) => ({ ico, title, sub, ok: ok(), go }));
+  const done = steps.filter((x) => x.ok).length;
+  if (day > 10 || done === steps.length) return '';
+  const next = steps.find((x) => !x.ok);
+  const action = next.go === 'add' ? 'data-open-add' : next.go === 'reminders' ? 'data-reminders' : next.go === 'checkin' ? 'data-scroll="checkin"' : `data-go="${next.go}"`;
+  return `<section class="journey" aria-label="${L('Vos 7 premiers jours')}">
+    <div class="journey-head"><div><small>${L('Vos 7 premiers jours · jour {n}', { n: Math.min(day, 7) })}</small><h3>${L('{d} sur {t} étapes', { d: done, t: steps.length })}</h3></div><button class="icon-btn ghost-x" data-journey-hide aria-label="${L('Masquer')}">${icon('close')}</button></div>
+    <div class="journey-track">${steps.map((x) => `<i class="${x.ok ? 'ok' : x === next ? 'now' : ''}"></i>`).join('')}</div>
+    <button class="journey-next" ${action}><span class="jn-ico">${icon(next.ico)}</span><span><b>${L(next.title)}</b><small>${L(next.sub)}</small></span>${icon('chevron')}</button>
+  </section>`;
+}
+function welcomeBackCard() {
+  if (!state.premium || awayDays < 3 || state.welcomeBackSeen === todayKey() || state.meals.some((m) => m.day === todayKey())) return '';
+  const name = state.profile?.name;
+  return `<section class="welcome-back">
+    <div><h3>${name ? L('Content de vous revoir, {name}', { name: esc(name) }) : L('Content de vous revoir')}</h3>
+    <p>${L('Rien à rattraper : on repart d’aujourd’hui, simplement. Un repas noté suffit pour reprendre le fil.')}</p></div>
+    <div class="wb-actions"><button class="btn btn-lime" data-open-add>${icon('scan')}<span>${L('Noter un repas')}</span></button><button class="btn btn-ghost" data-welcome-ok>${L('Plus tard')}</button></div>
+  </section>`;
+}
+function sosCard() {
+  return `<button class="sos-card" data-sos><span class="sos-ico">${icon('sparkle')}</span><span><b>${L('Envie de grignoter ou besoin d’une pause ?')}</b><small>${L('1 minute de respiration guidée, puis on décide ensemble.')}</small></span>${icon('chevron')}</button>`;
+}
+function sosSheet() {
+  const snacks = rankRecipes('s', 250).slice(0, 3);
+  return `<div class="sheet-head"><div><h2>${L('Une minute pour vous')}</h2><p class="fine">${L('Suivez le cercle : inspirez quand il grandit, expirez quand il diminue.')}</p></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">×</button></div>
+    <div class="breath" role="img" aria-label="${L('Respiration guidée : inspirez 4 secondes, expirez 6 secondes')}"><div class="breath-ring"></div><div class="breath-core"><span class="b-in">${L('Inspirez')}</span><span class="b-out">${L('Expirez')}</span></div></div>
+    <div class="sos-steps">
+      <div><b>1</b><span>${L('Buvez un grand verre d’eau.')}</span></div>
+      <div><b>2</b><span>${L('Demandez-vous : faim du ventre, ou fatigue, stress, ennui ?')}</span></div>
+      <div><b>3</b><span>${L('Si c’est la faim, mangez sans culpabilité : une collation qui tient au corps aide à retrouver le calme.')}</span></div>
+    </div>
+    ${snacks.length ? `<div class="section-label"><h3>${L('Collations qui calent')}</h3></div><div class="manual-list">${snacks.map((r) => `<button class="manual-item" data-recipe-id="${esc(r.id)}"><span><b>${esc(L(r.name))}</b><small>${fmt(r.kcal)} kcal · ${fmt(r.protein)} g ${L('protéines')}</small></span>${icon('chevron')}</button>`).join('')}</div>` : ''}
+    <button class="btn btn-ghost btn-wide sos-water" data-sos-water>${icon('drop')}<span>${L('J’ai bu un verre d’eau (+250 ml)')}</span></button>`;
+}
+function trainingDayTip(session) {
+  if (!session) return '';
+  return `<div class="tip-line">${icon('fork')}<span>${L('Jour d’entraînement : prévoyez une source de protéines dans le repas qui suit la séance et buvez un peu plus d’eau.')}</span></div>`;
+}
+function recentMeals() {
+  const seen = new Set();
+  return state.meals.slice().sort((a, b) => (b.day + b.id).localeCompare(a.day + a.id)).filter((m) => {
+    const k = (m.title || '').trim().toLowerCase();
+    if (!k || seen.has(k) || !m.total) return false;
+    seen.add(k); return true;
+  }).slice(0, 15);
+}
+function recentTab() {
+  const y = state.meals.filter((m) => m.day === addDays(-1));
+  const kcal = y.reduce((a, m) => a + Number(m.total?.kcal || 0), 0);
+  const list = recentMeals();
+  if (!list.length && !y.length) return `<div class="empty">${L('Vos repas récents apparaîtront ici pour les ajouter en un geste.')}</div>`;
+  return `${y.length ? `<button class="copy-day" data-copy-yesterday><span>${icon('swap')}</span><span><b>${L('Reprendre la journée d’hier')}</b><small>${L('{n} repas · {k} kcal', { n: y.length, k: fmt(kcal) })}</small></span>${icon('plus')}</button>` : ''}
+    <div class="manual-list">${list.map((m) => `<div class="recent-row"><button class="manual-item" data-recent-edit="${esc(m.id)}"><span><b>${esc(m.title)}</b><small>${L(m.type || '')} · ${fmt(m.total.kcal)} kcal · P ${fmt(m.total.protein)} g</small></span></button><button class="recent-add" data-recent-add="${esc(m.id)}" aria-label="${L('Ajouter aujourd’hui')}">${icon('plus')}</button></div>`).join('')}</div>`;
+}
+function relogMeal(m, type) {
+  state.meals.push({ ...clone(m), id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, day: todayKey(), type: type || m.type || mealTypeFromHour() });
+}
+
 function dashboard() {
   const t = totals();
   const p = state.profile;
@@ -1963,6 +2066,7 @@ function dashboard() {
     ${appHeader(p.name ? L('Bonjour {name} 👋', { name: p.name }) : L('Bonjour 👋'))}
     <div class="screen">
       ${weekDots()}
+      ${welcomeBackCard()}
       <section class="hero-ring-card">
         <div class="ring-wrap">
           <svg class="day-ring" viewBox="0 0 220 220" role="img" aria-label="${L('{n} kcal restantes', { n: fmt(left) })}">
@@ -1999,7 +2103,9 @@ function dashboard() {
         </div>
       </div>
 
+      ${journeyCard()}
       ${dailyMissions()}
+      ${sosCard()}
 
       <div class="quick-grid">
         <button data-go="planner">${icon('sparkle')}<span>${L('Que manger ensuite ?')}</span></button>
@@ -2008,7 +2114,7 @@ function dashboard() {
         <button data-go="coach">${icon('coach')}<span>${L('Coach')}</span></button>
       </div>
 
-      ${session ? `<button class="today-train" data-session="${esc(session.id)}" data-program="${esc(currentProgram().id)}">${exAnim(session.ex[0][0], 'sm')}<span><small>${L('Séance du jour')}</small><b>${esc(L(session.name))}</b><em>${esc(L(session.focus))} · ${L('{n} exercices', { n: session.ex.length })}</em></span><span class="tt-go">${doneOn(todayKey()) ? icon('check') : icon('chevron')}</span></button>` : ''}
+      ${session ? `<button class="today-train" data-session="${esc(session.id)}" data-program="${esc(currentProgram().id)}">${exAnim(session.ex[0][0], 'sm')}<span><small>${L('Séance du jour')}</small><b>${esc(L(session.name))}</b><em>${esc(L(session.focus))} · ${L('{n} exercices', { n: session.ex.length })}</em></span><span class="tt-go">${doneOn(todayKey()) ? icon('check') : icon('chevron')}</span></button>${trainingDayTip(session)}` : ''}
 
       ${dayPlan.length ? `<div class="section-label"><h3>${L('Votre plan aujourd’hui')}</h3><button class="link-btn" data-go="program">${L('7 jours →')}</button></div><div class="plan-today">${dayPlan.map((meal) => { const idx = state.weekPlan.indexOf(todayPlan); const mi = dayPlan.indexOf(meal); return `<div class="pt-row"><span class="pm-flag">${CUISINE_FLAG[meal.cuisine] || '🍽️'}</span><span><small>${esc(L(meal.type))}</small><b>${esc(L(meal.name))}</b></span><button class="pill pill-button" data-add-plan-meal data-day="${idx}" data-meal="${mi}">${fmt(meal.kcal)} kcal ${icon('plus')}</button></div>`; }).join('')}</div>` : `<button class="cta-card" data-go="program">${icon('calendar')}<span><b>${L('Créez votre plan de la semaine')}</b><small>${L('Repas, recettes et liste de courses en un clic.')}</small></span>${icon('chevron')}</button>`}
 
@@ -3665,6 +3771,97 @@ function menopauseScreen() {
   </div>`;
 }
 
+// v11 — menopause factors, 30-day evolution, printable report
+const MENO_FACTORS = [['caffeine', 'Caféine', '☕'], ['alcohol', 'Alcool', '🍷'], ['spicy', 'Plat épicé', '🌶️'], ['stress', 'Stress', '⚡'], ['heat', 'Chaleur', '☀️'], ['badsleep', 'Nuit courte', '🌙'], ['active', 'Activité physique', '🏃']];
+let menoChartKey = 'hot';
+let menoRange = 30;
+function menoScore(day) {
+  const log = state.menoLog?.[day];
+  if (!log || !Object.keys(log).length) return null;
+  const v = Object.values(log).map(Number);
+  return v.reduce((a, b) => a + b, 0) / v.length;
+}
+function menoValue(day, key) {
+  if (key === 'all') return menoScore(day);
+  const v = state.menoLog?.[day]?.[key];
+  return v === undefined ? null : Number(v);
+}
+function menoChartHtml() {
+  const days = Array.from({ length: menoRange }, (_, i) => addDays(-(menoRange - 1 - i)));
+  const W = 320, H = 120, padL = 22, padB = 18;
+  const step = (W - padL - 6) / Math.max(1, days.length - 1);
+  const pts = days.map((d, i) => [padL + i * step, menoValue(d, menoChartKey)]);
+  const y = (v) => 6 + (H - padB - 6) * (1 - v / 3);
+  const segs = [];
+  let cur = [];
+  pts.forEach(([x, v]) => { if (v === null) { if (cur.length) segs.push(cur); cur = []; } else cur.push(`${x.toFixed(1)},${y(v).toFixed(1)}`); });
+  if (cur.length) segs.push(cur);
+  const logged = pts.filter(([, v]) => v !== null).length;
+  const factorRow = days.map((d, i) => { const f = state.menoFactors?.[d] || {}; const n = Object.keys(f).filter((k) => k !== 'active').length; return n ? `<circle cx="${(padL + i * step).toFixed(1)}" cy="${H - 5}" r="${Math.min(4, 1.6 + n * 0.8)}" class="mf-dot"/>` : ''; }).join('');
+  const grid = [0, 1, 2, 3].map((v) => `<line x1="${padL}" x2="${W - 4}" y1="${y(v)}" y2="${y(v)}" class="mc-grid"/><text x="2" y="${y(v) + 3}" class="mc-ax">${v}</text>`).join('');
+  const keys = [['all', 'Moyenne'], ...MENO_SYMPTOMS];
+  return `<div class="section-label"><h3>${L('Évolution')}</h3><div class="mini-seg">${[14, 30, 90].map((n) => `<button class="${menoRange === n ? 'active' : ''}" data-meno-range="${n}">${L('{n} j', { n })}</button>`).join('')}</div></div>
+    <div class="meno-chart-card">
+      <div class="chip-row h-scroll">${keys.map(([k, label]) => `<button class="chip-btn ${menoChartKey === k ? 'active' : ''}" data-meno-chart="${k}">${L(label)}</button>`).join('')}</div>
+      ${logged < 2 ? `<div class="empty small-empty">${L('Notez vos symptômes au moins 2 jours pour voir la courbe.')}</div>` : `<svg viewBox="0 0 ${W} ${H}" class="meno-chart" role="img" aria-label="${L('Évolution')}">${grid}${segs.map((sg) => sg.length > 1 ? `<polyline points="${sg.join(' ')}" class="mc-line"/>` : `<circle cx="${sg[0].split(',')[0]}" cy="${sg[0].split(',')[1]}" r="3" class="mc-pt"/>`).join('')}${factorRow}</svg>
+      <div class="mc-legend"><span><i class="lg-line"></i>${L('0 = aucun · 3 = fort')}</span><span><i class="lg-dot"></i>${L('jour avec facteurs notés')}</span></div>`}
+    </div>`;
+}
+function menoFactorInsight() {
+  const days = Object.keys(state.menoLog || {});
+  const out = [];
+  MENO_FACTORS.forEach(([fk, flabel]) => {
+    MENO_SYMPTOMS.forEach(([sk, slabel]) => {
+      const withF = [], without = [];
+      days.forEach((d) => { const v = state.menoLog[d]?.[sk]; if (v === undefined) return; (state.menoFactors?.[d]?.[fk] ? withF : without).push(Number(v)); });
+      if (withF.length < 3 || without.length < 3) return;
+      const a = withF.reduce((x, z) => x + z, 0) / withF.length;
+      const b = without.reduce((x, z) => x + z, 0) / without.length;
+      if (Math.abs(a - b) < 0.6) return;
+      out.push({ fk, diff: Math.abs(a - b), text: `${a > b ? '↑' : '↓'} ` + L('{s} — jours avec « {f} » : {a} en moyenne, contre {b} les autres jours.', { f: L(flabel), s: L(slabel), a: fmt(a, 1), b: fmt(b, 1) }) });
+    });
+  });
+  out.sort((x, z) => z.diff - x.diff);
+  const picked = [];
+  out.forEach((o) => { if (picked.length < 3 && picked.filter((p) => p.fk === o.fk).length < 2) picked.push(o); });
+  if (!picked.length) return `<div class="insight meno-insight"><strong>${L('Vos déclencheurs possibles')}</strong>${L('Notez vos facteurs quelques jours (au moins 3 avec et 3 sans) : NutriPilot vous montrera les liens qui ressortent pour vous.')}</div>`;
+  return `<div class="insight meno-insight"><strong>${L('Vos déclencheurs possibles')}</strong>${picked.map((o) => esc(o.text)).join('<br>')}<div class="fine">${L('Observation personnelle à partir de vos notes, pas un diagnostic. Parlez-en à votre médecin si besoin.')}</div></div>`;
+}
+function menoFactorsHtml() {
+  const f = state.menoFactors?.[todayKey()] || {};
+  return `<div class="section-label"><h3>${L('Facteurs du jour')}</h3><span class="fine">${L('facultatif')}</span></div>
+    <div class="factor-grid">${MENO_FACTORS.map(([key, label, emo]) => `<button class="factor ${f[key] ? 'on' : ''}" data-meno-factor="${key}" aria-pressed="${f[key] ? 'true' : 'false'}"><span aria-hidden="true">${emo}</span>${L(label)}</button>`).join('')}</div>`;
+}
+function menoReportHtml() {
+  const days = Array.from({ length: 30 }, (_, i) => addDays(-(29 - i)));
+  const logged = days.filter((d) => state.menoLog?.[d] && Object.keys(state.menoLog[d]).length);
+  const avg = (key, list) => { const v = list.map((d) => state.menoLog[d]?.[key]).filter((x) => x !== undefined).map(Number); return v.length ? fmt(v.reduce((a, b) => a + b, 0) / v.length, 1) : '–'; };
+  const first = logged.slice(0, Math.ceil(logged.length / 2)), second = logged.slice(Math.ceil(logged.length / 2));
+  const factorCount = MENO_FACTORS.map(([k, label]) => [label, days.filter((d) => state.menoFactors?.[d]?.[k]).length]).filter(([, n]) => n);
+  const p = state.profile || {};
+  const cell = (v) => v === undefined ? '' : `<td class="l${v}">${v}</td>`;
+  return `<!doctype html><html lang="${lang()}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${L('Journal ménopause')} — NutriPilot</title>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#102419;margin:24px;max-width:900px}h1{font-size:22px;margin:0}h2{font-size:15px;margin:22px 0 8px}p,li{font-size:13px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:11px}th,td{border:1px solid #dfe3da;padding:4px;text-align:center}th{background:#f2f4ee}td.l0{background:#fff}td.l1{background:#eef7d8}td.l2{background:#ffe9b8}td.l3{background:#ffc9b8}.meta{color:#5b6b60;font-size:12px}.btn{display:inline-block;margin:12px 0;padding:10px 16px;border-radius:12px;background:#102419;color:#fff;border:0;font-weight:700}@media print{.btn{display:none}body{margin:10mm}}</style></head><body>
+<button class="btn" onclick="print()">${L('Imprimer / enregistrer en PDF')}</button>
+<h1>${L('Journal ménopause — 30 derniers jours')}</h1>
+<p class="meta">${esc(p.name || '')} · ${L('Généré le {d}', { d: dateFr(new Date(), true) })} · ${L('{n} jours renseignés', { n: logged.length })} · ${L('Échelle : 0 = aucun, 1 = léger, 2 = moyen, 3 = fort')}</p>
+<h2>${L('Moyennes')}</h2>
+<table><tr><th>${L('Symptôme')}</th><th>${L('30 jours')}</th><th>${L('1re moitié')}</th><th>${L('2e moitié')}</th></tr>${MENO_SYMPTOMS.map(([k, label]) => `<tr><td style="text-align:left">${L(label)}</td><td>${avg(k, logged)}</td><td>${avg(k, first)}</td><td>${avg(k, second)}</td></tr>`).join('')}</table>
+${factorCount.length ? `<h2>${L('Facteurs notés')}</h2><p>${factorCount.map(([label, n]) => `${L(label)} : ${L('{n} j', { n })}`).join(' · ')}</p>` : ''}
+<h2>${L('Détail par jour')}</h2>
+<div style="overflow-x:auto"><table><tr><th>${L('Date')}</th>${MENO_SYMPTOMS.map(([, label]) => `<th>${L(label)}</th>`).join('')}</tr>${logged.map((d) => `<tr><td style="white-space:nowrap">${new Date(`${d}T12:00:00`).toLocaleDateString(locale(), { day: '2-digit', month: '2-digit' })}</td>${MENO_SYMPTOMS.map(([k]) => cell(state.menoLog[d]?.[k]) || '<td></td>').join('')}</tr>`).join('')}</table></div>
+<p class="meta">${L('Document établi à partir de vos propres notes dans NutriPilot. Il ne constitue pas un diagnostic et ne remplace pas l’avis d’un professionnel de santé.')}</p>
+</body></html>`;
+}
+function openMenoReport() {
+  const blob = new Blob([menoReportHtml()], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (!win) { const a = document.createElement('a'); a.href = url; a.download = 'rapport-menopause.html'; a.click(); }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  track('MenoReport');
+}
+
 function menoToday() {
   const log = state.menoLog?.[todayKey()] || {};
   const p = state.profile || {};
@@ -3678,7 +3875,11 @@ function menoToday() {
       <div class="symptom-head"><b>${L(label)}</b><span class="spark">${bars(key)}</span></div>
       <div class="level-row">${MENO_LEVELS.map(([v, l]) => `<button class="${Number(log[key]) === v && log[key] !== undefined ? 'on l' + v : ''}" data-meno-log="${key}" data-value="${v}">${L(l)}</button>`).join('')}</div>
     </div>`).join('')}</div>
+    ${menoFactorsHtml()}
     <div class="insight meno-insight"><strong>${L('Vos tendances')}</strong>${esc(menoInsight())}</div>
+    ${menoChartHtml()}
+    ${menoFactorInsight()}
+    <div class="report-row"><button class="btn btn-primary" data-meno-report>${icon('book')}<span>${L('Rapport pour mon médecin')}</span></button><button class="btn btn-ghost" data-export="meno">${L('Export CSV')}</button></div>
     <div class="section-label"><h3>${L('Vos repères du jour')}</h3></div>
     <div class="meno-targets">
       <div>${icon('fork')}<b>${L('{n} g de protéines', { n: p.protein || 100 })}</b><small>${L('Une source à chaque repas')}</small></div>
@@ -3692,7 +3893,7 @@ function menoToday() {
       <p class="screen-sub">${L('La moitié de l’assiette en légumes, un quart de protéines, un quart de féculents complets, et une petite part de bonnes graisses (huile d’olive, noix).')}</p>
       <button class="btn btn-ghost btn-wide" data-go="recipes">${L('Voir les recettes adaptées')}</button>
     </div>
-    <button class="btn btn-ghost btn-wide" data-export="meno">${L('Exporter mon journal pour mon médecin')}</button>`;
+`;
 }
 
 function menoProgram(week) {
@@ -3869,7 +4070,7 @@ function settings() {
 
 function legal() {
   const legalInfo = config.legal || {};
-  return `<div class="mobile-app"><div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="${state.premium ? 'settings' : 'access'}">←</button><h2>${L('Informations')}</h2><span></span></div></div><div class="screen"><h1 class="screen-title">${L('Transparence')}</h1><div class="day-card"><h3>${L('Nature du service')}</h3><p class="screen-sub">${L('{brand} est un outil général de suivi nutritionnel et de bien-être. Les calories, grammes, portions et macros restent des estimations lorsqu’ils ne proviennent pas de données mesurées.', { brand: esc(config.brand) })}</p></div><div class="day-card"><h3>${L('Scanner photo')}</h3><p class="screen-sub">${L('Une photo ne pèse pas un aliment. NutriPilot affiche des estimations et vous permet de corriger les grammes avant enregistrement.')}</p></div><div class="day-card"><h3>${L('Abonnement')}</h3><p class="screen-sub">${L('La durée, le prix, le renouvellement et les conditions d’annulation sont présentés avant tout paiement.')}</p></div><div class="day-card"><h3>${L('Éditeur')}</h3><p class="screen-sub"><b>${esc(legalInfo.company || L('À compléter'))}</b><br>${esc(legalInfo.address || L('Adresse à compléter'))}<br>${esc(legalInfo.id || L('Identifiant à compléter'))}<br>${L('Support : {email}', { email: esc(config.supportEmail) })}</p></div></div></div>`;
+  return `<div class="mobile-app"><div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="${state.premium ? 'settings' : 'access'}">←</button><h2>${L('Informations')}</h2><span></span></div></div><div class="screen"><h1 class="screen-title">${L('Transparence')}</h1><div class="day-card"><h3>${L('Nature du service')}</h3><p class="screen-sub">${L('{brand} est un outil général de suivi nutritionnel et de bien-être. Les calories, grammes, portions et macros restent des estimations lorsqu’ils ne proviennent pas de données mesurées.', { brand: esc(config.brand) })}</p></div><div class="day-card"><h3>${L('Scanner photo')}</h3><p class="screen-sub">${L('Une photo ne pèse pas un aliment. NutriPilot affiche des estimations et vous permet de corriger les grammes avant enregistrement.')}</p></div><div class="day-card"><h3>${L('Vos données')}</h3><p class="screen-sub">${L('Vos repas, mesures et journaux servent uniquement à votre suivi. Les photos de progression restent sur votre appareil. Pour améliorer l’application, nous comptons de façon anonyme quelques étapes (par exemple « page des formules vue »), sans identifiant ni contenu personnel.')}</p></div><div class="day-card"><h3>${L('Limites de l’IA')}</h3><p class="screen-sub">${L('Le coach et l’analyse photo utilisent une IA qui peut se tromper. Ils ne posent pas de diagnostic et ne prescrivent ni médicament ni traitement hormonal.')}</p></div><div class="day-card"><h3>${L('Abonnement')}</h3><p class="screen-sub">${L('La durée, le prix, le renouvellement et les conditions d’annulation sont présentés avant tout paiement.')}</p></div><div class="day-card"><h3>${L('Éditeur')}</h3><p class="screen-sub"><b>${esc(legalInfo.company || L('À compléter'))}</b><br>${esc(legalInfo.address || L('Adresse à compléter'))}<br>${esc(legalInfo.id || L('Identifiant à compléter'))}<br>${L('Support : {email}', { email: esc(config.supportEmail) })}</p></div></div></div>`;
 }
 
 function access() {
@@ -3896,8 +4097,11 @@ function renderModal() {
   if (!modal) return;
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : addSheet()}</div>`;
+  wrap.setAttribute('role', 'dialog');
+  wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
+  a11yPass(wrap);
   bindModal(wrap);
   if (modal.type === 'ex-picker') {
     $('#picker-search', wrap)?.addEventListener('input', (event) => {
@@ -3917,7 +4121,7 @@ function renderModal() {
 function addSheet() {
   if (modal.loading) return `<div class="loader"><div class="loader-dots"><i></i><i></i><i></i></div><h3>${L('Analyse en cours…')}</h3><p>${L('NutriPilot identifie les aliments, estime les portions et prépare les données modifiables.')}</p></div>`;
   if (modal.result) return resultSheet(modal.result);
-  const tabs = [['photo','Photo'],['text','Texte / voix'],['barcode','Code-barres'],['label','Étiquette'],['manual','Manuel'],['favorites','Favoris']].map(([k, v]) => [k, L(v)]);
+  const tabs = [...(state.meals.length ? [['recent', 'Récents']] : []), ['photo','Photo'],['text','Texte / voix'],['barcode','Code-barres'],['label','Étiquette'],['manual','Manuel'],['favorites','Favoris']].map(([k, v]) => [k, L(v)]);
   return `<div class="sheet-head"><div><span class="tag">${L('AJOUTER UN REPAS')}</span><h2>${L('Choisissez la méthode.')}</h2></div><button class="icon-btn" data-close>×</button></div><div class="tabs">${tabs.map(([key, label]) => `<button class="tab ${modal.tab === key ? 'active' : ''}" data-mtab="${key}">${label}</button>`).join('')}</div>${addTab(modal.tab)}`;
 }
 
@@ -3926,6 +4130,7 @@ const localFood = [
 ];
 
 function addTab(tab) {
+  if (tab === 'recent') return recentTab();
   if (tab === 'photo' || tab === 'label') return `<label class="upload"><input id="meal-image" type="file" accept="image/*" capture="environment"><div class="camera-ico">${tab === 'label' ? '▤' : '📸'}</div><h3>${L(tab === 'label' ? 'Photographier l’étiquette' : 'Photographier mon repas')}</h3><p>${L(tab === 'label' ? 'Cadrez les valeurs nutritionnelles et la portion.' : 'Une photo donne une estimation. Vous pourrez corriger chaque quantité avant de l’enregistrer.')}</p><span class="btn btn-primary">${L('Choisir une photo')}</span></label>`;
   if (tab === 'text') return `<div class="field"><label>${L('Décrivez votre repas')}</label><textarea class="textarea" id="meal-text" placeholder="${L('Ex. 150 g de poulet, 120 g de riz, courgettes et 1 c. à café d’huile d’olive')}"></textarea></div><div class="inline-actions"><button class="voice-btn" data-voice>${L('🎙 Dicter')}</button><button class="btn btn-primary" data-analyze-text>${L('Analyser →')}</button></div>`;
   if (tab === 'barcode') return `<div class="day-card"><h3>${L('Produit emballé')}</h3><p class="screen-sub">${L('Entrez les 8 à 14 chiffres du code-barres. Les données disponibles proviennent d’Open Food Facts et restent à vérifier sur l’emballage.')}</p><div class="field"><label>${L('Code-barres')}</label><input id="barcode" inputmode="numeric" placeholder="${L('Ex. 3017620422003')}"></div><button class="btn btn-primary btn-wide" data-barcode>${L('Rechercher →')}</button></div>`;
@@ -3946,14 +4151,14 @@ function foodEdit(food, index) {
 
 function resultSheet(result) {
   const range = result.range || { min: Math.round(result.total.kcal * 0.9), max: Math.round(result.total.kcal * 1.1) };
-  return `<div class="sheet-head"><div><span class="confidence">≈ ${Math.round((result.confidence || 0.7) * 100)}% confiance</span><h2>${esc(result.title || 'Repas analysé')}</h2></div><button class="icon-btn" data-close>×</button></div>
-    <div class="result-total"><div><small>${L('Estimation centrale')}</small><strong id="result-kcal">${fmt(result.total.kcal)}</strong> kcal<div class="range">Fourchette initiale ≈ ${fmt(range.min)}–${fmt(range.max)} kcal</div></div><div class="result-macros"><span><b id="result-p">${fmt(result.total.protein, 1)}</b>${L('P')}</span><span><b id="result-c">${fmt(result.total.carbs, 1)}</b>${L('G')}</span><span><b id="result-f">${fmt(result.total.fat, 1)}</b>${L('L')}</span><span><b id="result-fi">${fmt(result.total.fiber, 1)}</b>${L('Fibres')}</span></div></div>
+  return `<div class="sheet-head"><div><span class="confidence">${L('≈ {n} % de confiance', { n: Math.round((result.confidence || 0.7) * 100) })}</span><h2>${esc(result.title || L('Repas analysé'))}</h2></div><button class="icon-btn" data-close>×</button></div>
+    <div class="result-total"><div><small>${L('Estimation centrale')}</small><strong id="result-kcal">${fmt(result.total.kcal)}</strong> kcal<div class="range">${L('Fourchette initiale ≈ {a}–{b} kcal', { a: fmt(range.min), b: fmt(range.max) })}</div></div><div class="result-macros"><span><b id="result-p">${fmt(result.total.protein, 1)}</b>${L('P')}</span><span><b id="result-c">${fmt(result.total.carbs, 1)}</b>${L('G')}</span><span><b id="result-f">${fmt(result.total.fat, 1)}</b>${L('L')}</span><span><b id="result-fi">${fmt(result.total.fiber, 1)}</b>${L('Fibres')}</span></div></div>
     <div class="extended-nutrition" id="extended-nutrition">${extendedNutritionHtml(result.total)}</div>
     <div class="field"><label>${L('Type de repas')}</label><select id="meal-type">${['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Collation'].map((type) => `<option value="${type}" ${modal.mealType === type ? 'selected' : ''}>${L(type)}</option>`).join('')}</select></div>
     <div class="section-label"><h3>${L('Vérifiez les portions')}</h3><span class="fine">${L('modifiable avant enregistrement')}</span></div>
     <div id="food-edits">${(result.foods || []).map(foodEdit).join('')}</div>
-    ${result.assumptions?.length ? `<div class="warn"><b>${L('Hypothèses de l’analyse')}</b><br>${result.assumptions.map(esc).join('<br>')}</div>` : ''}
-    ${result.note ? `<div class="fine note-line">${esc(result.note)}</div>` : ''}
+    ${result.assumptions?.length ? `<div class="warn"><b>${L('Hypothèses de l’analyse')}</b><br>${result.assumptions.map((a) => esc(L(a))).join('<br>')}</div>` : ''}
+    ${result.note ? `<div class="fine note-line">${esc(L(result.note))}</div>` : ''}
     <div class="modal-actions"><button class="btn btn-ghost" data-save-favorite>${L('♡ Favori')}</button><button class="btn btn-lime" data-save-result>${L('Ajouter au journal →')}</button></div>`;
 }
 
@@ -4262,6 +4467,7 @@ function render() {
   ensureProfileDefaults();
 
   let html;
+  try {
   if (route === 'lang') html = langScreen();
   else if (route === 'basics') html = basicsScreen();
   else if (route === 'saving') html = savingScreen();
@@ -4288,9 +4494,16 @@ function render() {
   else if (route === 'settings') html = settings();
   else if (route === 'legal') html = legal();
   else html = access();
+  } catch (err) {
+    (window.__npErrors ||= []).push(String(err?.stack || err));
+    console.warn('[NutriPilot] render', err);
+    html = `<main class="screen app-screen"><section class="error-state"><div class="error-ico">${icon('sparkle')}</div><h1>${L('Cet écran n’a pas pu s’afficher')}</h1><p>${L('Vos données sont intactes. Revenez à l’accueil ou réessayez.')}</p><div class="error-actions"><button class="btn" data-retry-render>${L('Réessayer')}</button><button class="btn btn-ghost" data-go="app">${L('Accueil')}</button></div></section></main>`;
+  }
   const noFab = state.premium || ['lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
+  a11yPass(app);
   if (window.__npLastRoute !== route) {
+    if (route === 'plans') track('PlansView', { from: window.__npLastRoute || 'direct' });
     if (window.__npLastRoute) app.firstElementChild?.classList.add('route-in');
     window.__npLastRoute = route;
   }
@@ -4300,6 +4513,16 @@ function render() {
   if ((route === 'app' && state.premium) || route === 'progress') runCountUps();
   if (route === 'progress') renderPhotos();
   if (route === 'saving' && !savingTimer) startSaving();
+}
+
+// Gives every icon-only button an accessible name.
+function a11yPass(root) {
+  root.querySelectorAll('button:not([aria-label])').forEach((b) => {
+    if (b.textContent.replace(/[×→←+−\s]/g, '').trim()) return;
+    const d = b.dataset;
+    const name = d.close !== undefined ? 'Fermer' : d.drawer !== undefined ? 'Menu' : d.go === 'coach' ? 'Coach' : d.water ? `${d.water} ml` : d.openAdd !== undefined ? 'Ajouter un repas' : d.reminders !== undefined ? 'Rappels' : b.title || '';
+    if (name) b.setAttribute('aria-label', /ml$/.test(name) ? name : L(name));
+  });
 }
 
 function bind() {
@@ -4354,6 +4577,7 @@ function bind() {
       return nav('saving');
     }
 
+    if (button.dataset.retryRender !== undefined) return render();
     if (button.dataset.go) {
       pendingPlanSwap = null;
       return nav(button.dataset.go);
@@ -4449,6 +4673,19 @@ function bind() {
     }
     if (button.dataset.trainTab) { trainTab = button.dataset.trainTab; return render(); }
     if (button.dataset.menoTab) { menoTab = button.dataset.menoTab; return render(); }
+    if (button.dataset.menoChart) { menoChartKey = button.dataset.menoChart; return render(); }
+    if (button.dataset.menoRange) { menoRange = Number(button.dataset.menoRange); return render(); }
+    if (button.dataset.menoReport !== undefined) return openMenoReport();
+    if (button.dataset.menoFactor) {
+      if (!state.premium) { nav('paywall'); return; }
+      const day = todayKey();
+      state.menoFactors = state.menoFactors || {};
+      const f = { ...(state.menoFactors[day] || {}) };
+      if (f[button.dataset.menoFactor]) delete f[button.dataset.menoFactor]; else f[button.dataset.menoFactor] = 1;
+      state.menoFactors[day] = f;
+      saveState();
+      return render();
+    }
     if (button.dataset.menoLog) {
       if (!state.premium) { nav('paywall'); return; }
       const day = todayKey();
@@ -4573,7 +4810,7 @@ function bind() {
       return nav('onboarding');
     }
 
-    if (button.dataset.openAdd !== undefined) return openAdd('photo');
+    if (button.dataset.openAdd !== undefined) return openAdd(state.meals.length >= 2 ? 'recent' : 'photo');
     if (button.dataset.addTab) return openAdd(button.dataset.addTab);
     if (button.dataset.water) {
       const key = todayKey();
@@ -4663,6 +4900,9 @@ function bind() {
       return render();
     }
 
+    if (button.dataset.journeyHide !== undefined) { state.journeyHidden = true; saveState(); toast('Vous retrouverez tout dans le menu.'); return render(); }
+    if (button.dataset.welcomeOk !== undefined) { state.welcomeBackSeen = todayKey(); saveState(false); return render(); }
+    if (button.dataset.sos !== undefined) { track('SosOpen'); modal = { type: 'sos' }; return renderModal(); }
     if (button.dataset.recipeId && !event.target.closest('[data-fav-recipe]')) {
       const recipe = ALL_RECIPES.find((r) => r.id === button.dataset.recipeId);
       if (recipe) { modal = { type: 'recipe', recipe }; renderModal(); }
@@ -4785,6 +5025,31 @@ function bindModal(root) {
       return;
     }
     if (button.dataset.guide) { root.remove(); return openLesson(button.dataset.guide); }
+    if (button.dataset.recipeId && modal?.type === 'sos') { const recipe = ALL_RECIPES.find((r) => r.id === button.dataset.recipeId); if (recipe) { modal = { type: 'recipe', recipe }; renderModal(); } return; }
+    if (button.dataset.sosWater !== undefined) { const k = todayKey(); state.water[k] = Number(state.water[k] || 0) + 250; saveState(); modal = null; root.remove(); render(); return toast('+250 ml ✓'); }
+    if (button.dataset.copyYesterday !== undefined) {
+      const y = state.meals.filter((m) => m.day === addDays(-1));
+      y.forEach((m) => relogMeal(m));
+      saveState(); track('MealSaved', { source: 'copy-day', n: y.length });
+      modal = null; root.remove(); render();
+      return toast(L('{n} repas ajoutés ✓', { n: y.length }));
+    }
+    if (button.dataset.recentAdd) {
+      const m = state.meals.find((x) => String(x.id) === button.dataset.recentAdd);
+      if (!m) return;
+      relogMeal(m, mealTypeFromHour());
+      saveState(); track('MealSaved', { source: 'recent', kcal: m.total?.kcal });
+      button.classList.add('done'); button.innerHTML = icon('check'); button.disabled = true;
+      modal.refresh = true;
+      return toast('Repas ajouté ✓');
+    }
+    if (button.dataset.recentEdit) {
+      const m = state.meals.find((x) => String(x.id) === button.dataset.recentEdit);
+      if (!m) return;
+      modal.result = { title: m.title, foods: clone(m.foods || [{ name: m.title, grams: 100, ...m.total }]), total: clone(m.total), confidence: 0.95, source: m.source || 'manual' };
+      modal.mealType = m.type || modal.mealType;
+      return renderModal();
+    }
     if (button.dataset.saveReminders !== undefined) { await saveReminders(root); modal = null; root.remove(); return render(); }
     if (button.dataset.supportSend !== undefined) return sendSupport($('#support-input', root)?.value);
     if (button.dataset.supportQuick) return sendSupport(button.dataset.supportQuick);
@@ -4960,5 +5225,16 @@ function bindModal(root) {
     };
   }
 }
+
+let lastErrorToast = 0;
+function softFail(err) {
+  (window.__npErrors ||= []).push(String(err?.stack || err?.message || err));
+  console.warn('[NutriPilot]', err);
+  if (Date.now() - lastErrorToast < 4000) return;
+  lastErrorToast = Date.now();
+  try { toast(L('Petit souci technique, réessayez. Vos données sont sauvegardées.')); } catch { /* ignore */ }
+}
+window.addEventListener('error', (e) => { if (e.error) softFail(e.error); });
+window.addEventListener('unhandledrejection', (e) => softFail(e.reason));
 
 init();
