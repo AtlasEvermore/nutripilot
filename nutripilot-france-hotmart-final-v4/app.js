@@ -266,6 +266,12 @@ const defaultState = {
   checkins: {},
   coach: [],
   recipeFavorites: [],
+  guidesRead: [],
+  lang: '',
+  basicsDone: false,
+  basicsFilled: {},
+  workoutLog: [],
+  workoutProgram: '',
   achievements: [],
   scanCount: 0,
   utms: {},
@@ -474,8 +480,26 @@ function mealTypeFromHour() {
   return 'Dîner';
 }
 
+const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang'];
+function guardRoute() {
+  if (!routeAllowed()) route = 'app';
+  if (!state.premium) {
+    if (['access', 'legal'].includes(route)) return;
+    if (!state.lang) { route = 'lang'; return; }
+    if (!state.basicsDone) { if (!['lang', 'basics', 'saving'].includes(route)) route = 'basics'; return; }
+    if (route === 'upgrade') route = 'paywall';
+    if (route === 'hub') route = 'app';
+    if (route === 'plan' && !state.onboarding && !onboardingState.data.weight) route = 'app';
+    if (!EXPLORE_ROUTES.includes(route)) route = 'app';
+    return;
+  }
+  if (route === 'hub') route = 'app';
+  if (!state.onboarding && !['onboarding', 'analyzing', 'plan', 'legal', 'lang', 'support', 'tour'].includes(route)) route = 'onboarding';
+  if (state.onboarding && ['paywall', 'access', 'analyzing', 'basics', 'saving'].includes(route)) route = 'app';
+}
+
 function routeAllowed() {
-  return ['app', 'program', 'planner', 'recipes', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'plan', 'access'].includes(route);
+  return ['app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support'].includes(route);
 }
 
 async function init() {
@@ -521,12 +545,9 @@ async function init() {
     state.premium = false;
     state.accessToken = '';
     state.subscriptionPlan = '';
-    route = 'access';
-  } else if (!state.onboarding) {
-    route = 'onboarding';
-  } else if (!routeAllowed() || route === 'access' || route === 'plan' || route === 'onboarding') {
-    route = 'app';
   }
+  if (valid && state.onboarding && ['access', 'plan', 'onboarding', 'paywall', 'welcome'].includes(route)) route = 'app';
+  guardRoute();
 
   saveState(false);
   render();
@@ -535,9 +556,6 @@ async function init() {
 
 window.addEventListener('hashchange', () => {
   route = location.hash.replace('#', '') || 'app';
-  if (!state.premium && !['access', 'legal'].includes(route)) route = 'access';
-  if (state.premium && !state.onboarding && !['onboarding', 'plan', 'legal', 'access'].includes(route)) route = 'onboarding';
-  if (!routeAllowed()) route = state.premium ? 'app' : 'access';
   render();
 });
 
@@ -546,54 +564,417 @@ window.addEventListener('beforeinstallprompt', (event) => {
   window.deferredInstall = event;
 });
 
+const kgFmt = (value) => fmt(value, Number.isInteger(Number(value)) ? 0 : 1);
 const onboardingSteps = [
-  { key: 'goal', title: 'Quel est votre objectif principal ?', sub: 'NutriPilot adapte vos repères à cet objectif.', type: 'options', opts: [['lose', 'Perdre du poids', 'Progressivement et sans régime extrême'], ['maintain', 'Stabiliser mon poids', 'Mieux structurer mon alimentation'], ['gain', 'Prendre du poids', 'Avec une progression contrôlée']] },
-  { key: 'sex', title: 'Quel sexe utiliser pour le calcul énergétique ?', sub: 'La formule énergétique de départ utilise ce paramètre biologique.', type: 'options', opts: [['female', 'Femme', 'Formule féminine'], ['male', 'Homme', 'Formule masculine'], ['other', 'Autre / préfère ne pas dire', 'Estimation intermédiaire']] },
-  { key: 'age', title: 'Quel âge avez-vous ?', sub: 'NutriPilot est destiné aux adultes.', type: 'number', min: 18, max: 90, unit: 'ans' },
+  { key: 'goal', when: (d) => !['lose', 'menopause'].includes(d.track), title: 'Quel est votre objectif principal ?', sub: 'Votre programme sera construit autour de cette réponse.', type: 'options', opts: (d) => d.track === 'muscle' ? [['gain', 'Prendre du muscle', 'Gagner en force et en volume'], ['lose', 'Perdre du gras et me tonifier', 'Un corps plus sec et dessiné'], ['maintain', 'Me sculpter sans changer de poids', 'Recomposition corporelle']] : [['lose', 'Perdre du poids', 'Durablement, sans régime extrême'], ['maintain', 'Stabiliser mon poids', 'Mieux manger sans y penser'], ['gain', 'Prendre du poids', 'Avec une progression contrôlée']] },
+  { key: 'motivation', title: 'Qu’est-ce qui compte le plus pour vous ?', sub: 'C’est ce que nous vous rappellerons les jours difficiles.', type: 'options', opts: [['confidence', 'Me sentir bien dans mon corps', 'Retrouver confiance en moi'], ['clothes', 'Rentrer à nouveau dans mes vêtements', 'Sans avoir à tout racheter'], ['energy', 'Avoir plus d’énergie', 'Fini les coups de fatigue'], ['health', 'Prendre soin de ma santé', 'Pour aujourd’hui et pour demain']] },
+  { key: 'sex', when: (d) => d.track !== 'menopause', title: 'Vous êtes…', sub: 'Vos besoins énergétiques en dépendent.', type: 'options', opts: [['female', 'Une femme', ''], ['male', 'Un homme', ''], ['other', 'Je préfère ne pas répondre', 'Estimation intermédiaire']] },
+  { key: 'age', title: 'Quel âge avez-vous ?', sub: 'Le métabolisme évolue avec l’âge : votre plan en tient compte.', type: 'number', min: 18, max: 90, unit: 'ans' },
+  { key: 'menopause', when: (d) => d.track === 'menopause', title: 'Êtes-vous concernée par la ménopause ?', sub: 'Les changements hormonaux modifient le stockage des graisses : votre programme et vos guides s’y adaptent.', type: 'options', opts: [['peri', 'Oui, ça commence', 'Préménopause : cycles irréguliers, premiers symptômes'], ['post', 'Oui, je suis ménopausée', 'Depuis plus d’un an sans règles'], ['unsure', 'Je ne sais pas', 'Nous vous expliquons tout dans les guides'], ['no', 'Non, pas encore', '']] },
   { key: 'height', title: 'Quelle est votre taille ?', sub: 'En centimètres.', type: 'number', min: 130, max: 220, unit: 'cm' },
-  { key: 'weight', title: 'Quel est votre poids actuel ?', sub: 'Vous pourrez le mettre à jour dans Progrès.', type: 'number', min: 35, max: 250, step: 0.1, unit: 'kg' },
-  { key: 'target', title: 'Quel poids souhaitez-vous atteindre ?', sub: 'Choisissez un objectif cohérent avec votre direction.', type: 'number', min: 35, max: 250, step: 0.1, unit: 'kg' },
-  { key: 'activity', title: 'À quoi ressemble votre activité ?', sub: 'Choisissez l’option la plus proche de votre semaine habituelle.', type: 'options', opts: [[1.2, 'Plutôt sédentaire', 'Peu d’activité structurée'], [1.375, 'Légèrement actif', '1–3 séances / semaine'], [1.55, 'Actif', '3–5 séances / semaine'], [1.725, 'Très actif', 'Activité fréquente']] },
-  { key: 'speed', title: 'Quel rythme vous semble durable ?', sub: 'Pour la perte de poids, nous limitons les déficits agressifs.', type: 'options', opts: [[0.2, 'Très progressif', '≈ 0,2 kg / semaine'], [0.35, 'Progressif', '≈ 0,35 kg / semaine'], [0.5, 'Soutenu mais raisonnable', '≈ 0,5 kg / semaine']] },
-  { key: 'diet', title: 'Quel style alimentaire vous convient ?', sub: 'Cela personnalise recettes et suggestions.', type: 'options', opts: [['balanced', 'Équilibré', 'Aucune règle spécifique'], ['vegetarian', 'Végétarien', 'Sans viande ni poisson'], ['pescatarian', 'Pescétarien', 'Poisson, sans viande'], ['mediterranean', 'Méditerranéen', 'Légumes, légumineuses, poisson'], ['high-protein', 'Riche en protéines', 'Priorité à la satiété']] },
-  { key: 'allergies', title: 'Y a-t-il des aliments à éviter ?', sub: 'Allergies, intolérances ou préférences. Vérifiez toujours les étiquettes.', type: 'text', placeholder: 'Ex. arachides, lactose…' },
-  { key: 'mealsPerDay', title: 'Combien de repas vous conviennent ?', sub: 'Le plan 7 jours suivra ce rythme.', type: 'options', opts: [[2, '2 repas', 'Très simple'], [3, '3 repas', 'Classique'], [4, '3 repas + collation', 'Plus flexible']] },
-  { key: 'cooking', title: 'Combien de temps voulez-vous cuisiner ?', sub: 'Les recettes respecteront votre quotidien.', type: 'options', opts: [['<15 min', 'Moins de 15 min', 'Très rapide'], ['15-30 min', '15 à 30 min', 'Équilibre pratique'], ['30-45 min', '30 à 45 min', 'J’aime cuisiner']] },
-  { key: 'challenge', title: 'Qu’est-ce qui vous bloque le plus ?', sub: 'Le tableau de bord mettra l’accent sur ce point.', type: 'options', opts: [['portions', 'Les portions', 'Je ne sais pas combien manger'], ['ideas', 'Les idées de repas', 'Je manque d’inspiration'], ['snacking', 'Les grignotages', 'Je perds le fil entre les repas'], ['consistency', 'La régularité', 'Je commence puis j’abandonne'], ['restaurant', 'Les repas à l’extérieur', 'Je ne sais pas quoi choisir']] },
-  { key: 'cuisine', title: 'Quelles cuisines aimez-vous ?', sub: 'Votre plan doit donner envie d’être suivi.', type: 'options', opts: [['france', 'Française & familiale', 'Simple et accessible'], ['med', 'Méditerranéenne', 'Fraîche et colorée'], ['world', 'Cuisine du monde', 'Variété maximale'], ['simple', 'Très simple', 'Peu d’ingrédients']] },
-  { key: 'budget', title: 'Quel budget cuisine vous convient ?', sub: 'Nous adaptons les idées au panier.', type: 'options', opts: [['economy', 'Économique', 'Produits simples'], ['standard', 'Standard', 'Équilibre prix / variété'], ['flexible', 'Flexible', 'Plus de liberté']] },
-  { key: 'name', title: 'Comment devons-nous vous appeler ?', sub: 'Dernière étape.', type: 'text', placeholder: 'Votre prénom' },
+  { key: 'weight', title: 'Quel est votre poids actuel ?', sub: 'C’est votre point de départ. Personne d’autre ne le voit.', type: 'number', min: 35, max: 250, step: 0.1, unit: 'kg' },
+  { key: 'target', when: (d) => d.goal !== 'maintain', title: 'Quel poids aimeriez-vous atteindre ?', sub: 'Choisissez un objectif qui vous ferait vraiment plaisir.', type: 'number', min: 35, max: 250, step: 0.1, unit: 'kg' },
+  {
+    key: 'info-target', type: 'info', icon: '✦',
+    title: (d) => d.goal === 'lose' ? `Perdre ${kgFmt(Math.abs(Number(d.weight) - Number(d.target)))} kg : c’est un objectif atteignable.` : d.goal === 'gain' ? 'Prendre du muscle, ça se construit repas après repas.' : 'Votre objectif est noté.',
+    sub: (d) => d.goal === 'gain' ? 'NutriPilot ajuste vos calories et vos protéines à votre entraînement pour progresser sans prendre de gras inutile.' : 'NutriPilot ne vous demandera pas de tout supprimer. Il calcule un rythme qui respecte votre énergie, votre vie sociale et le plaisir de manger, puis vous guide repas après repas.',
+  },
+  { key: 'event', title: 'Avez-vous une date en tête ?', sub: 'Un objectif daté aide à garder le cap.', type: 'options', opts: [['holidays', 'Les prochaines vacances', 'Me sentir bien à la plage'], ['event', 'Un événement important', 'Mariage, anniversaire, soirée…'], ['season', 'La nouvelle saison', 'Repartir sur de bonnes bases'], ['none', 'Pas de date précise', 'Je veux surtout que ça dure']] },
+  { key: 'activity', title: 'À quoi ressemble votre semaine ?', sub: 'Choisissez l’option la plus proche de votre quotidien.', type: 'options', opts: [[1.2, 'Plutôt assise', 'Bureau, voiture, peu de sport'], [1.375, 'Un peu active', '1 à 3 séances ou longues marches'], [1.55, 'Active', '3 à 5 séances par semaine'], [1.725, 'Très active', 'Sport ou métier physique au quotidien']] },
+  { key: 'speed', when: (d) => d.goal === 'lose', title: 'À quel rythme voulez-vous avancer ?', sub: 'Un rythme durable évite l’effet yo-yo.', type: 'options', opts: [[0.2, 'Tranquille', '≈ 0,2 kg / semaine · très facile à tenir'], [0.35, 'Régulier', '≈ 0,35 kg / semaine · recommandé'], [0.5, 'Soutenu', '≈ 0,5 kg / semaine · plus exigeant']] },
+  { key: 'trainPlace', title: 'Voulez-vous un programme d’entraînement ?', sub: 'Le sport accélère les résultats et protège vos muscles. Il est inclus.', type: 'options', opts: (d) => [['gym', 'Oui, en salle de sport', 'Machines, haltères, barre'], ['home', 'Oui, à la maison', 'Sans matériel, 30 minutes'], ...(d.track === 'muscle' ? [] : [['none', 'Pas pour l’instant', 'Je me concentre sur l’alimentation']])] },
+  { key: 'trainLevel', when: (d) => d.trainPlace && d.trainPlace !== 'none', title: 'Quel est votre niveau ?', sub: 'Vos séances partiront de là.', type: 'options', opts: [['beginner', 'Débutant(e)', 'Je découvre ou je reprends'], ['intermediate', 'Intermédiaire', 'Je m’entraîne depuis quelques mois'], ['advanced', 'Confirmé(e)', 'Plus d’un an de pratique régulière']] },
+  { key: 'trainDays', when: (d) => d.trainPlace && d.trainPlace !== 'none', title: 'Combien de séances par semaine ?', sub: 'Mieux vaut moins de séances tenues que trop de séances abandonnées.', type: 'options', opts: [[2, '2 séances', 'L’essentiel'], [3, '3 séances', 'Recommandé'], [4, '4 séances ou plus', 'Pour progresser plus vite']] },
+  { key: 'tried', title: 'Qu’avez-vous déjà essayé ?', sub: 'Pour ne pas vous refaire vivre ce qui n’a pas marché.', type: 'options', opts: [['diets', 'Des régimes stricts', 'Et le poids est revenu'], ['apps', 'Des applis de comptage', 'Trop long, j’ai arrêté'], ['fasting', 'Le jeûne ou sauter des repas', 'Difficile à tenir'], ['nothing', 'Rien de structuré', 'C’est ma première vraie démarche']] },
+  { key: 'challenge', title: 'Qu’est-ce qui vous fait le plus craquer ?', sub: 'Votre tableau de bord mettra l’accent sur ce point.', type: 'options', opts: [['portions', 'Les portions', 'Je ne sais pas combien manger'], ['ideas', 'Les idées de repas', 'Je mange toujours la même chose'], ['snacking', 'Le grignotage', 'Surtout le soir ou entre les repas'], ['consistency', 'La régularité', 'Je commence puis j’abandonne'], ['restaurant', 'Les repas à l’extérieur', 'Restaurant, apéro, repas de famille']] },
+  {
+    key: 'info-why', type: 'info', icon: '♡',
+    title: () => 'Ce n’est pas un manque de volonté.',
+    sub: (d) => ({
+      portions: 'Sans repères, on mange au jugé. NutriPilot vous montre la bonne portion en une photo, à chaque repas.',
+      ideas: 'Quand on ne sait pas quoi manger, on prend ce qui est rapide. NutriPilot vous propose votre prochain repas, adapté à votre journée.',
+      snacking: 'Le grignotage vient souvent de repas pas assez rassasiants. Votre plan priorise les protéines et les fibres qui calent vraiment.',
+      consistency: 'Les régimes trop stricts finissent par lâcher. NutriPilot ajuste le reste de la journée au lieu de tout interdire.',
+      restaurant: 'Une sortie ne ruine rien. Décrivez votre restaurant ou prenez votre assiette en photo : NutriPilot rééquilibre la suite.',
+    })[d.challenge] || 'Il vous manquait simplement un plan clair, repas après repas. C’est exactement ce que nous construisons maintenant.',
+  },
+  { key: 'diet', title: 'Comment aimez-vous manger ?', sub: 'Vos recettes et suggestions suivront ce style.', type: 'options', opts: [['balanced', 'De tout', 'Aucune règle particulière'], ['mediterranean', 'Méditerranéen', 'Légumes, huile d’olive, poisson'], ['high-protein', 'Riche en protéines', 'Pour être rassasié(e) plus longtemps'], ['pescatarian', 'Pescétarien', 'Poisson, sans viande'], ['vegetarian', 'Végétarien', 'Sans viande ni poisson']] },
+  { key: 'allergies', title: 'Des aliments à éviter ?', sub: 'Allergies, intolérances ou simplement ce que vous n’aimez pas. Laissez vide si rien.', type: 'text', optional: true, placeholder: 'Ex. arachides, lactose, champignons…' },
+  { key: 'mealsPerDay', title: 'Combien de repas par jour ?', sub: 'Votre plan suivra votre rythme, pas l’inverse.', type: 'options', opts: [[2, '2 repas', 'Simple et efficace'], [3, '3 repas', 'Le classique'], [4, '3 repas + 1 collation', 'Pour éviter les fringales']] },
+  { key: 'cooking', title: 'Combien de temps pour cuisiner ?', sub: 'Toutes vos recettes respecteront ce temps.', type: 'options', opts: [['<15 min', 'Moins de 15 min', 'Le plus rapide possible'], ['15-30 min', '15 à 30 min', 'Simple mais bon'], ['30-45 min', '30 à 45 min', 'J’aime cuisiner']] },
+  { key: 'cuisine', title: 'Quelle cuisine vous fait envie ?', sub: 'Un plan qui donne envie, c’est un plan qu’on suit.', type: 'options', opts: [['france', 'Française & familiale', 'Les bons classiques, version légère'], ['med', 'Méditerranéenne', 'Fraîche et ensoleillée'], ['world', 'Cuisine du monde', 'Asie, Orient, Amériques…'], ['simple', 'Très simple', 'Peu d’ingrédients']] },
+  { key: 'budget', title: 'Quel budget pour vos courses ?', sub: 'Votre liste de courses sera adaptée.', type: 'options', opts: [['economy', 'Économique', 'Des produits simples'], ['standard', 'Standard', 'Équilibre prix et variété'], ['flexible', 'Flexible', 'Plus de liberté']] },
+  { key: 'name', title: 'Dernière question : votre prénom ?', sub: 'Pour personnaliser votre programme.', type: 'text', placeholder: 'Votre prénom' },
 ];
+const stepText = (value, data) => (typeof value === 'function' ? value(data) : value || '');
+const stepVisible = (index, data = onboardingState.data) => {
+  const step = onboardingSteps[index];
+  if (!step) return false;
+  if (onboardingState.skip?.includes(step.key) && data[step.key]) return false;
+  return !step.when || step.when(data);
+};
+function moveStep(direction) {
+  let index = onboardingState.step + direction;
+  while (index >= 0 && index < onboardingSteps.length && !stepVisible(index)) index += direction;
+  return index;
+}
 
 function onboardingInput(step) {
   const value = onboardingState.data[step.key] ?? '';
   if (step.type === 'options') {
-    return `<div class="options">${step.opts.map((option) => `
+    const opts = typeof step.opts === 'function' ? step.opts(onboardingState.data) : step.opts;
+    return `<div class="options">${opts.map((option) => `
       <button class="option ${String(option[0]) === String(value) ? 'selected' : ''}" data-ob-value="${esc(option[0])}">
-        <span>${esc(option[1])}</span><b>${esc(option[2])}</b>
+        <span>${esc(option[1])}</span>${option[2] ? `<b>${esc(option[2])}</b>` : ''}
       </button>`).join('')}</div>`;
   }
   if (step.type === 'number') {
-    return `<div class="number-entry"><input class="input-big" id="ob-field" type="number" min="${step.min}" max="${step.max}" step="${step.step || 1}" value="${esc(value)}"><span class="unit">${esc(step.unit)}</span></div>`;
+    return `<div class="number-entry"><input class="input-big" id="ob-field" type="number" inputmode="decimal" min="${step.min}" max="${step.max}" step="${step.step || 1}" value="${esc(value)}"><span class="unit">${esc(step.unit)}</span></div>`;
   }
   return `<input class="input-big text-input-big" id="ob-field" type="text" placeholder="${esc(step.placeholder || '')}" value="${esc(value)}">`;
 }
 
 function onboarding() {
   const step = onboardingSteps[onboardingState.step];
+  const data = onboardingState.data;
   const percent = ((onboardingState.step + 1) / onboardingSteps.length) * 100;
+  const isLast = onboardingState.step === onboardingSteps.length - 1;
+  const body = step.type === 'info'
+    ? `<div class="question info-step"><div class="info-icon">${esc(step.icon || '✦')}</div><h1>${esc(stepText(step.title, data))}</h1><p>${esc(stepText(step.sub, data))}</p></div>`
+    : `<div class="question"><h1>${esc(stepText(step.title, data))}</h1><p>${esc(stepText(step.sub, data))}</p>${onboardingInput(step)}</div>`;
   return `<div class="onboard">
     <aside class="onboard-art">
       ${logo()}
       <div><span class="tag">PROGRAMME PERSONNALISÉ</span><h2>Votre objectif de poids.<br>Une direction concrète chaque jour.</h2></div>
-      <div class="quote-card"><b>Simple devant. Puissant derrière.</b><p>Votre plan, vos repas, vos calories, votre progression et vos prochaines décisions restent connectés.</p></div>
+      <div class="quote-card"><b>Quelques questions. Un plan fait pour vous.</b><p>Vos réponses servent uniquement à construire votre programme.</p></div>
     </aside>
     <main class="onboard-main">
-      <div>${logo()}<div class="progress-steps"><i style="width:${percent}%"></i></div></div>
-      <div class="question"><small>ÉTAPE ${onboardingState.step + 1} / ${onboardingSteps.length}</small><h1>${esc(step.title)}</h1><p>${esc(step.sub)}</p>${onboardingInput(step)}</div>
-      <div class="nextbar"><button class="back" data-ob-back ${onboardingState.step === 0 ? 'style="visibility:hidden"' : ''}>← Retour</button><button class="btn btn-primary" data-ob-next>${onboardingState.step === onboardingSteps.length - 1 ? 'Créer mon programme' : 'Continuer →'}</button></div>
+      <div class="ob-top"><button class="back" data-ob-back ${onboardingState.step === 0 ? 'style="visibility:hidden"' : ''} aria-label="Retour">←</button><div class="progress-steps"><i style="width:${percent}%"></i></div><small class="ob-percent">${Math.round(percent)} %</small></div>
+      ${body}
+      <div class="nextbar"><button class="btn btn-primary btn-wide" data-ob-next>${isLast ? 'Créer mon programme' : 'Continuer'}</button></div>
     </main>
   </div>`;
+}
+
+const TRACKS = [
+  ['lose', 'Perdre du poids', 'Mincir sans régime extrême', '🔥'],
+  ['menopause', 'Ménopause & 40+', 'Retrouver un ventre plat après 40 ans', '🌸'],
+  ['muscle', 'Prendre du muscle', 'Programme salle + nutrition sportive', '💪'],
+  ['eat', 'Manger mieux', 'Plus d’énergie, sans prise de tête', '🥗'],
+];
+
+// ---- Langues ---------------------------------------------------------------
+const LANGS = [
+  ['fr', 'Français', '🇫🇷'], ['en', 'English', '🇬🇧'], ['es', 'Español', '🇪🇸'],
+  ['pt', 'Português', '🇵🇹'], ['de', 'Deutsch', '🇩🇪'], ['it', 'Italiano', '🇮🇹'],
+];
+const I18N = {
+  fr: {
+    langTitle: 'Choisissez votre langue', langCta: 'Continuer',
+    basicsTitle: 'Faisons connaissance', basicsSub: 'Quelques informations pour personnaliser NutriPilot. Vous pourrez les modifier à tout moment.',
+    name: 'Prénom', age: 'Âge', weight: 'Poids approximatif', height: 'Taille', later: 'Je répondrai plus tard', basicsCta: 'Continuer',
+    namePh: 'Votre prénom', needName: 'Indiquez votre prénom.', needAge: 'Indiquez un âge entre 18 et 90 ans.',
+    saving: 'Enregistrement de vos préférences…', savingSub: 'Nous préparons votre espace : nutrition, entraînement et coach.',
+    hello: 'Bonjour', hubSub: 'Que voulez-vous faire aujourd’hui ?', hubQuiz: 'Créer mon programme', hubQuizSub: 'Choisissez votre objectif : 2 minutes de questions, un plan fait pour vous.',
+    hubExplore: 'Explorer NutriPilot', hubTour: 'Découvrir l’application', hubTourSub: 'Toutes les fonctions en 1 minute',
+    hubSupport: 'Aide & support', hubSupportSub: 'Questions fréquentes et assistant',
+    myProgram: 'Votre programme', seePlan: 'Voir mon plan', unlock: 'Débloquer', explore: 'Mode découverte', exploreSub: 'Débloquez votre formule pour tout utiliser.',
+    tracks: [['Perdre du poids', 'Mincir sans régime extrême'], ['Ménopause & 40+', 'Retrouver un ventre plat après 40 ans'], ['Prendre du muscle', 'Programme salle + nutrition sportive'], ['Manger mieux', 'Plus d’énergie, sans prise de tête']],
+    features: ['Scanner de repas en une photo', 'Plan de repas 7 jours', 'Recettes de chef minceur', 'Programmes salle & maison', 'Guides ménopause', 'Coach au quotidien', 'Suivi du poids et des mensurations', 'Liste de courses automatique', 'Mode restaurant et mode frigo', 'Nutritionnistes & coachs (bientôt)'],
+    exploreTiles: [['recipes', 'Recettes'], ['training', 'Entraînements'], ['guides', 'Guides'], ['tour', 'Fonctions']],
+  },
+  en: {
+    langTitle: 'Choose your language', langCta: 'Continue',
+    basicsTitle: 'Let’s get to know you', basicsSub: 'A few details to personalise NutriPilot. You can change them at any time.',
+    name: 'First name', age: 'Age', weight: 'Approximate weight', height: 'Height', later: 'I’ll answer later', basicsCta: 'Continue',
+    namePh: 'Your first name', needName: 'Please enter your first name.', needAge: 'Please enter an age between 18 and 90.',
+    saving: 'Saving your preferences…', savingSub: 'We’re preparing your space: nutrition, training and coach.',
+    hello: 'Hello', hubSub: 'What would you like to do today?', hubQuiz: 'Create my programme', hubQuizSub: 'Pick your goal: 2 minutes of questions, a plan made for you.',
+    hubExplore: 'Explore NutriPilot', hubTour: 'Discover the app', hubTourSub: 'Every feature in 1 minute',
+    hubSupport: 'Help & support', hubSupportSub: 'FAQ and assistant',
+    myProgram: 'Your programme', seePlan: 'See my plan', unlock: 'Unlock', explore: 'Preview mode', exploreSub: 'Unlock your plan to use everything.',
+    tracks: [['Lose weight', 'Slim down without extreme dieting'], ['Menopause & 40+', 'A flatter belly after 40'], ['Build muscle', 'Gym programme + sports nutrition'], ['Eat better', 'More energy, no hassle']],
+    features: ['Meal scanner in one photo', '7-day meal plan', 'Chef-made slimming recipes', 'Gym & home workouts', 'Menopause guides', 'Daily coach', 'Weight and measurement tracking', 'Automatic shopping list', 'Restaurant and fridge modes', 'Nutritionists & coaches (soon)'],
+    exploreTiles: [['recipes', 'Recipes'], ['training', 'Workouts'], ['guides', 'Guides'], ['tour', 'Features']],
+  },
+  es: {
+    langTitle: 'Elige tu idioma', langCta: 'Continuar',
+    basicsTitle: 'Conozcámonos', basicsSub: 'Algunos datos para personalizar NutriPilot. Puedes cambiarlos cuando quieras.',
+    name: 'Nombre', age: 'Edad', weight: 'Peso aproximado', height: 'Altura', later: 'Responderé más tarde', basicsCta: 'Continuar',
+    namePh: 'Tu nombre', needName: 'Escribe tu nombre.', needAge: 'Indica una edad entre 18 y 90 años.',
+    saving: 'Guardando tus preferencias…', savingSub: 'Preparamos tu espacio: nutrición, entrenamiento y coach.',
+    hello: 'Hola', hubSub: '¿Qué quieres hacer hoy?', hubQuiz: 'Crear mi programa', hubQuizSub: 'Elige tu objetivo: 2 minutos de preguntas, un plan hecho para ti.',
+    hubExplore: 'Explorar NutriPilot', hubTour: 'Descubrir la app', hubTourSub: 'Todas las funciones en 1 minuto',
+    hubSupport: 'Ayuda y soporte', hubSupportSub: 'Preguntas frecuentes y asistente',
+    myProgram: 'Tu programa', seePlan: 'Ver mi plan', unlock: 'Desbloquear', explore: 'Modo descubrimiento', exploreSub: 'Desbloquea tu plan para usarlo todo.',
+    tracks: [['Perder peso', 'Adelgazar sin dietas extremas'], ['Menopausia y 40+', 'Un vientre más plano después de los 40'], ['Ganar músculo', 'Programa de gimnasio + nutrición deportiva'], ['Comer mejor', 'Más energía, sin complicaciones']],
+    features: ['Escáner de comidas con una foto', 'Plan de comidas de 7 días', 'Recetas de chef para adelgazar', 'Entrenamientos en gimnasio y casa', 'Guías de menopausia', 'Coach diario', 'Seguimiento de peso y medidas', 'Lista de la compra automática', 'Modos restaurante y nevera', 'Nutricionistas y coaches (pronto)'],
+    exploreTiles: [['recipes', 'Recetas'], ['training', 'Entrenamientos'], ['guides', 'Guías'], ['tour', 'Funciones']],
+  },
+  pt: {
+    langTitle: 'Escolha o seu idioma', langCta: 'Continuar',
+    basicsTitle: 'Vamos nos conhecer', basicsSub: 'Algumas informações para personalizar o NutriPilot. Você pode alterá-las quando quiser.',
+    name: 'Nome', age: 'Idade', weight: 'Peso aproximado', height: 'Altura', later: 'Responder depois', basicsCta: 'Continuar',
+    namePh: 'Seu nome', needName: 'Informe o seu nome.', needAge: 'Informe uma idade entre 18 e 90 anos.',
+    saving: 'Salvando suas preferências…', savingSub: 'Estamos preparando seu espaço: nutrição, treino e coach.',
+    hello: 'Olá', hubSub: 'O que você quer fazer hoje?', hubQuiz: 'Criar meu programa', hubQuizSub: 'Escolha seu objetivo: 2 minutos de perguntas, um plano feito para você.',
+    hubExplore: 'Explorar o NutriPilot', hubTour: 'Conhecer o app', hubTourSub: 'Todas as funções em 1 minuto',
+    hubSupport: 'Ajuda e suporte', hubSupportSub: 'Perguntas frequentes e assistente',
+    myProgram: 'Seu programa', seePlan: 'Ver meu plano', unlock: 'Desbloquear', explore: 'Modo descoberta', exploreSub: 'Desbloqueie seu plano para usar tudo.',
+    tracks: [['Perder peso', 'Emagrecer sem dieta radical'], ['Menopausa e 40+', 'Barriga mais lisa depois dos 40'], ['Ganhar músculo', 'Treino de academia + nutrição esportiva'], ['Comer melhor', 'Mais energia, sem complicação']],
+    features: ['Scanner de refeições com uma foto', 'Plano alimentar de 7 dias', 'Receitas de chef para emagrecer', 'Treinos na academia e em casa', 'Guias de menopausa', 'Coach diário', 'Acompanhamento de peso e medidas', 'Lista de compras automática', 'Modos restaurante e geladeira', 'Nutricionistas e coaches (em breve)'],
+    exploreTiles: [['recipes', 'Receitas'], ['training', 'Treinos'], ['guides', 'Guias'], ['tour', 'Funções']],
+  },
+  de: {
+    langTitle: 'Wähle deine Sprache', langCta: 'Weiter',
+    basicsTitle: 'Lernen wir uns kennen', basicsSub: 'Ein paar Angaben, um NutriPilot zu personalisieren. Du kannst sie jederzeit ändern.',
+    name: 'Vorname', age: 'Alter', weight: 'Ungefähres Gewicht', height: 'Größe', later: 'Später beantworten', basicsCta: 'Weiter',
+    namePh: 'Dein Vorname', needName: 'Bitte gib deinen Vornamen ein.', needAge: 'Bitte gib ein Alter zwischen 18 und 90 ein.',
+    saving: 'Deine Einstellungen werden gespeichert…', savingSub: 'Wir bereiten deinen Bereich vor: Ernährung, Training und Coach.',
+    hello: 'Hallo', hubSub: 'Was möchtest du heute tun?', hubQuiz: 'Mein Programm erstellen', hubQuizSub: 'Wähle dein Ziel: 2 Minuten Fragen, ein Plan nur für dich.',
+    hubExplore: 'NutriPilot entdecken', hubTour: 'Die App kennenlernen', hubTourSub: 'Alle Funktionen in 1 Minute',
+    hubSupport: 'Hilfe & Support', hubSupportSub: 'Häufige Fragen und Assistent',
+    myProgram: 'Dein Programm', seePlan: 'Meinen Plan ansehen', unlock: 'Freischalten', explore: 'Entdeckungsmodus', exploreSub: 'Schalte dein Abo frei, um alles zu nutzen.',
+    tracks: [['Abnehmen', 'Ohne extreme Diät'], ['Wechseljahre & 40+', 'Ein flacherer Bauch nach 40'], ['Muskeln aufbauen', 'Gym-Programm + Sporternährung'], ['Besser essen', 'Mehr Energie, ganz einfach']],
+    features: ['Mahlzeiten-Scanner per Foto', '7-Tage-Ernährungsplan', 'Leichte Rezepte vom Koch', 'Training im Gym & zu Hause', 'Wechseljahre-Ratgeber', 'Täglicher Coach', 'Gewicht & Maße verfolgen', 'Automatische Einkaufsliste', 'Restaurant- und Kühlschrank-Modus', 'Ernährungsberater & Coaches (bald)'],
+    exploreTiles: [['recipes', 'Rezepte'], ['training', 'Workouts'], ['guides', 'Ratgeber'], ['tour', 'Funktionen']],
+  },
+  it: {
+    langTitle: 'Scegli la tua lingua', langCta: 'Continua',
+    basicsTitle: 'Conosciamoci', basicsSub: 'Qualche informazione per personalizzare NutriPilot. Puoi modificarle in qualsiasi momento.',
+    name: 'Nome', age: 'Età', weight: 'Peso approssimativo', height: 'Altezza', later: 'Risponderò più tardi', basicsCta: 'Continua',
+    namePh: 'Il tuo nome', needName: 'Inserisci il tuo nome.', needAge: 'Inserisci un’età tra 18 e 90 anni.',
+    saving: 'Salvataggio delle tue preferenze…', savingSub: 'Stiamo preparando il tuo spazio: nutrizione, allenamento e coach.',
+    hello: 'Ciao', hubSub: 'Cosa vuoi fare oggi?', hubQuiz: 'Crea il mio programma', hubQuizSub: 'Scegli il tuo obiettivo: 2 minuti di domande, un piano fatto per te.',
+    hubExplore: 'Esplora NutriPilot', hubTour: 'Scopri l’app', hubTourSub: 'Tutte le funzioni in 1 minuto',
+    hubSupport: 'Aiuto e supporto', hubSupportSub: 'Domande frequenti e assistente',
+    myProgram: 'Il tuo programma', seePlan: 'Vedi il mio piano', unlock: 'Sblocca', explore: 'Modalità scoperta', exploreSub: 'Sblocca il tuo piano per usare tutto.',
+    tracks: [['Perdere peso', 'Dimagrire senza diete estreme'], ['Menopausa e 40+', 'Una pancia più piatta dopo i 40'], ['Aumentare i muscoli', 'Programma palestra + nutrizione sportiva'], ['Mangiare meglio', 'Più energia, senza complicazioni']],
+    features: ['Scanner dei pasti con una foto', 'Piano pasti di 7 giorni', 'Ricette dello chef per dimagrire', 'Allenamenti in palestra e a casa', 'Guide sulla menopausa', 'Coach quotidiano', 'Monitoraggio di peso e misure', 'Lista della spesa automatica', 'Modalità ristorante e frigo', 'Nutrizionisti e coach (presto)'],
+    exploreTiles: [['recipes', 'Ricette'], ['training', 'Allenamenti'], ['guides', 'Guide'], ['tour', 'Funzioni']],
+  },
+};
+function lang() {
+  return I18N[state.lang] ? state.lang : 'fr';
+}
+function t(key) {
+  return I18N[lang()]?.[key] ?? I18N.fr[key] ?? key;
+}
+function detectLang() {
+  const code = String(navigator.language || 'fr').slice(0, 2).toLowerCase();
+  return I18N[code] ? code : 'en';
+}
+
+let pendingLang = '';
+function langScreen() {
+  const current = pendingLang || state.lang || detectLang();
+  return `<div class="welcome">
+    <div class="welcome-inner">
+      ${logo()}
+      <div class="welcome-copy"><h1>${esc(I18N[current]?.langTitle || t('langTitle'))}</h1></div>
+      <div class="lang-grid">${LANGS.map(([code, label, flag]) => `<button class="lang-card ${code === current ? 'selected' : ''}" data-lang="${code}"><span>${flag}</span><b>${label}</b></button>`).join('')}</div>
+      <div class="welcome-cta"><button class="btn btn-lime btn-wide btn-xl" data-lang-ok="${current}">${esc(I18N[current]?.langCta || 'Continuer')}</button></div>
+    </div>
+  </div>`;
+}
+
+function basicsScreen() {
+  const d = state.profile || {};
+  return `<div class="welcome light">
+    <div class="welcome-inner">
+      <div class="ob-top"><button class="back" data-go="lang" aria-label="←">←</button>${logo()}</div>
+      <div class="welcome-copy"><h1>${esc(t('basicsTitle'))}</h1><p>${esc(t('basicsSub'))}</p></div>
+      <div class="basics-form">
+        <label class="field"><span>${esc(t('name'))}</span><input id="b-name" type="text" autocomplete="given-name" placeholder="${esc(t('namePh'))}" value="${esc(d.name || '')}"></label>
+        <label class="field"><span>${esc(t('age'))}</span><div class="unit-input"><input id="b-age" type="number" inputmode="numeric" min="18" max="90" value="${esc(d.age || '')}"><i>${({ fr: 'ans', en: 'yrs', es: 'años', pt: 'anos', de: 'J.', it: 'anni' })[lang()]}</i></div></label>
+        <div class="basics-optional" id="b-optional">
+          <label class="field"><span>${esc(t('weight'))}</span><div class="unit-input"><input id="b-weight" type="number" inputmode="decimal" min="35" max="250" step="0.1" value="${esc(d.weight || '')}"><i>kg</i></div></label>
+          <label class="field"><span>${esc(t('height'))}</span><div class="unit-input"><input id="b-height" type="number" inputmode="numeric" min="130" max="220" value="${esc(d.height || '')}"><i>cm</i></div></label>
+        </div>
+        <label class="later-toggle"><input type="checkbox" id="b-later"> ${esc(t('later'))}</label>
+      </div>
+      <div class="welcome-cta"><button class="btn btn-primary btn-wide btn-xl" data-basics-ok>${esc(t('basicsCta'))}</button></div>
+    </div>
+  </div>`;
+}
+
+let savingTimer = null;
+let savingIndex = 0;
+function savingScreen() {
+  const features = t('features');
+  return `<div class="welcome saving">
+    <div class="welcome-inner">
+      ${logo()}
+      <div class="saving-center">
+        <div class="analyzing-ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg" style="stroke-dashoffset:${327 - 327 * Math.min(savingIndex, features.length) / features.length}"/></svg><b>${Math.round(Math.min(savingIndex, features.length) / features.length * 100)} %</b></div>
+        <h1 class="analyzing-title">${esc(t('saving'))}</h1>
+        <p class="saving-sub">${esc(t('savingSub'))}</p>
+        <div class="feature-ticker">${features.map((f, i) => `<div class="${i < savingIndex ? 'done' : i === savingIndex ? 'current' : ''}"><span>${i < savingIndex ? '✓' : ''}</span>${esc(f)}</div>`).join('')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+function startSaving() {
+  clearInterval(savingTimer);
+  savingIndex = 0;
+  savingTimer = setInterval(() => {
+    savingIndex += 1;
+    if (route !== 'saving') { clearInterval(savingTimer); savingTimer = null; return; }
+    if (savingIndex > t('features').length) {
+      clearInterval(savingTimer); savingTimer = null;
+      state.basicsDone = true;
+      saveState(false);
+      return nav('hub');
+    }
+    render();
+  }, 380);
+}
+
+function hubScreen() {
+  const p = state.profile || {};
+  const tracks = t('tracks');
+  const hasPlan = state.onboarding && p.dailyKcal;
+  const proj = hasPlan ? projection(p) : null;
+  return `<div class="mobile-app">
+    <div class="app-head"><div class="app-head-row">${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${LANGS.find((x) => x[0] === lang())?.[2] || '🌐'}</button>${state.premium ? '' : `<button class="btn btn-lime btn-small" data-go="paywall">${esc(t('unlock'))}</button>`}</div></div></div>
+    <div class="screen">
+      <h1 class="screen-title">${esc(t('hello'))}${p.name ? ` ${esc(p.name)}` : ''} 👋</h1>
+      <p class="screen-sub">${esc(t('hubSub'))}</p>
+      ${hasPlan ? `<button class="today-card hub-plan" data-go="plan"><small>${esc(t('myProgram'))}</small><b>${fmt(p.dailyKcal)} kcal · ${p.protein} g prot.</b>${proj ? `<span>${kgFmt(p.weight)} → ${kgFmt(p.target)} kg · ${esc(dateFr(proj.end))}</span>` : ''}<em>${esc(t('seePlan'))} →</em></button>` : ''}
+      <div class="section-label"><h3>${esc(t('hubQuiz'))}</h3></div>
+      <p class="screen-sub guide-sub">${esc(t('hubQuizSub'))}</p>
+      <div class="track-list light">${TRACKS.map(([id, , , emoji], i) => `<button class="track-card" data-track="${id}"><span class="track-emoji">${emoji}</span><span><b>${esc(tracks[i][0])}</b><small>${esc(tracks[i][1])}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>
+      <div class="section-label"><h3>${esc(t('hubExplore'))}</h3></div>
+      <div class="explore-grid">${t('exploreTiles').map(([r, label]) => `<button class="explore-tile" data-go="${r}">${icon(r === 'recipes' ? 'program' : r === 'training' ? 'dumbbell' : r === 'guides' ? 'star' : 'scan')}<b>${esc(label)}</b></button>`).join('')}</div>
+      <button class="guide-card hub-link" data-go="tour"><span class="guide-check">${icon('star')}</span><span><b>${esc(t('hubTour'))}</b><small>${esc(t('hubTourSub'))}</small></span><span class="guide-arrow">→</span></button>
+      <button class="guide-card hub-link" data-go="support"><span class="guide-check">${icon('help')}</span><span><b>${esc(t('hubSupport'))}</b><small>${esc(t('hubSupportSub'))}</small></span><span class="guide-arrow">→</span></button>
+    </div>
+    ${bottom('app')}
+  </div>`;
+}
+
+function exploreBanner() {
+  if (state.premium) return '';
+  return `<button class="explore-banner" data-go="paywall">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button>`;
+}
+
+// ---- Découvrir l'application -----------------------------------------------
+const TOUR = [
+  ['scan', 'Scanner de repas', 'Prenez votre assiette en photo, écrivez ou dictez ce que vous mangez, scannez un code-barres ou une étiquette. NutriPilot estime calories, protéines, glucides, lipides, fibres et sel, et vous corrigez les grammes en un geste.', 'add'],
+  ['home', 'Aujourd’hui', 'Votre tableau de bord : calories restantes, protéines, eau, check-in du jour et la prochaine décision à prendre.', 'app'],
+  ['program', 'Plan de repas 7 jours', 'Un plan adapté à votre objectif, vos goûts, vos allergies, votre budget et votre temps de cuisine, avec la liste de courses rangée par rayon.', 'program'],
+  ['star', 'Que manger ensuite ?', 'Vos calories et protéines restantes deviennent des idées de repas concrètes. Mode frigo : dites ce que vous avez. Mode restaurant : on vous aide à choisir.', 'planner'],
+  ['dumbbell', 'Entraînement', 'Programmes en salle (développé couché, squat, presse, hip thrust…) ou à la maison, avec séries, répétitions, repos, conseils d’exécution et suivi des charges.', 'training'],
+  ['coach', 'Coach', 'Posez vos questions à tout moment : il connaît vos repères et votre semaine. Bientôt : des nutritionnistes et coachs diplômés.', 'coach'],
+  ['progress', 'Progrès', 'Poids, tendance, mensurations, régularité, badges et bilan hebdomadaire avec 3 priorités pour la semaine suivante.', 'progress'],
+  ['bell', 'Guides', 'Ménopause, premiers pas, restaurant, grignotage : des fiches courtes avec une action à faire le jour même.', 'guides'],
+];
+function tourScreen() {
+  return `<div class="mobile-app">
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="app">←</button><h2>${esc(t('hubTour'))}</h2><span></span></div></div>
+    <div class="screen">
+      <h1 class="screen-title">Tout NutriPilot, en un coup d’œil.</h1>
+      <div class="tour-list">${TOUR.map(([ico, title, text, r]) => `<div class="tour-card"><span class="tour-ico">${icon(ico)}</span><div><b>${esc(title)}</b><p>${esc(text)}</p><button class="link-btn" ${r === 'add' ? 'data-open-add' : `data-go="${r}"`}>Essayer →</button></div></div>`).join('')}</div>
+      <button class="btn btn-lime btn-wide btn-xl" data-go="app">Créer mon programme</button>
+    </div>
+    ${bottom('')}
+  </div>`;
+}
+
+// ---- Support ---------------------------------------------------------------
+const FAQ = [
+  ['Comment fonctionne l’essai gratuit ?', 'Dans les applications iPhone et Android, vous profitez de 3 jours gratuits avec un accès complet à votre formule. Aucun paiement pendant l’essai. L’abonnement démarre ensuite, sauf si vous annulez au moins 24 h avant la fin. Nous vous envoyons un rappel avant.'],
+  ['Comment annuler mon abonnement ?', 'iPhone : Réglages › votre nom › Abonnements › NutriPilot. Android : Play Store › votre profil › Paiements et abonnements › Abonnements. Supprimer l’application n’annule pas l’abonnement.'],
+  ['Quelle différence entre les formules ?', 'Nutrition : scanner, plan de repas, recettes, courses, guides et coach. Entraînement : programmes salle et maison avec suivi des charges. Complète : tout NutriPilot, au meilleur prix.'],
+  ['Le scanner est-il précis ?', 'Une photo ne pèse pas un aliment : NutriPilot affiche des estimations. Vous pouvez corriger chaque quantité avant d’enregistrer. Le code-barres et l’étiquette donnent des valeurs plus précises.'],
+  ['Puis-je utiliser NutriPilot avec un problème de santé ?', 'NutriPilot ne remplace pas un médecin ou un diététicien. En cas de grossesse, de maladie, de traitement ou de trouble du comportement alimentaire, demandez d’abord l’avis d’un professionnel. L’application est réservée aux adultes.'],
+  ['Comment me faire rembourser ?', 'Les achats faits dans l’App Store ou Google Play sont remboursés par Apple ou Google, selon leurs conditions. Pour toute autre question de paiement, écrivez-nous.'],
+  ['Mes données sont-elles protégées ?', 'Vos données servent uniquement à faire fonctionner votre programme. Vous pouvez les exporter ou les supprimer à tout moment depuis Réglages.'],
+  ['Puis-je utiliser NutriPilot sur plusieurs appareils ?', 'Oui, connectez-vous avec le même compte sur votre téléphone, votre tablette ou votre ordinateur.'],
+  ['Y aura-t-il des nutritionnistes et des coachs ?', 'Oui, c’est prévu : des professionnels diplômés rejoindront NutriPilot prochainement. Nous vous préviendrons dans l’application.'],
+];
+let supportMessages = [];
+let supportLoading = false;
+function supportScreen() {
+  return `<div class="mobile-app">
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="app">←</button><h2>${esc(t('hubSupport'))}</h2><span></span></div></div>
+    <div class="screen">
+      <h1 class="screen-title">Comment pouvons-nous vous aider ?</h1>
+      <button class="today-card support-cta" data-support-open>${icon('coach')}<span><b>Discuter avec l’assistant</b><small>Réponse immédiate, 24 h/24</small></span><em>→</em></button>
+      <div class="section-label"><h3>Questions fréquentes</h3></div>
+      <div class="session-list">${FAQ.map(([q, a]) => `<details class="ex-card faq"><summary><span class="ex-main"><b>${esc(q)}</b></span><span class="guide-arrow">+</span></summary><p>${esc(a)}</p></details>`).join('')}</div>
+      <div class="day-card"><h3>Écrire à l’équipe</h3><p class="screen-sub">Nous répondons par e-mail, en général sous 24 h ouvrées.</p><a class="btn btn-ghost btn-wide" href="mailto:${esc(config.supportEmail)}">${esc(config.supportEmail)}</a></div>
+    </div>
+    ${bottom('')}
+  </div>`;
+}
+
+function supportSheet() {
+  const intro = 'Bonjour 👋 Je suis l’assistant NutriPilot. Posez-moi votre question sur l’application, les formules, l’essai ou votre compte.';
+  return `<div class="sheet-head"><div><span class="tag">SUPPORT</span><h2>Assistant NutriPilot</h2></div><button class="icon-btn" data-close>×</button></div>
+    <div class="chat-log" id="support-log">
+      <div class="bubble bot">${esc(intro)}</div>
+      ${supportMessages.map((m) => `<div class="bubble ${m.role === 'user' ? 'me' : 'bot'}">${esc(m.text)}</div>`).join('')}
+      ${supportLoading ? '<div class="bubble bot typing"><i></i><i></i><i></i></div>' : ''}
+    </div>
+    ${supportMessages.length ? '' : `<div class="quick-row">${FAQ.slice(0, 3).map(([q]) => `<button class="mini-choice" data-support-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`}
+    <div class="chat-input"><input id="support-input" type="text" maxlength="600" placeholder="Votre question…" autocomplete="off"><button class="btn btn-primary" data-support-send>Envoyer</button></div>
+    <p class="fine center-fine">Assistant automatique. Pour un problème de paiement : ${esc(config.supportEmail)}</p>`;
+}
+
+async function sendSupport(text) {
+  const message = String(text || '').trim().slice(0, 600);
+  if (!message || supportLoading) return;
+  supportMessages.push({ role: 'user', text: message });
+  supportLoading = true;
+  renderModal();
+  try {
+    const response = await fetch('/api/support', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: lang(), messages: supportMessages.slice(-8) }) });
+    const data = await response.json();
+    supportMessages.push({ role: 'assistant', text: response.ok ? data.answer : (data.error || `Écrivez-nous à ${config.supportEmail}.`) });
+  } catch {
+    supportMessages.push({ role: 'assistant', text: `Connexion impossible. Écrivez-nous à ${config.supportEmail}.` });
+  }
+  supportLoading = false;
+  renderModal();
+  track('SupportMessage');
+}
+
+function supportBubble() {
+  return `<button class="support-fab" data-support-open aria-label="Aide & support">${icon('help')}</button>`;
+}
+
+const PREMIUM_ACTIONS = ['openAdd', 'addTab', 'generateWeek', 'weekReview', 'compose', 'fridge', 'restaurant', 'smartSwap', 'coachSend', 'quickCoach', 'swapPlan', 'planRecipe', 'addPlanMeal', 'saveProgress', 'recalibrate'];
+
+const analyzingSteps = ['Analyse de votre profil', 'Calcul de vos besoins énergétiques', 'Choix de votre rythme', 'Sélection de vos recettes', 'Préparation de votre programme'];
+let analyzingTimer = null;
+let analyzingStep = 0;
+
+function analyzing() {
+  const done = Number(analyzingStep || 0);
+  return `<div class="welcome analyzing">
+    <div class="welcome-inner">
+      ${logo()}
+      <div class="analyzing-ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg" style="stroke-dashoffset:${327 - (327 * Math.min(done, analyzingSteps.length)) / analyzingSteps.length}"/></svg><b>${Math.round(Math.min(done, analyzingSteps.length) / analyzingSteps.length * 100)} %</b></div>
+      <h1 class="analyzing-title">${esc(onboardingState.data.name || '')}${onboardingState.data.name ? ', nous' : 'Nous'} préparons votre programme…</h1>
+      <div class="analyzing-list">${analyzingSteps.map((label, index) => `<div class="${index < done ? 'done' : index === done ? 'current' : ''}"><span>${index < done ? '✓' : ''}</span>${esc(label)}</div>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+function startAnalyzing() {
+  clearInterval(analyzingTimer);
+  analyzingStep = 0;
+  const stop = () => { clearInterval(analyzingTimer); analyzingTimer = null; };
+  analyzingTimer = setInterval(() => {
+    analyzingStep += 1;
+    if (route !== 'analyzing') return stop();
+    if (analyzingStep > analyzingSteps.length) {
+      stop();
+      return nav('plan');
+    }
+    render();
+  }, 750);
 }
 
 function calculatePlan(data = onboardingState.data) {
@@ -648,16 +1029,83 @@ function calculatePlan(data = onboardingState.data) {
   return { ...p, bmr: Math.round(bmr), tdee: Math.round(tdee), bmi: +bmi.toFixed(1), dailyKcal: kcal, protein, carbs, fat, fiber, warning };
 }
 
+const ICONS = {
+  home: '<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/>',
+  program: '<rect x="4.5" y="4.5" width="15" height="15" rx="3"/><path d="M8.5 9.5h7M8.5 12.5h7M8.5 15.5h4"/>',
+  scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.5"/>',
+  coach: '<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V16h0.5A2.5 2.5 0 0 1 5 13.5z"/><path d="M9 9.5h6M9 12h4"/>',
+  progress: '<path d="M4 18 9.5 12.5l3.5 3.5L20 9"/><path d="M15 9h5v5"/>',
+  check: '<path d="M5 12.5 10 17l9-10"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+  bell: '<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  dumbbell: '<path d="M6.5 8v8M17.5 8v8M4 10v4M20 10v4M6.5 12h11"/>',
+  help: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17h.01"/>',
+  star: '<path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z"/>',
+};
+function icon(name, cls = '') {
+  return `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
+
+function dateFr(date, withYear = false) {
+  const opts = { day: 'numeric', month: 'long' };
+  if (withYear || date.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return date.toLocaleDateString('fr-FR', opts);
+}
+
+function projection(p) {
+  if (p.goal !== 'lose' || !p.speed) return null;
+  const delta = Math.abs(Number(p.weight) - Number(p.target));
+  const weeks = Math.max(1, Math.round(delta / Number(p.speed)));
+  const end = new Date(Date.now() + weeks * 7 * 86400000);
+  const firstWeeks = Math.min(4, weeks);
+  const firstLoss = Math.min(delta, Number(p.speed) * firstWeeks);
+  const firstDate = new Date(Date.now() + firstWeeks * 7 * 86400000);
+  return { delta, weeks, end, firstLoss, firstDate, firstWeeks };
+}
+
+function projectionChart(p, proj) {
+  const w = 320, h = 150, x0 = 18, x1 = 302, y0 = 26, y1 = 118;
+  return `<svg class="proj-chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Projection de votre poids">
+    <defs><linearGradient id="projFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9f23d" stop-opacity=".45"/><stop offset="1" stop-color="#b9f23d" stop-opacity="0"/></linearGradient></defs>
+    <path d="M${x0} ${y0} C ${x0 + 110} ${y0 + 10}, ${x1 - 120} ${y1}, ${x1} ${y1} L ${x1} ${h} L ${x0} ${h} Z" fill="url(#projFill)"/>
+    <path class="proj-line" d="M${x0} ${y0} C ${x0 + 110} ${y0 + 10}, ${x1 - 120} ${y1}, ${x1} ${y1}" fill="none" stroke="#102419" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="${x0}" cy="${y0}" r="6" fill="#fff" stroke="#102419" stroke-width="3"/>
+    <circle cx="${x1}" cy="${y1}" r="8" fill="#d7ff6a" stroke="#102419" stroke-width="3"/>
+    <text x="${x0}" y="14" class="proj-label">${kgFmt(p.weight)} kg</text>
+    <text x="${x1}" y="${y1 - 16}" text-anchor="end" class="proj-label strong">${kgFmt(p.target)} kg</text>
+    <text x="${x0}" y="${h - 4}" class="proj-axis">Aujourd’hui</text>
+    <text x="${x1}" y="${h - 4}" text-anchor="end" class="proj-axis">${esc(dateFr(proj.end))}</text>
+  </svg>`;
+}
+
+const MOTIVATION_LINE = {
+  confidence: 'Vous retrouvez confiance en vous.',
+  clothes: 'Vous rentrez à nouveau dans vos vêtements.',
+  energy: 'Vous retrouvez votre énergie.',
+  health: 'Vous prenez soin de votre santé.',
+};
+
 function planScreen() {
   const p = calculatePlan();
-  const delta = Math.abs(Number(p.weight) - Number(p.target));
-  const weeks = p.goal === 'lose' && p.speed ? Math.max(1, Math.round(delta / Number(p.speed))) : null;
-  return `<div class="mobile-app">
-    <div class="app-head"><div class="app-head-row">${logo()}<span class="pill premium-pill">Premium actif ✓</span></div></div>
+  const proj = projection(p);
+  const name = p.name ? `${esc(p.name)}, ` : '';
+  const cta = state.premium ? 'Entrer dans mon programme' : 'Débloquer mon programme';
+  return `<div class="mobile-app no-nav">
+    <div class="app-head"><div class="app-head-row">${logo()}${state.premium ? '<span class="pill premium-pill">Premium ✓</span>' : ''}</div></div>
     <div class="screen">
-      <div class="program-ready"><span class="tag">VOTRE PROGRAMME</span><h1 class="screen-title">${esc(p.name || 'Votre plan')}, votre direction est prête.</h1><p class="screen-sub">Des repères indicatifs, personnalisables et conçus pour une progression raisonnable.</p></div>
+      <div class="program-ready"><span class="tag">VOTRE PROGRAMME EST PRÊT</span>
+      ${proj
+        ? `<h1 class="screen-title">${name}vous pouvez atteindre <span class="hl">${kgFmt(p.target)} kg</span> le ${esc(dateFr(proj.end))}.</h1>`
+        : `<h1 class="screen-title">${name}votre programme est prêt.</h1>`}
+      </div>
+      ${proj ? `<div class="today-card proj-card">
+        ${projectionChart(p, proj)}
+        <div class="proj-milestone">${icon('check')}<span>Premier cap : <b>−${kgFmt(Math.round(proj.firstLoss * 10) / 10)} kg</b> d’ici le ${esc(dateFr(proj.firstDate))}</span></div>
+        ${MOTIVATION_LINE[p.motivation] ? `<div class="proj-milestone">${icon('star')}<span>${esc(MOTIVATION_LINE[p.motivation])}</span></div>` : ''}
+        <div class="fine">Estimation selon le rythme choisi (≈ ${fmt(p.speed, 2)} kg / semaine). Chaque corps est différent : NutriPilot ajuste votre plan selon vos résultats réels.</div>
+      </div>` : ''}
       <div class="today-card goal-card">
-        <small>Objectif énergétique quotidien estimé</small>
+        <small>Votre repère quotidien</small>
         <div class="hero-number">${fmt(p.dailyKcal)} <span>kcal</span></div>
         <div class="macro-row-4">
           <div><small>Protéines</small><b>${p.protein} g</b></div>
@@ -665,28 +1113,194 @@ function planScreen() {
           <div><small>Lipides</small><b>${p.fat} g</b></div>
           <div><small>Fibres</small><b>${p.fiber} g</b></div>
         </div>
-        ${weeks ? `<div class="goal-note"><b>${fmt(delta, 1)} kg</b> entre votre point de départ et votre objectif · rythme choisi ≈ ${fmt(p.speed, 2)} kg/semaine.</div>` : ''}
       </div>
-      ${p.warning ? `<div class="warn"><b>À noter.</b><br>${esc(p.warning)}</div>` : `<div class="success warn"><b>Votre programme reste flexible.</b><br>NutriPilot ajuste vos décisions, pas votre valeur. Corrigez les portions, gardez vos repas plaisir et regardez la tendance.</div>`}
-      <div class="benefits feature-list">${['Scanner photo + texte + code-barres + étiquette', 'Plan alimentaire 7 jours + liste de courses', 'Recettes détaillées avec grammes et macros', '« Que manger ensuite ? » + mode frigo + restaurant', 'Coach IA contextualisé à votre vraie semaine', 'Poids, mensurations, bilan hebdomadaire et habitudes'].map((x) => `<div class="benefit"><span class="check">✓</span><b>${x}</b></div>`).join('')}</div>
-      <button class="btn btn-lime btn-wide" data-activate>Entrer dans mon programme →</button>
+      ${p.warning ? `<div class="warn"><b>À noter.</b><br>${esc(p.warning)}</div>` : ''}
+      <div class="section-label"><h3>Ce que comprend votre programme</h3></div>
+      <div class="benefits feature-list">${PROGRAM_FEATURES.map((x) => `<div class="benefit"><span class="check">✓</span><b>${esc(x)}</b></div>`).join('')}</div>
+      <div class="sticky-cta"><button class="btn btn-lime btn-wide btn-xl" data-activate>${cta}</button></div>
     </div>
   </div>`;
 }
 
+const PROGRAM_FEATURES = [
+  'Scanner de repas : photo, texte, code-barres et étiquette',
+  'Plan de repas 7 jours + liste de courses',
+  'Recettes simples avec grammes et calories',
+  '« Que manger ensuite ? », mode frigo et mode restaurant',
+  'Coach qui ajuste votre journée, sans culpabilité',
+  'Suivi du poids, des mensurations et bilan de la semaine',
+];
+
+// ---- Billing ---------------------------------------------------------------
+// Store builds (App Store / Google Play): the native shell exposes
+// window.NutriPilotNative (RevenueCat) and handles the free trial.
+// Web: only plans with a Hotmart `offer` can be bought (legacy).
+const DEFAULT_PLANS = [
+  {
+    tier: 'complete', label: 'Complet', sub: 'Nutrition + Entraînement', badge: 'Le plus choisi',
+    features: ['Tout le programme Nutrition', 'Tous les programmes d’entraînement', 'Coach NutriPilot au quotidien'],
+    monthly: { price: 19.99, storeId: 'np_complete_monthly' }, annual: { price: 79.99, storeId: 'np_complete_annual' },
+  },
+  {
+    tier: 'nutrition', label: 'Nutrition', sub: 'Mincir et mieux manger',
+    features: ['Scanner de repas', 'Plan de repas, recettes et courses', 'Guides (ménopause incluse) et coach'],
+    monthly: { price: 14.99, storeId: 'np_nutrition_monthly' }, annual: { price: 59.99, storeId: 'np_nutrition_annual' },
+  },
+  {
+    tier: 'training', label: 'Entraînement', sub: 'Salle ou maison',
+    features: ['Programmes salle et maison', 'Exercices détaillés et suivi des charges', 'Repères caloriques et protéines'],
+    monthly: { price: 12.99, storeId: 'np_training_monthly' }, annual: { price: 49.99, storeId: 'np_training_annual' },
+  },
+];
+let selectedTier = '';
+let selectedPeriod = 'annual';
+
+function planTier(planId = state.subscriptionPlan) {
+  const id = String(planId || '');
+  if (id.includes('nutrition')) return 'nutrition';
+  if (id.includes('training')) return 'training';
+  return 'complete'; // complete plans and legacy Hotmart customers keep full access
+}
+function hasFeature(feature) {
+  const tier = planTier();
+  if (tier === 'complete') return true;
+  if (feature === 'training') return tier === 'training';
+  if (feature === 'nutrition') return tier === 'nutrition';
+  return true;
+}
+
+const Billing = {
+  native() { return Boolean(window.NutriPilotNative?.purchase); },
+  store() { return window.NutriPilotNative?.store || 'App Store / Google Play'; },
+  plans() { return (Array.isArray(config.plans) && config.plans.length ? config.plans : DEFAULT_PLANS); },
+  trialDays() { return this.native() ? Number(config.trialDays || 3) : 0; },
+  async purchase(plan, period) {
+    const option = plan[period];
+    const id = `${plan.tier}_${period}`;
+    track('InitiateCheckout', { plan: id, value: option.price, currency: 'EUR' });
+    if (this.native()) {
+      const result = await window.NutriPilotNative.purchase(option.storeId);
+      if (result?.token) {
+        state.premium = true;
+        state.accessToken = result.token;
+        state.premiumEmail = result.email || state.premiumEmail;
+        state.subscriptionPlan = id;
+        saveState();
+        track('StartTrial', { plan: id });
+        return nav('app');
+      }
+      return;
+    }
+    if (!option.offer) return toast('Cette formule sera disponible dans l’application iPhone et Android.');
+    const url = new URL(config.checkoutUrl || 'https://pay.hotmart.com/R107884011S');
+    url.searchParams.set('off', option.offer);
+    for (const [key, value] of Object.entries(state.utms || {})) if (value) url.searchParams.set(key, value);
+    location.href = url.toString();
+  },
+  async restore() {
+    if (!this.native() || !window.NutriPilotNative.restore) return nav('access');
+    const result = await window.NutriPilotNative.restore();
+    if (result?.token) {
+      state.premium = true;
+      state.accessToken = result.token;
+      state.subscriptionPlan = result.plan || state.subscriptionPlan;
+      saveState();
+      return nav(state.onboarding ? 'app' : 'onboarding');
+    }
+    toast('Aucun abonnement actif trouvé.');
+  },
+};
+
+function euro(value) {
+  return `${Number(value).toFixed(2).replace('.', ',')} €`;
+}
+
+function defaultTier() {
+  return 'complete';
+}
+
+function paywall() {
+  const p = state.profile || {};
+  const plans = Billing.plans();
+  const plan = plans.find((x) => x.tier === (selectedTier || defaultTier())) || plans[0];
+  const option = plan[selectedPeriod];
+  const periodLabel = selectedPeriod === 'annual' ? 'an' : 'mois';
+  const trial = Billing.trialDays();
+  const proj = projection(p);
+  const terms = trial
+    ? `${trial} jours gratuits, puis ${euro(option.price)} / ${periodLabel}. Renouvellement automatique, annulable à tout moment dans les réglages de votre compte ${esc(Billing.store())}, au moins 24 h avant la fin de l’essai ou de la période en cours.`
+    : `${euro(option.price)} / ${periodLabel}. Renouvellement automatique, annulable à tout moment.`;
+  return `<div class="mobile-app no-nav paywall">
+    <div class="app-head"><div class="app-head-row">${logo()}<button class="link-btn" data-go="access">Se connecter</button></div></div>
+    <div class="screen">
+      <h1 class="screen-title">${p.name ? `${esc(p.name)}, c` : 'C'}hoisissez votre formule.</h1>
+      ${proj ? `<div class="pw-goal">${icon('progress')}<span>Objectif <b>${kgFmt(p.target)} kg</b> · estimé le <b>${esc(dateFr(proj.end))}</b></span></div>` : ''}
+      <div class="period-toggle" role="tablist">
+        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">Annuel <span>jusqu’à −${Math.max(...plans.map((x) => Math.round((1 - x.annual.price / (x.monthly.price * 12)) * 100)))} %</span></button>
+        <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">Mensuel</button>
+      </div>
+      <div class="plan-list" role="radiogroup">
+        ${plans.map((x) => {
+          const o = x[selectedPeriod];
+          const perMonth = selectedPeriod === 'annual' ? o.price / 12 : o.price;
+          const saving = selectedPeriod === 'annual' ? Math.round((1 - o.price / (x.monthly.price * 12)) * 100) : 0;
+          return `<button class="plan-option ${x.tier === plan.tier ? 'selected' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}">
+            ${x.badge ? `<span class="plan-badge">${esc(x.badge)}</span>` : ''}
+            <span class="plan-radio"></span>
+            <span class="plan-main"><b>${esc(x.label)}</b><small>${esc(x.sub)}</small>
+              <span class="plan-feats">${x.features.map((f) => `<i>✓ ${esc(f)}</i>`).join('')}</span></span>
+            <span class="plan-per"><b>${euro(perMonth)}</b><small>/ mois</small>${saving > 0 ? `<em>−${saving} %</em>` : ''}</span>
+          </button>`;
+        }).join('')}
+      </div>
+      ${trial ? `<div class="trial-timeline">
+        <div><span class="tl-dot on">${icon('lock')}</span><p><b>Aujourd’hui</b>Accès complet à votre formule. Aucun paiement maintenant.</p></div>
+        <div><span class="tl-dot">${icon('bell')}</span><p><b>Jour ${Math.max(1, trial - 1)}</b>Nous vous envoyons un rappel avant la fin de l’essai.</p></div>
+        <div><span class="tl-dot">${icon('star')}</span><p><b>Jour ${trial}</b>Début de l’abonnement, sauf si vous annulez avant.</p></div>
+      </div>` : ''}
+      <div class="sticky-cta">
+        <button class="btn btn-lime btn-wide btn-xl" data-buy>${trial ? `Commencer mes ${trial} jours gratuits` : `Continuer · ${euro(option.price)} / ${periodLabel}`}</button>
+        <p class="pw-terms">${selectedPeriod === 'annual' && !trial ? `Soit ${euro(option.price / 12)} / mois, facturé ${euro(option.price)} par an. Renouvellement automatique, annulable à tout moment.` : terms}</p>
+      </div>
+      <div class="pw-soon">${icon('coach')}<span><b>Bientôt dans votre abonnement</b>Des nutritionnistes et coachs diplômés pour vous accompagner.</span></div>
+      <div class="pw-links">
+        ${Billing.native() ? '<button class="link-btn" data-restore>Restaurer mes achats</button>' : '<button class="link-btn" data-go="access">Déjà client ? Se connecter</button>'}
+        <button class="link-btn" data-support-open>Une question ? Parler au support</button>
+        <button class="link-btn" data-go="legal">Conditions & confidentialité</button>
+        <button class="link-btn" data-go="app">Plus tard, continuer à explorer</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function lockedScreen(feature) {
+  const isTraining = feature === 'training';
+  return `<div class="mobile-app">
+    ${appHeader(isTraining ? 'Entraînement' : 'Nutrition')}
+    <div class="screen">
+      <div class="today-card locked-card">${icon('lock')}
+        <h2>${isTraining ? 'Ajoutez l’entraînement à votre programme' : 'Ajoutez la nutrition à votre programme'}</h2>
+        <p>${isTraining ? 'Programmes salle et maison, exercices détaillés et suivi de vos charges.' : 'Scanner de repas, plan de 7 jours, recettes, liste de courses et guides.'}</p>
+        <button class="btn btn-lime btn-wide" data-upgrade>Passer à la formule Complète</button>
+      </div>
+    </div>
+    ${bottom(isTraining ? 'training' : 'program')}
+  </div>`;
+}
+
 function appHeader(title) {
-  return `<div class="app-head"><div class="app-head-row"><div><div class="head-logo">${logo()}</div><small class="head-date">${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</small><h2>${esc(title)}</h2></div><div class="head-actions"><span class="pill premium-pill">Premium ✓</span><button class="icon-btn" data-go="settings" aria-label="Réglages">⚙</button></div></div></div>`;
+  return `<div class="app-head"><div class="app-head-row"><div><div class="head-logo">${logo()}</div><small class="head-date">${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</small><h2>${esc(title)}</h2></div><div class="head-actions"><button class="icon-btn coach-btn" data-go="coach" aria-label="Coach">${icon('coach')}</button><button class="icon-btn" data-go="settings" aria-label="Réglages">⚙</button></div></div></div>${exploreBanner()}`;
 }
 
 function bottom(active) {
   const tabs = [
-    ['app', '⌂', 'Aujourd’hui'],
-    ['program', '◈', 'Programme'],
-    ['add', '＋', 'Scanner'],
-    ['coach', '✦', 'Coach'],
-    ['progress', '↗', 'Progrès'],
+    ['app', 'home', 'Aujourd’hui'],
+    ['program', 'program', 'Nutrition'],
+    ['add', 'scan', 'Scanner'],
+    ['training', 'dumbbell', 'Sport'],
+    ['progress', 'progress', 'Progrès'],
   ];
-  return `<nav class="bottom-nav">${tabs.map(([r, icon, label]) => `<button class="nav-btn ${r === active ? 'active' : ''} ${r === 'add' ? 'center' : ''}" ${r === 'add' ? 'data-open-add' : `data-go="${r}"`}><span>${icon}</span>${label}</button>`).join('')}</nav>`;
+  return `<nav class="bottom-nav">${tabs.map(([r, ico, label]) => `<button class="nav-btn ${r === active ? 'active' : ''} ${r === 'add' ? 'center' : ''}" ${r === 'add' ? 'data-open-add' : `data-go="${r}"`} aria-label="${label}"><span>${icon(ico)}</span>${label}</button>`).join('')}</nav>`;
 }
 
 function macroStat(name, value, target) {
@@ -743,7 +1357,7 @@ function dashboard() {
       <div class="action-grid">
         <button class="action-card primary" data-go="planner"><span class="aico">✦</span><b>Que manger ensuite ?</b><small>${fmt(left)} kcal à organiser</small></button>
         <button class="action-card" data-go="program"><span class="aico">▦</span><b>Plan 7 jours</b><small>${state.weekPlan.length ? 'Votre semaine est prête' : 'Créer ma semaine'}</small></button>
-        <button class="action-card" data-go="recipes"><span class="aico">⌁</span><b>Recettes</b><small>${curatedRecipes.length} idées détaillées</small></button>
+        ${hasFeature('training') ? `<button class="action-card" data-go="training"><span class="aico">${icon('dumbbell')}</span><b>Séance du jour</b><small>${esc(nextSession().name)} · ${weekWorkouts()}/${currentProgram().days} cette semaine</small></button>` : `<button class="action-card" data-go="recipes"><span class="aico">⌁</span><b>Recettes</b><small>${curatedRecipes.length} idées détaillées</small></button>`}
         <button class="action-card" data-go="insights"><span class="aico">↗</span><b>Analyse semaine</b><small>Score ${scoreDay()}/100</small></button>
       </div>
 
@@ -819,11 +1433,9 @@ function program() {
   const weeks = p.goal === 'lose' && p.speed ? Math.max(1, Math.round(delta / Number(p.speed))) : null;
   const shopping = planShopping();
   return `<div class="mobile-app">
-    ${appHeader('Mon programme')}
+    ${appHeader('Nutrition')}
     <div class="screen">
-      <span class="tag">DIRECTION PERSONNALISÉE</span>
-      <h1 class="screen-title">Votre feuille de route.</h1>
-      <p class="screen-sub">Objectif de poids, plan alimentaire, recettes, liste de courses et ajustements quotidiens réunis au même endroit.</p>
+      ${programTabs('program')}
 
       <div class="today-card program-card">
         <div class="today-top"><div><small>Poids actuel → objectif</small><h2>${fmt(lastWeight(), 1)} kg → ${fmt(p.target, 1)} kg</h2></div><span class="pill dark-pill">${weeks ? `≈ ${weeks} sem.` : 'Flexible'}</span></div>
@@ -841,13 +1453,303 @@ function program() {
       <div class="section-label"><h3>Recettes NutriPilot</h3><button class="link-btn" data-go="recipes">Voir tout →</button></div>
       <div class="recipe-strip">${curatedRecipes.slice(0, 4).map(recipeMiniCard).join('')}</div>
 
-      ${shopping.length ? `<div class="section-label"><h3>Liste de courses</h3><span class="fine">${shopping.length} ingrédients</span></div><div class="day-card shopping-list">${shoppingListHtml(shopping)}</div>` : ''}
 
       <div class="section-label"><h3>Bilan hebdomadaire</h3><span class="fine">vos données → 3 priorités</span></div>
       ${state.weekReview ? weeklyReviewHtml() : `<button class="btn btn-ghost btn-wide" data-week-review>Analyser mes 7 derniers jours →</button>`}
     </div>
     ${bottom('program')}
   </div>`;
+}
+
+// ---- Guides ----------------------------------------------------------------
+const GUIDE_COLLECTIONS = [
+  {
+    id: 'menopause',
+    title: 'Ménopause & minceur',
+    sub: 'Comprendre ce qui change après 40 ans et adapter votre assiette.',
+    guides: [
+      {
+        id: 'meno-changes', title: 'Pourquoi le ventre change à la (pré)ménopause', time: '4 min',
+        intro: 'La baisse progressive des œstrogènes modifie la façon dont le corps stocke les graisses : elles se placent plus volontiers autour de la taille. Ce n’est ni un manque de volonté ni une fatalité.',
+        points: [
+          'Le métabolisme de base baisse un peu avec l’âge, surtout parce que l’on perd du muscle.',
+          'Le sommeil plus léger et les bouffées de chaleur augmentent souvent la fatigue… et les envies de sucré.',
+          'Les mêmes habitudes qu’à 30 ans peuvent donc faire prendre du poids aujourd’hui : il faut ajuster, pas se priver.',
+        ],
+        action: 'Gardez votre repère calorique NutriPilot et visez la protéine à chaque repas : c’est le levier n°1 après 40 ans.',
+      },
+      {
+        id: 'meno-protein', title: 'Protéines et muscle : votre meilleur allié', time: '3 min',
+        intro: 'Préserver le muscle aide à garder un métabolisme actif, une silhouette tonique et des os solides.',
+        points: [
+          'Répartissez les protéines sur la journée : œufs, skyr ou fromage blanc le matin, poisson, volaille, légumineuses ou tofu ensuite.',
+          'Associez-les à une activité de renforcement 2 à 3 fois par semaine (marche rapide, pilates, poids du corps, salle).',
+          'Une assiette riche en protéines et en fibres cale plus longtemps et limite le grignotage.',
+        ],
+        action: 'Regardez votre jauge « Protéines » sur l’écran Aujourd’hui et complétez-la au dîner si besoin.',
+      },
+      {
+        id: 'meno-sleep', title: 'Sommeil, bouffées de chaleur et fringales du soir', time: '3 min',
+        intro: 'Une mauvaise nuit augmente la faim le lendemain. Quelques ajustements peuvent aider.',
+        points: [
+          'Chez certaines femmes, l’alcool, la caféine en fin de journée et les plats très épicés accentuent les bouffées de chaleur : observez ce qui vous concerne.',
+          'Un dîner complet (protéines + légumes + féculents en portion adaptée) évite les réveils affamés.',
+          'Une chambre fraîche et des horaires réguliers favorisent un sommeil plus réparateur.',
+        ],
+        action: 'Notez votre sommeil dans le check-in du jour : le coach en tiendra compte.',
+      },
+      {
+        id: 'meno-bones', title: 'Calcium, vitamine D et os solides', time: '3 min',
+        intro: 'Après la ménopause, la densité osseuse diminue plus vite. L’alimentation et le mouvement participent à la protéger.',
+        points: [
+          'Sources de calcium : produits laitiers, sardines avec arêtes, amandes, certaines eaux minérales riches en calcium, légumes verts.',
+          'La vitamine D vient surtout du soleil et de quelques aliments (poissons gras, œufs). Votre médecin peut vérifier votre taux.',
+          'Les activités en charge (marche, renforcement) stimulent l’os.',
+        ],
+        action: 'Ajoutez une portion de produit laitier ou une alternative enrichie à l’un de vos repas.',
+      },
+      {
+        id: 'meno-doctor', title: 'Quand en parler à un professionnel', time: '2 min',
+        intro: 'NutriPilot vous aide au quotidien, mais ne remplace pas un suivi médical.',
+        points: [
+          'Consultez si les symptômes (bouffées de chaleur, sommeil, humeur) pèsent sur votre quotidien : des solutions existent, dont le traitement hormonal à discuter avec votre médecin.',
+          'Demandez un avis en cas de prise de poids rapide et inexpliquée, de fatigue persistante ou de saignements inhabituels.',
+          'Si vous suivez un traitement ou avez une maladie chronique, validez votre objectif avec votre médecin.',
+        ],
+        action: 'Exportez vos données depuis Réglages pour les montrer à votre médecin ou diététicien.',
+      },
+    ],
+  },
+  {
+    id: 'basics',
+    title: 'Bien démarrer',
+    sub: 'Les réflexes qui font la différence la première semaine.',
+    guides: [
+      {
+        id: 'start-week1', title: 'Votre première semaine avec NutriPilot', time: '3 min',
+        intro: 'Le but de la semaine 1 n’est pas d’être parfait, mais de voir clair.',
+        points: [
+          'Scannez tous vos repas, même les écarts : ce sont les données réelles qui guident votre plan.',
+          'Pesez-vous 2 ou 3 fois par semaine, le matin, et regardez la tendance plutôt que le chiffre du jour.',
+          'Utilisez « Que manger ensuite ? » quand vous hésitez : le repas suivant rattrape la journée.',
+        ],
+        action: 'Objectif du jour : scanner 2 repas.',
+      },
+      {
+        id: 'start-restaurant', title: 'Restaurant, apéro et repas de famille', time: '3 min',
+        intro: 'Une sortie ne ruine jamais un programme. Ce qui compte, c’est la suite.',
+        points: [
+          'Choisissez une base protéinée (poisson, viande grillée, plat du jour avec légumes) et partagez le dessert si vous en avez envie.',
+          'À l’apéro, privilégiez les crudités, olives, chips de légumes et alternez avec de l’eau pétillante.',
+          'Le lendemain, pas de punition : revenez simplement à votre plan.',
+        ],
+        action: 'Avant de sortir, utilisez le mode Restaurant dans « Que manger ensuite ? ».',
+      },
+      {
+        id: 'start-snacking', title: 'Stopper le grignotage du soir', time: '3 min',
+        intro: 'Le grignotage vient souvent de journées où l’on a trop peu mangé de protéines et de fibres.',
+        points: [
+          'Un petit-déjeuner et un déjeuner rassasiants réduisent les envies de 18 h.',
+          'Prévoyez une collation simple (fruit + yaourt, poignée d’amandes) plutôt que de résister jusqu’à craquer.',
+          'Brossez-vous les dents après le dîner : un signal simple de fin de journée.',
+        ],
+        action: 'Si vous avez faim le soir, demandez au coach une collation adaptée à vos calories restantes.',
+      },
+    ],
+  },
+];
+
+function allGuides() {
+  return GUIDE_COLLECTIONS.flatMap((c) => c.guides.map((g) => ({ ...g, collection: c.id })));
+}
+
+function programTabs(active) {
+  const tabs = [['program', 'Mon plan'], ['recipes', 'Recettes'], ['shopping', 'Courses'], ['guides', 'Guides']];
+  return `<div class="segmented" role="tablist">${tabs.map(([r, label]) => `<button role="tab" aria-selected="${r === active}" class="${r === active ? 'active' : ''}" data-go="${r}">${label}</button>`).join('')}</div>`;
+}
+
+function guidesScreen() {
+  const p = state.profile || {};
+  const meno = p.menopause && p.menopause !== 'no';
+  const order = meno ? GUIDE_COLLECTIONS : [...GUIDE_COLLECTIONS].reverse();
+  const read = new Set(state.guidesRead || []);
+  return `<div class="mobile-app">
+    ${appHeader('Nutrition')}
+    <div class="screen">
+      ${programTabs('guides')}
+      ${order.map((c) => `
+        <div class="section-label"><h3>${esc(c.title)}</h3><span class="fine">${c.guides.filter((g) => read.has(g.id)).length}/${c.guides.length} lus</span></div>
+        <p class="screen-sub guide-sub">${esc(c.sub)}</p>
+        <div class="guide-list">${c.guides.map((g) => `<button class="guide-card ${read.has(g.id) ? 'read' : ''}" data-guide="${esc(g.id)}"><span class="guide-check">${read.has(g.id) ? icon('check') : ''}</span><span><b>${esc(g.title)}</b><small>${esc(g.time)} de lecture</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>`).join('')}
+      <div class="fine center-fine">Contenus d’information générale. Ils ne remplacent pas l’avis d’un médecin.</div>
+    </div>
+    ${bottom('program')}
+  </div>`;
+}
+
+function guideSheet(guide) {
+  return `<div class="sheet-head"><div><span class="tag">GUIDE · ${esc(guide.time)}</span><h2>${esc(guide.title)}</h2></div><button class="icon-btn" data-close>×</button></div>
+    <p class="guide-intro">${esc(guide.intro)}</p>
+    <ul class="guide-points">${guide.points.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+    <div class="warn success"><b>À faire aujourd’hui</b><br>${esc(guide.action)}</div>
+    <button class="btn btn-primary btn-wide" data-close>J’ai compris</button>`;
+}
+
+function shoppingScreen() {
+  const shopping = planShopping();
+  return `<div class="mobile-app">
+    ${appHeader('Nutrition')}
+    <div class="screen">
+      ${programTabs('shopping')}
+      ${shopping.length
+        ? `<div class="section-label"><h3>Liste de la semaine</h3><span class="fine">${shopping.length} ingrédients</span></div><div class="day-card shopping-list">${shoppingListHtml(shopping)}</div>`
+        : `<div class="day-card"><h3>Votre liste arrive avec votre plan.</h3><p class="screen-sub">Générez votre plan de 7 jours : NutriPilot regroupe automatiquement les ingrédients par rayon.</p><button class="btn btn-primary btn-wide" data-generate-week>Créer ma semaine</button></div>`}
+    </div>
+    ${bottom('program')}
+  </div>`;
+}
+
+// ---- Entraînement ----------------------------------------------------------
+const EXERCISES = {
+  'bench': { name: 'Développé couché (barre)', muscle: 'Pectoraux', cues: ['Omoplates serrées et basses, pieds bien ancrés au sol.', 'Descendez la barre au bas des pectoraux, coudes à environ 45° du corps.', 'Poussez en expirant, sans décoller les fesses du banc.'] },
+  'incline-db': { name: 'Développé incliné haltères', muscle: 'Haut des pectoraux', cues: ['Banc incliné à 30°.', 'Descendez lentement jusqu’à sentir l’étirement des pectoraux.', 'Remontez en rapprochant les haltères sans les cogner.'] },
+  'cable-fly': { name: 'Écarté à la poulie', muscle: 'Pectoraux', cues: ['Coudes légèrement fléchis et fixes.', 'Ramenez les mains devant la poitrine en contractant.', 'Revenez lentement en contrôlant l’ouverture.'] },
+  'dips': { name: 'Dips (ou dips assistés)', muscle: 'Pectoraux, triceps', cues: ['Buste légèrement penché vers l’avant.', 'Descendez jusqu’à ce que les bras soient parallèles au sol.', 'Utilisez la machine d’assistance si besoin.'] },
+  'ohp': { name: 'Développé militaire haltères', muscle: 'Épaules', cues: ['Gainage serré, dos droit.', 'Poussez les haltères au-dessus de la tête sans cambrer.', 'Redescendez à hauteur des oreilles.'] },
+  'lateral': { name: 'Élévations latérales', muscle: 'Épaules', cues: ['Charge légère, mouvement contrôlé.', 'Montez les bras jusqu’à l’horizontale, coudes légèrement fléchis.', 'Évitez de balancer le buste.'] },
+  'triceps': { name: 'Extension triceps à la poulie', muscle: 'Triceps', cues: ['Coudes collés au corps.', 'Tendez complètement les bras en bas.', 'Remontez lentement.'] },
+  'lat-pulldown': { name: 'Tirage vertical', muscle: 'Dos (grand dorsal)', cues: ['Poitrine sortie, légère inclinaison arrière.', 'Tirez la barre vers le haut de la poitrine avec les coudes.', 'Remontez en contrôlant l’étirement.'] },
+  'row': { name: 'Rowing barre ou haltère', muscle: 'Dos', cues: ['Dos plat, buste incliné vers l’avant.', 'Tirez vers le nombril en serrant les omoplates.', 'Ne tirez pas avec le bas du dos.'] },
+  'seated-row': { name: 'Tirage horizontal assis', muscle: 'Dos', cues: ['Buste droit et immobile.', 'Tirez la poignée vers le ventre, coudes près du corps.', 'Relâchez lentement vers l’avant.'] },
+  'curl': { name: 'Curl biceps haltères', muscle: 'Biceps', cues: ['Coudes fixes le long du corps.', 'Montez sans balancer le buste.', 'Descendez en 2 à 3 secondes.'] },
+  'squat': { name: 'Squat (barre ou goblet)', muscle: 'Quadriceps, fessiers', cues: ['Pieds largeur d’épaules, pointes légèrement ouvertes.', 'Descendez en poussant les fesses en arrière, genoux dans l’axe des pieds.', 'Dos neutre, remontez en poussant dans les talons.'] },
+  'leg-press': { name: 'Presse à cuisses', muscle: 'Quadriceps, fessiers', cues: ['Bas du dos collé au dossier.', 'Descendez jusqu’à environ 90° aux genoux.', 'Ne verrouillez pas complètement les genoux en haut.'] },
+  'leg-ext': { name: 'Leg extension', muscle: 'Quadriceps', cues: ['Réglez l’axe de la machine au niveau des genoux.', 'Tendez les jambes et marquez une pause en haut.', 'Redescendez lentement.'] },
+  'lunge': { name: 'Fentes marchées', muscle: 'Quadriceps, fessiers', cues: ['Grand pas en avant, buste droit.', 'Le genou arrière descend près du sol.', 'Poussez sur le talon avant pour avancer.'] },
+  'rdl': { name: 'Soulevé de terre jambes tendues', muscle: 'Ischio-jambiers, fessiers', cues: ['Genoux légèrement fléchis, dos bien plat.', 'Descendez la barre le long des jambes en poussant les hanches en arrière.', 'Remontez en contractant les fessiers.'] },
+  'leg-curl': { name: 'Leg curl', muscle: 'Ischio-jambiers', cues: ['Hanches bien plaquées.', 'Fléchissez les jambes complètement.', 'Revenez lentement.'] },
+  'hip-thrust': { name: 'Hip thrust', muscle: 'Fessiers', cues: ['Haut du dos sur le banc, barre sur les hanches (avec protection).', 'Montez jusqu’à aligner épaules, hanches et genoux.', 'Serrez fort les fessiers 1 seconde en haut.'] },
+  'abduction': { name: 'Abduction à la machine', muscle: 'Moyen fessier', cues: ['Buste légèrement penché vers l’avant.', 'Écartez les jambes en contrôlant.', 'Revenez sans laisser les poids se toucher.'] },
+  'calf': { name: 'Mollets debout', muscle: 'Mollets', cues: ['Montez sur la pointe des pieds le plus haut possible.', 'Pause en haut, descente lente.', 'Amplitude complète.'] },
+  'plank': { name: 'Gainage (planche)', muscle: 'Abdominaux', cues: ['Coudes sous les épaules.', 'Corps aligné, fessiers serrés.', 'Respirez calmement.'] },
+  'pushup': { name: 'Pompes (sur genoux si besoin)', muscle: 'Pectoraux, triceps', cues: ['Mains un peu plus larges que les épaules.', 'Corps gainé du début à la fin.', 'Poitrine près du sol, puis poussez.'] },
+  'bw-squat': { name: 'Squat au poids du corps', muscle: 'Quadriceps, fessiers', cues: ['Bras tendus devant pour l’équilibre.', 'Descendez en gardant les talons au sol.', 'Remontez en expirant.'] },
+  'glute-bridge': { name: 'Pont fessier', muscle: 'Fessiers', cues: ['Allongé(e), pieds proches des fesses.', 'Montez le bassin en serrant les fessiers.', 'Redescendez lentement.'] },
+  'split-squat': { name: 'Fente bulgare (chaise)', muscle: 'Quadriceps, fessiers', cues: ['Pied arrière posé sur une chaise stable.', 'Descendez verticalement.', 'Poussez dans le talon avant.'] },
+  'superman': { name: 'Superman', muscle: 'Bas du dos', cues: ['Allongé(e) sur le ventre.', 'Levez bras et jambes quelques centimètres.', 'Tenez 2 secondes, redescendez.'] },
+  'mountain': { name: 'Mountain climbers', muscle: 'Cardio, abdominaux', cues: ['Position de pompe, dos plat.', 'Ramenez les genoux vers la poitrine en alternant.', 'Rythme régulier.'] },
+};
+
+const WORKOUT_PROGRAMS = [
+  {
+    id: 'gym-full-3', name: 'Full body · salle', level: 'Débutant', place: 'gym', days: 3,
+    desc: 'Tout le corps à chaque séance, 3 fois par semaine. Idéal pour démarrer ou reprendre.',
+    sessions: [
+      { id: 'A', name: 'Séance A', focus: 'Pectoraux · Jambes · Dos', ex: [['squat', 3, '8–10', 120], ['bench', 3, '8–10', 120], ['lat-pulldown', 3, '10–12', 90], ['rdl', 3, '10', 90], ['lateral', 2, '12–15', 60], ['plank', 3, '30 s', 45]] },
+      { id: 'B', name: 'Séance B', focus: 'Jambes · Épaules · Dos', ex: [['leg-press', 3, '10–12', 120], ['ohp', 3, '8–10', 90], ['seated-row', 3, '10–12', 90], ['hip-thrust', 3, '10–12', 90], ['curl', 2, '12', 60], ['triceps', 2, '12', 60]] },
+      { id: 'C', name: 'Séance C', focus: 'Pectoraux · Quadriceps · Fessiers', ex: [['incline-db', 3, '10', 90], ['lunge', 3, '10 / jambe', 90], ['row', 3, '10', 90], ['leg-ext', 3, '12–15', 60], ['leg-curl', 3, '12', 60], ['calf', 3, '15', 45]] },
+    ],
+  },
+  {
+    id: 'gym-upper-lower-4', name: 'Haut / Bas · salle', level: 'Intermédiaire', place: 'gym', days: 4,
+    desc: '4 séances : 2 haut du corps, 2 bas du corps. Plus de volume pour progresser.',
+    sessions: [
+      { id: 'U1', name: 'Haut du corps 1', focus: 'Pectoraux · Dos · Bras', ex: [['bench', 4, '6–8', 150], ['row', 4, '8', 120], ['incline-db', 3, '10', 90], ['lat-pulldown', 3, '10', 90], ['lateral', 3, '12–15', 60], ['triceps', 3, '12', 60]] },
+      { id: 'L1', name: 'Bas du corps 1', focus: 'Quadriceps · Fessiers', ex: [['squat', 4, '6–8', 150], ['leg-press', 3, '10–12', 120], ['leg-ext', 3, '12–15', 60], ['leg-curl', 3, '12', 60], ['calf', 4, '12–15', 45], ['plank', 3, '40 s', 45]] },
+      { id: 'U2', name: 'Haut du corps 2', focus: 'Épaules · Dos · Pectoraux', ex: [['ohp', 4, '8', 120], ['seated-row', 3, '10', 90], ['dips', 3, '8–10', 90], ['cable-fly', 3, '12–15', 60], ['curl', 3, '10–12', 60], ['lateral', 2, '15', 45]] },
+      { id: 'L2', name: 'Bas du corps 2', focus: 'Ischios · Fessiers', ex: [['rdl', 4, '8', 120], ['hip-thrust', 4, '8–10', 120], ['lunge', 3, '10 / jambe', 90], ['abduction', 3, '15', 60], ['leg-curl', 3, '12', 60], ['calf', 3, '15', 45]] },
+    ],
+  },
+  {
+    id: 'gym-glutes-3', name: 'Fessiers & jambes · salle', level: 'Tous niveaux', place: 'gym', days: 3,
+    desc: 'Priorité au bas du corps et aux fessiers, avec une séance haut du corps pour l’équilibre.',
+    sessions: [
+      { id: 'G1', name: 'Fessiers & quadriceps', focus: 'Fessiers · Quadriceps', ex: [['hip-thrust', 4, '8–10', 120], ['squat', 3, '8–10', 120], ['leg-ext', 3, '12–15', 60], ['abduction', 3, '15–20', 60], ['plank', 3, '30 s', 45]] },
+      { id: 'G2', name: 'Haut du corps', focus: 'Dos · Épaules · Pectoraux', ex: [['lat-pulldown', 3, '10–12', 90], ['incline-db', 3, '10', 90], ['seated-row', 3, '12', 90], ['lateral', 3, '15', 60], ['triceps', 2, '12', 60]] },
+      { id: 'G3', name: 'Fessiers & ischios', focus: 'Fessiers · Ischio-jambiers', ex: [['rdl', 4, '8–10', 120], ['lunge', 3, '10 / jambe', 90], ['leg-curl', 3, '12', 60], ['glute-bridge', 3, '15', 60], ['calf', 3, '15', 45]] },
+    ],
+  },
+  {
+    id: 'home-full-3', name: 'Maison sans matériel', level: 'Débutant', place: 'home', days: 3,
+    desc: '30 minutes, sans matériel, dans votre salon. Parfait pour s’y mettre en douceur.',
+    sessions: [
+      { id: 'H1', name: 'Corps entier 1', focus: 'Jambes · Pectoraux · Gainage', ex: [['bw-squat', 3, '15', 60], ['pushup', 3, '8–12', 60], ['glute-bridge', 3, '15', 45], ['plank', 3, '30 s', 45], ['mountain', 3, '30 s', 45]] },
+      { id: 'H2', name: 'Corps entier 2', focus: 'Fessiers · Dos · Cardio', ex: [['split-squat', 3, '10 / jambe', 60], ['superman', 3, '12', 45], ['glute-bridge', 3, '20', 45], ['pushup', 3, '8–12', 60], ['mountain', 3, '40 s', 45]] },
+      { id: 'H3', name: 'Corps entier 3', focus: 'Jambes · Gainage', ex: [['bw-squat', 4, '20', 60], ['lunge', 3, '10 / jambe', 60], ['plank', 3, '40 s', 45], ['superman', 3, '12', 45], ['mountain', 3, '30 s', 45]] },
+    ],
+  },
+];
+
+function recommendedProgramId(p = state.profile || {}) {
+  if (p.trainPlace === 'home') return 'home-full-3';
+  if (p.trainPlace === 'gym') {
+    if (Number(p.trainDays) >= 4 && p.trainLevel !== 'beginner') return 'gym-upper-lower-4';
+    if (p.sex === 'female' && p.track !== 'muscle') return 'gym-glutes-3';
+    return 'gym-full-3';
+  }
+  return 'home-full-3';
+}
+
+function currentProgram() {
+  return WORKOUT_PROGRAMS.find((x) => x.id === (state.workoutProgram || recommendedProgramId())) || WORKOUT_PROGRAMS[0];
+}
+
+function nextSession(program = currentProgram()) {
+  const done = (state.workoutLog || []).filter((x) => x.programId === program.id).length;
+  return program.sessions[done % program.sessions.length];
+}
+
+function lastLoad(exerciseId) {
+  const log = [...(state.workoutLog || [])].reverse();
+  for (const entry of log) {
+    const value = entry.loads?.[exerciseId];
+    if (value) return value;
+  }
+  return '';
+}
+
+function weekWorkouts() {
+  const since = Date.now() - 7 * 86400000;
+  return (state.workoutLog || []).filter((x) => new Date(x.at).getTime() >= since).length;
+}
+
+function trainingScreen() {
+  const program = currentProgram();
+  const next = nextSession(program);
+  const week = weekWorkouts();
+  return `<div class="mobile-app">
+    ${appHeader('Entraînement')}
+    <div class="screen">
+      <div class="today-card train-card">
+        <small>${esc(program.level)} · ${program.days} séances / semaine</small>
+        <h2>${esc(program.name)}</h2>
+        <div class="train-week">${Array.from({ length: program.days }, (_, i) => `<i class="${i < week ? 'on' : ''}"></i>`).join('')}<span>${Math.min(week, program.days)}/${program.days} cette semaine</span></div>
+        <button class="btn btn-lime btn-wide" data-session="${esc(next.id)}">Commencer : ${esc(next.name)} →</button>
+      </div>
+      <div class="section-label"><h3>Séances du programme</h3></div>
+      <div class="guide-list">${program.sessions.map((s) => `<button class="guide-card" data-session="${esc(s.id)}"><span class="guide-check">${esc(s.id)}</span><span><b>${esc(s.name)}</b><small>${esc(s.focus)} · ${s.ex.length} exercices</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>
+      <div class="section-label"><h3>Changer de programme</h3></div>
+      <div class="program-switch">${WORKOUT_PROGRAMS.map((x) => `<button class="mini-choice ${x.id === program.id ? 'selected' : ''}" data-workout-program="${esc(x.id)}">${esc(x.name)}</button>`).join('')}</div>
+      <p class="screen-sub">${esc(program.desc)}</p>
+      <div class="fine center-fine">Échauffez-vous 5 à 10 minutes avant chaque séance. Choisissez une charge qui vous laisse 1 à 2 répétitions en réserve. Arrêtez en cas de douleur et demandez un avis médical si vous avez un problème de santé.</div>
+    </div>
+    ${bottom('training')}
+  </div>`;
+}
+
+function sessionSheet(sessionId) {
+  const program = currentProgram();
+  const session = program.sessions.find((x) => x.id === sessionId) || program.sessions[0];
+  return `<div class="sheet-head"><div><span class="tag">${esc(program.name.toUpperCase())}</span><h2>${esc(session.name)}</h2><div class="fine">${esc(session.focus)}</div></div><button class="icon-btn" data-close>×</button></div>
+    <div class="session-list">${session.ex.map(([id, sets, reps, rest], index) => {
+      const ex = EXERCISES[id];
+      return `<details class="ex-card">
+        <summary><span class="ex-num">${index + 1}</span><span class="ex-main"><b>${esc(ex.name)}</b><small>${sets} × ${esc(reps)} · repos ${rest >= 60 ? `${Math.round(rest / 60 * 10) / 10} min`.replace('.', ',') : `${rest} s`} · ${esc(ex.muscle)}</small></span></summary>
+        <ul class="guide-points">${ex.cues.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+        <label class="ex-load">Charge utilisée (kg) <input type="number" inputmode="decimal" min="0" step="0.5" data-load="${esc(id)}" value="${esc(lastLoad(id))}" placeholder="—"></label>
+      </details>`;
+    }).join('')}</div>
+    <button class="btn btn-primary btn-wide" data-finish-session="${esc(session.id)}">✓ Terminer la séance</button>`;
 }
 
 function recipeMiniCard(recipe) {
@@ -857,11 +1759,9 @@ function recipeMiniCard(recipe) {
 function recipesScreen() {
   const favoriteSet = new Set(state.recipeFavorites || []);
   return `<div class="mobile-app">
-    ${appHeader('Recettes')}
+    ${appHeader('Nutrition')}
     <div class="screen">
-      <span class="tag">BIBLIOTHÈQUE NUTRIPILOT</span>
-      <h1 class="screen-title">Des repas qui donnent envie d’être suivis.</h1>
-      <p class="screen-sub">Recettes avec grammes, calories, macros, fibres et préparation. Ajustez ensuite les portions selon votre journée.</p>
+      ${programTabs('recipes')}
       <div class="recipe-filter-row"><button class="mini-choice selected" data-recipe-filter="all">Toutes</button><button class="mini-choice" data-recipe-filter="quick">Rapides</button><button class="mini-choice" data-recipe-filter="protein">Protéinées</button><button class="mini-choice" data-recipe-filter="veg">Végétariennes</button><button class="mini-choice" data-recipe-filter="fav">Favoris</button></div>
       <div id="recipe-grid" class="recipe-grid">${recipeGridHtml('all', favoriteSet)}</div>
     </div>
@@ -925,6 +1825,7 @@ function coachScreen() {
     <div class="screen">
       <span class="tag">COACH CONTEXTUEL</span>
       <h1 class="screen-title">Il connaît votre journée.</h1>
+      <div class="pw-soon">${icon('coach')}<span><b>Bientôt</b>Des nutritionnistes et coachs diplômés rejoindront NutriPilot pour vous accompagner.</span></div>
       <p class="screen-sub">NutriPilot utilise vos repères, vos repas récents et votre progression pour répondre avec contexte.</p>
       <div class="quick-prompts">${quick.map((q) => `<button data-quick-coach="${esc(q)}">${esc(q)}</button>`).join('')}</div>
       <div class="chat" id="chat">${state.coach.length ? state.coach.slice(-18).map((m) => `<div class="bubble ${m.role === 'user' ? 'user' : 'ai'}">${esc(m.text)}</div>`).join('') : `<div class="bubble ai">Bonjour ${esc(p.name || '')} 👋 Je peux relier votre objectif, vos repas et ce qu’il vous reste aujourd’hui.</div>`}</div>
@@ -1027,18 +1928,24 @@ function settings() {
   return `<div class="mobile-app">
     <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="app">←</button><h2>Réglages</h2><span></span></div></div>
     <div class="screen">
-      <div class="success warn"><b>NutriPilot Premium actif ✓</b><br>${esc(state.premiumEmail || 'Accès activé')} ${state.subscriptionPlan ? `· formule ${esc(state.subscriptionPlan)}` : ''}</div>
+      ${state.premium ? '' : `<button class="explore-banner" data-go="paywall">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button>`}
+      <button class="btn btn-ghost btn-wide" data-go="lang">🌐 Langue · ${esc(LANGS.find((x) => x[0] === lang())?.[1] || 'Français')}</button>
+      <div class="success warn" ${state.premium ? '' : 'hidden'}><b>NutriPilot Premium actif ✓</b><br>${esc(state.premiumEmail || 'Accès activé')} ${state.subscriptionPlan ? `· formule ${esc(state.subscriptionPlan)}` : ''}</div>
       <div class="kpi settings-goal"><small>Votre objectif quotidien</small><b>${fmt(state.profile.dailyKcal)} kcal</b><div class="fine">P ${state.profile.protein} g · G ${state.profile.carbs} g · L ${state.profile.fat} g · Fibres ${state.profile.fiber} g</div></div>
       <button class="btn btn-primary btn-wide" data-start>🎯 Recalculer mon programme</button>
       <div class="section-label"><h3>Abonnement</h3></div>
-      ${config.manageSubscriptionUrl ? `<a class="btn btn-ghost btn-wide" href="${esc(config.manageSubscriptionUrl)}" target="_blank" rel="noopener">Gérer mon abonnement Hotmart</a>` : ''}
+      ${config.manageSubscriptionUrl ? `<a class="btn btn-ghost btn-wide" href="${esc(config.manageSubscriptionUrl)}" target="_blank" rel="noopener">Gérer mon abonnement</a>` : ''}
+      <div class="fine center-fine">Formule actuelle : ${esc(({ complete: 'Complète', nutrition: 'Nutrition', training: 'Entraînement' })[planTier()])}</div>
+      ${planTier() !== 'complete' ? '<button class="btn btn-lime btn-wide" data-upgrade>Passer à la formule Complète</button>' : ''}
       <div class="section-label"><h3>Données & appareil</h3></div>
       <button class="btn btn-ghost btn-wide" data-export>Exporter mes données (.json)</button>
       <button class="btn btn-ghost btn-wide" data-install>Ajouter NutriPilot à l’écran d’accueil</button>
+      <button class="btn btn-ghost btn-wide" data-go="support">Aide & support</button>
+      <button class="btn btn-ghost btn-wide" data-go="tour">Découvrir l’application</button>
       <button class="btn btn-ghost btn-wide" data-go="legal">Confidentialité & informations</button>
       <button class="btn btn-ghost btn-wide" data-logout>Se déconnecter</button>
       <button class="btn btn-danger-soft btn-wide" data-delete-data>Supprimer mes données NutriPilot</button>
-      <div class="fine center-fine">La suppression des données NutriPilot ne résilie pas votre abonnement Hotmart.</div>
+      <div class="fine center-fine">La suppression des données NutriPilot ne résilie pas votre abonnement : gérez-le depuis votre compte.</div>
     </div>
   </div>`;
 }
@@ -1072,9 +1979,16 @@ function renderModal() {
   if (!modal) return;
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'plan-recipe' ? planRecipeSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId) : modal.type === 'support' ? supportSheet() : addSheet()}</div>`;
   document.body.appendChild(wrap);
   bindModal(wrap);
+  if (modal.type === 'support') {
+    const log = $('#support-log', wrap);
+    if (log) log.scrollTop = log.scrollHeight;
+    const input = $('#support-input', wrap);
+    input?.addEventListener('keydown', (event) => { if (event.key === 'Enter') sendSupport(input.value); });
+    if (!supportLoading) input?.focus();
+  }
 }
 
 function addSheet() {
@@ -1455,13 +2369,34 @@ function toggleRecipeFavorite(id) {
   saveState();
 }
 
+// Explorers who have not done a quiz still get coherent figures to browse the app.
+function ensureProfileDefaults() {
+  if (state.onboarding || state.profile?.dailyKcal && !state.profile.estimated) return;
+  const base = { goal: 'maintain', sex: 'other', activity: 1.375, mealsPerDay: 3, diet: 'balanced', allergies: 'Aucun', cooking: '15-30 min', cuisine: 'france', budget: 'standard', age: 35, weight: 70, height: 168 };
+  const merged = { ...base, ...Object.fromEntries(Object.entries(state.profile || {}).filter(([, v]) => v !== '' && v != null)) };
+  if (!merged.target) merged.target = merged.weight;
+  state.profile = { ...calculatePlan(merged), estimated: true };
+}
+
 function render() {
   document.querySelector('.modal-wrap')?.remove();
-  if (!state.premium && !['access', 'legal'].includes(route)) route = 'access';
-  if (state.premium && !state.onboarding && !['onboarding', 'plan', 'access', 'legal'].includes(route)) route = 'onboarding';
+  guardRoute();
+  ensureProfileDefaults();
 
   let html;
-  if (route === 'onboarding') html = onboarding();
+  if (route === 'lang') html = langScreen();
+  else if (route === 'basics') html = basicsScreen();
+  else if (route === 'saving') html = savingScreen();
+  else if (route === 'tour') html = tourScreen();
+  else if (route === 'support') html = supportScreen();
+  else if (route === 'app' && !state.premium) html = hubScreen();
+  else if (route === 'onboarding') html = onboarding();
+  else if (route === 'analyzing') html = analyzing();
+  else if (route === 'paywall' || route === 'upgrade') html = paywall();
+  else if (route === 'training') html = hasFeature('training') ? trainingScreen() : lockedScreen('training');
+  else if (['program', 'recipes', 'shopping', 'planner'].includes(route) && !hasFeature('nutrition')) html = lockedScreen('nutrition');
+  else if (route === 'shopping') html = shoppingScreen();
+  else if (route === 'guides') html = guidesScreen();
   else if (route === 'plan') html = planScreen();
   else if (route === 'app') html = dashboard();
   else if (route === 'program') html = program();
@@ -1473,8 +2408,12 @@ function render() {
   else if (route === 'settings') html = settings();
   else if (route === 'legal') html = legal();
   else html = access();
-  app.innerHTML = html;
+  const noFab = ['lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
+  app.innerHTML = html + (noFab ? '' : supportBubble());
+  document.documentElement.lang = lang();
   bind();
+  if (route === 'analyzing' && !analyzingTimer) startAnalyzing();
+  if (route === 'saving' && !savingTimer) startSaving();
 }
 
 function bind() {
@@ -1482,32 +2421,75 @@ function bind() {
     const button = event.target.closest('button');
     if (!button) return;
 
+    if (!state.premium && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
+      track('PaywallFromFeature', { feature: PREMIUM_ACTIONS.find((key) => button.dataset[key] !== undefined) });
+      return nav('paywall');
+    }
+    if (button.dataset.supportOpen !== undefined) {
+      modal = { type: 'support' };
+      return renderModal();
+    }
+    if (button.dataset.lang) {
+      pendingLang = button.dataset.lang;
+      return render();
+    }
+    if (button.dataset.langOk) {
+      state.lang = button.dataset.langOk;
+      pendingLang = '';
+      saveState();
+      track('SelectLanguage', { lang: state.lang });
+      return nav(state.basicsDone || state.premium ? 'app' : 'basics');
+    }
+    if (button.dataset.basicsOk !== undefined) {
+      const name = $('#b-name').value.trim().slice(0, 40);
+      const age = Number($('#b-age').value);
+      const later = $('#b-later').checked;
+      const weight = Number(String($('#b-weight').value).replace(',', '.'));
+      const height = Number($('#b-height').value);
+      if (!name) return toast(t('needName'));
+      if (!(age >= 18 && age <= 90)) return toast(t('needAge'));
+      state.profile = { ...state.profile, name, age };
+      state.basicsFilled = { name: true, age: true };
+      if (!later && weight >= 35 && weight <= 250) { state.profile.weight = weight; state.basicsFilled.weight = true; }
+      if (!later && height >= 130 && height <= 220) { state.profile.height = height; state.basicsFilled.height = true; }
+      saveState(false);
+      track('BasicsDone');
+      return nav('saving');
+    }
+
     if (button.dataset.go) {
       pendingPlanSwap = null;
       return nav(button.dataset.go);
     }
     if (button.dataset.start !== undefined) {
-      onboardingState = { step: 0, data: { ...state.profile } };
+      onboardingState = { step: 0, data: state.profile?.estimated ? {} : { ...state.profile } };
+      if (!state.premium) state.onboarding = false;
       track('StartQuiz');
       return nav('onboarding');
     }
     if (button.dataset.obValue !== undefined) {
       const step = onboardingSteps[onboardingState.step];
       let value = button.dataset.obValue;
-      if (['activity', 'speed', 'mealsPerDay'].includes(step.key)) value = Number(value);
+      if (['activity', 'speed', 'mealsPerDay', 'trainDays'].includes(step.key)) value = Number(value);
       onboardingState.data[step.key] = value;
       return render();
     }
     if (button.dataset.obBack !== undefined) {
-      onboardingState.step = Math.max(0, onboardingState.step - 1);
+      onboardingState.step = Math.max(0, moveStep(-1));
       return render();
     }
     if (button.dataset.obNext !== undefined) {
       const step = onboardingSteps[onboardingState.step];
       const field = $('#ob-field');
-      if (field) {
+      if (step.type === 'info') {
+        onboardingState.step = moveStep(1);
+        return render();
+      }
+      if (field && step.optional && !field.value.trim()) {
+        onboardingState.data[step.key] = 'Aucun';
+      } else if (field) {
         let value = field.value.trim();
-        if (step.type === 'number') value = Number(value);
+        if (step.type === 'number') value = field.value.trim() === '' ? NaN : Number(value.replace(',', '.'));
         if (value === '' || Number.isNaN(value)) return toast('Complétez cette étape.');
         if ((step.min != null && value < step.min) || (step.max != null && value > step.max)) return toast(`Valeur attendue entre ${step.min} et ${step.max}.`);
         onboardingState.data[step.key] = value;
@@ -1519,20 +2501,81 @@ function bind() {
         if (onboardingState.data.goal === 'lose' && target >= current) return toast('Pour perdre du poids, choisissez un objectif inférieur au poids actuel.');
         if (onboardingState.data.goal === 'gain' && target <= current) return toast('Pour prendre du poids, choisissez un objectif supérieur au poids actuel.');
       }
-      if (onboardingState.step < onboardingSteps.length - 1) {
-        onboardingState.step += 1;
+      const next = moveStep(1);
+      if (next < onboardingSteps.length) {
+        onboardingState.step = next;
+        track('QuizStep', { step: step.key });
         return render();
       }
-      track('CompleteQuiz');
-      return nav('plan');
+      if (onboardingState.data.goal === 'maintain') onboardingState.data.target = onboardingState.data.weight;
+      state.workoutProgram = '';
+      track('CompleteQuiz', { track: onboardingState.data.track || '' });
+      return nav('analyzing');
     }
     if (button.dataset.activate !== undefined) {
-      state.profile = calculatePlan();
+      state.profile = { ...calculatePlan(), estimated: false };
       if (state.profile.warning && Number(state.profile.age) < 18) return toast('Cette version est réservée aux adultes.');
       state.onboarding = true;
       if (!state.weights.length) state.weights = [{ day: todayKey(), value: Number(state.profile.weight) }];
       saveState();
+      if (!state.premium) {
+        track('ViewPaywall');
+        return nav('paywall');
+      }
       return nav('app');
+    }
+    if (button.dataset.tier) {
+      selectedTier = button.dataset.tier;
+      return render();
+    }
+    if (button.dataset.period) {
+      selectedPeriod = button.dataset.period;
+      return render();
+    }
+    if (button.dataset.upgrade !== undefined) {
+      selectedTier = 'complete';
+      return nav('upgrade');
+    }
+    if (button.dataset.buy !== undefined) {
+      const plan = Billing.plans().find((x) => x.tier === (selectedTier || defaultTier())) || Billing.plans()[0];
+      button.disabled = true;
+      try { await Billing.purchase(plan, selectedPeriod); } catch (error) { toast(error?.message || 'Paiement interrompu.'); }
+      button.disabled = false;
+      return;
+    }
+    if (button.dataset.restore !== undefined) return Billing.restore();
+    if (button.dataset.guide) {
+      const guide = allGuides().find((g) => g.id === button.dataset.guide);
+      if (!guide) return;
+      state.guidesRead = [...new Set([...(state.guidesRead || []), guide.id])];
+      saveState();
+      render();
+      modal = { type: 'guide', guide };
+      return renderModal();
+    }
+    if (button.dataset.session) {
+      modal = { type: 'session', sessionId: button.dataset.session };
+      return renderModal();
+    }
+    if (button.dataset.workoutProgram) {
+      state.workoutProgram = button.dataset.workoutProgram;
+      saveState();
+      return render();
+    }
+    if (button.dataset.track) {
+      const chosen = button.dataset.track;
+      const source = state.profile?.estimated
+        ? Object.fromEntries(Object.entries(state.profile).filter(([k]) => state.basicsFilled?.[k]))
+        : state.profile;
+      const data = { ...source, track: chosen };
+      if (chosen === 'lose' || chosen === 'menopause') data.goal = 'lose';
+      else if (chosen !== state.profile.track) delete data.goal;
+      if (chosen === 'menopause') data.sex = 'female';
+      onboardingState = { step: 0, data, skip: Object.keys(state.basicsFilled || {}).filter((k) => state.basicsFilled[k]) };
+      if (!stepVisible(0)) onboardingState.step = moveStep(1);
+      state.onboarding = state.premium ? state.onboarding : false;
+      track('SelectTrack', { track: chosen });
+      return nav('onboarding');
     }
 
     if (button.dataset.openAdd !== undefined) return openAdd('photo');
@@ -1732,6 +2775,24 @@ function bindModal(root) {
       modal = null;
       root.remove();
       return;
+    }
+    if (button.dataset.supportSend !== undefined) return sendSupport($('#support-input', root)?.value);
+    if (button.dataset.supportQuick) return sendSupport(button.dataset.supportQuick);
+    if (button.dataset.finishSession && !state.premium) {
+      modal = null;
+      root.remove();
+      return nav('paywall');
+    }
+    if (button.dataset.finishSession) {
+      const loads = {};
+      $$('[data-load]', root).forEach((input) => { if (input.value) loads[input.dataset.load] = Number(input.value); });
+      state.workoutLog = [...(state.workoutLog || []), { at: new Date().toISOString(), day: todayKey(), programId: currentProgram().id, sessionId: button.dataset.finishSession, loads }].slice(-300);
+      saveState();
+      track('WorkoutDone', { program: currentProgram().id });
+      modal = null;
+      root.remove();
+      toast('Séance enregistrée. Bravo ! 💪');
+      return render();
     }
     if (button.dataset.mtab) {
       modal.tab = button.dataset.mtab;
