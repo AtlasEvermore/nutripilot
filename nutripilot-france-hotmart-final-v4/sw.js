@@ -1,5 +1,5 @@
-const CACHE = 'nutripilot-v9-20261012-r1';
-const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
+const CACHE = 'nutripilot-v10-20261012-r1';
+const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)).then(() => self.skipWaiting()));
@@ -17,7 +17,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
 
-  const isAppShell = ['/', '/index.html', '/styles.css', '/app.js', '/i18n.js', '/manifest.webmanifest'].includes(url.pathname);
+  const isAppShell = ['/', '/index.html', '/styles.css', '/app.js', '/i18n.js', '/food.js', '/exercises.js', '/manifest.webmanifest'].includes(url.pathname);
   if (isAppShell) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })

@@ -10086,5 +10086,5521 @@ export const DICT = {
 "pt": "Até",
 "de": "Bis",
 "it": "Alle"
+},
+"/ mois, en annuel": {
+"en": "/ month, billed yearly",
+"es": "/ mes, en plan anual",
+"pt": "/ mês, no plano anual",
+"de": "/ Monat, bei Jahresabo",
+"it": "/ mese, con piano annuale"
+},
+"1 min": {
+"en": "1 min",
+"es": "1 min",
+"pt": "1 min",
+"de": "1 Min.",
+"it": "1 min"
+},
+"10 min": {
+"en": "10 min",
+"es": "10 min",
+"pt": "10 min",
+"de": "10 Min.",
+"it": "10 min"
+},
+"10 séances": {
+"en": "10 workouts",
+"es": "10 sesiones",
+"pt": "10 treinos",
+"de": "10 Einheiten",
+"it": "10 allenamenti"
+},
+"2 min": {
+"en": "2 min",
+"es": "2 min",
+"pt": "2 min",
+"de": "2 Min.",
+"it": "2 min"
+},
+"2 minutes de cardio léger pour monter la température.": {
+"en": "2 minutes of light cardio to warm up.",
+"es": "2 minutos de cardio suave para entrar en calor.",
+"pt": "2 minutos de cardio leve para aquecer.",
+"de": "2 Minuten leichtes Cardio zum Aufwärmen.",
+"it": "2 minuti di cardio leggero per scaldarsi."
+},
+"2 minutes de mobilité : hanches, épaules, chevilles.": {
+"en": "2 minutes of mobility: hips, shoulders, ankles.",
+"es": "2 minutos de movilidad: caderas, hombros, tobillos.",
+"pt": "2 minutos de mobilidade: quadril, ombros, tornozelos.",
+"de": "2 Minuten Mobilität: Hüften, Schultern, Knöchel.",
+"it": "2 minuti di mobilità: anche, spalle, caviglie."
+},
+"2 séries légères du premier exercice de la séance.": {
+"en": "2 light sets of the session’s first exercise.",
+"es": "2 series ligeras del primer ejercicio de la sesión.",
+"pt": "2 séries leves do primeiro exercício do treino.",
+"de": "2 leichte Sätze der ersten Übung der Einheit.",
+"it": "2 serie leggere del primo esercizio della seduta."
+},
+"3 min": {
+"en": "3 min",
+"es": "3 min",
+"pt": "3 min",
+"de": "3 Min.",
+"it": "3 min"
+},
+"30 derniers jours": {
+"en": "last 30 days",
+"es": "últimos 30 días",
+"pt": "últimos 30 dias",
+"de": "letzte 30 Tage",
+"it": "ultimi 30 giorni"
+},
+"35 min": {
+"en": "35 min",
+"es": "35 min",
+"pt": "35 min",
+"de": "35 Min.",
+"it": "35 min"
+},
+"50 repas suivis": {
+"en": "50 meals logged",
+"es": "50 comidas registradas",
+"pt": "50 refeições registradas",
+"de": "50 Mahlzeiten erfasst",
+"it": "50 pasti registrati"
+},
+"50 séances": {
+"en": "50 workouts",
+"es": "50 sesiones",
+"pt": "50 treinos",
+"de": "50 Einheiten",
+"it": "50 allenamenti"
+},
+"6 min": {
+"en": "6 min",
+"es": "6 min",
+"pt": "6 min",
+"de": "6 Min.",
+"it": "6 min"
+},
+"8 min": {
+"en": "8 min",
+"es": "8 min",
+"pt": "8 min",
+"de": "8 Min.",
+"it": "8 min"
+},
+"Abdominaux, obliques": {
+"en": "Abs, obliques",
+"es": "Abdominales, oblicuos",
+"pt": "Abdômen, oblíquos",
+"de": "Bauch, schräge Bauchmuskeln",
+"it": "Addominali, obliqui"
+},
+"Adaptées à mon profil": {
+"en": "Suited to my profile",
+"es": "Adaptadas a mi perfil",
+"pt": "Adaptadas ao meu perfil",
+"de": "Passend zu meinem Profil",
+"it": "Adatte al mio profilo"
+},
+"Adducteurs": {
+"en": "Adductors",
+"es": "Aductores",
+"pt": "Adutores",
+"de": "Adduktoren",
+"it": "Adduttori"
+},
+"Adducteurs, fessiers": {
+"en": "Adductors, glutes",
+"es": "Aductores, glúteos",
+"pt": "Adutores, glúteos",
+"de": "Adduktoren, Po",
+"it": "Adduttori, glutei"
+},
+"Adduction à la machine": {
+"en": "Adductor machine",
+"es": "Aductores en máquina",
+"pt": "Cadeira adutora",
+"de": "Adduktorenmaschine",
+"it": "Adductor machine"
+},
+"Agenda, chronomètre de repos et suivi des charges": {
+"en": "Schedule, rest timer and weight tracking",
+"es": "Agenda, cronómetro de descanso y seguimiento de cargas",
+"pt": "Agenda, cronômetro de descanso e registro de cargas",
+"de": "Wochenplan, Pausentimer und Gewichtsprotokoll",
+"it": "Agenda, timer di recupero e registro dei carichi"
+},
+"Aidez-vous de la rampe si besoin.": {
+"en": "Hold the handrail if needed.",
+"es": "Agárrate a la barandilla si lo necesitas.",
+"pt": "Use o corrimão se precisar.",
+"de": "Halte dich bei Bedarf am Geländer fest.",
+"it": "Aiutati con il corrimano se serve."
+},
+"Ajouter": {
+"en": "Add",
+"es": "Añadir",
+"pt": "Adicionar",
+"de": "Hinzufügen",
+"it": "Aggiungi"
+},
+"Ajouter des mensurations": {
+"en": "Add measurements",
+"es": "Añadir medidas",
+"pt": "Adicionar medidas",
+"de": "Körpermaße hinzufügen",
+"it": "Aggiungi misure"
+},
+"Ajouter un article (ex. café, éponges)": {
+"en": "Add an item (e.g. coffee, sponges)",
+"es": "Añadir un artículo (ej. café, esponjas)",
+"pt": "Adicionar um item (ex. café, esponjas)",
+"de": "Artikel hinzufügen (z. B. Kaffee, Schwämme)",
+"it": "Aggiungi un articolo (es. caffè, spugne)"
+},
+"Ajouter un exercice": {
+"en": "Add an exercise",
+"es": "Añadir un ejercicio",
+"pt": "Adicionar um exercício",
+"de": "Übung hinzufügen",
+"it": "Aggiungi un esercizio"
+},
+"Ajouter à ma grille": {
+"en": "Add to my schedule",
+"es": "Añadir a mi rutina",
+"pt": "Adicionar à minha grade",
+"de": "Zu meinem Plan hinzufügen",
+"it": "Aggiungi alla mia scheda"
+},
+"Ajouter à mon plan": {
+"en": "Add to my plan",
+"es": "Añadir a mi plan",
+"pt": "Adicionar ao meu plano",
+"de": "Zu meinem Plan hinzufügen",
+"it": "Aggiungi al mio piano"
+},
+"Ajoutez brocoli et poivron, faites sauter 4 minutes.": {
+"en": "Add the broccoli and pepper, stir-fry for 4 minutes.",
+"es": "Añade el brócoli y el pimiento, saltea 4 minutos.",
+"pt": "Adicione o brócolis e o pimentão, salteie por 4 minutos.",
+"de": "Brokkoli und Paprika dazugeben, 4 Minuten pfannenrühren.",
+"it": "Aggiungi broccoli e peperone, salta per 4 minuti."
+},
+"Ajoutez haricots et pâtes, servez avec le parmesan.": {
+"en": "Add the beans and pasta, serve with parmesan.",
+"es": "Añade las alubias y la pasta, sirve con parmesano.",
+"pt": "Adicione o feijão e o macarrão, sirva com parmesão.",
+"de": "Bohnen und Nudeln dazugeben, mit Parmesan servieren.",
+"it": "Aggiungi fagioli e pasta, servi con il parmigiano."
+},
+"Ajoutez la poire en lamelles et le miel.": {
+"en": "Add the sliced pear and the honey.",
+"es": "Añade la pera en láminas y la miel.",
+"pt": "Adicione a pera fatiada e o mel.",
+"de": "Birnenscheiben und Honig darauf geben.",
+"it": "Aggiungi la pera a fettine e il miele."
+},
+"Ajoutez la saucisse en rondelles et le paprika.": {
+"en": "Add the sliced sausage and the paprika.",
+"es": "Añade la salchicha en rodajas y el pimentón.",
+"pt": "Adicione a linguiça em rodelas e a páprica.",
+"de": "Wurst in Scheiben und Paprikapulver dazugeben.",
+"it": "Aggiungi la salsiccia a rondelle e la paprika."
+},
+"Ajoutez lait de coco, poivron et bok choy, cuisez 5 minutes.": {
+"en": "Add coconut milk, pepper and bok choy, cook for 5 minutes.",
+"es": "Añade la leche de coco, el pimiento y el bok choy, cocina 5 minutos.",
+"pt": "Adicione o leite de coco, o pimentão e o bok choy, cozinhe por 5 minutos.",
+"de": "Kokosmilch, Paprika und Pak Choi dazugeben, 5 Minuten garen.",
+"it": "Aggiungi latte di cocco, peperone e bok choy, cuoci 5 minuti."
+},
+"Ajoutez le jambon.": {
+"en": "Add the ham.",
+"es": "Añade el jamón.",
+"pt": "Adicione o presunto.",
+"de": "Schinken darauflegen.",
+"it": "Aggiungi il prosciutto."
+},
+"Ajoutez le poisson et le lait de coco, cuisez 15 minutes à couvert.": {
+"en": "Add the fish and coconut milk, cook covered for 15 minutes.",
+"es": "Añade el pescado y la leche de coco, cocina tapado 15 minutos.",
+"pt": "Adicione o peixe e o leite de coco, cozinhe tampado por 15 minutos.",
+"de": "Fisch und Kokosmilch dazugeben, zugedeckt 15 Minuten garen.",
+"it": "Aggiungi il pesce e il latte di cocco, cuoci coperto 15 minuti."
+},
+"Ajoutez le reste de banane et le granola.": {
+"en": "Add the rest of the banana and the granola.",
+"es": "Añade el resto del plátano y la granola.",
+"pt": "Adicione o restante da banana e a granola.",
+"de": "Restliche Banane und Granola darauf geben.",
+"it": "Aggiungi il resto della banana e la granola."
+},
+"Ajoutez le riz, les petits pois et un peu de bouillon.": {
+"en": "Add the rice, peas and a little stock.",
+"es": "Añade el arroz, los guisantes y un poco de caldo.",
+"pt": "Adicione o arroz, as ervilhas e um pouco de caldo.",
+"de": "Reis, Erbsen und etwas Brühe dazugeben.",
+"it": "Aggiungi il riso, i piselli e un po’ di brodo."
+},
+"Ajoutez le saumon et le sésame.": {
+"en": "Add the salmon and sesame.",
+"es": "Añade el salmón y el sésamo.",
+"pt": "Adicione o salmão e o gergelim.",
+"de": "Lachs und Sesam darauf geben.",
+"it": "Aggiungi il salmone e il sesamo."
+},
+"Ajoutez les crevettes 3 minutes et servez avec le riz.": {
+"en": "Add the prawns for 3 minutes and serve with rice.",
+"es": "Añade las gambas 3 minutos y sirve con arroz.",
+"pt": "Adicione os camarões por 3 minutos e sirva com arroz.",
+"de": "Garnelen 3 Minuten mitgaren und mit Reis servieren.",
+"it": "Aggiungi i gamberi per 3 minuti e servi con il riso."
+},
+"Ajoutez les fruits rouges.": {
+"en": "Add the berries.",
+"es": "Añade los frutos rojos.",
+"pt": "Adicione as frutas vermelhas.",
+"de": "Beeren dazugeben.",
+"it": "Aggiungi i frutti rossi."
+},
+"Ajoutez les graines de chia.": {
+"en": "Add the chia seeds.",
+"es": "Añade las semillas de chía.",
+"pt": "Adicione as sementes de chia.",
+"de": "Chiasamen darüberstreuen.",
+"it": "Aggiungi i semi di chia."
+},
+"Ajoutez les lentilles et de l’eau, cuisez 15 minutes puis mixez.": {
+"en": "Add the lentils and water, cook for 15 minutes, then blend.",
+"es": "Añade las lentejas y agua, cocina 15 minutos y tritura.",
+"pt": "Adicione as lentilhas e água, cozinhe por 15 minutos e bata.",
+"de": "Linsen und Wasser dazugeben, 15 Minuten kochen, dann pürieren.",
+"it": "Aggiungi lenticchie e acqua, cuoci 15 minuti e frulla."
+},
+"Ajoutez les lentilles et la saucisse en rondelles.": {
+"en": "Add the lentils and the sliced sausage.",
+"es": "Añade las lentejas y la salchicha en rodajas.",
+"pt": "Adicione as lentilhas e a linguiça em rodelas.",
+"de": "Linsen und Wurst in Scheiben dazugeben.",
+"it": "Aggiungi le lenticchie e la salsiccia a rondelle."
+},
+"Ajoutez les lentilles et mijotez 10 minutes.": {
+"en": "Add the lentils and simmer for 10 minutes.",
+"es": "Añade las lentejas y cuece 10 minutos a fuego lento.",
+"pt": "Adicione as lentilhas e cozinhe em fogo baixo por 10 minutos.",
+"de": "Linsen dazugeben und 10 Minuten köcheln lassen.",
+"it": "Aggiungi le lenticchie e fai sobbollire 10 minuti."
+},
+"Ajoutez les noix.": {
+"en": "Add the walnuts.",
+"es": "Añade las nueces.",
+"pt": "Adicione as nozes.",
+"de": "Walnüsse dazugeben.",
+"it": "Aggiungi le noci."
+},
+"Ajoutez les nouilles et la sauce soja.": {
+"en": "Add the noodles and soy sauce.",
+"es": "Añade los fideos y la salsa de soja.",
+"pt": "Adicione o macarrão e o molho de soja.",
+"de": "Nudeln und Sojasauce dazugeben.",
+"it": "Aggiungi i noodles e la salsa di soia."
+},
+"Ajoutez les quartiers au yaourt.": {
+"en": "Add the segments to the yoghurt.",
+"es": "Añade los gajos al yogur.",
+"pt": "Adicione os gomos ao iogurte.",
+"de": "Die Filets zum Joghurt geben.",
+"it": "Aggiungi gli spicchi allo yogurt."
+},
+"Ajoutez oignon, poivrons et tomates, laissez mijoter 15 minutes.": {
+"en": "Add onion, peppers and tomatoes, simmer for 15 minutes.",
+"es": "Añade cebolla, pimientos y tomates, deja cocer 15 minutos.",
+"pt": "Adicione cebola, pimentões e tomates, cozinhe por 15 minutos.",
+"de": "Zwiebel, Paprika und Tomaten dazugeben, 15 Minuten köcheln.",
+"it": "Aggiungi cipolla, peperoni e pomodori, fai cuocere 15 minuti."
+},
+"Ajoutez oignon, tomate et coriandre.": {
+"en": "Add onion, tomato and coriander.",
+"es": "Añade cebolla, tomate y cilantro.",
+"pt": "Adicione cebola, tomate e coentro.",
+"de": "Zwiebel, Tomate und Koriander dazugeben.",
+"it": "Aggiungi cipolla, pomodoro e coriandolo."
+},
+"Ajoutez soja et miel pour laquer.": {
+"en": "Add soy sauce and honey to glaze.",
+"es": "Añade soja y miel para glasear.",
+"pt": "Adicione shoyu e mel para caramelizar.",
+"de": "Sojasauce und Honig zum Glasieren dazugeben.",
+"it": "Aggiungi soia e miele per laccare."
+},
+"Ajoutez tomates et haricots, mijotez 20 minutes.": {
+"en": "Add the tomatoes and beans, simmer for 20 minutes.",
+"es": "Añade tomates y alubias, cuece 20 minutos.",
+"pt": "Adicione tomates e feijão, cozinhe por 20 minutos.",
+"de": "Tomaten und Bohnen dazugeben, 20 Minuten köcheln.",
+"it": "Aggiungi pomodori e fagioli, fai sobbollire 20 minuti."
+},
+"Ajoutez tomates et pois chiches, mijotez 15 minutes.": {
+"en": "Add the tomatoes and chickpeas, simmer for 15 minutes.",
+"es": "Añade tomates y garbanzos, cuece 15 minutos.",
+"pt": "Adicione tomates e grão-de-bico, cozinhe por 15 minutos.",
+"de": "Tomaten und Kichererbsen dazugeben, 15 Minuten köcheln.",
+"it": "Aggiungi pomodori e ceci, fai sobbollire 15 minuti."
+},
+"Ajoutez tomates, lentilles et épinards, mijotez 10 minutes.": {
+"en": "Add tomatoes, lentils and spinach, simmer for 10 minutes.",
+"es": "Añade tomates, lentejas y espinacas, cuece 10 minutos.",
+"pt": "Adicione tomates, lentilhas e espinafre, cozinhe por 10 minutos.",
+"de": "Tomaten, Linsen und Spinat dazugeben, 10 Minuten köcheln.",
+"it": "Aggiungi pomodori, lenticchie e spinaci, fai sobbollire 10 minuti."
+},
+"Ajoutez un filet de miel.": {
+"en": "Drizzle with honey.",
+"es": "Añade un hilo de miel.",
+"pt": "Regue com um fio de mel.",
+"de": "Mit etwas Honig beträufeln.",
+"it": "Aggiungi un filo di miele."
+},
+"Ajoutez une pincée de cardamome.": {
+"en": "Add a pinch of cardamom.",
+"es": "Añade una pizca de cardamomo.",
+"pt": "Adicione uma pitada de cardamomo.",
+"de": "Eine Prise Kardamom hinzufügen.",
+"it": "Aggiungi un pizzico di cardamomo."
+},
+"Ajoutez-la au yaourt.": {
+"en": "Add it to the yoghurt.",
+"es": "Añádela al yogur.",
+"pt": "Adicione ao iogurte.",
+"de": "Zum Joghurt geben.",
+"it": "Aggiungila allo yogurt."
+},
+"Allemande & nordique": {
+"en": "German & Nordic",
+"es": "Alemana y nórdica",
+"pt": "Alemã e nórdica",
+"de": "Deutsch & nordisch",
+"it": "Tedesca e nordica"
+},
+"Allongé(e), bras verticaux.": {
+"en": "Lying down, arms vertical.",
+"es": "Tumbado/a, brazos verticales.",
+"pt": "Deitado(a), braços na vertical.",
+"de": "Liegend, Arme senkrecht.",
+"it": "Sdraiato/a, braccia verticali."
+},
+"Alternez 1 minute rapide, 2 minutes calmes.": {
+"en": "Alternate 1 fast minute, 2 easy minutes.",
+"es": "Alterna 1 minuto rápido y 2 minutos suaves.",
+"pt": "Alterne 1 minuto rápido e 2 minutos leves.",
+"de": "Abwechselnd 1 Minute schnell, 2 Minuten locker.",
+"it": "Alterna 1 minuto veloce e 2 minuti tranquilli."
+},
+"Alternez lentement.": {
+"en": "Alternate slowly.",
+"es": "Alterna despacio.",
+"pt": "Alterne devagar.",
+"de": "Langsam abwechseln.",
+"it": "Alterna lentamente."
+},
+"Américaine & britannique": {
+"en": "American & British",
+"es": "Estadounidense y británica",
+"pt": "Americana e britânica",
+"de": "Amerikanisch & britisch",
+"it": "Americana e britannica"
+},
+"Aplatissez le poulet et saisissez-le 3 minutes par face.": {
+"en": "Flatten the chicken and sear it 3 minutes per side.",
+"es": "Aplana el pollo y dóralo 3 minutos por lado.",
+"pt": "Achate o frango e sele 3 minutos de cada lado.",
+"de": "Hähnchen flach klopfen und 3 Minuten pro Seite anbraten.",
+"it": "Appiattisci il pollo e scottalo 3 minuti per lato."
+},
+"Arrivée estimée": {
+"en": "Estimated arrival",
+"es": "Llegada estimada",
+"pt": "Chegada estimada",
+"de": "Voraussichtliches Ziel",
+"it": "Arrivo stimato"
+},
+"Arrêtez avant toute gêne.": {
+"en": "Stop before any discomfort.",
+"es": "Detente antes de cualquier molestia.",
+"pt": "Pare antes de qualquer incômodo.",
+"de": "Vor jedem Unbehagen stoppen.",
+"it": "Fermati prima di qualsiasi fastidio."
+},
+"Asiatique": {
+"en": "Asian",
+"es": "Asiática",
+"pt": "Asiática",
+"de": "Asiatisch",
+"it": "Asiatica"
+},
+"Assaisonnez d’huile d’olive et de basilic.": {
+"en": "Season with olive oil and basil.",
+"es": "Aliña con aceite de oliva y albahaca.",
+"pt": "Tempere com azeite e manjericão.",
+"de": "Mit Olivenöl und Basilikum würzen.",
+"it": "Condisci con olio d’oliva e basilico."
+},
+"Assemblez avec maïs, haricots, salade et sauce yaourt.": {
+"en": "Assemble with corn, beans, salad and yoghurt sauce.",
+"es": "Monta con maíz, frijoles, ensalada y salsa de yogur.",
+"pt": "Monte com milho, feijão, salada e molho de iogurte.",
+"de": "Mit Mais, Bohnen, Salat und Joghurtsauce anrichten.",
+"it": "Componi con mais, fagioli, insalata e salsa allo yogurt."
+},
+"Assemblez le bol avec maïs, salsa et salade.": {
+"en": "Assemble the bowl with corn, salsa and salad.",
+"es": "Monta el bol con maíz, salsa y ensalada.",
+"pt": "Monte o bowl com milho, salsa e salada.",
+"de": "Bowl mit Mais, Salsa und Salat anrichten.",
+"it": "Componi la bowl con mais, salsa e insalata."
+},
+"Assis(e), buste incliné en arrière.": {
+"en": "Seated, torso leaning back.",
+"es": "Sentado/a, torso inclinado hacia atrás.",
+"pt": "Sentado(a), tronco inclinado para trás.",
+"de": "Sitzend, Oberkörper nach hinten geneigt.",
+"it": "Seduto/a, busto inclinato all’indietro."
+},
+"Assis, coude contre l’intérieur de la cuisse.": {
+"en": "Seated, elbow against the inside of the thigh.",
+"es": "Sentado, codo contra el interior del muslo.",
+"pt": "Sentado, cotovelo apoiado na parte interna da coxa.",
+"de": "Sitzend, Ellbogen an der Innenseite des Oberschenkels.",
+"it": "Seduto, gomito contro l’interno della coscia."
+},
+"Atteindre 80 % de mes protéines": {
+"en": "Reach 80% of my protein",
+"es": "Llegar al 80 % de mis proteínas",
+"pt": "Atingir 80% da minha proteína",
+"de": "80 % meines Eiweißziels erreichen",
+"it": "Raggiungere l’80% delle mie proteine"
+},
+"Atteindre mon objectif d’eau": {
+"en": "Reach my water goal",
+"es": "Alcanzar mi objetivo de agua",
+"pt": "Atingir minha meta de água",
+"de": "Mein Trinkziel erreichen",
+"it": "Raggiungere il mio obiettivo d’acqua"
+},
+"Au plan": {
+"en": "To plan",
+"es": "Al plan",
+"pt": "No plano",
+"de": "Zum Plan",
+"it": "Al piano"
+},
+"Aubergine": {
+"en": "Aubergine",
+"es": "Berenjena",
+"pt": "Berinjela",
+"de": "Aubergine",
+"it": "Melanzana"
+},
+"Aucun exercice pour l’instant.": {
+"en": "No exercises yet.",
+"es": "Aún no hay ejercicios.",
+"pt": "Nenhum exercício ainda.",
+"de": "Noch keine Übungen.",
+"it": "Ancora nessun esercizio."
+},
+"Autre envie ? Idées sur mesure": {
+"en": "Craving something else? Custom ideas",
+"es": "¿Te apetece otra cosa? Ideas a medida",
+"pt": "Vontade de outra coisa? Ideias sob medida",
+"de": "Lust auf etwas anderes? Ideen nach Maß",
+"it": "Voglia di altro? Idee su misura"
+},
+"Avancez en gardant le dos plat.": {
+"en": "Roll forward keeping your back flat.",
+"es": "Avanza manteniendo la espalda recta.",
+"pt": "Avance mantendo as costas retas.",
+"de": "Nach vorne rollen, Rücken gerade halten.",
+"it": "Avanza mantenendo la schiena piatta."
+},
+"Avant des épaules": {
+"en": "Front delts",
+"es": "Parte delantera del hombro",
+"pt": "Parte frontal dos ombros",
+"de": "Vordere Schulter",
+"it": "Deltoidi anteriori"
+},
+"Back": {
+"en": "Back",
+"es": "Volver",
+"pt": "Voltar",
+"de": "Zurück",
+"it": "Indietro"
+},
+"Banc incliné à 30°, omoplates serrées.": {
+"en": "Bench at 30°, shoulder blades squeezed.",
+"es": "Banco inclinado a 30°, escápulas juntas.",
+"pt": "Banco inclinado a 30°, escápulas contraídas.",
+"de": "Bank auf 30°, Schulterblätter zusammen.",
+"it": "Panca inclinata a 30°, scapole strette."
+},
+"Barre": {
+"en": "Barbell",
+"es": "Barra",
+"pt": "Barra",
+"de": "Langhantel",
+"it": "Bilanciere"
+},
+"Barre au front": {
+"en": "Skull crusher",
+"es": "Press francés con barra",
+"pt": "Tríceps testa com barra",
+"de": "Stirndrücken",
+"it": "French press con bilanciere"
+},
+"Barre au-dessus du milieu du pied, dos plat.": {
+"en": "Bar over mid-foot, flat back.",
+"es": "Barra sobre la mitad del pie, espalda recta.",
+"pt": "Barra sobre o meio do pé, costas retas.",
+"de": "Stange über der Fußmitte, Rücken gerade.",
+"it": "Bilanciere sopra il centro del piede, schiena piatta."
+},
+"Barre sur le haut de la poitrine, fessiers serrés.": {
+"en": "Bar on upper chest, glutes squeezed.",
+"es": "Barra sobre la parte alta del pecho, glúteos apretados.",
+"pt": "Barra na parte alta do peito, glúteos contraídos.",
+"de": "Stange auf der oberen Brust, Po angespannt.",
+"it": "Bilanciere sulla parte alta del petto, glutei stretti."
+},
+"Barre sur le haut du dos, genoux souples.": {
+"en": "Bar on upper back, soft knees.",
+"es": "Barra sobre la parte alta de la espalda, rodillas flexibles.",
+"pt": "Barra na parte alta das costas, joelhos levemente flexionados.",
+"de": "Stange auf dem oberen Rücken, Knie locker.",
+"it": "Bilanciere sulla parte alta della schiena, ginocchia morbide."
+},
+"Barre sur l’avant des épaules, coudes hauts.": {
+"en": "Bar on the front of the shoulders, elbows high.",
+"es": "Barra sobre la parte delantera de los hombros, codos altos.",
+"pt": "Barra na frente dos ombros, cotovelos altos.",
+"de": "Stange vorne auf den Schultern, Ellbogen hoch.",
+"it": "Bilanciere sulla parte anteriore delle spalle, gomiti alti."
+},
+"Bas des pectoraux": {
+"en": "Lower chest",
+"es": "Parte baja del pecho",
+"pt": "Parte inferior do peito",
+"de": "Untere Brust",
+"it": "Petto basso"
+},
+"Bas du dos au sol.": {
+"en": "Lower back on the floor.",
+"es": "Zona lumbar en el suelo.",
+"pt": "Lombar no chão.",
+"de": "Unterer Rücken am Boden.",
+"it": "Zona lombare a terra."
+},
+"Bas du dos, fessiers": {
+"en": "Lower back, glutes",
+"es": "Zona lumbar, glúteos",
+"pt": "Lombar, glúteos",
+"de": "Unterer Rücken, Po",
+"it": "Zona lombare, glutei"
+},
+"Battez les œufs avec oignon, tomate, coriandre et épices.": {
+"en": "Beat the eggs with onion, tomato, coriander and spices.",
+"es": "Bate los huevos con cebolla, tomate, cilantro y especias.",
+"pt": "Bata os ovos com cebola, tomate, coentro e especiarias.",
+"de": "Eier mit Zwiebel, Tomate, Koriander und Gewürzen verquirlen.",
+"it": "Sbatti le uova con cipolla, pomodoro, coriandolo e spezie."
+},
+"Beurre de cacahuète": {
+"en": "Peanut butter",
+"es": "Crema de cacahuete",
+"pt": "Pasta de amendoim",
+"de": "Erdnussbutter",
+"it": "Burro di arachidi"
+},
+"Bibimbap au bœuf": {
+"en": "Beef bibimbap",
+"es": "Bibimbap de ternera",
+"pt": "Bibimbap de carne",
+"de": "Rindfleisch-Bibimbap",
+"it": "Bibimbap di manzo"
+},
+"Bibliothèque d’exercices animés": {
+"en": "Animated exercise library",
+"es": "Biblioteca de ejercicios animados",
+"pt": "Biblioteca de exercícios animados",
+"de": "Bibliothek animierter Übungen",
+"it": "Libreria di esercizi animati"
+},
+"Bien squatter": {
+"en": "How to squat well",
+"es": "Hacer bien la sentadilla",
+"pt": "Agachar do jeito certo",
+"de": "Richtig Kniebeugen machen",
+"it": "Fare bene lo squat"
+},
+"Boisson soja": {
+"en": "Soy drink",
+"es": "Bebida de soja",
+"pt": "Bebida de soja",
+"de": "Sojadrink",
+"it": "Bevanda di soia"
+},
+"Bok choy": {
+"en": "Bok choy",
+"es": "Bok choy",
+"pt": "Bok choy",
+"de": "Pak Choi",
+"it": "Bok choy"
+},
+"Bol de riz, œuf mollet, épinards & sésame": {
+"en": "Rice bowl, soft-boiled egg, spinach & sesame",
+"es": "Bol de arroz, huevo mollet, espinacas y sésamo",
+"pt": "Bowl de arroz, ovo mole, espinafre e gergelim",
+"de": "Reisschale, wachsweiches Ei, Spinat & Sesam",
+"it": "Ciotola di riso, uovo bazzotto, spinaci e sesamo"
+},
+"Boulgour cuit": {
+"en": "Cooked bulgur",
+"es": "Bulgur cocido",
+"pt": "Triguilho cozido",
+"de": "Gekochter Bulgur",
+"it": "Bulgur cotto"
+},
+"Bowl burrito, riz & haricots noirs": {
+"en": "Burrito bowl, rice & black beans",
+"es": "Burrito bowl, arroz y frijoles negros",
+"pt": "Burrito bowl, arroz e feijão-preto",
+"de": "Burrito-Bowl, Reis & schwarze Bohnen",
+"it": "Burrito bowl, riso e fagioli neri"
+},
+"Bowl d’açaí protéiné, banane & granola": {
+"en": "Protein açaí bowl, banana & granola",
+"es": "Bol de açaí proteico, plátano y granola",
+"pt": "Açaí proteico na tigela, banana e granola",
+"de": "Protein-Açaí-Bowl, Banane & Granola",
+"it": "Bowl di açaí proteica, banana e granola"
+},
+"Bowl poulet cajun, patate douce & maïs": {
+"en": "Cajun chicken bowl, sweet potato & corn",
+"es": "Bowl de pollo cajún, boniato y maíz",
+"pt": "Bowl de frango cajun, batata-doce e milho",
+"de": "Cajun-Hähnchen-Bowl, Süßkartoffel & Mais",
+"it": "Bowl di pollo cajun, patata dolce e mais"
+},
+"Bras bien à plat sur le pupitre.": {
+"en": "Arms flat on the pad.",
+"es": "Brazos bien apoyados en el banco Scott.",
+"pt": "Braços bem apoiados no banco Scott.",
+"de": "Arme flach auf dem Polster.",
+"it": "Braccia ben appoggiate sul leggio."
+},
+"Bras presque tendus, buste légèrement penché.": {
+"en": "Arms almost straight, torso slightly leaning.",
+"es": "Brazos casi estirados, torso ligeramente inclinado.",
+"pt": "Braços quase estendidos, tronco levemente inclinado.",
+"de": "Arme fast gestreckt, Oberkörper leicht vorgeneigt.",
+"it": "Braccia quasi tese, busto leggermente inclinato."
+},
+"Bras presque tendus.": {
+"en": "Arms almost straight.",
+"es": "Brazos casi estirados.",
+"pt": "Braços quase estendidos.",
+"de": "Arme fast gestreckt.",
+"it": "Braccia quasi tese."
+},
+"Bras tendus, charges le long du corps.": {
+"en": "Arms straight, weights by your sides.",
+"es": "Brazos estirados, pesos junto al cuerpo.",
+"pt": "Braços estendidos, pesos ao lado do corpo.",
+"de": "Arme gestreckt, Gewichte seitlich am Körper.",
+"it": "Braccia tese, pesi lungo il corpo."
+},
+"Brouillez les œufs à feu doux.": {
+"en": "Scramble the eggs over low heat.",
+"es": "Revuelve los huevos a fuego lento.",
+"pt": "Mexa os ovos em fogo baixo.",
+"de": "Eier bei schwacher Hitze stocken lassen.",
+"it": "Strapazza le uova a fuoco basso."
+},
+"Brouillez les œufs à part.": {
+"en": "Scramble the eggs separately.",
+"es": "Revuelve los huevos aparte.",
+"pt": "Mexa os ovos à parte.",
+"de": "Eier separat verrühren und stocken lassen.",
+"it": "Strapazza le uova a parte."
+},
+"Brésilienne": {
+"en": "Brazilian",
+"es": "Brasileña",
+"pt": "Brasileira",
+"de": "Brasilianisch",
+"it": "Brasiliana"
+},
+"Burger de dinde maison & frites au four": {
+"en": "Homemade turkey burger & oven fries",
+"es": "Hamburguesa de pavo casera y patatas al horno",
+"pt": "Hambúrguer caseiro de peru e batatas no forno",
+"de": "Selbstgemachter Putenburger & Ofenpommes",
+"it": "Burger di tacchino fatto in casa e patate al forno"
+},
+"Burpees": {
+"en": "Burpees",
+"es": "Burpees",
+"pt": "Burpees",
+"de": "Burpees",
+"it": "Burpees"
+},
+"Buste droit.": {
+"en": "Upright torso.",
+"es": "Torso recto.",
+"pt": "Tronco ereto.",
+"de": "Oberkörper aufrecht.",
+"it": "Busto dritto."
+},
+"Buste incliné à 45°, dos plat.": {
+"en": "Torso at 45°, flat back.",
+"es": "Torso inclinado a 45°, espalda recta.",
+"pt": "Tronco inclinado a 45°, costas retas.",
+"de": "Oberkörper 45° geneigt, Rücken gerade.",
+"it": "Busto inclinato a 45°, schiena piatta."
+},
+"Buste penché, bras collé au corps.": {
+"en": "Lean forward, upper arm tight to your body.",
+"es": "Torso inclinado, brazo pegado al cuerpo.",
+"pt": "Tronco inclinado, braço colado ao corpo.",
+"de": "Vorgebeugt, Oberarm am Körper.",
+"it": "Busto inclinato, braccio aderente al corpo."
+},
+"Buste très droit à la descente.": {
+"en": "Very upright torso on the way down.",
+"es": "Torso muy recto al bajar.",
+"pt": "Tronco bem ereto na descida.",
+"de": "Oberkörper beim Absenken sehr aufrecht.",
+"it": "Busto molto dritto in discesa."
+},
+"Bœuf (rumsteck)": {
+"en": "Beef (rump steak)",
+"es": "Ternera (cadera)",
+"pt": "Carne bovina (alcatra)",
+"de": "Rindfleisch (Hüftsteak)",
+"it": "Manzo (scamone)"
+},
+"Bœuf maigre, manioc & brocoli": {
+"en": "Lean beef, cassava & broccoli",
+"es": "Ternera magra, yuca y brócoli",
+"pt": "Carne magra, mandioca e brócolis",
+"de": "Mageres Rind, Maniok & Brokkoli",
+"it": "Manzo magro, manioca e broccoli"
+},
+"COURS NUTRITION": {
+"en": "NUTRITION COURSES",
+"es": "CURSOS DE NUTRICIÓN",
+"pt": "CURSOS DE NUTRIÇÃO",
+"de": "ERNÄHRUNGSKURSE",
+"it": "CORSI DI NUTRIZIONE"
+},
+"Cabillaud": {
+"en": "Cod",
+"es": "Bacalao fresco",
+"pt": "Bacalhau fresco",
+"de": "Kabeljau",
+"it": "Merluzzo"
+},
+"Cabillaud, purée de patate douce & haricots verts": {
+"en": "Cod, sweet potato mash & green beans",
+"es": "Bacalao, puré de boniato y judías verdes",
+"pt": "Bacalhau, purê de batata-doce e vagem",
+"de": "Kabeljau, Süßkartoffelpüree & grüne Bohnen",
+"it": "Merluzzo, purè di patate dolci e fagiolini"
+},
+"Cacao non sucré": {
+"en": "Unsweetened cocoa",
+"es": "Cacao sin azúcar",
+"pt": "Cacau sem açúcar",
+"de": "Ungesüßter Kakao",
+"it": "Cacao amaro"
+},
+"Cadence régulière.": {
+"en": "Steady cadence.",
+"es": "Cadencia regular.",
+"pt": "Cadência regular.",
+"de": "Gleichmäßige Trittfrequenz.",
+"it": "Cadenza regolare."
+},
+"Calories moy.": {
+"en": "Avg. calories",
+"es": "Calorías med.",
+"pt": "Calorias méd.",
+"de": "Ø Kalorien",
+"it": "Calorie medie"
+},
+"Calories, 7 derniers jours": {
+"en": "Calories, last 7 days",
+"es": "Calorías, últimos 7 días",
+"pt": "Calorias, últimos 7 dias",
+"de": "Kalorien, letzte 7 Tage",
+"it": "Calorie, ultimi 7 giorni"
+},
+"Cardio, corps entier": {
+"en": "Cardio, full body",
+"es": "Cardio, cuerpo completo",
+"pt": "Cardio, corpo inteiro",
+"de": "Cardio, Ganzkörper",
+"it": "Cardio, total body"
+},
+"Cardio, dos, jambes": {
+"en": "Cardio, back, legs",
+"es": "Cardio, espalda, piernas",
+"pt": "Cardio, costas, pernas",
+"de": "Cardio, Rücken, Beine",
+"it": "Cardio, schiena, gambe"
+},
+"Cardio, fessiers": {
+"en": "Cardio, glutes",
+"es": "Cardio, glúteos",
+"pt": "Cardio, glúteos",
+"de": "Cardio, Po",
+"it": "Cardio, glutei"
+},
+"Cardio, jambes": {
+"en": "Cardio, legs",
+"es": "Cardio, piernas",
+"pt": "Cardio, pernas",
+"de": "Cardio, Beine",
+"it": "Cardio, gambe"
+},
+"Cassez les œufs dans la sauce et couvrez 6 minutes.": {
+"en": "Crack the eggs into the sauce and cover for 6 minutes.",
+"es": "Casca los huevos en la salsa y tapa 6 minutos.",
+"pt": "Quebre os ovos no molho e tampe por 6 minutos.",
+"de": "Eier in die Sauce schlagen und 6 Minuten zudecken.",
+"it": "Rompi le uova nel sugo e copri per 6 minuti."
+},
+"Ce que fait NutriPilot": {
+"en": "What NutriPilot does",
+"es": "Lo que hace NutriPilot",
+"pt": "O que o NutriPilot faz",
+"de": "Was NutriPilot kann",
+"it": "Cosa fa NutriPilot"
+},
+"Ceviche de poisson & patate douce": {
+"en": "Fish ceviche & sweet potato",
+"es": "Ceviche de pescado y boniato",
+"pt": "Ceviche de peixe e batata-doce",
+"de": "Fisch-Ceviche & Süßkartoffel",
+"it": "Ceviche di pesce e patata dolce"
+},
+"Chakchouka (œufs, tomates & poivrons)": {
+"en": "Shakshuka (eggs, tomatoes & peppers)",
+"es": "Shakshuka (huevos, tomates y pimientos)",
+"pt": "Shakshuka (ovos, tomates e pimentões)",
+"de": "Shakshuka (Eier, Tomaten & Paprika)",
+"it": "Shakshuka (uova, pomodori e peperoni)"
+},
+"Chana masala & chapati": {
+"en": "Chana masala & chapati",
+"es": "Chana masala y chapati",
+"pt": "Chana masala e chapati",
+"de": "Chana Masala & Chapati",
+"it": "Chana masala e chapati"
+},
+"Chapati": {
+"en": "Chapati",
+"es": "Chapati",
+"pt": "Chapati",
+"de": "Chapati",
+"it": "Chapati"
+},
+"Charge légère, dos toujours plat.": {
+"en": "Light weight, back always flat.",
+"es": "Carga ligera, espalda siempre recta.",
+"pt": "Carga leve, costas sempre retas.",
+"de": "Leichtes Gewicht, Rücken immer gerade.",
+"it": "Carico leggero, schiena sempre piatta."
+},
+"Chauffez la sauce tomate avec le thon émietté.": {
+"en": "Heat the tomato sauce with the flaked tuna.",
+"es": "Calienta la salsa de tomate con el atún desmigado.",
+"pt": "Aqueça o molho de tomate com o atum desfiado.",
+"de": "Tomatensauce mit zerpflücktem Thunfisch erhitzen.",
+"it": "Scalda la salsa di pomodoro con il tonno sbriciolato."
+},
+"Chauffez les tortillas.": {
+"en": "Warm the tortillas.",
+"es": "Calienta las tortillas.",
+"pt": "Aqueça as tortilhas.",
+"de": "Tortillas erwärmen.",
+"it": "Scalda le tortillas."
+},
+"Chili aux haricots & riz complet": {
+"en": "Bean chili & brown rice",
+"es": "Chili de frijoles y arroz integral",
+"pt": "Chili de feijão e arroz integral",
+"de": "Bohnenchili & Naturreis",
+"it": "Chili di fagioli e riso integrale"
+},
+"Choisir": {
+"en": "Choose",
+"es": "Elegir",
+"pt": "Escolher",
+"de": "Wählen",
+"it": "Scegli"
+},
+"Choisir cette formule": {
+"en": "Choose this plan",
+"es": "Elegir este plan",
+"pt": "Escolher este plano",
+"de": "Dieses Paket wählen",
+"it": "Scegli questo piano"
+},
+"Choisissez vos jours et vos exercices, un par un.": {
+"en": "Pick your days and your exercises, one by one.",
+"es": "Elige tus días y tus ejercicios, uno a uno.",
+"pt": "Escolha seus dias e seus exercícios, um por um.",
+"de": "Wähle deine Tage und Übungen, eine nach der anderen.",
+"it": "Scegli i giorni e gli esercizi, uno per uno."
+},
+"Chou blanc": {
+"en": "White cabbage",
+"es": "Repollo",
+"pt": "Repolho",
+"de": "Weißkohl",
+"it": "Cavolo cappuccio"
+},
+"Coach au quotidien": {
+"en": "Daily coaching",
+"es": "Coach a diario",
+"pt": "Coach no dia a dia",
+"de": "Täglicher Coach",
+"it": "Coach ogni giorno"
+},
+"Commencez chaque tirage en abaissant et rapprochant les omoplates.": {
+"en": "Start every pull by lowering and squeezing your shoulder blades.",
+"es": "Empieza cada tirón bajando y juntando las escápulas.",
+"pt": "Comece cada puxada abaixando e aproximando as escápulas.",
+"de": "Jeden Zug damit beginnen, die Schulterblätter zu senken und zusammenzuziehen.",
+"it": "Inizia ogni tirata abbassando e avvicinando le scapole."
+},
+"Commencez par 5 minutes de marche.": {
+"en": "Start with 5 minutes of walking.",
+"es": "Empieza con 5 minutos caminando.",
+"pt": "Comece com 5 minutos de caminhada.",
+"de": "Beginne mit 5 Minuten Gehen.",
+"it": "Inizia con 5 minuti di camminata."
+},
+"Comparer les formules": {
+"en": "Compare plans",
+"es": "Comparar planes",
+"pt": "Comparar planos",
+"de": "Pakete vergleichen",
+"it": "Confronta i piani"
+},
+"Comparer →": {
+"en": "Compare →",
+"es": "Comparar →",
+"pt": "Comparar →",
+"de": "Vergleichen →",
+"it": "Confronta →"
+},
+"Continuer à explorer": {
+"en": "Keep exploring",
+"es": "Seguir explorando",
+"pt": "Continuar explorando",
+"de": "Weiter entdecken",
+"it": "Continua a esplorare"
+},
+"Contrôlez la descente en 2 secondes.": {
+"en": "Control the descent over 2 seconds.",
+"es": "Controla la bajada en 2 segundos.",
+"pt": "Controle a descida em 2 segundos.",
+"de": "Das Absenken 2 Sekunden lang kontrollieren.",
+"it": "Controlla la discesa in 2 secondi."
+},
+"Contrôlez la remontée.": {
+"en": "Control the way up.",
+"es": "Controla la subida.",
+"pt": "Controle a subida.",
+"de": "Den Rückweg kontrollieren.",
+"it": "Controlla la risalita."
+},
+"Corps aligné de la tête aux talons.": {
+"en": "Body in line from head to heels.",
+"es": "Cuerpo alineado de la cabeza a los talones.",
+"pt": "Corpo alinhado da cabeça aos calcanhares.",
+"de": "Körper in einer Linie von Kopf bis Ferse.",
+"it": "Corpo allineato dalla testa ai talloni."
+},
+"Corps gainé, tirez la poitrine vers la barre.": {
+"en": "Body braced, pull your chest to the bar.",
+"es": "Cuerpo firme, lleva el pecho hacia la barra.",
+"pt": "Corpo firme, puxe o peito até a barra.",
+"de": "Körper angespannt, Brust zur Stange ziehen.",
+"it": "Corpo contratto, porta il petto verso la sbarra."
+},
+"Corpulence normale": {
+"en": "Healthy weight",
+"es": "Peso normal",
+"pt": "Peso normal",
+"de": "Normalgewicht",
+"it": "Normopeso"
+},
+"Coude sous l’épaule.": {
+"en": "Elbow under the shoulder.",
+"es": "Codo bajo el hombro.",
+"pt": "Cotovelo abaixo do ombro.",
+"de": "Ellbogen unter der Schulter.",
+"it": "Gomito sotto la spalla."
+},
+"Coude vers le genou opposé.": {
+"en": "Elbow towards the opposite knee.",
+"es": "Codo hacia la rodilla contraria.",
+"pt": "Cotovelo em direção ao joelho oposto.",
+"de": "Ellbogen zum gegenüberliegenden Knie.",
+"it": "Gomito verso il ginocchio opposto."
+},
+"Coudes fixes contre le corps.": {
+"en": "Elbows fixed against your body.",
+"es": "Codos fijos junto al cuerpo.",
+"pt": "Cotovelos fixos junto ao corpo.",
+"de": "Ellbogen fest am Körper.",
+"it": "Gomiti fissi contro il corpo."
+},
+"Coudes légèrement fléchis du début à la fin.": {
+"en": "Elbows slightly bent from start to finish.",
+"es": "Codos ligeramente flexionados de principio a fin.",
+"pt": "Cotovelos levemente flexionados do início ao fim.",
+"de": "Ellbogen von Anfang bis Ende leicht gebeugt.",
+"it": "Gomiti leggermente piegati dall’inizio alla fine."
+},
+"Coudes près du corps à la descente.": {
+"en": "Elbows close to your body on the way down.",
+"es": "Codos cerca del cuerpo al bajar.",
+"pt": "Cotovelos próximos ao corpo na descida.",
+"de": "Ellbogen beim Absenken nah am Körper.",
+"it": "Gomiti vicini al corpo in discesa."
+},
+"Coudes à environ 45° du corps, pas à 90°.": {
+"en": "Elbows at about 45° from your body, not 90°.",
+"es": "Codos a unos 45° del cuerpo, no a 90°.",
+"pt": "Cotovelos a cerca de 45° do corpo, não a 90°.",
+"de": "Ellbogen etwa 45° vom Körper, nicht 90°.",
+"it": "Gomiti a circa 45° dal corpo, non a 90°."
+},
+"Coupez la mangue.": {
+"en": "Cut the mango.",
+"es": "Corta el mango.",
+"pt": "Corte a manga.",
+"de": "Mango schneiden.",
+"it": "Taglia il mango."
+},
+"Coupez la papaye.": {
+"en": "Cut the papaya.",
+"es": "Corta la papaya.",
+"pt": "Corte o mamão.",
+"de": "Papaya schneiden.",
+"it": "Taglia la papaya."
+},
+"Coupez la pomme en dés.": {
+"en": "Dice the apple.",
+"es": "Corta la manzana en dados.",
+"pt": "Corte a maçã em cubos.",
+"de": "Apfel würfeln.",
+"it": "Taglia la mela a dadini."
+},
+"Coupez la pomme en quartiers.": {
+"en": "Cut the apple into wedges.",
+"es": "Corta la manzana en cuartos.",
+"pt": "Corte a maçã em gomos.",
+"de": "Apfel vierteln.",
+"it": "Taglia la mela a spicchi."
+},
+"Coupez le poisson très frais en dés et couvrez de jus de citron 15 minutes.": {
+"en": "Dice very fresh fish and cover with lemon juice for 15 minutes.",
+"es": "Corta pescado muy fresco en dados y cúbrelo con zumo de limón 15 minutos.",
+"pt": "Corte peixe bem fresco em cubos e cubra com suco de limão por 15 minutos.",
+"de": "Sehr frischen Fisch würfeln und 15 Minuten mit Zitronensaft bedecken.",
+"it": "Taglia a dadini pesce freschissimo e coprilo di succo di limone per 15 minuti."
+},
+"Coupez le saumon en dés et marinez-le avec le soja.": {
+"en": "Dice the salmon and marinate it in soy sauce.",
+"es": "Corta el salmón en dados y marínalo con soja.",
+"pt": "Corte o salmão em cubos e marine no shoyu.",
+"de": "Lachs würfeln und in Sojasauce marinieren.",
+"it": "Taglia il salmone a dadini e marinalo nella soia."
+},
+"Coupez les pommes de terre en frites et cuisez-les au four 25 minutes.": {
+"en": "Cut the potatoes into fries and bake for 25 minutes.",
+"es": "Corta las patatas en bastones y hornéalas 25 minutos.",
+"pt": "Corte as batatas em palitos e asse por 25 minutos.",
+"de": "Kartoffeln in Pommes schneiden und 25 Minuten backen.",
+"it": "Taglia le patate a bastoncini e cuocile in forno 25 minuti."
+},
+"Courbe de poids": {
+"en": "Weight curve",
+"es": "Curva de peso",
+"pt": "Curva de peso",
+"de": "Gewichtskurve",
+"it": "Curva del peso"
+},
+"Courbe de poids, mensurations, records, photos et badges.": {
+"en": "Weight curve, measurements, records, photos and badges.",
+"es": "Curva de peso, medidas, récords, fotos e insignias.",
+"pt": "Curva de peso, medidas, recordes, fotos e conquistas.",
+"de": "Gewichtskurve, Körpermaße, Rekorde, Fotos und Abzeichen.",
+"it": "Curva del peso, misure, record, foto e badge."
+},
+"Cours de technique et de musculation": {
+"en": "Technique and strength-training courses",
+"es": "Cursos de técnica y musculación",
+"pt": "Cursos de técnica e musculação",
+"de": "Technik- und Krafttrainingskurse",
+"it": "Corsi di tecnica e muscolazione"
+},
+"Cours nutrition": {
+"en": "Nutrition courses",
+"es": "Cursos de nutrición",
+"pt": "Cursos de nutrição",
+"de": "Ernährungskurse",
+"it": "Corsi di nutrizione"
+},
+"Couscous cuit": {
+"en": "Cooked couscous",
+"es": "Cuscús cocido",
+"pt": "Cuscuz marroquino cozido",
+"de": "Gekochter Couscous",
+"it": "Couscous cotto"
+},
+"Couvrez d’eau et laissez cuire 20 minutes.": {
+"en": "Cover with water and cook for 20 minutes.",
+"es": "Cubre con agua y cocina 20 minutos.",
+"pt": "Cubra com água e cozinhe por 20 minutos.",
+"de": "Mit Wasser bedecken und 20 Minuten kochen.",
+"it": "Copri d’acqua e cuoci 20 minuti."
+},
+"Crunch": {
+"en": "Crunch",
+"es": "Crunch",
+"pt": "Abdominal crunch",
+"de": "Crunch",
+"it": "Crunch"
+},
+"Crunch vélo": {
+"en": "Bicycle crunch",
+"es": "Crunch bicicleta",
+"pt": "Abdominal bicicleta",
+"de": "Fahrrad-Crunch",
+"it": "Crunch bicicletta"
+},
+"Crunch à la poulie": {
+"en": "Cable crunch",
+"es": "Crunch en polea",
+"pt": "Abdominal na polia",
+"de": "Kabel-Crunch",
+"it": "Crunch ai cavi"
+},
+"Créez votre plan de la semaine": {
+"en": "Create your plan for the week",
+"es": "Crea tu plan de la semana",
+"pt": "Crie seu plano da semana",
+"de": "Erstelle deinen Wochenplan",
+"it": "Crea il tuo piano della settimana"
+},
+"Cuisez au four 15 minutes et servez avec la salade.": {
+"en": "Bake for 15 minutes and serve with the salad.",
+"es": "Hornea 15 minutos y sirve con la ensalada.",
+"pt": "Asse por 15 minutos e sirva com a salada.",
+"de": "15 Minuten backen und mit dem Salat servieren.",
+"it": "Cuoci in forno 15 minuti e servi con l’insalata."
+},
+"Cuisez de petits pancakes 2 minutes par face.": {
+"en": "Cook small pancakes 2 minutes per side.",
+"es": "Cocina pancakes pequeños 2 minutos por lado.",
+"pt": "Faça panquecas pequenas, 2 minutos de cada lado.",
+"de": "Kleine Pancakes 2 Minuten pro Seite backen.",
+"it": "Cuoci piccoli pancake 2 minuti per lato."
+},
+"Cuisez le cabillaud à la poêle 4 minutes de chaque côté.": {
+"en": "Pan-fry the cod 4 minutes per side.",
+"es": "Cocina el bacalao en sartén 4 minutos por lado.",
+"pt": "Cozinhe o bacalhau na frigideira por 4 minutos de cada lado.",
+"de": "Kabeljau 4 Minuten pro Seite in der Pfanne braten.",
+"it": "Cuoci il merluzzo in padella 4 minuti per lato."
+},
+"Cuisez les pommes de terre.": {
+"en": "Cook the potatoes.",
+"es": "Cuece las patatas.",
+"pt": "Cozinhe as batatas.",
+"de": "Kartoffeln kochen.",
+"it": "Cuoci le patate."
+},
+"Cuisez les pâtes al dente.": {
+"en": "Cook the pasta al dente.",
+"es": "Cuece la pasta al dente.",
+"pt": "Cozinhe o macarrão al dente.",
+"de": "Nudeln al dente kochen.",
+"it": "Cuoci la pasta al dente."
+},
+"Cuisez les œufs 6 minutes.": {
+"en": "Boil the eggs for 6 minutes.",
+"es": "Cuece los huevos 6 minutos.",
+"pt": "Cozinhe os ovos por 6 minutos.",
+"de": "Eier 6 Minuten kochen.",
+"it": "Cuoci le uova 6 minuti."
+},
+"Cuisez les œufs durs 9 minutes.": {
+"en": "Hard-boil the eggs for 9 minutes.",
+"es": "Cuece los huevos duros 9 minutos.",
+"pt": "Cozinhe os ovos por 9 minutos.",
+"de": "Eier 9 Minuten hart kochen.",
+"it": "Rassoda le uova in 9 minuti."
+},
+"Cuisez l’omelette à feu moyen.": {
+"en": "Cook the omelette over medium heat.",
+"es": "Cuaja la tortilla a fuego medio.",
+"pt": "Faça a omelete em fogo médio.",
+"de": "Omelett bei mittlerer Hitze braten.",
+"it": "Cuoci la frittata a fuoco medio."
+},
+"Cuisez l’œuf dur.": {
+"en": "Hard-boil the egg.",
+"es": "Cuece el huevo duro.",
+"pt": "Cozinhe o ovo.",
+"de": "Ei hart kochen.",
+"it": "Rassoda l’uovo."
+},
+"Cuisez pommes de terre et oignon en fines tranches à la poêle.": {
+"en": "Pan-cook thinly sliced potatoes and onion.",
+"es": "Cocina en sartén las patatas y la cebolla en láminas finas.",
+"pt": "Cozinhe na frigideira as batatas e a cebola em fatias finas.",
+"de": "Kartoffeln und Zwiebel in dünnen Scheiben in der Pfanne garen.",
+"it": "Cuoci in padella patate e cipolla a fettine sottili."
+},
+"Cuisse": {
+"en": "Thigh",
+"es": "Muslo",
+"pt": "Coxa",
+"de": "Oberschenkel",
+"it": "Coscia"
+},
+"Cuisses bien bloquées.": {
+"en": "Thighs firmly locked in.",
+"es": "Muslos bien sujetos.",
+"pt": "Coxas bem travadas.",
+"de": "Oberschenkel fest fixiert.",
+"it": "Cosce ben bloccate."
+},
+"Curl au pupitre": {
+"en": "Preacher curl",
+"es": "Curl en banco Scott",
+"pt": "Rosca Scott",
+"de": "Scottcurls",
+"it": "Curl al leggio"
+},
+"Curl barre": {
+"en": "Barbell curl",
+"es": "Curl con barra",
+"pt": "Rosca direta com barra",
+"de": "Langhantelcurls",
+"it": "Curl con bilanciere"
+},
+"Curl concentré": {
+"en": "Concentration curl",
+"es": "Curl concentrado",
+"pt": "Rosca concentrada",
+"de": "Konzentrationscurls",
+"it": "Curl di concentrazione"
+},
+"Curl à la poulie": {
+"en": "Cable curl",
+"es": "Curl en polea",
+"pt": "Rosca na polia",
+"de": "Kabelcurls",
+"it": "Curl ai cavi"
+},
+"Curry rouge thaï aux crevettes": {
+"en": "Thai red prawn curry",
+"es": "Curry rojo tailandés de gambas",
+"pt": "Curry vermelho tailandês de camarão",
+"de": "Rotes Thai-Curry mit Garnelen",
+"it": "Curry rosso thailandese di gamberi"
+},
+"Dal de lentilles, riz basmati & épinards": {
+"en": "Lentil dal, basmati rice & spinach",
+"es": "Dal de lentejas, arroz basmati y espinacas",
+"pt": "Dal de lentilha, arroz basmati e espinafre",
+"de": "Linsen-Dal, Basmatireis & Spinat",
+"it": "Dal di lenticchie, riso basmati e spinaci"
+},
+"Dans l’application iPhone et Android, chaque formule commence par 3 jours gratuits. Vous pouvez annuler avant la fin de l’essai sans rien payer.": {
+"en": "In the iPhone and Android app, every plan starts with 3 free days. You can cancel before the trial ends without paying anything.",
+"es": "En la app de iPhone y Android, cada plan empieza con 3 días gratis. Puedes cancelar antes de que acabe la prueba sin pagar nada.",
+"pt": "No app para iPhone e Android, cada plano começa com 3 dias grátis. Você pode cancelar antes do fim do teste sem pagar nada.",
+"de": "In der iPhone- und Android-App beginnt jedes Paket mit 3 kostenlosen Tagen. Du kannst vor Ende des Tests kündigen, ohne etwas zu bezahlen.",
+"it": "Nell’app per iPhone e Android ogni piano inizia con 3 giorni gratuiti. Puoi annullare prima della fine della prova senza pagare nulla."
+},
+"Dattes": {
+"en": "Dates",
+"es": "Dátiles",
+"pt": "Tâmaras",
+"de": "Datteln",
+"it": "Datteri"
+},
+"Dattes & amandes": {
+"en": "Dates & almonds",
+"es": "Dátiles y almendras",
+"pt": "Tâmaras e amêndoas",
+"de": "Datteln & Mandeln",
+"it": "Datteri e mandorle"
+},
+"Des repas de votre culture, ajustés à vos calories, avec la liste de courses.": {
+"en": "Meals from your culture, adjusted to your calories, with the shopping list.",
+"es": "Comidas de tu cultura, ajustadas a tus calorías, con la lista de la compra.",
+"pt": "Refeições da sua cultura, ajustadas às suas calorias, com a lista de compras.",
+"de": "Gerichte aus deiner Küche, an deine Kalorien angepasst, mit Einkaufsliste.",
+"it": "Pasti della tua cultura, adattati alle tue calorie, con la lista della spesa."
+},
+"Descendez bras presque tendus.": {
+"en": "Lower with arms almost straight.",
+"es": "Baja con los brazos casi estirados.",
+"pt": "Desça com os braços quase estendidos.",
+"de": "Mit fast gestreckten Armen absenken.",
+"it": "Scendi con le braccia quasi tese."
+},
+"Descendez dos plat.": {
+"en": "Lower with a flat back.",
+"es": "Baja con la espalda recta.",
+"pt": "Desça com as costas retas.",
+"de": "Mit geradem Rücken absenken.",
+"it": "Scendi con la schiena piatta."
+},
+"Descendez en gardant le dos neutre.": {
+"en": "Lower while keeping your back neutral.",
+"es": "Baja manteniendo la espalda neutra.",
+"pt": "Desça mantendo as costas neutras.",
+"de": "Mit neutralem Rücken absenken.",
+"it": "Scendi mantenendo la schiena neutra."
+},
+"Descendez en poussant les hanches en arrière, genoux dans l’axe des pieds.": {
+"en": "Lower by pushing your hips back, knees in line with your feet.",
+"es": "Baja empujando las caderas hacia atrás, rodillas alineadas con los pies.",
+"pt": "Desça empurrando o quadril para trás, joelhos alinhados com os pés.",
+"de": "Absenken, indem du die Hüften nach hinten schiebst, Knie in Linie mit den Füßen.",
+"it": "Scendi spingendo le anche indietro, ginocchia in linea con i piedi."
+},
+"Descendez en squat.": {
+"en": "Lower into a squat.",
+"es": "Baja en sentadilla.",
+"pt": "Desça em agachamento.",
+"de": "In die Kniebeuge gehen.",
+"it": "Scendi in squat."
+},
+"Descendez jusqu’à 90° aux coudes.": {
+"en": "Lower until your elbows reach 90°.",
+"es": "Baja hasta 90° en los codos.",
+"pt": "Desça até 90° nos cotovelos.",
+"de": "Absenken, bis die Ellbogen 90° erreichen.",
+"it": "Scendi fino a 90° ai gomiti."
+},
+"Descendez jusqu’à 90° ou plus si confortable.": {
+"en": "Lower to 90° or deeper if comfortable.",
+"es": "Baja hasta 90° o más si te resulta cómodo.",
+"pt": "Desça até 90° ou mais, se for confortável.",
+"de": "Bis 90° oder tiefer absenken, wenn es angenehm ist.",
+"it": "Scendi fino a 90° o più se è comodo."
+},
+"Descendez la barre sous les clavicules.": {
+"en": "Lower the bar to just below your collarbones.",
+"es": "Baja la barra bajo las clavículas.",
+"pt": "Desça a barra abaixo das clavículas.",
+"de": "Stange unter die Schlüsselbeine absenken.",
+"it": "Abbassa il bilanciere sotto le clavicole."
+},
+"Descendez la barre vers le bas des pectoraux.": {
+"en": "Lower the bar towards your lower chest.",
+"es": "Baja la barra hacia la parte baja del pecho.",
+"pt": "Desça a barra em direção à parte inferior do peito.",
+"de": "Stange zur unteren Brust absenken.",
+"it": "Abbassa il bilanciere verso il petto basso."
+},
+"Descendez la tête vers le sol entre les mains.": {
+"en": "Lower your head towards the floor between your hands.",
+"es": "Baja la cabeza hacia el suelo entre las manos.",
+"pt": "Desça a cabeça em direção ao chão entre as mãos.",
+"de": "Kopf zwischen den Händen Richtung Boden senken.",
+"it": "Abbassa la testa verso terra tra le mani."
+},
+"Descendez lentement jusqu’à l’étirement.": {
+"en": "Lower slowly until you feel the stretch.",
+"es": "Baja despacio hasta notar el estiramiento.",
+"pt": "Desça devagar até sentir o alongamento.",
+"de": "Langsam absenken, bis du die Dehnung spürst.",
+"it": "Scendi lentamente fino a sentire l’allungamento."
+},
+"Descendez sans élan.": {
+"en": "Lower without swinging.",
+"es": "Baja sin impulso.",
+"pt": "Desça sem impulso.",
+"de": "Ohne Schwung absenken.",
+"it": "Scendi senza slancio."
+},
+"Dips entre deux chaises": {
+"en": "Chair dips",
+"es": "Fondos entre dos sillas",
+"pt": "Mergulho entre duas cadeiras",
+"de": "Dips zwischen zwei Stühlen",
+"it": "Dip tra due sedie"
+},
+"Disposez légumes, olives et feta.": {
+"en": "Arrange vegetables, olives and feta.",
+"es": "Coloca las verduras, las aceitunas y el feta.",
+"pt": "Disponha os legumes, as azeitonas e o feta.",
+"de": "Gemüse, Oliven und Feta anrichten.",
+"it": "Disponi verdure, olive e feta."
+},
+"Disposez riz, légumes et edamame.": {
+"en": "Arrange rice, vegetables and edamame.",
+"es": "Coloca el arroz, las verduras y el edamame.",
+"pt": "Disponha o arroz, os legumes e o edamame.",
+"de": "Reis, Gemüse und Edamame anrichten.",
+"it": "Disponi riso, verdure ed edamame."
+},
+"Disposez sur le quinoa et la roquette.": {
+"en": "Arrange on the quinoa and rocket.",
+"es": "Coloca sobre la quinoa y la rúcula.",
+"pt": "Disponha sobre a quinoa e a rúcula.",
+"de": "Auf Quinoa und Rucola anrichten.",
+"it": "Disponi su quinoa e rucola."
+},
+"Disposez sur le riz avec l’œuf et le kimchi.": {
+"en": "Arrange on the rice with the egg and kimchi.",
+"es": "Coloca sobre el arroz con el huevo y el kimchi.",
+"pt": "Disponha sobre o arroz com o ovo e o kimchi.",
+"de": "Mit Ei und Kimchi auf dem Reis anrichten.",
+"it": "Disponi sul riso con l’uovo e il kimchi."
+},
+"Donkey kicks": {
+"en": "Donkey kicks",
+"es": "Patadas de burro",
+"pt": "Coice de glúteo",
+"de": "Donkey Kicks",
+"it": "Donkey kick"
+},
+"Dorez le tofu en cubes.": {
+"en": "Brown the tofu cubes.",
+"es": "Dora el tofu en dados.",
+"pt": "Doure o tofu em cubos.",
+"de": "Tofuwürfel anbraten.",
+"it": "Fai dorare il tofu a cubetti."
+},
+"Dos (épaisseur)": {
+"en": "Back (thickness)",
+"es": "Espalda (grosor)",
+"pt": "Costas (espessura)",
+"de": "Rücken (Dicke)",
+"it": "Schiena (spessore)"
+},
+"Dos collé au dossier.": {
+"en": "Back against the backrest.",
+"es": "Espalda pegada al respaldo.",
+"pt": "Costas encostadas no encosto.",
+"de": "Rücken an der Lehne.",
+"it": "Schiena aderente allo schienale."
+},
+"Dos droit, pieds au sol si besoin.": {
+"en": "Back straight, feet on the floor if needed.",
+"es": "Espalda recta, pies en el suelo si hace falta.",
+"pt": "Costas retas, pés no chão se precisar.",
+"de": "Rücken gerade, Füße bei Bedarf am Boden.",
+"it": "Schiena dritta, piedi a terra se serve."
+},
+"Dos, fessiers, ischio-jambiers": {
+"en": "Back, glutes, hamstrings",
+"es": "Espalda, glúteos, isquiotibiales",
+"pt": "Costas, glúteos, posteriores de coxa",
+"de": "Rücken, Po, Beinbeuger",
+"it": "Schiena, glutei, femorali"
+},
+"Déglacez avec le jus de citron.": {
+"en": "Deglaze with the lemon juice.",
+"es": "Desglasa con el zumo de limón.",
+"pt": "Deglaceie com o suco de limão.",
+"de": "Mit Zitronensaft ablöschen.",
+"it": "Sfuma con il succo di limone."
+},
+"Dégustez frais.": {
+"en": "Enjoy chilled.",
+"es": "Sírvelo frío.",
+"pt": "Sirva gelado.",
+"de": "Kalt genießen.",
+"it": "Gusta fresco."
+},
+"Démonstration animée": {
+"en": "Animated demo",
+"es": "Demostración animada",
+"pt": "Demonstração animada",
+"de": "Animierte Vorführung",
+"it": "Dimostrazione animata"
+},
+"Dénoyautez les dattes.": {
+"en": "Pit the dates.",
+"es": "Deshuesa los dátiles.",
+"pt": "Tire os caroços das tâmaras.",
+"de": "Datteln entsteinen.",
+"it": "Snocciola i datteri."
+},
+"Départ paumes vers vous devant le visage.": {
+"en": "Start with palms facing you in front of your face.",
+"es": "Empieza con las palmas hacia ti delante de la cara.",
+"pt": "Comece com as palmas voltadas para você na frente do rosto.",
+"de": "Start mit Handflächen zu dir vor dem Gesicht.",
+"it": "Parti con i palmi verso di te davanti al viso."
+},
+"Développé Arnold": {
+"en": "Arnold press",
+"es": "Press Arnold",
+"pt": "Desenvolvimento Arnold",
+"de": "Arnold-Press",
+"it": "Arnold press"
+},
+"Développé couché haltères": {
+"en": "Dumbbell bench press",
+"es": "Press de banca con mancuernas",
+"pt": "Supino com halteres",
+"de": "Kurzhantel-Bankdrücken",
+"it": "Panca piana con manubri"
+},
+"Développé couché prise serrée": {
+"en": "Close-grip bench press",
+"es": "Press de banca agarre cerrado",
+"pt": "Supino com pegada fechada",
+"de": "Enges Bankdrücken",
+"it": "Panca presa stretta"
+},
+"Développé décliné": {
+"en": "Decline bench press",
+"es": "Press declinado",
+"pt": "Supino declinado",
+"de": "Negativbankdrücken",
+"it": "Panca declinata"
+},
+"Développé incliné (barre)": {
+"en": "Incline bench press (barbell)",
+"es": "Press inclinado (barra)",
+"pt": "Supino inclinado (barra)",
+"de": "Schrägbankdrücken (Langhantel)",
+"it": "Panca inclinata (bilanciere)"
+},
+"Développé militaire (barre)": {
+"en": "Overhead press (barbell)",
+"es": "Press militar (barra)",
+"pt": "Desenvolvimento militar (barra)",
+"de": "Schulterdrücken (Langhantel)",
+"it": "Lento avanti (bilanciere)"
+},
+"Développé épaules à la machine": {
+"en": "Machine shoulder press",
+"es": "Press de hombros en máquina",
+"pt": "Desenvolvimento na máquina",
+"de": "Schulterpresse an der Maschine",
+"it": "Shoulder press alla macchina"
+},
+"Développés et pompes demandent des épaules stables.": {
+"en": "Presses and push-ups need stable shoulders.",
+"es": "Los presses y las flexiones necesitan hombros estables.",
+"pt": "Supinos e flexões exigem ombros estáveis.",
+"de": "Drückübungen und Liegestütze brauchen stabile Schultern.",
+"it": "Distensioni e piegamenti richiedono spalle stabili."
+},
+"Eau moy.": {
+"en": "Avg. water",
+"es": "Agua med.",
+"pt": "Água méd.",
+"de": "Ø Wasser",
+"it": "Acqua media"
+},
+"Edamame": {
+"en": "Edamame",
+"es": "Edamame",
+"pt": "Edamame",
+"de": "Edamame",
+"it": "Edamame"
+},
+"Edamame & orange": {
+"en": "Edamame & orange",
+"es": "Edamame y naranja",
+"pt": "Edamame e laranja",
+"de": "Edamame & Orange",
+"it": "Edamame e arancia"
+},
+"En appui sur une jambe, genou souple.": {
+"en": "Standing on one leg, soft knee.",
+"es": "Apoyado en una pierna, rodilla flexible.",
+"pt": "Apoiado em uma perna, joelho levemente flexionado.",
+"de": "Auf einem Bein, Knie locker.",
+"it": "In appoggio su una gamba, ginocchio morbido."
+},
+"Endurance": {
+"en": "Endurance",
+"es": "Resistencia",
+"pt": "Resistência",
+"de": "Ausdauer",
+"it": "Resistenza"
+},
+"Enregistrer ma grille": {
+"en": "Save my schedule",
+"es": "Guardar mi rutina",
+"pt": "Salvar minha grade",
+"de": "Meinen Plan speichern",
+"it": "Salva la mia scheda"
+},
+"Enregistrer ma pesée": {
+"en": "Save my weigh-in",
+"es": "Guardar mi peso",
+"pt": "Salvar minha pesagem",
+"de": "Wiegen speichern",
+"it": "Salva la pesata"
+},
+"Enregistrer un repas": {
+"en": "Log a meal",
+"es": "Registrar una comida",
+"pt": "Registrar uma refeição",
+"de": "Eine Mahlzeit erfassen",
+"it": "Registrare un pasto"
+},
+"Enroulez le buste vers le sol.": {
+"en": "Curl your torso towards the floor.",
+"es": "Enrolla el torso hacia el suelo.",
+"pt": "Enrole o tronco em direção ao chão.",
+"de": "Oberkörper Richtung Boden einrollen.",
+"it": "Arrotola il busto verso terra."
+},
+"Enroulez le haut du dos en expirant.": {
+"en": "Curl your upper back as you breathe out.",
+"es": "Enrolla la parte alta de la espalda al espirar.",
+"pt": "Enrole a parte alta das costas ao expirar.",
+"de": "Oberen Rücken beim Ausatmen einrollen.",
+"it": "Arrotola la parte alta della schiena espirando."
+},
+"Entraînement guidé": {
+"en": "Guided training",
+"es": "Entrenamiento guiado",
+"pt": "Treino guiado",
+"de": "Geführtes Training",
+"it": "Allenamento guidato"
+},
+"Entraînez le geste avec un bâton le long du dos : tête, haut du dos et bassin restent en contact.": {
+"en": "Practise with a stick along your back: head, upper back and pelvis stay in contact.",
+"es": "Practica el gesto con un palo a lo largo de la espalda: cabeza, parte alta de la espalda y pelvis siguen en contacto.",
+"pt": "Treine o movimento com um bastão nas costas: cabeça, parte alta das costas e quadril ficam em contato.",
+"de": "Übe mit einem Stab am Rücken: Kopf, oberer Rücken und Becken bleiben in Kontakt.",
+"it": "Allena il gesto con un bastone lungo la schiena: testa, parte alta della schiena e bacino restano a contatto."
+},
+"Escaliers ou stepper": {
+"en": "Stairs or stepper",
+"es": "Escaleras o stepper",
+"pt": "Escadas ou stepper",
+"de": "Treppen oder Stepper",
+"it": "Scale o stepper"
+},
+"Escalope de dinde, pommes de terre & chou": {
+"en": "Turkey escalope, potatoes & cabbage",
+"es": "Escalope de pavo, patatas y col",
+"pt": "Escalope de peru, batatas e repolho",
+"de": "Putenschnitzel, Kartoffeln & Kohl",
+"it": "Scaloppina di tacchino, patate e cavolo"
+},
+"Espace Ménopause 40+": {
+"en": "Menopause 40+ space",
+"es": "Espacio Menopausia 40+",
+"pt": "Espaço Menopausa 40+",
+"de": "Wechseljahre-40+-Bereich",
+"it": "Spazio Menopausa 40+"
+},
+"Espagnole": {
+"en": "Spanish",
+"es": "Española",
+"pt": "Espanhola",
+"de": "Spanisch",
+"it": "Spagnola"
+},
+"Exercices animés": {
+"en": "Animated exercises",
+"es": "Ejercicios animados",
+"pt": "Exercícios animados",
+"de": "Animierte Übungen",
+"it": "Esercizi animati"
+},
+"Extension lombaire (banc à 45°)": {
+"en": "Back extension (45° bench)",
+"es": "Extensión lumbar (banco a 45°)",
+"pt": "Extensão lombar (banco a 45°)",
+"de": "Rückenstrecker (45°-Bank)",
+"it": "Hyperextension (panca a 45°)"
+},
+"Extension triceps à la corde": {
+"en": "Rope triceps pushdown",
+"es": "Extensión de tríceps con cuerda",
+"pt": "Tríceps na corda",
+"de": "Trizepsdrücken am Seil",
+"it": "Push down tricipiti alla corda"
+},
+"Exécution": {
+"en": "How to do it",
+"es": "Ejecución",
+"pt": "Execução",
+"de": "Ausführung",
+"it": "Esecuzione"
+},
+"Faire ma séance du jour": {
+"en": "Do today’s workout",
+"es": "Hacer mi sesión del día",
+"pt": "Fazer o treino do dia",
+"de": "Heutige Einheit machen",
+"it": "Fare l’allenamento di oggi"
+},
+"Faire mon check-in": {
+"en": "Do my check-in",
+"es": "Hacer mi check-in",
+"pt": "Fazer meu check-in",
+"de": "Meinen Check-in machen",
+"it": "Fare il mio check-in"
+},
+"Faites 2 séries de 10 squats goblet légers en vous filmant de profil.": {
+"en": "Do 2 sets of 10 light goblet squats while filming yourself from the side.",
+"es": "Haz 2 series de 10 sentadillas goblet ligeras grabándote de perfil.",
+"pt": "Faça 2 séries de 10 agachamentos goblet leves filmando-se de lado.",
+"de": "Mache 2 Sätze mit 10 leichten Goblet Squats und filme dich von der Seite.",
+"it": "Fai 2 serie da 10 goblet squat leggeri filmandoti di profilo."
+},
+"Faites 2 séries de pompes inclinées en gardant les coudes à 45°.": {
+"en": "Do 2 sets of incline push-ups keeping your elbows at 45°.",
+"es": "Haz 2 series de flexiones inclinadas con los codos a 45°.",
+"pt": "Faça 2 séries de flexões inclinadas com os cotovelos a 45°.",
+"de": "Mache 2 Sätze Schräg-Liegestütze mit Ellbogen bei 45°.",
+"it": "Fai 2 serie di piegamenti inclinati con i gomiti a 45°."
+},
+"Faites 3 gainages de 30 secondes en respirant calmement.": {
+"en": "Do 3 planks of 30 seconds, breathing calmly.",
+"es": "Haz 3 planchas de 30 segundos respirando con calma.",
+"pt": "Faça 3 pranchas de 30 segundos respirando com calma.",
+"de": "Mache 3 Planks à 30 Sekunden und atme ruhig.",
+"it": "Fai 3 plank da 30 secondi respirando con calma."
+},
+"Faites compoter oignon, poivron et tomates avec le cumin.": {
+"en": "Gently cook onion, pepper and tomatoes with cumin.",
+"es": "Pocha la cebolla, el pimiento y los tomates con comino.",
+"pt": "Refogue cebola, pimentão e tomates com cominho.",
+"de": "Zwiebel, Paprika und Tomaten mit Kreuzkümmel weich schmoren.",
+"it": "Fai stufare cipolla, peperone e pomodori con il cumino."
+},
+"Faites cuire le saumon au four 12 minutes.": {
+"en": "Bake the salmon for 12 minutes.",
+"es": "Hornea el salmón 12 minutos.",
+"pt": "Asse o salmão por 12 minutos.",
+"de": "Lachs 12 Minuten im Ofen garen.",
+"it": "Cuoci il salmone in forno 12 minuti."
+},
+"Faites cuire les edamame 4 minutes.": {
+"en": "Cook the edamame for 4 minutes.",
+"es": "Cuece el edamame 4 minutos.",
+"pt": "Cozinhe o edamame por 4 minutos.",
+"de": "Edamame 4 Minuten kochen.",
+"it": "Cuoci gli edamame 4 minuti."
+},
+"Faites cuire les pommes de terre à l’eau.": {
+"en": "Boil the potatoes.",
+"es": "Cuece las patatas en agua.",
+"pt": "Cozinhe as batatas na água.",
+"de": "Kartoffeln in Wasser kochen.",
+"it": "Lessa le patate."
+},
+"Faites cuire les œufs au plat.": {
+"en": "Fry the eggs.",
+"es": "Haz los huevos a la plancha.",
+"pt": "Frite os ovos.",
+"de": "Spiegeleier braten.",
+"it": "Cuoci le uova all’occhio di bue."
+},
+"Faites dorer le manioc cuit à la poêle ou au four.": {
+"en": "Brown the cooked cassava in a pan or in the oven.",
+"es": "Dora la yuca cocida en sartén o al horno.",
+"pt": "Doure a mandioca cozida na frigideira ou no forno.",
+"de": "Gekochten Maniok in der Pfanne oder im Ofen bräunen.",
+"it": "Fai dorare la manioca cotta in padella o in forno."
+},
+"Faites dorer le poulet en morceaux.": {
+"en": "Brown the chicken pieces.",
+"es": "Dora el pollo en trozos.",
+"pt": "Doure o frango em pedaços.",
+"de": "Hähnchenstücke anbraten.",
+"it": "Fai dorare il pollo a pezzi."
+},
+"Faites griller le pain et écrasez l’avocat dessus.": {
+"en": "Toast the bread and mash the avocado on top.",
+"es": "Tuesta el pan y aplasta el aguacate encima.",
+"pt": "Toste o pão e amasse o abacate por cima.",
+"de": "Brot rösten und Avocado darauf zerdrücken.",
+"it": "Tosta il pane e schiaccia l’avocado sopra."
+},
+"Faites griller le pain.": {
+"en": "Toast the bread.",
+"es": "Tuesta el pan.",
+"pt": "Toste o pão.",
+"de": "Brot rösten.",
+"it": "Tosta il pane."
+},
+"Faites griller le poulet assaisonné.": {
+"en": "Grill the seasoned chicken.",
+"es": "Asa el pollo sazonado.",
+"pt": "Grelhe o frango temperado.",
+"de": "Gewürztes Hähnchen grillen.",
+"it": "Griglia il pollo condito."
+},
+"Faites griller le poulet épicé et émincez-le.": {
+"en": "Grill the spiced chicken and slice it.",
+"es": "Asa el pollo especiado y córtalo en tiras.",
+"pt": "Grelhe o frango temperado e fatie.",
+"de": "Gewürztes Hähnchen grillen und in Streifen schneiden.",
+"it": "Griglia il pollo speziato e taglialo a striscioline."
+},
+"Faites griller le poulet.": {
+"en": "Grill the chicken.",
+"es": "Asa el pollo.",
+"pt": "Grelhe o frango.",
+"de": "Hähnchen grillen.",
+"it": "Griglia il pollo."
+},
+"Faites mijoter les légumes coupés en dés avec l’huile 25 minutes.": {
+"en": "Simmer the diced vegetables with the oil for 25 minutes.",
+"es": "Cocina a fuego lento las verduras en dados con el aceite 25 minutos.",
+"pt": "Cozinhe os legumes em cubos com o azeite por 25 minutos.",
+"de": "Gewürfeltes Gemüse 25 Minuten mit dem Öl schmoren.",
+"it": "Fai stufare le verdure a dadini con l’olio per 25 minuti."
+},
+"Faites revenir la pâte de curry.": {
+"en": "Fry the curry paste.",
+"es": "Sofríe la pasta de curry.",
+"pt": "Refogue a pasta de curry.",
+"de": "Currypaste anbraten.",
+"it": "Fai soffriggere la pasta di curry."
+},
+"Faites revenir le bœuf haché avec cumin et paprika.": {
+"en": "Brown the minced beef with cumin and paprika.",
+"es": "Dora la carne picada con comino y pimentón.",
+"pt": "Doure a carne moída com cominho e páprica.",
+"de": "Hackfleisch mit Kreuzkümmel und Paprika anbraten.",
+"it": "Fai rosolare la carne macinata con cumino e paprika."
+},
+"Faites revenir les légumes en dés.": {
+"en": "Sauté the diced vegetables.",
+"es": "Sofríe las verduras en dados.",
+"pt": "Refogue os legumes em cubos.",
+"de": "Gewürfeltes Gemüse anbraten.",
+"it": "Fai soffriggere le verdure a dadini."
+},
+"Faites revenir oignon et carotte avec le cumin.": {
+"en": "Sauté onion and carrot with cumin.",
+"es": "Sofríe la cebolla y la zanahoria con comino.",
+"pt": "Refogue cebola e cenoura com cominho.",
+"de": "Zwiebel und Karotte mit Kreuzkümmel anbraten.",
+"it": "Fai soffriggere cipolla e carota con il cumino."
+},
+"Faites revenir oignon et carottes.": {
+"en": "Sauté the onion and carrots.",
+"es": "Sofríe la cebolla y las zanahorias.",
+"pt": "Refogue a cebola e as cenouras.",
+"de": "Zwiebel und Karotten anbraten.",
+"it": "Fai soffriggere cipolla e carote."
+},
+"Faites revenir oignon et garam masala.": {
+"en": "Sauté onion and garam masala.",
+"es": "Sofríe la cebolla y el garam masala.",
+"pt": "Refogue a cebola e o garam masala.",
+"de": "Zwiebel und Garam Masala anbraten.",
+"it": "Fai soffriggere cipolla e garam masala."
+},
+"Faites revenir oignon et poivron avec les épices.": {
+"en": "Sauté onion and pepper with the spices.",
+"es": "Sofríe la cebolla y el pimiento con las especias.",
+"pt": "Refogue cebola e pimentão com as especiarias.",
+"de": "Zwiebel und Paprika mit den Gewürzen anbraten.",
+"it": "Fai soffriggere cipolla e peperone con le spezie."
+},
+"Faites revenir oignon et épices (curcuma, cumin).": {
+"en": "Sauté onion and spices (turmeric, cumin).",
+"es": "Sofríe la cebolla y las especias (cúrcuma, comino).",
+"pt": "Refogue a cebola e as especiarias (cúrcuma, cominho).",
+"de": "Zwiebel und Gewürze (Kurkuma, Kreuzkümmel) anbraten.",
+"it": "Fai soffriggere cipolla e spezie (curcuma, cumino)."
+},
+"Faites revenir oignon, carotte et poivron.": {
+"en": "Sauté onion, carrot and pepper.",
+"es": "Sofríe la cebolla, la zanahoria y el pimiento.",
+"pt": "Refogue cebola, cenoura e pimentão.",
+"de": "Zwiebel, Karotte und Paprika anbraten.",
+"it": "Fai soffriggere cipolla, carota e peperone."
+},
+"Faites revenir poivron et tomate avec le paprika et le safran.": {
+"en": "Sauté pepper and tomato with paprika and saffron.",
+"es": "Sofríe el pimiento y el tomate con pimentón y azafrán.",
+"pt": "Refogue pimentão e tomate com páprica e açafrão.",
+"de": "Paprika und Tomate mit Paprikapulver und Safran anbraten.",
+"it": "Fai soffriggere peperone e pomodoro con paprika e zafferano."
+},
+"Faites sauter épinards et carottes séparément.": {
+"en": "Stir-fry the spinach and carrots separately.",
+"es": "Saltea las espinacas y las zanahorias por separado.",
+"pt": "Salteie o espinafre e as cenouras separadamente.",
+"de": "Spinat und Karotten getrennt anbraten.",
+"it": "Salta spinaci e carote separatamente."
+},
+"Faites tomber les épinards à la poêle.": {
+"en": "Wilt the spinach in a pan.",
+"es": "Saltea las espinacas en la sartén.",
+"pt": "Murche o espinafre na frigideira.",
+"de": "Spinat in der Pfanne zusammenfallen lassen.",
+"it": "Fai appassire gli spinaci in padella."
+},
+"Faites-le griller au four 15 minutes.": {
+"en": "Roast it in the oven for 15 minutes.",
+"es": "Ásalo al horno 15 minutos.",
+"pt": "Asse no forno por 15 minutos.",
+"de": "15 Minuten im Ofen grillen.",
+"it": "Cuocilo in forno per 15 minuti."
+},
+"Falafels au four, houmous & salade": {
+"en": "Baked falafel, hummus & salad",
+"es": "Falafel al horno, hummus y ensalada",
+"pt": "Falafel assado, homus e salada",
+"de": "Ofen-Falafel, Hummus & Salat",
+"it": "Falafel al forno, hummus e insalata"
+},
+"Fentes arrière": {
+"en": "Reverse lunges",
+"es": "Zancadas hacia atrás",
+"pt": "Avanço para trás",
+"de": "Ausfallschritte nach hinten",
+"it": "Affondi indietro"
+},
+"Fessiers, adducteurs": {
+"en": "Glutes, adductors",
+"es": "Glúteos, aductores",
+"pt": "Glúteos, adutores",
+"de": "Po, Adduktoren",
+"it": "Glutei, adduttori"
+},
+"Fessiers, ischio-jambiers, équilibre": {
+"en": "Glutes, hamstrings, balance",
+"es": "Glúteos, isquiotibiales, equilibrio",
+"pt": "Glúteos, posteriores de coxa, equilíbrio",
+"de": "Po, Beinbeuger, Gleichgewicht",
+"it": "Glutei, femorali, equilibrio"
+},
+"Fléchissez complètement.": {
+"en": "Bend fully.",
+"es": "Flexiona por completo.",
+"pt": "Flexione totalmente.",
+"de": "Vollständig beugen.",
+"it": "Piega completamente."
+},
+"Formez des boulettes et cuisez au four 20 minutes.": {
+"en": "Shape into balls and bake for 20 minutes.",
+"es": "Forma bolitas y hornéalas 20 minutos.",
+"pt": "Faça bolinhas e asse por 20 minutos.",
+"de": "Bällchen formen und 20 Minuten backen.",
+"it": "Forma delle polpette e cuocile in forno 20 minuti."
+},
+"Formez et grillez le steak de dinde haché.": {
+"en": "Shape and grill the minced turkey patty.",
+"es": "Forma y asa la hamburguesa de pavo picado.",
+"pt": "Modele e grelhe o hambúrguer de peru moído.",
+"de": "Putenhack-Patty formen und grillen.",
+"it": "Forma e griglia l’hamburger di tacchino macinato."
+},
+"Formules": {
+"en": "Plans",
+"es": "Planes",
+"pt": "Planos",
+"de": "Pakete",
+"it": "Piani"
+},
+"Française": {
+"en": "French",
+"es": "Francesa",
+"pt": "Francesa",
+"de": "Französisch",
+"it": "Francese"
+},
+"Fromage blanc 0%": {
+"en": "Fat-free fromage frais",
+"es": "Queso batido 0 %",
+"pt": "Queijo fresco batido 0%",
+"de": "Magerquark",
+"it": "Formaggio fresco magro 0%"
+},
+"Fromage blanc, pomme & noix": {
+"en": "Fromage frais, apple & walnuts",
+"es": "Queso batido, manzana y nueces",
+"pt": "Queijo batido, maçã e nozes",
+"de": "Quark, Apfel & Walnüsse",
+"it": "Formaggio fresco, mela e noci"
+},
+"Fromage frais léger": {
+"en": "Light cream cheese",
+"es": "Queso crema light",
+"pt": "Requeijão light",
+"de": "Leichter Frischkäse",
+"it": "Formaggio spalmabile light"
+},
+"Frottez le poulet d’épices cajun et faites-le griller.": {
+"en": "Rub the chicken with Cajun spices and grill it.",
+"es": "Frota el pollo con especias cajún y ásalo.",
+"pt": "Esfregue o frango com tempero cajun e grelhe.",
+"de": "Hähnchen mit Cajun-Gewürz einreiben und grillen.",
+"it": "Strofina il pollo con spezie cajun e grigliato."
+},
+"Frottez-le de tomate râpée et d’un filet d’huile.": {
+"en": "Rub it with grated tomato and a drizzle of oil.",
+"es": "Frótalo con tomate rallado y un hilo de aceite.",
+"pt": "Esfregue com tomate ralado e um fio de azeite.",
+"de": "Mit geriebener Tomate und etwas Öl einreiben.",
+"it": "Strofinalo con pomodoro grattugiato e un filo d’olio."
+},
+"Fruits rouges": {
+"en": "Berries",
+"es": "Frutos rojos",
+"pt": "Frutas vermelhas",
+"de": "Beeren",
+"it": "Frutti rossi"
+},
+"Gainage latéral": {
+"en": "Side plank",
+"es": "Plancha lateral",
+"pt": "Prancha lateral",
+"de": "Seitstütz",
+"it": "Plank laterale"
+},
+"Gardez la poitrine haute, sans balancer.": {
+"en": "Keep your chest up, without swinging.",
+"es": "Mantén el pecho alto, sin balancearte.",
+"pt": "Mantenha o peito alto, sem balançar.",
+"de": "Brust oben halten, ohne Schwung.",
+"it": "Tieni il petto alto, senza oscillare."
+},
+"Gardez le dos plat et immobile.": {
+"en": "Keep your back flat and still.",
+"es": "Mantén la espalda recta e inmóvil.",
+"pt": "Mantenha as costas retas e imóveis.",
+"de": "Rücken gerade und ruhig halten.",
+"it": "Tieni la schiena piatta e ferma."
+},
+"Gardez le dos près du support.": {
+"en": "Keep your back close to the support.",
+"es": "Mantén la espalda cerca del apoyo.",
+"pt": "Mantenha as costas próximas ao apoio.",
+"de": "Rücken nah am Stützpunkt halten.",
+"it": "Tieni la schiena vicina al supporto."
+},
+"Gardez les coudes à 45° du corps.": {
+"en": "Keep your elbows at 45° from your body.",
+"es": "Mantén los codos a 45° del cuerpo.",
+"pt": "Mantenha os cotovelos a 45° do corpo.",
+"de": "Ellbogen 45° vom Körper halten.",
+"it": "Tieni i gomiti a 45° dal corpo."
+},
+"Gardez les talons au sol et le dos neutre, remontez en poussant le sol.": {
+"en": "Keep your heels down and your back neutral, push the floor away to stand.",
+"es": "Mantén los talones en el suelo y la espalda neutra, sube empujando el suelo.",
+"pt": "Mantenha os calcanhares no chão e as costas neutras, suba empurrando o chão.",
+"de": "Fersen am Boden, Rücken neutral, beim Aufstehen den Boden wegdrücken.",
+"it": "Talloni a terra e schiena neutra, risali spingendo il pavimento."
+},
+"Garnissez de poulet, salsa, avocat, oignon et salade.": {
+"en": "Fill with chicken, salsa, avocado, onion and salad.",
+"es": "Rellena con pollo, salsa, aguacate, cebolla y ensalada.",
+"pt": "Recheie com frango, salsa, abacate, cebola e salada.",
+"de": "Mit Hähnchen, Salsa, Avocado, Zwiebel und Salat füllen.",
+"it": "Farcisci con pollo, salsa, avocado, cipolla e insalata."
+},
+"Garnissez d’œufs et de concombre.": {
+"en": "Top with eggs and cucumber.",
+"es": "Cubre con huevos y pepino.",
+"pt": "Cubra com ovos e pepino.",
+"de": "Mit Eiern und Gurke belegen.",
+"it": "Guarnisci con uova e cetriolo."
+},
+"Garnissez la galette d’œufs, de fromage frais et de tomate.": {
+"en": "Fill the pancake with eggs, cream cheese and tomato.",
+"es": "Rellena la tortita con huevos, queso crema y tomate.",
+"pt": "Recheie a tapioca com ovos, requeijão e tomate.",
+"de": "Fladen mit Ei, Frischkäse und Tomate belegen.",
+"it": "Farcisci la crêpe con uova, formaggio spalmabile e pomodoro."
+},
+"Gaspacho, poulet grillé & pois chiches": {
+"en": "Gazpacho, grilled chicken & chickpeas",
+"es": "Gazpacho, pollo a la plancha y garbanzos",
+"pt": "Gaspacho, frango grelhado e grão-de-bico",
+"de": "Gazpacho, gegrilltes Hähnchen & Kichererbsen",
+"it": "Gazpacho, pollo grigliato e ceci"
+},
+"Genou arrière près du sol.": {
+"en": "Back knee close to the floor.",
+"es": "Rodilla trasera cerca del suelo.",
+"pt": "Joelho de trás próximo ao chão.",
+"de": "Hinteres Knie nah am Boden.",
+"it": "Ginocchio posteriore vicino a terra."
+},
+"Genou légèrement fléchi en bas.": {
+"en": "Knee slightly bent at the bottom.",
+"es": "Rodilla ligeramente flexionada abajo.",
+"pt": "Joelho levemente flexionado embaixo.",
+"de": "Knie unten leicht gebeugt.",
+"it": "Ginocchio leggermente piegato in basso."
+},
+"Genoux dans l’axe des orteils.": {
+"en": "Knees in line with your toes.",
+"es": "Rodillas alineadas con los dedos de los pies.",
+"pt": "Joelhos alinhados com os dedos dos pés.",
+"de": "Knie in Linie mit den Zehen.",
+"it": "Ginocchia in linea con le punte dei piedi."
+},
+"Genoux souples, poussez les fesses vers le mur derrière vous.": {
+"en": "Soft knees, push your hips towards the wall behind you.",
+"es": "Rodillas flexibles, lleva las caderas hacia la pared de detrás.",
+"pt": "Joelhos levemente flexionados, leve o quadril em direção à parede atrás de você.",
+"de": "Knie locker, Hüften Richtung Wand hinter dir schieben.",
+"it": "Ginocchia morbide, spingi i glutei verso il muro dietro di te."
+},
+"Genoux sous l’appui.": {
+"en": "Knees under the pad.",
+"es": "Rodillas bajo el apoyo.",
+"pt": "Joelhos sob o apoio.",
+"de": "Knie unter dem Polster.",
+"it": "Ginocchia sotto l’appoggio."
+},
+"Good morning": {
+"en": "Good morning",
+"es": "Buenos días (good morning)",
+"pt": "Good morning",
+"de": "Good Morning",
+"it": "Good morning"
+},
+"Graines de chia": {
+"en": "Chia seeds",
+"es": "Semillas de chía",
+"pt": "Sementes de chia",
+"de": "Chiasamen",
+"it": "Semi di chia"
+},
+"Graines de sésame": {
+"en": "Sesame seeds",
+"es": "Semillas de sésamo",
+"pt": "Gergelim",
+"de": "Sesamsamen",
+"it": "Semi di sesamo"
+},
+"Grammes, calories et macros calculés pour chaque portion.": {
+"en": "Grams, calories and macros calculated for every serving.",
+"es": "Gramos, calorías y macros calculados para cada ración.",
+"pt": "Gramas, calorias e macros calculados para cada porção.",
+"de": "Gramm, Kalorien und Makros für jede Portion berechnet.",
+"it": "Grammi, calorie e macro calcolati per ogni porzione."
+},
+"Grand dorsal": {
+"en": "Lats",
+"es": "Dorsal ancho",
+"pt": "Grande dorsal",
+"de": "Breiter Rückenmuskel",
+"it": "Gran dorsale"
+},
+"Grand pas en arrière.": {
+"en": "Big step back.",
+"es": "Paso largo hacia atrás.",
+"pt": "Passo largo para trás.",
+"de": "Großer Schritt nach hinten.",
+"it": "Grande passo indietro."
+},
+"Granola": {
+"en": "Granola",
+"es": "Granola",
+"pt": "Granola",
+"de": "Granola",
+"it": "Granola"
+},
+"Grille d’entraînement à monter vous-même": {
+"en": "A training schedule you build yourself",
+"es": "Rutina de entrenamiento que montas tú",
+"pt": "Grade de treino que você mesmo monta",
+"de": "Trainingsplan zum Selbstgestalten",
+"it": "Scheda di allenamento da costruire da te"
+},
+"Grillez les keftas et servez avec le couscous.": {
+"en": "Grill the koftas and serve with the couscous.",
+"es": "Asa las keftas y sírvelas con el cuscús.",
+"pt": "Grelhe as keftas e sirva com o cuscuz.",
+"de": "Köfte grillen und mit Couscous servieren.",
+"it": "Griglia le kefta e servile con il couscous."
+},
+"Générateur intelligent": {
+"en": "Smart generator",
+"es": "Generador inteligente",
+"pt": "Gerador inteligente",
+"de": "Intelligenter Generator",
+"it": "Generatore intelligente"
+},
+"Hack squat": {
+"en": "Hack squat",
+"es": "Sentadilla hack",
+"pt": "Hack squat",
+"de": "Hackenschmidt-Kniebeuge",
+"it": "Hack squat"
+},
+"Haltère tenu entre les jambes.": {
+"en": "Dumbbell held between your legs.",
+"es": "Mancuerna sujeta entre las piernas.",
+"pt": "Halter segurado entre as pernas.",
+"de": "Kurzhantel zwischen den Beinen.",
+"it": "Manubrio tenuto tra le gambe."
+},
+"Haltères": {
+"en": "Dumbbells",
+"es": "Mancuernas",
+"pt": "Halteres",
+"de": "Kurzhanteln",
+"it": "Manubri"
+},
+"Haltères au niveau de la poitrine, paumes vers les pieds.": {
+"en": "Dumbbells at chest level, palms facing your feet.",
+"es": "Mancuernas a la altura del pecho, palmas hacia los pies.",
+"pt": "Halteres na altura do peito, palmas voltadas para os pés.",
+"de": "Kurzhanteln auf Brusthöhe, Handflächen Richtung Füße.",
+"it": "Manubri all’altezza del petto, palmi verso i piedi."
+},
+"Hanches": {
+"en": "Hips",
+"es": "Caderas",
+"pt": "Quadril",
+"de": "Hüfte",
+"it": "Fianchi"
+},
+"Hanches au bord du support.": {
+"en": "Hips at the edge of the pad.",
+"es": "Caderas en el borde del apoyo.",
+"pt": "Quadril na borda do apoio.",
+"de": "Hüften an der Polsterkante.",
+"it": "Anche sul bordo del supporto."
+},
+"Hanches hautes, corps aligné.": {
+"en": "Hips high, body in line.",
+"es": "Caderas altas, cuerpo alineado.",
+"pt": "Quadril alto, corpo alinhado.",
+"de": "Hüfte hoch, Körper in einer Linie.",
+"it": "Anche alte, corpo allineato."
+},
+"Hanches hautes, corps en V inversé.": {
+"en": "Hips high, body in an inverted V.",
+"es": "Caderas altas, cuerpo en V invertida.",
+"pt": "Quadril alto, corpo em V invertido.",
+"de": "Hüfte hoch, Körper als umgekehrtes V.",
+"it": "Anche alte, corpo a V rovesciata."
+},
+"Haricots blancs cuits": {
+"en": "Cooked white beans",
+"es": "Alubias blancas cocidas",
+"pt": "Feijão-branco cozido",
+"de": "Gekochte weiße Bohnen",
+"it": "Fagioli bianchi cotti"
+},
+"Haricots noirs cuits": {
+"en": "Cooked black beans",
+"es": "Frijoles negros cocidos",
+"pt": "Feijão-preto cozido",
+"de": "Gekochte schwarze Bohnen",
+"it": "Fagioli neri cotti"
+},
+"Haricots rouges cuits": {
+"en": "Cooked kidney beans",
+"es": "Alubias rojas cocidas",
+"pt": "Feijão-vermelho cozido",
+"de": "Gekochte Kidneybohnen",
+"it": "Fagioli rossi cotti"
+},
+"Haussements d’épaules": {
+"en": "Shrugs",
+"es": "Encogimientos de hombros",
+"pt": "Encolhimento de ombros",
+"de": "Schulterheben",
+"it": "Scrollate di spalle"
+},
+"Houmous": {
+"en": "Hummus",
+"es": "Hummus",
+"pt": "Homus",
+"de": "Hummus",
+"it": "Hummus"
+},
+"Hydratation 7 jours": {
+"en": "7-day hydration",
+"es": "Hidratación 7 días",
+"pt": "Hidratação 7 dias",
+"de": "7 Tage getrunken",
+"it": "Idratazione 7 giorni"
+},
+"IMC": {
+"en": "BMI",
+"es": "IMC",
+"pt": "IMC",
+"de": "BMI",
+"it": "IMC"
+},
+"Idéal avant une séance.": {
+"en": "Great before a workout.",
+"es": "Ideal antes de entrenar.",
+"pt": "Ideal antes do treino.",
+"de": "Ideal vor dem Training.",
+"it": "Ideale prima dell’allenamento."
+},
+"Idées pour vous": {
+"en": "Ideas for you",
+"es": "Ideas para ti",
+"pt": "Ideias para você",
+"de": "Ideen für dich",
+"it": "Idee per te"
+},
+"Importer": {
+"en": "Import",
+"es": "Importar",
+"pt": "Importar",
+"de": "Importieren",
+"it": "Importa"
+},
+"Indienne": {
+"en": "Indian",
+"es": "India",
+"pt": "Indiana",
+"de": "Indisch",
+"it": "Indiana"
+},
+"Inspirez par le ventre avant l’effort, comme pour gonfler une ceinture.": {
+"en": "Breathe into your belly before the effort, as if inflating a belt.",
+"es": "Inspira con el abdomen antes del esfuerzo, como si inflaras un cinturón.",
+"pt": "Inspire pela barriga antes do esforço, como se inflasse um cinto.",
+"de": "Vor der Anstrengung in den Bauch einatmen, als würdest du einen Gürtel aufblasen.",
+"it": "Inspira con la pancia prima dello sforzo, come per gonfiare una cintura."
+},
+"Insuffisance pondérale": {
+"en": "Underweight",
+"es": "Bajo peso",
+"pt": "Abaixo do peso",
+"de": "Untergewicht",
+"it": "Sottopeso"
+},
+"Inversez le mouvement en descendant.": {
+"en": "Reverse the movement on the way down.",
+"es": "Invierte el movimiento al bajar.",
+"pt": "Inverta o movimento na descida.",
+"de": "Bewegung beim Absenken umkehren.",
+"it": "Inverti il movimento in discesa."
+},
+"Ischio-jambiers, bas du dos": {
+"en": "Hamstrings, lower back",
+"es": "Isquiotibiales, zona lumbar",
+"pt": "Posteriores de coxa, lombar",
+"de": "Beinbeuger, unterer Rücken",
+"it": "Femorali, zona lombare"
+},
+"Italienne": {
+"en": "Italian",
+"es": "Italiana",
+"pt": "Italiana",
+"de": "Italienisch",
+"it": "Italiana"
+},
+"Jambe tendue sur un support bas.": {
+"en": "Leg straight on a low support.",
+"es": "Pierna estirada sobre un apoyo bajo.",
+"pt": "Perna estendida sobre um apoio baixo.",
+"de": "Bein gestreckt auf einer niedrigen Ablage.",
+"it": "Gamba tesa su un supporto basso."
+},
+"Jambes bien calées sous les boudins.": {
+"en": "Legs firmly hooked under the pads.",
+"es": "Piernas bien sujetas bajo los rodillos.",
+"pt": "Pernas bem presas sob os rolos.",
+"de": "Beine fest unter den Polstern.",
+"it": "Gambe ben bloccate sotto i rulli."
+},
+"Jambes, cardio": {
+"en": "Legs, cardio",
+"es": "Piernas, cardio",
+"pt": "Pernas, cardio",
+"de": "Beine, Cardio",
+"it": "Gambe, cardio"
+},
+"Journal": {
+"en": "Log",
+"es": "Diario",
+"pt": "Diário",
+"de": "Tagebuch",
+"it": "Diario"
+},
+"Journal des symptômes de la ménopause": {
+"en": "Menopause symptom log",
+"es": "Diario de síntomas de la menopausia",
+"pt": "Diário de sintomas da menopausa",
+"de": "Wechseljahre-Symptomtagebuch",
+"it": "Diario dei sintomi della menopausa"
+},
+"Journal des symptômes, alimentation adaptée et programme de 8 semaines.": {
+"en": "Symptom log, tailored eating and an 8-week program.",
+"es": "Diario de síntomas, alimentación adaptada y programa de 8 semanas.",
+"pt": "Diário de sintomas, alimentação adaptada e programa de 8 semanas.",
+"de": "Symptomtagebuch, angepasste Ernährung und 8-Wochen-Programm.",
+"it": "Diario dei sintomi, alimentazione adatta e programma di 8 settimane."
+},
+"Journal, programme, séances": {
+"en": "Log, program, workouts",
+"es": "Diario, programa, sesiones",
+"pt": "Diário, programa, treinos",
+"de": "Tagebuch, Programm, Einheiten",
+"it": "Diario, programma, sedute"
+},
+"Kefta de bœuf, couscous & légumes rôtis": {
+"en": "Beef kofta, couscous & roasted vegetables",
+"es": "Kefta de ternera, cuscús y verduras asadas",
+"pt": "Kafta de carne, cuscuz e legumes assados",
+"de": "Rinder-Köfte, Couscous & Ofengemüse",
+"it": "Kefta di manzo, couscous e verdure arrosto"
+},
+"Kickback fessier à la poulie": {
+"en": "Cable glute kickback",
+"es": "Patada de glúteo en polea",
+"pt": "Coice de glúteo na polia",
+"de": "Glute-Kickback am Kabelzug",
+"it": "Slancio dei glutei ai cavi"
+},
+"Kickback triceps": {
+"en": "Triceps kickback",
+"es": "Patada de tríceps",
+"pt": "Tríceps coice",
+"de": "Trizeps-Kickback",
+"it": "Kickback tricipiti"
+},
+"Kimchi": {
+"en": "Kimchi",
+"es": "Kimchi",
+"pt": "Kimchi",
+"de": "Kimchi",
+"it": "Kimchi"
+},
+"La barre ou les haltères glissent le long des jambes.": {
+"en": "The bar or dumbbells slide down your legs.",
+"es": "La barra o las mancuernas se deslizan a lo largo de las piernas.",
+"pt": "A barra ou os halteres deslizam ao longo das pernas.",
+"de": "Stange oder Kurzhanteln gleiten an den Beinen entlang.",
+"it": "Il bilanciere o i manubri scorrono lungo le gambe."
+},
+"La charnière de hanche": {
+"en": "The hip hinge",
+"es": "La bisagra de cadera",
+"pt": "A dobradiça de quadril",
+"de": "Das Hüftscharnier",
+"it": "La cerniera dell’anca"
+},
+"Lassi protéiné à la mangue": {
+"en": "Protein mango lassi",
+"es": "Lassi proteico de mango",
+"pt": "Lassi proteico de manga",
+"de": "Protein-Mango-Lassi",
+"it": "Lassi proteico al mango"
+},
+"Le dos reste plat : arrêtez la descente quand il commence à s’arrondir.": {
+"en": "Your back stays flat: stop going down when it starts to round.",
+"es": "La espalda se mantiene recta: deja de bajar cuando empiece a redondearse.",
+"pt": "As costas ficam retas: pare de descer quando começarem a arredondar.",
+"de": "Der Rücken bleibt gerade: Stoppe, wenn er sich zu runden beginnt.",
+"it": "La schiena resta piatta: fermati quando inizia ad arrotondarsi."
+},
+"Le programme de votre coach ou votre plan alimentaire.": {
+"en": "Your coach’s program or your meal plan.",
+"es": "El programa de tu entrenador o tu plan de comidas.",
+"pt": "O programa do seu treinador ou seu plano alimentar.",
+"de": "Das Programm deines Coaches oder dein Ernährungsplan.",
+"it": "Il programma del tuo coach o il tuo piano alimentare."
+},
+"Le squat est le roi des exercices pour les jambes et les fessiers.": {
+"en": "The squat is the king of leg and glute exercises.",
+"es": "La sentadilla es el rey de los ejercicios de piernas y glúteos.",
+"pt": "O agachamento é o rei dos exercícios para pernas e glúteos.",
+"de": "Die Kniebeuge ist die Königin der Bein- und Po-Übungen.",
+"it": "Lo squat è il re degli esercizi per gambe e glutei."
+},
+"Leg curl assis": {
+"en": "Seated leg curl",
+"es": "Curl femoral sentado",
+"pt": "Mesa flexora sentada",
+"de": "Beinbeuger sitzend",
+"it": "Leg curl seduto"
+},
+"Lentilles à l’espagnole": {
+"en": "Spanish-style lentils",
+"es": "Lentejas a la española",
+"pt": "Lentilhas à espanhola",
+"de": "Linsen nach spanischer Art",
+"it": "Lenticchie alla spagnola"
+},
+"Lentilles, saucisse de volaille & carottes": {
+"en": "Lentils, chicken sausage & carrots",
+"es": "Lentejas, salchicha de ave y zanahorias",
+"pt": "Lentilhas, linguiça de frango e cenouras",
+"de": "Linsen, Geflügelwurst & Karotten",
+"it": "Lenticchie, salsiccia di pollo e carote"
+},
+"Les gestes de base de la musculation, expliqués et animés.": {
+"en": "The basic gym movements, explained and animated.",
+"es": "Los gestos básicos de la musculación, explicados y animados.",
+"pt": "Os movimentos básicos da musculação, explicados e animados.",
+"de": "Die Grundbewegungen des Krafttrainings, erklärt und animiert.",
+"it": "I gesti base della muscolazione, spiegati e animati."
+},
+"Les hanches restent fixes.": {
+"en": "Your hips stay still.",
+"es": "Las caderas permanecen fijas.",
+"pt": "O quadril fica parado.",
+"de": "Die Hüften bleiben ruhig.",
+"it": "Le anche restano ferme."
+},
+"Liste de courses automatique": {
+"en": "Automatic shopping list",
+"es": "Lista de la compra automática",
+"pt": "Lista de compras automática",
+"de": "Automatische Einkaufsliste",
+"it": "Lista della spesa automatica"
+},
+"L’échauffement en 6 minutes": {
+"en": "The 6-minute warm-up",
+"es": "El calentamiento de 6 minutos",
+"pt": "O aquecimento de 6 minutos",
+"de": "Das 6-Minuten-Aufwärmen",
+"it": "Il riscaldamento in 6 minuti"
+},
+"Ma grille": {
+"en": "My schedule",
+"es": "Mi rutina",
+"pt": "Minha grade",
+"de": "Mein Plan",
+"it": "La mia scheda"
+},
+"Ma grille d’entraînement": {
+"en": "My training schedule",
+"es": "Mi rutina de entrenamiento",
+"pt": "Minha grade de treino",
+"de": "Mein Trainingsplan",
+"it": "La mia scheda di allenamento"
+},
+"Machine": {
+"en": "Machine",
+"es": "Máquina",
+"pt": "Máquina",
+"de": "Maschine",
+"it": "Macchina"
+},
+"Main et genou en appui sur un banc.": {
+"en": "Hand and knee resting on a bench.",
+"es": "Mano y rodilla apoyadas en un banco.",
+"pt": "Mão e joelho apoiados no banco.",
+"de": "Hand und Knie auf einer Bank abgestützt.",
+"it": "Mano e ginocchio in appoggio su una panca."
+},
+"Mains au sol, pieds en arrière.": {
+"en": "Hands on the floor, feet back.",
+"es": "Manos en el suelo, pies hacia atrás.",
+"pt": "Mãos no chão, pés para trás.",
+"de": "Hände auf den Boden, Füße nach hinten.",
+"it": "Mani a terra, piedi indietro."
+},
+"Mains aux tempes.": {
+"en": "Hands at your temples.",
+"es": "Manos en las sienes.",
+"pt": "Mãos nas têmporas.",
+"de": "Hände an den Schläfen.",
+"it": "Mani alle tempie."
+},
+"Mains largeur d’épaules.": {
+"en": "Hands shoulder-width apart.",
+"es": "Manos a la anchura de los hombros.",
+"pt": "Mãos na largura dos ombros.",
+"de": "Hände schulterbreit.",
+"it": "Mani alla larghezza delle spalle."
+},
+"Mains sur le bord d’un banc ou d’une chaise stable.": {
+"en": "Hands on the edge of a stable bench or chair.",
+"es": "Manos en el borde de un banco o una silla estable.",
+"pt": "Mãos na borda de um banco ou cadeira estável.",
+"de": "Hände auf die Kante einer stabilen Bank oder eines Stuhls.",
+"it": "Mani sul bordo di una panca o di una sedia stabile."
+},
+"Mains sur un banc ou une table stable.": {
+"en": "Hands on a stable bench or table.",
+"es": "Manos sobre un banco o una mesa estable.",
+"pt": "Mãos sobre um banco ou mesa estável.",
+"de": "Hände auf einer stabilen Bank oder einem Tisch.",
+"it": "Mani su una panca o un tavolo stabile."
+},
+"Mangue": {
+"en": "Mango",
+"es": "Mango",
+"pt": "Manga",
+"de": "Mango",
+"it": "Mango"
+},
+"Manioc cuit": {
+"en": "Cooked cassava",
+"es": "Yuca cocida",
+"pt": "Mandioca cozida",
+"de": "Gekochter Maniok",
+"it": "Manioca cotta"
+},
+"Marinez le poulet avec les épices shawarma et faites-le griller.": {
+"en": "Marinate the chicken with shawarma spices and grill it.",
+"es": "Marina el pollo con especias de shawarma y ásalo.",
+"pt": "Marine o frango com tempero de shawarma e grelhe.",
+"de": "Hähnchen mit Shawarma-Gewürzen marinieren und grillen.",
+"it": "Marina il pollo con le spezie shawarma e grigliato."
+},
+"Marinez le poulet dans le yaourt et les épices tikka.": {
+"en": "Marinate the chicken in yoghurt and tikka spices.",
+"es": "Marina el pollo en yogur y especias tikka.",
+"pt": "Marine o frango no iogurte com tempero tikka.",
+"de": "Hähnchen in Joghurt und Tikka-Gewürzen marinieren.",
+"it": "Marina il pollo nello yogurt e nelle spezie tikka."
+},
+"Maïs doux": {
+"en": "Sweetcorn",
+"es": "Maíz dulce",
+"pt": "Milho",
+"de": "Zuckermais",
+"it": "Mais dolce"
+},
+"Mensurations": {
+"en": "Measurements",
+"es": "Medidas",
+"pt": "Medidas",
+"de": "Körpermaße",
+"it": "Misure"
+},
+"Mes ajouts": {
+"en": "My extras",
+"es": "Mis añadidos",
+"pt": "Meus itens",
+"de": "Meine Extras",
+"it": "Le mie aggiunte"
+},
+"Mettre à jour ma grille": {
+"en": "Update my schedule",
+"es": "Actualizar mi rutina",
+"pt": "Atualizar minha grade",
+"de": "Meinen Plan aktualisieren",
+"it": "Aggiorna la mia scheda"
+},
+"Mexicaine & latino": {
+"en": "Mexican & Latin",
+"es": "Mexicana y latina",
+"pt": "Mexicana e latina",
+"de": "Mexikanisch & lateinamerikanisch",
+"it": "Messicana e latina"
+},
+"Miel": {
+"en": "Honey",
+"es": "Miel",
+"pt": "Mel",
+"de": "Honig",
+"it": "Miele"
+},
+"Mijotez 10 minutes, servez avec la moutarde.": {
+"en": "Simmer for 10 minutes, serve with mustard.",
+"es": "Cuece 10 minutos, sirve con mostaza.",
+"pt": "Cozinhe por 10 minutos, sirva com mostarda.",
+"de": "10 Minuten köcheln, mit Senf servieren.",
+"it": "Fai sobbollire 10 minuti, servi con la senape."
+},
+"Mincir et mieux manger, sans régime extrême.": {
+"en": "Slim down and eat better, without extreme dieting.",
+"es": "Adelgazar y comer mejor, sin dietas extremas.",
+"pt": "Emagrecer e comer melhor, sem dieta radical.",
+"de": "Abnehmen und besser essen, ohne extreme Diät.",
+"it": "Dimagrire e mangiare meglio, senza diete estreme."
+},
+"Minestrone aux haricots blancs": {
+"en": "White bean minestrone",
+"es": "Minestrone con alubias blancas",
+"pt": "Minestrone com feijão-branco",
+"de": "Minestrone mit weißen Bohnen",
+"it": "Minestrone con fagioli bianchi"
+},
+"Missions du jour": {
+"en": "Today’s missions",
+"es": "Misiones del día",
+"pt": "Missões do dia",
+"de": "Tagesaufgaben",
+"it": "Missioni del giorno"
+},
+"Mixez avoine, œufs, banane et skyr.": {
+"en": "Blend oats, eggs, banana and skyr.",
+"es": "Tritura avena, huevos, plátano y skyr.",
+"pt": "Bata aveia, ovos, banana e skyr.",
+"de": "Haferflocken, Eier, Banane und Skyr mixen.",
+"it": "Frulla avena, uova, banana e skyr."
+},
+"Mixez l’açaí avec le skyr et la moitié de la banane.": {
+"en": "Blend the açaí with the skyr and half the banana.",
+"es": "Tritura el açaí con el skyr y la mitad del plátano.",
+"pt": "Bata o açaí com o skyr e metade da banana.",
+"de": "Açaí mit Skyr und der halben Banane mixen.",
+"it": "Frulla l’açaí con lo skyr e metà banana."
+},
+"Mixez mangue, boisson soja et avoine.": {
+"en": "Blend mango, soy drink and oats.",
+"es": "Tritura mango, bebida de soja y avena.",
+"pt": "Bata manga, bebida de soja e aveia.",
+"de": "Mango, Sojadrink und Haferflocken mixen.",
+"it": "Frulla mango, bevanda di soia e avena."
+},
+"Mixez pois chiches, oignon, herbes et cumin.": {
+"en": "Blend chickpeas, onion, herbs and cumin.",
+"es": "Tritura garbanzos, cebolla, hierbas y comino.",
+"pt": "Bata grão-de-bico, cebola, ervas e cominho.",
+"de": "Kichererbsen, Zwiebel, Kräuter und Kreuzkümmel pürieren.",
+"it": "Frulla ceci, cipolla, erbe e cumino."
+},
+"Mixez tomates, concombre, poivron et huile, puis réservez au frais.": {
+"en": "Blend tomatoes, cucumber, pepper and oil, then chill.",
+"es": "Tritura tomates, pepino, pimiento y aceite, y reserva en frío.",
+"pt": "Bata tomates, pepino, pimentão e azeite e leve à geladeira.",
+"de": "Tomaten, Gurke, Paprika und Öl pürieren und kalt stellen.",
+"it": "Frulla pomodori, cetriolo, peperone e olio, poi metti in fresco."
+},
+"Mixez tous les ingrédients.": {
+"en": "Blend all the ingredients.",
+"es": "Tritura todos los ingredientes.",
+"pt": "Bata todos os ingredientes.",
+"de": "Alle Zutaten mixen.",
+"it": "Frulla tutti gli ingredienti."
+},
+"Mobilité du haut du dos": {
+"en": "Upper-back mobility",
+"es": "Movilidad de la parte alta de la espalda",
+"pt": "Mobilidade da parte alta das costas",
+"de": "Mobilität des oberen Rückens",
+"it": "Mobilità della parte alta della schiena"
+},
+"Mollets (soléaire)": {
+"en": "Calves (soleus)",
+"es": "Gemelos (sóleo)",
+"pt": "Panturrilhas (sóleo)",
+"de": "Waden (Schollenmuskel)",
+"it": "Polpacci (soleo)"
+},
+"Mollets assis": {
+"en": "Seated calf raises",
+"es": "Gemelos sentado",
+"pt": "Panturrilha sentado",
+"de": "Wadenheben sitzend",
+"it": "Polpacci da seduto"
+},
+"Monter": {
+"en": "Move up",
+"es": "Subir",
+"pt": "Subir",
+"de": "Nach oben",
+"it": "Sposta su"
+},
+"Monter ma grille": {
+"en": "Build my schedule",
+"es": "Montar mi rutina",
+"pt": "Montar minha grade",
+"de": "Meinen Plan erstellen",
+"it": "Costruire la mia scheda"
+},
+"Montez en contractant.": {
+"en": "Lift while squeezing.",
+"es": "Sube contrayendo.",
+"pt": "Suba contraindo.",
+"de": "Unter Anspannung nach oben.",
+"it": "Sali contraendo."
+},
+"Montez jusqu’à hauteur des yeux.": {
+"en": "Raise up to eye level.",
+"es": "Sube hasta la altura de los ojos.",
+"pt": "Suba até a altura dos olhos.",
+"de": "Bis auf Augenhöhe anheben.",
+"it": "Sali fino all’altezza degli occhi."
+},
+"Montez jusqu’à passer le menton au-dessus de la barre.": {
+"en": "Pull up until your chin clears the bar.",
+"es": "Sube hasta pasar la barbilla por encima de la barra.",
+"pt": "Suba até o queixo passar da barra.",
+"de": "Hochziehen, bis das Kinn über der Stange ist.",
+"it": "Sali finché il mento supera la sbarra."
+},
+"Montez le burger avec salade et tomate.": {
+"en": "Build the burger with lettuce and tomato.",
+"es": "Monta la hamburguesa con lechuga y tomate.",
+"pt": "Monte o hambúrguer com alface e tomate.",
+"de": "Burger mit Salat und Tomate belegen.",
+"it": "Componi il burger con insalata e pomodoro."
+},
+"Montez lentement en tournant le petit doigt vers le haut.": {
+"en": "Lift slowly, turning your little finger upwards.",
+"es": "Sube despacio girando el meñique hacia arriba.",
+"pt": "Suba devagar girando o dedo mínimo para cima.",
+"de": "Langsam anheben und dabei den kleinen Finger nach oben drehen.",
+"it": "Sali lentamente ruotando il mignolo verso l’alto."
+},
+"Montez les coudes jusqu’à hauteur d’épaules.": {
+"en": "Raise your elbows to shoulder height.",
+"es": "Sube los codos hasta la altura de los hombros.",
+"pt": "Eleve os cotovelos até a altura dos ombros.",
+"de": "Ellbogen bis auf Schulterhöhe anheben.",
+"it": "Porta i gomiti all’altezza delle spalle."
+},
+"Montez les genoux ou les jambes sans balancer.": {
+"en": "Raise your knees or legs without swinging.",
+"es": "Sube las rodillas o las piernas sin balancearte.",
+"pt": "Suba os joelhos ou as pernas sem balançar.",
+"de": "Knie oder Beine ohne Schwung anheben.",
+"it": "Solleva le ginocchia o le gambe senza oscillare."
+},
+"Montez les épaules vers les oreilles.": {
+"en": "Lift your shoulders towards your ears.",
+"es": "Sube los hombros hacia las orejas.",
+"pt": "Eleve os ombros em direção às orelhas.",
+"de": "Schultern Richtung Ohren ziehen.",
+"it": "Porta le spalle verso le orecchie."
+},
+"Montez sans décoller les coudes.": {
+"en": "Lift without lifting your elbows off.",
+"es": "Sube sin despegar los codos.",
+"pt": "Suba sem tirar os cotovelos do apoio.",
+"de": "Anheben, ohne die Ellbogen abzuheben.",
+"it": "Sali senza staccare i gomiti."
+},
+"Montez sur la pointe des pieds.": {
+"en": "Rise onto your toes.",
+"es": "Ponte de puntillas.",
+"pt": "Suba na ponta dos pés.",
+"de": "Auf die Zehenspitzen gehen.",
+"it": "Sali sulle punte dei piedi."
+},
+"Montez un pied vers le plafond, genou plié.": {
+"en": "Lift one foot towards the ceiling, knee bent.",
+"es": "Sube un pie hacia el techo con la rodilla doblada.",
+"pt": "Eleve um pé em direção ao teto, joelho dobrado.",
+"de": "Einen Fuß Richtung Decke heben, Knie gebeugt.",
+"it": "Solleva un piede verso il soffitto, ginocchio piegato."
+},
+"Moqueca de poisson légère & riz": {
+"en": "Light fish moqueca & rice",
+"es": "Moqueca de pescado ligera y arroz",
+"pt": "Moqueca de peixe leve e arroz",
+"de": "Leichte Fisch-Moqueca & Reis",
+"it": "Moqueca di pesce leggera e riso"
+},
+"Moutarde": {
+"en": "Mustard",
+"es": "Mostaza",
+"pt": "Mostarda",
+"de": "Senf",
+"it": "Senape"
+},
+"Muscle": {
+"en": "Muscle",
+"es": "Músculo",
+"pt": "Músculo",
+"de": "Muskel",
+"it": "Muscolo"
+},
+"Mélangez avec le fromage blanc.": {
+"en": "Mix with the fromage frais.",
+"es": "Mezcla con el queso batido.",
+"pt": "Misture com o queijo batido.",
+"de": "Mit dem Quark vermischen.",
+"it": "Mescola con il formaggio fresco."
+},
+"Mélangez avec les œufs battus.": {
+"en": "Mix with the beaten eggs.",
+"es": "Mezcla con los huevos batidos.",
+"pt": "Misture com os ovos batidos.",
+"de": "Mit den verquirlten Eiern vermischen.",
+"it": "Mescola con le uova sbattute."
+},
+"Mélangez boulgour, tomates, concombre, persil et citron.": {
+"en": "Mix bulgur, tomatoes, cucumber, parsley and lemon.",
+"es": "Mezcla el bulgur, los tomates, el pepino, el perejil y el limón.",
+"pt": "Misture o triguilho, tomates, pepino, salsinha e limão.",
+"de": "Bulgur, Tomaten, Gurke, Petersilie und Zitrone vermischen.",
+"it": "Mescola bulgur, pomodori, cetriolo, prezzemolo e limone."
+},
+"Mélangez la viande avec épices et herbes, formez des keftas.": {
+"en": "Mix the meat with spices and herbs, shape into koftas.",
+"es": "Mezcla la carne con especias y hierbas y forma las keftas.",
+"pt": "Misture a carne com especiarias e ervas e modele as keftas.",
+"de": "Fleisch mit Gewürzen und Kräutern mischen und Köfte formen.",
+"it": "Mescola la carne con spezie ed erbe e forma le kefta."
+},
+"Mélangez le quark et le cacao.": {
+"en": "Mix the quark and cocoa.",
+"es": "Mezcla el quark y el cacao.",
+"pt": "Misture o quark e o cacau.",
+"de": "Quark und Kakao verrühren.",
+"it": "Mescola il quark e il cacao."
+},
+"Mélangez le quark et l’avoine.": {
+"en": "Mix the quark and oats.",
+"es": "Mezcla el quark y la avena.",
+"pt": "Misture o quark e a aveia.",
+"de": "Quark und Haferflocken verrühren.",
+"it": "Mescola il quark e l’avena."
+},
+"Mélangez, ajoutez basilic et parmesan.": {
+"en": "Mix, add basil and parmesan.",
+"es": "Mezcla y añade albahaca y parmesano.",
+"pt": "Misture e adicione manjericão e parmesão.",
+"de": "Vermischen, Basilikum und Parmesan dazugeben.",
+"it": "Mescola, aggiungi basilico e parmigiano."
+},
+"Même objectif calorique, adapté à vos préférences.": {
+"en": "Same calorie target, matched to your preferences.",
+"es": "Mismo objetivo calórico, adaptado a tus preferencias.",
+"pt": "Mesma meta calórica, adaptada às suas preferências.",
+"de": "Gleiches Kalorienziel, passend zu deinen Vorlieben.",
+"it": "Stesso obiettivo calorico, adattato alle tue preferenze."
+},
+"Müesli au quark & pomme": {
+"en": "Quark muesli & apple",
+"es": "Muesli con quark y manzana",
+"pt": "Muesli com quark e maçã",
+"de": "Quark-Müsli & Apfel",
+"it": "Muesli con quark e mela"
+},
+"Ne cambrez pas le bas du dos.": {
+"en": "Don’t arch your lower back.",
+"es": "No arquees la zona lumbar.",
+"pt": "Não arqueie a lombar.",
+"de": "Kein Hohlkreuz machen.",
+"it": "Non inarcare la zona lombare."
+},
+"Ne tendez pas brusquement en bas.": {
+"en": "Don’t snap your arms straight at the bottom.",
+"es": "No estires de golpe abajo.",
+"pt": "Não estenda bruscamente embaixo.",
+"de": "Unten nicht ruckartig durchstrecken.",
+"it": "Non distendere di scatto in basso."
+},
+"Ne tirez pas sur la nuque.": {
+"en": "Don’t pull on your neck.",
+"es": "No tires del cuello.",
+"pt": "Não puxe o pescoço.",
+"de": "Nicht am Nacken ziehen.",
+"it": "Non tirare il collo."
+},
+"Noix": {
+"en": "Walnuts",
+"es": "Nueces",
+"pt": "Nozes",
+"de": "Walnüsse",
+"it": "Noci"
+},
+"Nom de la séance": {
+"en": "Session name",
+"es": "Nombre de la sesión",
+"pt": "Nome do treino",
+"de": "Name der Einheit",
+"it": "Nome della seduta"
+},
+"Nom de ma grille (ex. Ma routine 4 jours)": {
+"en": "Name of my schedule (e.g. My 4-day routine)",
+"es": "Nombre de mi rutina (ej. Mi rutina de 4 días)",
+"pt": "Nome da minha grade (ex. Minha rotina de 4 dias)",
+"de": "Name meines Plans (z. B. Meine 4-Tage-Routine)",
+"it": "Nome della mia scheda (es. La mia routine di 4 giorni)"
+},
+"Nos formules": {
+"en": "Our plans",
+"es": "Nuestros planes",
+"pt": "Nossos planos",
+"de": "Unsere Pakete",
+"it": "I nostri piani"
+},
+"Nouilles de riz cuites": {
+"en": "Cooked rice noodles",
+"es": "Fideos de arroz cocidos",
+"pt": "Macarrão de arroz cozido",
+"de": "Gekochte Reisnudeln",
+"it": "Noodles di riso cotti"
+},
+"Nouilles soba cuites": {
+"en": "Cooked soba noodles",
+"es": "Fideos soba cocidos",
+"pt": "Macarrão soba cozido",
+"de": "Gekochte Soba-Nudeln",
+"it": "Soba cotti"
+},
+"Nutrition, entraînement et bien-être, dans une seule app.": {
+"en": "Nutrition, training and well-being, in one app.",
+"es": "Nutrición, entrenamiento y bienestar, en una sola app.",
+"pt": "Nutrição, treino e bem-estar, em um só app.",
+"de": "Ernährung, Training und Wohlbefinden in einer App.",
+"it": "Nutrizione, allenamento e benessere, in un’unica app."
+},
+"Nutrition, entraînement, ménopause ou tout à la fois. Changez de formule quand vous voulez.": {
+"en": "Nutrition, training, menopause or all at once. Switch plans whenever you like.",
+"es": "Nutrición, entrenamiento, menopausia o todo a la vez. Cambia de plan cuando quieras.",
+"pt": "Nutrição, treino, menopausa ou tudo junto. Troque de plano quando quiser.",
+"de": "Ernährung, Training, Wechseljahre oder alles zusammen. Wechsle das Paket, wann du willst.",
+"it": "Nutrizione, allenamento, menopausa o tutto insieme. Cambia piano quando vuoi."
+},
+"Obliques": {
+"en": "Obliques",
+"es": "Oblicuos",
+"pt": "Oblíquos",
+"de": "Schräge Bauchmuskeln",
+"it": "Obliqui"
+},
+"Obésité": {
+"en": "Obesity",
+"es": "Obesidad",
+"pt": "Obesidade",
+"de": "Adipositas",
+"it": "Obesità"
+},
+"Oignon": {
+"en": "Onion",
+"es": "Cebolla",
+"pt": "Cebola",
+"de": "Zwiebel",
+"it": "Cipolla"
+},
+"Olives": {
+"en": "Olives",
+"es": "Aceitunas",
+"pt": "Azeitonas",
+"de": "Oliven",
+"it": "Olive"
+},
+"Omelette masala & chapati": {
+"en": "Masala omelette & chapati",
+"es": "Tortilla masala y chapati",
+"pt": "Omelete masala e chapati",
+"de": "Masala-Omelett & Chapati",
+"it": "Frittata masala e chapati"
+},
+"Orange": {
+"en": "Orange",
+"es": "Naranja",
+"pt": "Laranja",
+"de": "Orange",
+"it": "Arancia"
+},
+"Orientale & turque": {
+"en": "Middle Eastern & Turkish",
+"es": "Oriental y turca",
+"pt": "Oriental e turca",
+"de": "Orientalisch & türkisch",
+"it": "Mediorientale e turca"
+},
+"Oui : recettes, exercices, programmes et la première leçon de chaque cours sont visibles gratuitement.": {
+"en": "Yes: recipes, exercises, programs and the first lesson of every course are free to view.",
+"es": "Sí: recetas, ejercicios, programas y la primera lección de cada curso se pueden ver gratis.",
+"pt": "Sim: receitas, exercícios, programas e a primeira aula de cada curso podem ser vistos gratuitamente.",
+"de": "Ja: Rezepte, Übungen, Programme und die erste Lektion jedes Kurses sind kostenlos sichtbar.",
+"it": "Sì: ricette, esercizi, programmi e la prima lezione di ogni corso sono visibili gratuitamente."
+},
+"Oui, à tout moment depuis les réglages de votre compte App Store ou Google Play.": {
+"en": "Yes, anytime from your App Store or Google Play account settings.",
+"es": "Sí, cuando quieras desde los ajustes de tu cuenta de App Store o Google Play.",
+"pt": "Sim, a qualquer momento nas configurações da sua conta da App Store ou do Google Play.",
+"de": "Ja, jederzeit in den Einstellungen deines App-Store- oder Google-Play-Kontos.",
+"it": "Sì, in qualsiasi momento dalle impostazioni del tuo account App Store o Google Play."
+},
+"Ouvrez les bras jusqu’à sentir l’étirement.": {
+"en": "Open your arms until you feel the stretch.",
+"es": "Abre los brazos hasta notar el estiramiento.",
+"pt": "Abra os braços até sentir o alongamento.",
+"de": "Arme öffnen, bis du die Dehnung spürst.",
+"it": "Apri le braccia fino a sentire l’allungamento."
+},
+"Paella légère aux crevettes": {
+"en": "Light prawn paella",
+"es": "Paella ligera de gambas",
+"pt": "Paella leve de camarão",
+"de": "Leichte Garnelen-Paella",
+"it": "Paella leggera di gamberi"
+},
+"Pain de seigle": {
+"en": "Rye bread",
+"es": "Pan de centeno",
+"pt": "Pão de centeio",
+"de": "Roggenbrot",
+"it": "Pane di segale"
+},
+"Pain de seigle, œufs & concombre": {
+"en": "Rye bread, eggs & cucumber",
+"es": "Pan de centeno, huevos y pepino",
+"pt": "Pão de centeio, ovos e pepino",
+"de": "Roggenbrot, Eier & Gurke",
+"it": "Pane di segale, uova e cetriolo"
+},
+"Pain pita complet": {
+"en": "Wholemeal pitta bread",
+"es": "Pan de pita integral",
+"pt": "Pão sírio integral",
+"de": "Vollkorn-Pitabrot",
+"it": "Pane pita integrale"
+},
+"Pancakes protéinés aux myrtilles": {
+"en": "Protein blueberry pancakes",
+"es": "Pancakes proteicos con arándanos",
+"pt": "Panquecas proteicas com mirtilos",
+"de": "Protein-Pancakes mit Blaubeeren",
+"it": "Pancake proteici ai mirtilli"
+},
+"Papaye": {
+"en": "Papaya",
+"es": "Papaya",
+"pt": "Mamão",
+"de": "Papaya",
+"it": "Papaya"
+},
+"Parfait avec un thé.": {
+"en": "Perfect with a cup of tea.",
+"es": "Perfecto con un té.",
+"pt": "Perfeito com um chá.",
+"de": "Perfekt zu einem Tee.",
+"it": "Perfetto con un tè."
+},
+"Parsemez de coriandre et servez avec le riz.": {
+"en": "Sprinkle with coriander and serve with rice.",
+"es": "Espolvorea cilantro y sirve con arroz.",
+"pt": "Salpique coentro e sirva com arroz.",
+"de": "Mit Koriander bestreuen und mit Reis servieren.",
+"it": "Cospargi di coriandolo e servi con il riso."
+},
+"Parsemez de graines de chia.": {
+"en": "Sprinkle with chia seeds.",
+"es": "Espolvorea semillas de chía.",
+"pt": "Polvilhe sementes de chia.",
+"de": "Mit Chiasamen bestreuen.",
+"it": "Cospargi di semi di chia."
+},
+"Parsemez de noix concassées.": {
+"en": "Sprinkle with crushed walnuts.",
+"es": "Espolvorea nueces troceadas.",
+"pt": "Polvilhe nozes picadas.",
+"de": "Mit gehackten Walnüssen bestreuen.",
+"it": "Cospargi di noci tritate."
+},
+"Parsemez d’amandes.": {
+"en": "Sprinkle with almonds.",
+"es": "Espolvorea almendras.",
+"pt": "Polvilhe amêndoas.",
+"de": "Mit Mandeln bestreuen.",
+"it": "Cospargi di mandorle."
+},
+"Partager": {
+"en": "Share",
+"es": "Compartir",
+"pt": "Compartilhar",
+"de": "Teilen",
+"it": "Condividi"
+},
+"Partir d’un modèle": {
+"en": "Start from a template",
+"es": "Partir de una plantilla",
+"pt": "Partir de um modelo",
+"de": "Mit einer Vorlage starten",
+"it": "Parti da un modello"
+},
+"Passer à cette formule": {
+"en": "Switch to this plan",
+"es": "Cambiar a este plan",
+"pt": "Mudar para este plano",
+"de": "Zu diesem Paket wechseln",
+"it": "Passa a questo piano"
+},
+"Paumes vers vous, largeur d’épaules.": {
+"en": "Palms facing you, shoulder-width apart.",
+"es": "Palmas hacia ti, a la anchura de los hombros.",
+"pt": "Palmas voltadas para você, na largura dos ombros.",
+"de": "Handflächen zu dir, schulterbreit.",
+"it": "Palmi verso di te, alla larghezza delle spalle."
+},
+"Pause 1 seconde, descendez lentement.": {
+"en": "Pause for 1 second, lower slowly.",
+"es": "Pausa 1 segundo, baja despacio.",
+"pt": "Pausa de 1 segundo, desça devagar.",
+"de": "1 Sekunde halten, langsam absenken.",
+"it": "Pausa di 1 secondo, scendi lentamente."
+},
+"Pause bras tendu.": {
+"en": "Pause with your arm straight.",
+"es": "Pausa con el brazo estirado.",
+"pt": "Pausa com o braço estendido.",
+"de": "Mit gestrecktem Arm halten.",
+"it": "Pausa a braccio teso."
+},
+"Pause en haut.": {
+"en": "Pause at the top.",
+"es": "Pausa arriba.",
+"pt": "Pausa no topo.",
+"de": "Oben kurz halten.",
+"it": "Pausa in alto."
+},
+"Pec deck (butterfly)": {
+"en": "Pec deck (butterfly)",
+"es": "Pec deck (contractor)",
+"pt": "Voador (peck deck)",
+"de": "Butterfly-Maschine",
+"it": "Pec deck (butterfly)"
+},
+"Pelez l’orange à vif.": {
+"en": "Peel the orange, removing the pith.",
+"es": "Pela la naranja a vivo.",
+"pt": "Descasque a laranja, retirando a pele branca.",
+"de": "Orange schälen und filetieren.",
+"it": "Pela l’arancia a vivo."
+},
+"Penchez le buste en poussant les hanches en arrière.": {
+"en": "Lean your torso forward by pushing your hips back.",
+"es": "Inclina el torso empujando las caderas hacia atrás.",
+"pt": "Incline o tronco empurrando o quadril para trás.",
+"de": "Oberkörper neigen, Hüften nach hinten schieben.",
+"it": "Inclina il busto spingendo le anche indietro."
+},
+"Penchez le buste, jambe libre vers l’arrière.": {
+"en": "Lean forward, free leg extending back.",
+"es": "Inclina el torso, la pierna libre hacia atrás.",
+"pt": "Incline o tronco, perna livre para trás.",
+"de": "Oberkörper neigen, freies Bein nach hinten.",
+"it": "Inclina il busto, gamba libera all’indietro."
+},
+"Penchez-vous dos droit.": {
+"en": "Lean forward with a straight back.",
+"es": "Inclínate con la espalda recta.",
+"pt": "Incline-se com as costas retas.",
+"de": "Mit geradem Rücken vorbeugen.",
+"it": "Piegati con la schiena dritta."
+},
+"Pensez à amener les coudes vers les hanches.": {
+"en": "Think of driving your elbows towards your hips.",
+"es": "Piensa en llevar los codos hacia las caderas.",
+"pt": "Pense em levar os cotovelos em direção ao quadril.",
+"de": "Denke daran, die Ellbogen zu den Hüften zu führen.",
+"it": "Pensa a portare i gomiti verso le anche."
+},
+"Pensé pour les femmes en (pré)ménopause.": {
+"en": "Designed for women in (peri)menopause.",
+"es": "Pensado para mujeres en (peri)menopausia.",
+"pt": "Pensado para mulheres na (peri)menopausa.",
+"de": "Für Frauen in den (Prä-)Wechseljahren.",
+"it": "Pensato per le donne in (peri)menopausa."
+},
+"Petit-déjeuner turc léger": {
+"en": "Light Turkish breakfast",
+"es": "Desayuno turco ligero",
+"pt": "Café da manhã turco leve",
+"de": "Leichtes türkisches Frühstück",
+"it": "Colazione turca leggera"
+},
+"Petites actions, gros résultats.": {
+"en": "Small actions, big results.",
+"es": "Pequeñas acciones, grandes resultados.",
+"pt": "Pequenas ações, grandes resultados.",
+"de": "Kleine Schritte, große Wirkung.",
+"it": "Piccole azioni, grandi risultati."
+},
+"Petits pois": {
+"en": "Peas",
+"es": "Guisantes",
+"pt": "Ervilhas",
+"de": "Erbsen",
+"it": "Piselli"
+},
+"Photo, texte, code-barres ou étiquette : calories et macros en quelques secondes.": {
+"en": "Photo, text, barcode or label: calories and macros in seconds.",
+"es": "Foto, texto, código de barras o etiqueta: calorías y macros en segundos.",
+"pt": "Foto, texto, código de barras ou rótulo: calorias e macros em segundos.",
+"de": "Foto, Text, Barcode oder Etikett: Kalorien und Makros in Sekunden.",
+"it": "Foto, testo, codice a barre o etichetta: calorie e macro in pochi secondi."
+},
+"Photos de progression": {
+"en": "Progress photos",
+"es": "Fotos de progreso",
+"pt": "Fotos de progresso",
+"de": "Fortschrittsfotos",
+"it": "Foto dei progressi"
+},
+"Pieds larges, pointes ouvertes.": {
+"en": "Wide stance, toes turned out.",
+"es": "Pies separados, puntas hacia fuera.",
+"pt": "Pés afastados, pontas para fora.",
+"de": "Breiter Stand, Fußspitzen nach außen.",
+"it": "Piedi larghi, punte aperte."
+},
+"Pieds légèrement en avant de la barre.": {
+"en": "Feet slightly in front of the bar.",
+"es": "Pies ligeramente por delante de la barra.",
+"pt": "Pés levemente à frente da barra.",
+"de": "Füße leicht vor der Stange.",
+"it": "Piedi leggermente davanti al bilanciere."
+},
+"Pieds plus avancés = plus difficile.": {
+"en": "Feet further forward = harder.",
+"es": "Pies más adelantados = más difícil.",
+"pt": "Pés mais à frente = mais difícil.",
+"de": "Füße weiter vorne = schwerer.",
+"it": "Piedi più avanti = più difficile."
+},
+"Pieds très écartés, mains à l’intérieur des jambes.": {
+"en": "Very wide stance, hands inside your legs.",
+"es": "Pies muy separados, manos por dentro de las piernas.",
+"pt": "Pés bem afastados, mãos por dentro das pernas.",
+"de": "Sehr breiter Stand, Hände innerhalb der Beine.",
+"it": "Piedi molto larghi, mani all’interno delle gambe."
+},
+"Plan 7 jours et courses": {
+"en": "7-day plan & shopping",
+"es": "Plan de 7 días y compra",
+"pt": "Plano de 7 dias e compras",
+"de": "7-Tage-Plan & Einkauf",
+"it": "Piano di 7 giorni e spesa"
+},
+"Pliez les coudes pour descendre la barre vers le front.": {
+"en": "Bend your elbows to lower the bar towards your forehead.",
+"es": "Flexiona los codos para bajar la barra hacia la frente.",
+"pt": "Flexione os cotovelos para descer a barra em direção à testa.",
+"de": "Ellbogen beugen und Stange zur Stirn absenken.",
+"it": "Piega i gomiti per portare il bilanciere verso la fronte."
+},
+"Plus de 100 exercices avec démonstration animée": {
+"en": "100+ exercises with animated demos",
+"es": "Más de 100 ejercicios con demostración animada",
+"pt": "Mais de 100 exercícios com demonstração animada",
+"de": "Über 100 Übungen mit animierter Vorführung",
+"it": "Oltre 100 esercizi con dimostrazione animata"
+},
+"Plus le support est haut, plus c’est facile.": {
+"en": "The higher the support, the easier it is.",
+"es": "Cuanto más alto el apoyo, más fácil.",
+"pt": "Quanto mais alto o apoio, mais fácil.",
+"de": "Je höher die Ablage, desto leichter.",
+"it": "Più il supporto è alto, più è facile."
+},
+"Pochez les œufs 3 minutes dans l’eau frémissante.": {
+"en": "Poach the eggs for 3 minutes in simmering water.",
+"es": "Escalfa los huevos 3 minutos en agua a punto de hervir.",
+"pt": "Escalfe os ovos por 3 minutos em água fervente.",
+"de": "Eier 3 Minuten in siedendem Wasser pochieren.",
+"it": "Cuoci le uova in camicia 3 minuti in acqua che sobbolle."
+},
+"Poids du corps": {
+"en": "Bodyweight",
+"es": "Peso corporal",
+"pt": "Peso corporal",
+"de": "Körpergewicht",
+"it": "Corpo libero"
+},
+"Poignée triangle, buste légèrement incliné.": {
+"en": "Triangle handle, torso slightly leaning back.",
+"es": "Agarre triangular, torso ligeramente inclinado.",
+"pt": "Pegador triângulo, tronco levemente inclinado.",
+"de": "Dreiecksgriff, Oberkörper leicht zurückgelehnt.",
+"it": "Maniglia a triangolo, busto leggermente inclinato."
+},
+"Poignées à hauteur de poitrine.": {
+"en": "Handles at chest height.",
+"es": "Agarres a la altura del pecho.",
+"pt": "Pegadores na altura do peito.",
+"de": "Griffe auf Brusthöhe.",
+"it": "Maniglie all’altezza del petto."
+},
+"Poignées à hauteur d’épaules.": {
+"en": "Handles at shoulder height.",
+"es": "Agarres a la altura de los hombros.",
+"pt": "Pegadores na altura dos ombros.",
+"de": "Griffe auf Schulterhöhe.",
+"it": "Maniglie all’altezza delle spalle."
+},
+"Poire": {
+"en": "Pear",
+"es": "Pera",
+"pt": "Pera",
+"de": "Birne",
+"it": "Pera"
+},
+"Pois chiches cuits": {
+"en": "Cooked chickpeas",
+"es": "Garbanzos cocidos",
+"pt": "Grão-de-bico cozido",
+"de": "Gekochte Kichererbsen",
+"it": "Ceci cotti"
+},
+"Poitrine": {
+"en": "Chest",
+"es": "Pecho",
+"pt": "Peito",
+"de": "Brust",
+"it": "Petto"
+},
+"Poitrine contre l’appui.": {
+"en": "Chest against the pad.",
+"es": "Pecho contra el apoyo.",
+"pt": "Peito contra o apoio.",
+"de": "Brust am Polster.",
+"it": "Petto contro l’appoggio."
+},
+"Poitrine haute, dos plat.": {
+"en": "Chest up, flat back.",
+"es": "Pecho alto, espalda recta.",
+"pt": "Peito alto, costas retas.",
+"de": "Brust raus, Rücken gerade.",
+"it": "Petto alto, schiena piatta."
+},
+"Poke bowl saumon & edamame": {
+"en": "Salmon & edamame poke bowl",
+"es": "Poke bowl de salmón y edamame",
+"pt": "Poke de salmão e edamame",
+"de": "Lachs-Edamame-Poke-Bowl",
+"it": "Poke bowl di salmone ed edamame"
+},
+"Polenta cuite": {
+"en": "Cooked polenta",
+"es": "Polenta cocida",
+"pt": "Polenta cozida",
+"de": "Gekochte Polenta",
+"it": "Polenta cotta"
+},
+"Pomme & beurre de cacahuète": {
+"en": "Apple & peanut butter",
+"es": "Manzana y crema de cacahuete",
+"pt": "Maçã e pasta de amendoim",
+"de": "Apfel & Erdnussbutter",
+"it": "Mela e burro di arachidi"
+},
+"Pompes inclinées (mains surélevées)": {
+"en": "Incline push-ups (hands raised)",
+"es": "Flexiones inclinadas (manos elevadas)",
+"pt": "Flexões inclinadas (mãos elevadas)",
+"de": "Schräg-Liegestütze (Hände erhöht)",
+"it": "Piegamenti inclinati (mani rialzate)"
+},
+"Pompes piquées": {
+"en": "Pike push-ups",
+"es": "Flexiones en pica",
+"pt": "Flexões em V (pike)",
+"de": "Pike-Liegestütze",
+"it": "Piegamenti a V (pike)"
+},
+"Posez les crevettes dessus et cuisez 6 minutes.": {
+"en": "Lay the prawns on top and cook for 6 minutes.",
+"es": "Coloca las gambas encima y cocina 6 minutos.",
+"pt": "Coloque os camarões por cima e cozinhe por 6 minutos.",
+"de": "Garnelen darauflegen und 6 Minuten garen.",
+"it": "Adagia i gamberi sopra e cuoci 6 minuti."
+},
+"Poulet basquaise léger & riz": {
+"en": "Light Basque-style chicken & rice",
+"es": "Pollo a la vasca ligero y arroz",
+"pt": "Frango à basca leve e arroz",
+"de": "Leichtes Hähnchen baskische Art & Reis",
+"it": "Pollo alla basca leggero e riso"
+},
+"Poulet piccata au citron, polenta & épinards": {
+"en": "Lemon chicken piccata, polenta & spinach",
+"es": "Pollo piccata al limón, polenta y espinacas",
+"pt": "Frango piccata ao limão, polenta e espinafre",
+"de": "Hähnchen-Piccata mit Zitrone, Polenta & Spinat",
+"it": "Pollo piccata al limone, polenta e spinaci"
+},
+"Poulet shawarma, boulgour & taboulé": {
+"en": "Chicken shawarma, bulgur & tabbouleh",
+"es": "Pollo shawarma, bulgur y tabulé",
+"pt": "Frango shawarma, triguilho e tabule",
+"de": "Hähnchen-Shawarma, Bulgur & Taboulé",
+"it": "Pollo shawarma, bulgur e tabbouleh"
+},
+"Poulet tikka au yaourt, riz & concombre": {
+"en": "Yoghurt chicken tikka, rice & cucumber",
+"es": "Pollo tikka al yogur, arroz y pepino",
+"pt": "Frango tikka ao iogurte, arroz e pepino",
+"de": "Joghurt-Hähnchen-Tikka, Reis & Gurke",
+"it": "Pollo tikka allo yogurt, riso e cetriolo"
+},
+"Poulie": {
+"en": "Cable",
+"es": "Polea",
+"pt": "Polia",
+"de": "Kabelzug",
+"it": "Cavi"
+},
+"Poulie basse, coudes fixes.": {
+"en": "Low pulley, elbows fixed.",
+"es": "Polea baja, codos fijos.",
+"pt": "Polia baixa, cotovelos fixos.",
+"de": "Unterer Kabelzug, Ellbogen fest.",
+"it": "Cavo basso, gomiti fissi."
+},
+"Pour un dos large et une posture droite, le mouvement part des omoplates.": {
+"en": "For a wide back and upright posture, the movement starts from the shoulder blades.",
+"es": "Para una espalda ancha y una postura recta, el movimiento empieza en las escápulas.",
+"pt": "Para costas largas e uma postura ereta, o movimento começa nas escápulas.",
+"de": "Für einen breiten Rücken und eine aufrechte Haltung beginnt die Bewegung an den Schulterblättern.",
+"it": "Per una schiena ampia e una postura dritta, il movimento parte dalle scapole."
+},
+"Pousser sans douleur d’épaule": {
+"en": "Pushing without shoulder pain",
+"es": "Empujar sin dolor de hombro",
+"pt": "Empurrar sem dor no ombro",
+"de": "Drücken ohne Schulterschmerzen",
+"it": "Spingere senza dolore alla spalla"
+},
+"Poussez au-dessus de la tête en reculant la tête.": {
+"en": "Press overhead, moving your head back.",
+"es": "Empuja por encima de la cabeza retirando la cabeza.",
+"pt": "Empurre acima da cabeça recuando a cabeça.",
+"de": "Über Kopf drücken und den Kopf zurücknehmen.",
+"it": "Spingi sopra la testa arretrando la testa."
+},
+"Poussez d’abord avec les jambes.": {
+"en": "Push with your legs first.",
+"es": "Empuja primero con las piernas.",
+"pt": "Empurre primeiro com as pernas.",
+"de": "Zuerst mit den Beinen drücken.",
+"it": "Spingi prima con le gambe."
+},
+"Poussez en ligne droite au-dessus des épaules.": {
+"en": "Press in a straight line above your shoulders.",
+"es": "Empuja en línea recta por encima de los hombros.",
+"pt": "Empurre em linha reta acima dos ombros.",
+"de": "In gerader Linie über die Schultern drücken.",
+"it": "Spingi in linea retta sopra le spalle."
+},
+"Poussez en rapprochant légèrement les haltères.": {
+"en": "Press while bringing the dumbbells slightly together.",
+"es": "Empuja acercando ligeramente las mancuernas.",
+"pt": "Empurre aproximando levemente os halteres.",
+"de": "Drücken und die Kurzhanteln leicht zusammenführen.",
+"it": "Spingi avvicinando leggermente i manubri."
+},
+"Poussez en verrouillant les bras.": {
+"en": "Press and lock out your arms.",
+"es": "Empuja bloqueando los brazos.",
+"pt": "Empurre estendendo totalmente os braços.",
+"de": "Drücken und die Arme strecken.",
+"it": "Spingi distendendo completamente le braccia."
+},
+"Poussez et tirez avec les bras.": {
+"en": "Push and pull with your arms.",
+"es": "Empuja y tira con los brazos.",
+"pt": "Empurre e puxe com os braços.",
+"de": "Mit den Armen drücken und ziehen.",
+"it": "Spingi e tira con le braccia."
+},
+"Poussez la jambe vers l’arrière.": {
+"en": "Push your leg back.",
+"es": "Lleva la pierna hacia atrás.",
+"pt": "Empurre a perna para trás.",
+"de": "Bein nach hinten drücken.",
+"it": "Spingi la gamba indietro."
+},
+"Poussez le sol avec les jambes en gardant la barre contre vous.": {
+"en": "Push the floor with your legs, keeping the bar close to you.",
+"es": "Empuja el suelo con las piernas manteniendo la barra pegada a ti.",
+"pt": "Empurre o chão com as pernas mantendo a barra junto ao corpo.",
+"de": "Mit den Beinen den Boden wegdrücken und die Stange nah am Körper halten.",
+"it": "Spingi il pavimento con le gambe tenendo il bilanciere vicino a te."
+},
+"Poussez le sol vers l’extérieur.": {
+"en": "Push the floor outwards.",
+"es": "Empuja el suelo hacia fuera.",
+"pt": "Empurre o chão para fora.",
+"de": "Den Boden nach außen drücken.",
+"it": "Spingi il pavimento verso l’esterno."
+},
+"Poussez pour remonter.": {
+"en": "Push back up.",
+"es": "Empuja para subir.",
+"pt": "Empurre para subir.",
+"de": "Hochdrücken.",
+"it": "Spingi per risalire."
+},
+"Poussez sans décoller les talons.": {
+"en": "Push without lifting your heels.",
+"es": "Empuja sin despegar los talones.",
+"pt": "Empurre sem tirar os calcanhares.",
+"de": "Drücken, ohne die Fersen zu heben.",
+"it": "Spingi senza staccare i talloni."
+},
+"Poêlez le chou émincé 10 minutes.": {
+"en": "Pan-fry the sliced cabbage for 10 minutes.",
+"es": "Saltea la col en juliana 10 minutos.",
+"pt": "Refogue o repolho fatiado por 10 minutos.",
+"de": "Geschnittenen Kohl 10 Minuten in der Pfanne braten.",
+"it": "Fai saltare il cavolo a listarelle per 10 minuti."
+},
+"Première leçon offerte": {
+"en": "First lesson free",
+"es": "Primera lección gratis",
+"pt": "Primeira aula grátis",
+"de": "Erste Lektion gratis",
+"it": "Prima lezione gratuita"
+},
+"Première séance": {
+"en": "First workout",
+"es": "Primera sesión",
+"pt": "Primeiro treino",
+"de": "Erste Einheit",
+"it": "Primo allenamento"
+},
+"Prise plus large que les épaules.": {
+"en": "Grip wider than your shoulders.",
+"es": "Agarre más ancho que los hombros.",
+"pt": "Pegada mais aberta que os ombros.",
+"de": "Griff breiter als schulterbreit.",
+"it": "Presa più larga delle spalle."
+},
+"Programme guidé de 8 semaines": {
+"en": "Guided 8-week program",
+"es": "Programa guiado de 8 semanas",
+"pt": "Programa guiado de 8 semanas",
+"de": "Begleitetes 8-Wochen-Programm",
+"it": "Programma guidato di 8 settimane"
+},
+"Programmes d’entraînement et grille": {
+"en": "Training programs and schedule",
+"es": "Programas de entrenamiento y rutina",
+"pt": "Programas de treino e grade",
+"de": "Trainingsprogramme und Plan",
+"it": "Programmi di allenamento e scheda"
+},
+"Programmes, grille sur mesure, démonstrations animées et suivi des charges.": {
+"en": "Programs, custom schedule, animated demos and weight tracking.",
+"es": "Programas, rutina a medida, demostraciones animadas y seguimiento de cargas.",
+"pt": "Programas, grade sob medida, demonstrações animadas e registro de cargas.",
+"de": "Programme, Plan nach Maß, animierte Vorführungen und Gewichtsprotokoll.",
+"it": "Programmi, scheda su misura, dimostrazioni animate e registro dei carichi."
+},
+"Puis basculez le buste et tirez les bras.": {
+"en": "Then swing your torso back and pull with your arms.",
+"es": "Luego inclina el torso y tira con los brazos.",
+"pt": "Depois incline o tronco e puxe com os braços.",
+"de": "Dann Oberkörper zurücklehnen und mit den Armen ziehen.",
+"it": "Poi inclina il busto e tira con le braccia."
+},
+"Puis-je changer de formule ?": {
+"en": "Can I switch plans?",
+"es": "¿Puedo cambiar de plan?",
+"pt": "Posso trocar de plano?",
+"de": "Kann ich das Paket wechseln?",
+"it": "Posso cambiare piano?"
+},
+"Puis-je explorer avant de m’abonner ?": {
+"en": "Can I explore before subscribing?",
+"es": "¿Puedo explorar antes de suscribirme?",
+"pt": "Posso explorar antes de assinar?",
+"de": "Kann ich vor dem Abo alles ansehen?",
+"it": "Posso esplorare prima di abbonarmi?"
+},
+"Pull-over à la poulie (bras tendus)": {
+"en": "Straight-arm cable pullover",
+"es": "Pullover en polea (brazos estirados)",
+"pt": "Pullover na polia (braços estendidos)",
+"de": "Überzüge am Kabelzug (gestreckte Arme)",
+"it": "Pullover ai cavi (braccia tese)"
+},
+"Pulpe d’açaí": {
+"en": "Açaí pulp",
+"es": "Pulpa de açaí",
+"pt": "Polpa de açaí",
+"de": "Açaí-Püree",
+"it": "Polpa di açaí"
+},
+"Pâte de curry rouge": {
+"en": "Red curry paste",
+"es": "Pasta de curry rojo",
+"pt": "Pasta de curry vermelho",
+"de": "Rote Currypaste",
+"it": "Pasta di curry rosso"
+},
+"Pâtes complètes al pomodoro & thon": {
+"en": "Wholewheat pasta al pomodoro & tuna",
+"es": "Pasta integral al pomodoro y atún",
+"pt": "Macarrão integral ao pomodoro e atum",
+"de": "Vollkornnudeln al pomodoro & Thunfisch",
+"it": "Pasta integrale al pomodoro e tonno"
+},
+"Pâtes complètes cuites": {
+"en": "Cooked wholewheat pasta",
+"es": "Pasta integral cocida",
+"pt": "Macarrão integral cozido",
+"de": "Gekochte Vollkornnudeln",
+"it": "Pasta integrale cotta"
+},
+"Quark, fruits rouges & cacao": {
+"en": "Quark, berries & cocoa",
+"es": "Quark, frutos rojos y cacao",
+"pt": "Quark, frutas vermelhas e cacau",
+"de": "Quark, Beeren & Kakao",
+"it": "Quark, frutti rossi e cacao"
+},
+"Ramenez la barre vers les cuisses.": {
+"en": "Bring the bar down towards your thighs.",
+"es": "Lleva la barra hacia los muslos.",
+"pt": "Leve a barra em direção às coxas.",
+"de": "Stange Richtung Oberschenkel ziehen.",
+"it": "Porta la barra verso le cosce."
+},
+"Ramenez les pieds puis sautez.": {
+"en": "Bring your feet in, then jump.",
+"es": "Recoge los pies y salta.",
+"pt": "Traga os pés de volta e salte.",
+"de": "Füße heranziehen, dann springen.",
+"it": "Riporta i piedi in avanti e salta."
+},
+"Rameur": {
+"en": "Rowing machine",
+"es": "Remo",
+"pt": "Remo ergométrico",
+"de": "Rudergerät",
+"it": "Vogatore"
+},
+"Rapprochez les bras en contractant.": {
+"en": "Bring your arms together while squeezing.",
+"es": "Junta los brazos contrayendo.",
+"pt": "Aproxime os braços contraindo.",
+"de": "Arme unter Anspannung zusammenführen.",
+"it": "Avvicina le braccia contraendo."
+},
+"Rapprochez les jambes en contrôlant.": {
+"en": "Bring your legs together with control.",
+"es": "Junta las piernas con control.",
+"pt": "Aproxime as pernas com controle.",
+"de": "Beine kontrolliert zusammenführen.",
+"it": "Avvicina le gambe con controllo."
+},
+"Ratatouille, œufs pochés & quinoa": {
+"en": "Ratatouille, poached eggs & quinoa",
+"es": "Pisto, huevos escalfados y quinoa",
+"pt": "Ratatouille, ovos pochê e quinoa",
+"de": "Ratatouille, pochierte Eier & Quinoa",
+"it": "Ratatouille, uova in camicia e quinoa"
+},
+"Recettes du monde": {
+"en": "World recipes",
+"es": "Recetas del mundo",
+"pt": "Receitas do mundo",
+"de": "Rezepte aus aller Welt",
+"it": "Ricette dal mondo"
+},
+"Recettes du monde entier avec grammes et calories": {
+"en": "Recipes from around the world with grams and calories",
+"es": "Recetas de todo el mundo con gramos y calorías",
+"pt": "Receitas do mundo todo com gramas e calorias",
+"de": "Rezepte aus aller Welt mit Gramm und Kalorien",
+"it": "Ricette da tutto il mondo con grammi e calorie"
+},
+"Recettes du monde et liste de courses": {
+"en": "World recipes and shopping list",
+"es": "Recetas del mundo y lista de la compra",
+"pt": "Receitas do mundo e lista de compras",
+"de": "Rezepte aus aller Welt und Einkaufsliste",
+"it": "Ricette dal mondo e lista della spesa"
+},
+"Rechercher un exercice ou un muscle": {
+"en": "Search an exercise or a muscle",
+"es": "Buscar un ejercicio o un músculo",
+"pt": "Buscar um exercício ou um músculo",
+"de": "Übung oder Muskel suchen",
+"it": "Cerca un esercizio o un muscolo"
+},
+"Rechercher un plat ou un ingrédient": {
+"en": "Search a dish or an ingredient",
+"es": "Buscar un plato o un ingrediente",
+"pt": "Buscar um prato ou ingrediente",
+"de": "Gericht oder Zutat suchen",
+"it": "Cerca un piatto o un ingrediente"
+},
+"Records personnels": {
+"en": "Personal records",
+"es": "Récords personales",
+"pt": "Recordes pessoais",
+"de": "Persönliche Rekorde",
+"it": "Record personali"
+},
+"Refermez comme pour enlacer un arbre.": {
+"en": "Close as if hugging a tree.",
+"es": "Cierra como si abrazaras un árbol.",
+"pt": "Feche como se abraçasse uma árvore.",
+"de": "Schließen, als würdest du einen Baum umarmen.",
+"it": "Richiudi come per abbracciare un albero."
+},
+"Relevés de jambes suspendu": {
+"en": "Hanging leg raises",
+"es": "Elevaciones de piernas colgado",
+"pt": "Elevação de pernas na barra",
+"de": "Hängendes Beinheben",
+"it": "Sollevamento gambe alla sbarra"
+},
+"Remontez en contrôlant.": {
+"en": "Come back up with control.",
+"es": "Vuelve a subir con control.",
+"pt": "Suba com controle.",
+"de": "Kontrolliert zurück nach oben.",
+"it": "Risali con controllo."
+},
+"Remontez en poussant dans tout le pied.": {
+"en": "Stand back up pushing through your whole foot.",
+"es": "Sube empujando con todo el pie.",
+"pt": "Suba empurrando com o pé inteiro.",
+"de": "Mit dem ganzen Fuß nach oben drücken.",
+"it": "Risali spingendo con tutto il piede."
+},
+"Remontez en serrant le fessier.": {
+"en": "Come back up squeezing your glutes.",
+"es": "Sube apretando el glúteo.",
+"pt": "Suba contraindo o glúteo.",
+"de": "Mit angespanntem Po hochkommen.",
+"it": "Risali stringendo il gluteo."
+},
+"Remontez jusqu’à 90°.": {
+"en": "Come back up to 90°.",
+"es": "Vuelve a subir hasta 90°.",
+"pt": "Volte até 90°.",
+"de": "Zurück bis 90°.",
+"it": "Risali fino a 90°."
+},
+"Remontez jusqu’à l’alignement, sans hyper-extension.": {
+"en": "Come up until aligned, without overextending.",
+"es": "Sube hasta alinearte, sin hiperextender.",
+"pt": "Suba até alinhar, sem hiperestender.",
+"de": "Bis zur Linie hochkommen, ohne zu überstrecken.",
+"it": "Risali fino all’allineamento, senza iperestendere."
+},
+"Remplacer ce repas": {
+"en": "Swap this meal",
+"es": "Cambiar esta comida",
+"pt": "Trocar esta refeição",
+"de": "Diese Mahlzeit ersetzen",
+"it": "Sostituisci questo pasto"
+},
+"Remplir mon journal ménopause": {
+"en": "Fill in my menopause log",
+"es": "Rellenar mi diario de menopausia",
+"pt": "Preencher meu diário da menopausa",
+"de": "Mein Wechseljahre-Tagebuch ausfüllen",
+"it": "Compilare il mio diario della menopausa"
+},
+"Repas, recettes et liste de courses en un clic.": {
+"en": "Meals, recipes and shopping list in one tap.",
+"es": "Comidas, recetas y lista de la compra en un clic.",
+"pt": "Refeições, receitas e lista de compras em um toque.",
+"de": "Mahlzeiten, Rezepte und Einkaufsliste mit einem Tipp.",
+"it": "Pasti, ricette e lista della spesa in un tocco."
+},
+"Respiration et gainage": {
+"en": "Breathing and bracing",
+"es": "Respiración y core",
+"pt": "Respiração e core",
+"de": "Atmung und Rumpfspannung",
+"it": "Respirazione e core"
+},
+"Restent sur cet appareil": {
+"en": "Stay on this device",
+"es": "Se quedan en este dispositivo",
+"pt": "Ficam neste aparelho",
+"de": "Bleiben auf diesem Gerät",
+"it": "Restano su questo dispositivo"
+},
+"Restez droit(e), sans tenir les barres.": {
+"en": "Stay upright, without holding the rails.",
+"es": "Mantente erguido/a, sin sujetar las barras.",
+"pt": "Mantenha-se ereto(a), sem segurar as barras.",
+"de": "Aufrecht bleiben, ohne die Griffe festzuhalten.",
+"it": "Resta dritto/a, senza tenere le barre."
+},
+"Retirer": {
+"en": "Remove",
+"es": "Quitar",
+"pt": "Remover",
+"de": "Entfernen",
+"it": "Rimuovi"
+},
+"Retour à l’accueil": {
+"en": "Back to home",
+"es": "Volver al inicio",
+"pt": "Voltar ao início",
+"de": "Zurück zur Startseite",
+"it": "Torna alla home"
+},
+"Revenez dans l’ordre inverse.": {
+"en": "Return in reverse order.",
+"es": "Vuelve en orden inverso.",
+"pt": "Volte na ordem inversa.",
+"de": "In umgekehrter Reihenfolge zurück.",
+"it": "Torna nell’ordine inverso."
+},
+"Revenez en contractant les abdominaux.": {
+"en": "Roll back by tightening your abs.",
+"es": "Vuelve contrayendo los abdominales.",
+"pt": "Volte contraindo o abdômen.",
+"de": "Mit angespanntem Bauch zurückrollen.",
+"it": "Torna contraendo gli addominali."
+},
+"Revenez en poussant sur le talon avant.": {
+"en": "Return by pushing through your front heel.",
+"es": "Vuelve empujando con el talón delantero.",
+"pt": "Volte empurrando com o calcanhar da frente.",
+"de": "Über die vordere Ferse zurückdrücken.",
+"it": "Torna spingendo sul tallone anteriore."
+},
+"Revenez sans laisser les charges se toucher.": {
+"en": "Return without letting the weights touch.",
+"es": "Vuelve sin dejar que los pesos se toquen.",
+"pt": "Volte sem deixar as placas se tocarem.",
+"de": "Zurück, ohne die Gewichte aufsetzen zu lassen.",
+"it": "Torna senza far toccare i pesi."
+},
+"Ricotta": {
+"en": "Ricotta",
+"es": "Ricota",
+"pt": "Ricota",
+"de": "Ricotta",
+"it": "Ricotta"
+},
+"Ricotta & fruits rouges": {
+"en": "Ricotta & berries",
+"es": "Ricota y frutos rojos",
+"pt": "Ricota e frutas vermelhas",
+"de": "Ricotta & Beeren",
+"it": "Ricotta e frutti rossi"
+},
+"Ricotta, poire & miel sur pain complet": {
+"en": "Ricotta, pear & honey on wholemeal bread",
+"es": "Ricota, pera y miel sobre pan integral",
+"pt": "Ricota, pera e mel no pão integral",
+"de": "Ricotta, Birne & Honig auf Vollkornbrot",
+"it": "Ricotta, pera e miele su pane integrale"
+},
+"Riz complet cuit": {
+"en": "Cooked brown rice",
+"es": "Arroz integral cocido",
+"pt": "Arroz integral cozido",
+"de": "Gekochter Naturreis",
+"it": "Riso integrale cotto"
+},
+"Riz, haricots noirs, poulet grillé & salade": {
+"en": "Rice, black beans, grilled chicken & salad",
+"es": "Arroz, frijoles negros, pollo a la plancha y ensalada",
+"pt": "Arroz, feijão-preto, frango grelhado e salada",
+"de": "Reis, schwarze Bohnen, gegrilltes Hähnchen & Salat",
+"it": "Riso, fagioli neri, pollo grigliato e insalata"
+},
+"Rotations russes": {
+"en": "Russian twists",
+"es": "Giros rusos",
+"pt": "Rotação russa",
+"de": "Russian Twists",
+"it": "Russian twist"
+},
+"Rotations thoraciques": {
+"en": "Thoracic rotations",
+"es": "Rotaciones torácicas",
+"pt": "Rotações torácicas",
+"de": "Brustwirbelsäulen-Rotationen",
+"it": "Rotazioni toraciche"
+},
+"Roue abdominale": {
+"en": "Ab wheel",
+"es": "Rueda abdominal",
+"pt": "Roda abdominal",
+"de": "Bauchroller",
+"it": "Ruota addominale"
+},
+"Rowing T-bar": {
+"en": "T-bar row",
+"es": "Remo en barra T",
+"pt": "Remada cavalinho",
+"de": "T-Bar-Rudern",
+"it": "Rematore T-bar"
+},
+"Rowing haltère un bras": {
+"en": "One-arm dumbbell row",
+"es": "Remo con mancuerna a una mano",
+"pt": "Remada unilateral com halter",
+"de": "Einarmiges Kurzhantelrudern",
+"it": "Rematore con manubrio a un braccio"
+},
+"Rowing inversé": {
+"en": "Inverted row",
+"es": "Remo invertido",
+"pt": "Remada invertida",
+"de": "Umgekehrtes Rudern",
+"it": "Rematore inverso"
+},
+"Rowing machine": {
+"en": "Machine row",
+"es": "Remo en máquina",
+"pt": "Remada na máquina",
+"de": "Rudern an der Maschine",
+"it": "Rematore alla macchina"
+},
+"Rythme": {
+"en": "Pace",
+"es": "Ritmo",
+"pt": "Ritmo",
+"de": "Tempo",
+"it": "Ritmo"
+},
+"Râpez la pomme par-dessus.": {
+"en": "Grate the apple on top.",
+"es": "Ralla la manzana por encima.",
+"pt": "Rale a maçã por cima.",
+"de": "Apfel darüber reiben.",
+"it": "Grattugia la mela sopra."
+},
+"Réception souple, genoux fléchis.": {
+"en": "Land softly, knees bent.",
+"es": "Aterriza suave, con las rodillas flexionadas.",
+"pt": "Aterrisse suavemente, joelhos flexionados.",
+"de": "Weich landen, Knie gebeugt.",
+"it": "Atterra morbido, ginocchia piegate."
+},
+"Réchauffez les haricots avec un peu d’oignon et d’ail.": {
+"en": "Warm the beans with a little onion and garlic.",
+"es": "Calienta los frijoles con un poco de cebolla y ajo.",
+"pt": "Aqueça o feijão com um pouco de cebola e alho.",
+"de": "Bohnen mit etwas Zwiebel und Knoblauch erwärmen.",
+"it": "Scalda i fagioli con un po’ di cipolla e aglio."
+},
+"Réchauffez riz et haricots.": {
+"en": "Warm the rice and beans.",
+"es": "Calienta el arroz y los frijoles.",
+"pt": "Aqueça o arroz e o feijão.",
+"de": "Reis und Bohnen erwärmen.",
+"it": "Scalda riso e fagioli."
+},
+"Réchauffez tortilla et haricots.": {
+"en": "Warm the tortilla and beans.",
+"es": "Calienta la tortilla y los frijoles.",
+"pt": "Aqueça a tortilha e o feijão.",
+"de": "Tortilla und Bohnen erwärmen.",
+"it": "Scalda la tortilla e i fagioli."
+},
+"Résistance modérée.": {
+"en": "Moderate resistance.",
+"es": "Resistencia moderada.",
+"pt": "Resistência moderada.",
+"de": "Mäßiger Widerstand.",
+"it": "Resistenza moderata."
+},
+"Rôtissez la patate douce en cubes.": {
+"en": "Roast the diced sweet potato.",
+"es": "Asa el boniato en dados.",
+"pt": "Asse a batata-doce em cubos.",
+"de": "Süßkartoffelwürfel rösten.",
+"it": "Arrostisci la patata dolce a cubetti."
+},
+"Rôtissez les légumes au four 20 minutes.": {
+"en": "Roast the vegetables in the oven for 20 minutes.",
+"es": "Asa las verduras al horno 20 minutos.",
+"pt": "Asse os legumes no forno por 20 minutos.",
+"de": "Gemüse 20 Minuten im Ofen rösten.",
+"it": "Arrostisci le verdure in forno per 20 minuti."
+},
+"Saisissez le bœuf en lanières avec l’oignon.": {
+"en": "Sear the beef strips with the onion.",
+"es": "Saltea la ternera en tiras con la cebolla.",
+"pt": "Sele a carne em tiras com a cebola.",
+"de": "Rindfleischstreifen mit der Zwiebel scharf anbraten.",
+"it": "Scotta il manzo a striscioline con la cipolla."
+},
+"Saisissez le bœuf mariné au soja.": {
+"en": "Sear the soy-marinated beef.",
+"es": "Saltea la ternera marinada en soja.",
+"pt": "Sele a carne marinada no shoyu.",
+"de": "In Soja mariniertes Rindfleisch scharf anbraten.",
+"it": "Scotta il manzo marinato nella soia."
+},
+"Saisissez le poulet émincé au wok.": {
+"en": "Sear the sliced chicken in the wok.",
+"es": "Saltea el pollo en tiras en el wok.",
+"pt": "Sele o frango fatiado na wok.",
+"de": "Hähnchenstreifen im Wok scharf anbraten.",
+"it": "Scotta il pollo a striscioline nel wok."
+},
+"Saisissez l’escalope et servez avec la moutarde.": {
+"en": "Sear the escalope and serve with mustard.",
+"es": "Dora el escalope y sírvelo con mostaza.",
+"pt": "Sele o escalope e sirva com mostarda.",
+"de": "Schnitzel anbraten und mit Senf servieren.",
+"it": "Scotta la scaloppina e servila con la senape."
+},
+"Salade caprese, quinoa & roquette": {
+"en": "Caprese salad, quinoa & rocket",
+"es": "Ensalada caprese, quinoa y rúcula",
+"pt": "Salada caprese, quinoa e rúcula",
+"de": "Caprese-Salat, Quinoa & Rucola",
+"it": "Insalata caprese, quinoa e rucola"
+},
+"Salez légèrement.": {
+"en": "Salt lightly.",
+"es": "Sala ligeramente.",
+"pt": "Salgue levemente.",
+"de": "Leicht salzen.",
+"it": "Sala leggermente."
+},
+"Salle ou maison, chaque séance guidée.": {
+"en": "Gym or home, every workout guided.",
+"es": "Gimnasio o casa, cada sesión guiada.",
+"pt": "Academia ou casa, cada treino guiado.",
+"de": "Studio oder Zuhause, jede Einheit angeleitet.",
+"it": "Palestra o casa, ogni seduta guidata."
+},
+"Salsa tomate": {
+"en": "Tomato salsa",
+"es": "Salsa de tomate fresca",
+"pt": "Molho de tomate fresco (salsa)",
+"de": "Tomatensalsa",
+"it": "Salsa di pomodoro fresca"
+},
+"Sangle à la cheville, buste penché.": {
+"en": "Strap on your ankle, torso leaning forward.",
+"es": "Correa en el tobillo, torso inclinado.",
+"pt": "Tornozeleira presa, tronco inclinado.",
+"de": "Manschette am Knöchel, Oberkörper vorgeneigt.",
+"it": "Cavigliera al piede, busto inclinato."
+},
+"Sardines en boîte": {
+"en": "Tinned sardines",
+"es": "Sardinas en lata",
+"pt": "Sardinha em lata",
+"de": "Sardinen aus der Dose",
+"it": "Sardine in scatola"
+},
+"Sauce soja": {
+"en": "Soy sauce",
+"es": "Salsa de soja",
+"pt": "Molho de soja (shoyu)",
+"de": "Sojasauce",
+"it": "Salsa di soia"
+},
+"Saucisse de volaille": {
+"en": "Chicken sausage",
+"es": "Salchicha de ave",
+"pt": "Linguiça de frango",
+"de": "Geflügelwurst",
+"it": "Salsiccia di pollo"
+},
+"Saumon, pommes de terre & concombre à l’aneth": {
+"en": "Salmon, potatoes & dill cucumber",
+"es": "Salmón, patatas y pepino al eneldo",
+"pt": "Salmão, batatas e pepino com endro",
+"de": "Lachs, Kartoffeln & Dillgurke",
+"it": "Salmone, patate e cetriolo all’aneto"
+},
+"Saupoudrez d’un peu de piment doux et de citron.": {
+"en": "Sprinkle with a little mild chilli and lime.",
+"es": "Espolvorea un poco de chile suave y limón.",
+"pt": "Polvilhe um pouco de pimenta suave e limão.",
+"de": "Mit etwas mildem Chili und Limette bestreuen.",
+"it": "Spolvera con un po’ di peperoncino dolce e limone."
+},
+"Sautez de façon explosive.": {
+"en": "Jump explosively.",
+"es": "Salta de forma explosiva.",
+"pt": "Salte de forma explosiva.",
+"de": "Explosiv springen.",
+"it": "Salta in modo esplosivo."
+},
+"Sauté de poulet, brocoli & nouilles de riz": {
+"en": "Chicken, broccoli & rice noodle stir-fry",
+"es": "Salteado de pollo, brócoli y fideos de arroz",
+"pt": "Salteado de frango, brócolis e macarrão de arroz",
+"de": "Hähnchen-Brokkoli-Pfanne mit Reisnudeln",
+"it": "Saltato di pollo, broccoli e noodles di riso"
+},
+"Savoir plier aux hanches, c’est la base du soulevé de terre et d’un dos en bonne santé.": {
+"en": "Knowing how to bend at the hips is the basis of the deadlift and a healthy back.",
+"es": "Saber flexionar las caderas es la base del peso muerto y de una espalda sana.",
+"pt": "Saber dobrar o quadril é a base do levantamento terra e de costas saudáveis.",
+"de": "Richtig in der Hüfte zu beugen ist die Grundlage für Kreuzheben und einen gesunden Rücken.",
+"it": "Saper piegarsi sulle anche è la base dello stacco e di una schiena sana."
+},
+"Selle à hauteur de hanche.": {
+"en": "Saddle at hip height.",
+"es": "Sillín a la altura de la cadera.",
+"pt": "Banco na altura do quadril.",
+"de": "Sattel auf Hüfthöhe.",
+"it": "Sellino all’altezza dell’anca."
+},
+"Serrez le fessier en haut.": {
+"en": "Squeeze your glute at the top.",
+"es": "Aprieta el glúteo arriba.",
+"pt": "Contraia o glúteo no topo.",
+"de": "Oben den Po anspannen.",
+"it": "Stringi il gluteo in alto."
+},
+"Serrez le fessier sans cambrer.": {
+"en": "Squeeze your glute without arching.",
+"es": "Aprieta el glúteo sin arquear.",
+"pt": "Contraia o glúteo sem arquear.",
+"de": "Po anspannen, ohne ins Hohlkreuz zu gehen.",
+"it": "Stringi il gluteo senza inarcare."
+},
+"Serrez les abdominaux comme si quelqu’un allait vous pousser.": {
+"en": "Tighten your abs as if someone were about to push you.",
+"es": "Contrae los abdominales como si alguien fuera a empujarte.",
+"pt": "Contraia o abdômen como se alguém fosse empurrar você.",
+"de": "Spanne den Bauch an, als würde dich gleich jemand schubsen.",
+"it": "Contrai gli addominali come se qualcuno stesse per spingerti."
+},
+"Serrez les omoplates en haut.": {
+"en": "Squeeze your shoulder blades at the top.",
+"es": "Junta las escápulas arriba.",
+"pt": "Contraia as escápulas no topo.",
+"de": "Oben die Schulterblätter zusammenziehen.",
+"it": "Stringi le scapole in alto."
+},
+"Serrez les omoplates et descendez-les vers les poches arrière.": {
+"en": "Squeeze your shoulder blades and pull them down towards your back pockets.",
+"es": "Junta las escápulas y bájalas hacia los bolsillos traseros.",
+"pt": "Contraia as escápulas e leve-as em direção aos bolsos de trás.",
+"de": "Schulterblätter zusammen und Richtung Gesäßtaschen ziehen.",
+"it": "Stringi le scapole e portale verso le tasche posteriori."
+},
+"Serrez les omoplates.": {
+"en": "Squeeze your shoulder blades.",
+"es": "Junta las escápulas.",
+"pt": "Contraia as escápulas.",
+"de": "Schulterblätter zusammenziehen.",
+"it": "Stringi le scapole."
+},
+"Servez avec chapati et yaourt.": {
+"en": "Serve with chapati and yoghurt.",
+"es": "Sirve con chapati y yogur.",
+"pt": "Sirva com chapati e iogurte.",
+"de": "Mit Chapati und Joghurt servieren.",
+"it": "Servi con chapati e yogurt."
+},
+"Servez avec citron et pain.": {
+"en": "Serve with lemon and bread.",
+"es": "Sirve con limón y pan.",
+"pt": "Sirva com limão e pão.",
+"de": "Mit Zitrone und Brot servieren.",
+"it": "Servi con limone e pane."
+},
+"Servez avec houmous et salade.": {
+"en": "Serve with hummus and salad.",
+"es": "Sirve con hummus y ensalada.",
+"pt": "Sirva com homus e salada.",
+"de": "Mit Hummus und Salat servieren.",
+"it": "Servi con hummus e insalata."
+},
+"Servez avec la patate douce et l’avocat.": {
+"en": "Serve with the sweet potato and avocado.",
+"es": "Sirve con el boniato y el aguacate.",
+"pt": "Sirva com a batata-doce e o abacate.",
+"de": "Mit Süßkartoffel und Avocado servieren.",
+"it": "Servi con la patata dolce e l’avocado."
+},
+"Servez avec la polenta et les épinards poêlés.": {
+"en": "Serve with the polenta and pan-fried spinach.",
+"es": "Sirve con la polenta y las espinacas salteadas.",
+"pt": "Sirva com a polenta e o espinafre refogado.",
+"de": "Mit Polenta und gebratenem Spinat servieren.",
+"it": "Servi con la polenta e gli spinaci saltati."
+},
+"Servez avec la sauce yaourt.": {
+"en": "Serve with the yoghurt sauce.",
+"es": "Sirve con la salsa de yogur.",
+"pt": "Sirva com o molho de iogurte.",
+"de": "Mit der Joghurtsauce servieren.",
+"it": "Servi con la salsa allo yogurt."
+},
+"Servez avec le beurre de cacahuète.": {
+"en": "Serve with the peanut butter.",
+"es": "Sirve con la crema de cacahuete.",
+"pt": "Sirva com a pasta de amendoim.",
+"de": "Mit der Erdnussbutter servieren.",
+"it": "Servi con il burro di arachidi."
+},
+"Servez avec le brocoli vapeur.": {
+"en": "Serve with steamed broccoli.",
+"es": "Sirve con brócoli al vapor.",
+"pt": "Sirva com brócolis no vapor.",
+"de": "Mit gedämpftem Brokkoli servieren.",
+"it": "Servi con broccoli al vapore."
+},
+"Servez avec le chapati.": {
+"en": "Serve with the chapati.",
+"es": "Sirve con el chapati.",
+"pt": "Sirva com o chapati.",
+"de": "Mit dem Chapati servieren.",
+"it": "Servi con il chapati."
+},
+"Servez avec le concombre au yaourt et à l’aneth.": {
+"en": "Serve with the yoghurt and dill cucumber.",
+"es": "Sirve con el pepino al yogur y eneldo.",
+"pt": "Sirva com o pepino ao iogurte e endro.",
+"de": "Mit Joghurt-Dill-Gurke servieren.",
+"it": "Servi con il cetriolo allo yogurt e aneto."
+},
+"Servez avec le pain pita.": {
+"en": "Serve with the pitta bread.",
+"es": "Sirve con el pan de pita.",
+"pt": "Sirva com o pão sírio.",
+"de": "Mit dem Pitabrot servieren.",
+"it": "Servi con il pane pita."
+},
+"Servez avec le riz complet.": {
+"en": "Serve with the brown rice.",
+"es": "Sirve con el arroz integral.",
+"pt": "Sirva com o arroz integral.",
+"de": "Mit dem Naturreis servieren.",
+"it": "Servi con il riso integrale."
+},
+"Servez avec le riz et la salade de tomates.": {
+"en": "Serve with the rice and tomato salad.",
+"es": "Sirve con el arroz y la ensalada de tomate.",
+"pt": "Sirva com o arroz e a salada de tomate.",
+"de": "Mit Reis und Tomatensalat servieren.",
+"it": "Servi con il riso e l’insalata di pomodori."
+},
+"Servez avec le yaourt et le pain.": {
+"en": "Serve with the yoghurt and bread.",
+"es": "Sirve con el yogur y el pan.",
+"pt": "Sirva com o iogurte e o pão.",
+"de": "Mit Joghurt und Brot servieren.",
+"it": "Servi con lo yogurt e il pane."
+},
+"Servez avec les amandes.": {
+"en": "Serve with the almonds.",
+"es": "Sirve con las almendras.",
+"pt": "Sirva com as amêndoas.",
+"de": "Mit den Mandeln servieren.",
+"it": "Servi con le mandorle."
+},
+"Servez avec les haricots verts vapeur.": {
+"en": "Serve with steamed green beans.",
+"es": "Sirve con judías verdes al vapor.",
+"pt": "Sirva com vagem no vapor.",
+"de": "Mit gedämpften grünen Bohnen servieren.",
+"it": "Servi con fagiolini al vapore."
+},
+"Servez avec les myrtilles.": {
+"en": "Serve with the blueberries.",
+"es": "Sirve con los arándanos.",
+"pt": "Sirva com os mirtilos.",
+"de": "Mit den Blaubeeren servieren.",
+"it": "Servi con i mirtilli."
+},
+"Servez avec les soba et les légumes sautés.": {
+"en": "Serve with the soba and stir-fried vegetables.",
+"es": "Sirve con los soba y las verduras salteadas.",
+"pt": "Sirva com o soba e os legumes salteados.",
+"de": "Mit Soba und gebratenem Gemüse servieren.",
+"it": "Servi con i soba e le verdure saltate."
+},
+"Servez avec les tomates.": {
+"en": "Serve with the tomatoes.",
+"es": "Sirve con los tomates.",
+"pt": "Sirva com os tomates.",
+"de": "Mit den Tomaten servieren.",
+"it": "Servi con i pomodori."
+},
+"Servez avec l’orange.": {
+"en": "Serve with the orange.",
+"es": "Sirve con la naranja.",
+"pt": "Sirva com a laranja.",
+"de": "Mit der Orange servieren.",
+"it": "Servi con l’arancia."
+},
+"Servez avec riz et concombre citronné.": {
+"en": "Serve with rice and lemony cucumber.",
+"es": "Sirve con arroz y pepino al limón.",
+"pt": "Sirva com arroz e pepino ao limão.",
+"de": "Mit Reis und Zitronengurke servieren.",
+"it": "Servi con riso e cetriolo al limone."
+},
+"Servez avec salsa et avocat.": {
+"en": "Serve with salsa and avocado.",
+"es": "Sirve con salsa y aguacate.",
+"pt": "Sirva com salsa e abacate.",
+"de": "Mit Salsa und Avocado servieren.",
+"it": "Servi con salsa e avocado."
+},
+"Servez bien frais.": {
+"en": "Serve well chilled.",
+"es": "Sirve bien frío.",
+"pt": "Sirva bem gelado.",
+"de": "Gut gekühlt servieren.",
+"it": "Servi ben freddo."
+},
+"Servez frais.": {
+"en": "Serve chilled.",
+"es": "Sirve frío.",
+"pt": "Sirva gelado.",
+"de": "Kalt servieren.",
+"it": "Servi fresco."
+},
+"Servez le fromage blanc avec les fruits rouges.": {
+"en": "Serve the fromage frais with the berries.",
+"es": "Sirve el queso batido con los frutos rojos.",
+"pt": "Sirva o queijo batido com as frutas vermelhas.",
+"de": "Quark mit den Beeren servieren.",
+"it": "Servi il formaggio fresco con i frutti rossi."
+},
+"Servez le gaspacho avec le poulet et les pois chiches.": {
+"en": "Serve the gazpacho with the chicken and chickpeas.",
+"es": "Sirve el gazpacho con el pollo y los garbanzos.",
+"pt": "Sirva o gaspacho com o frango e o grão-de-bico.",
+"de": "Gazpacho mit Hähnchen und Kichererbsen servieren.",
+"it": "Servi il gazpacho con il pollo e i ceci."
+},
+"Servez sur le quinoa chaud.": {
+"en": "Serve over warm quinoa.",
+"es": "Sirve sobre la quinoa caliente.",
+"pt": "Sirva sobre a quinoa quente.",
+"de": "Auf warmer Quinoa servieren.",
+"it": "Servi sulla quinoa calda."
+},
+"Servez sur le riz avec soja et sésame.": {
+"en": "Serve over rice with soy sauce and sesame.",
+"es": "Sirve sobre el arroz con soja y sésamo.",
+"pt": "Sirva sobre o arroz com shoyu e gergelim.",
+"de": "Auf Reis mit Sojasauce und Sesam servieren.",
+"it": "Servi sul riso con soia e sesamo."
+},
+"Smoothie bowl mangue & soja": {
+"en": "Mango & soy smoothie bowl",
+"es": "Smoothie bowl de mango y soja",
+"pt": "Smoothie bowl de manga e soja",
+"de": "Mango-Soja-Smoothie-Bowl",
+"it": "Smoothie bowl mango e soia"
+},
+"Soufflez pendant la phase la plus difficile du mouvement.": {
+"en": "Breathe out during the hardest part of the movement.",
+"es": "Espira durante la fase más difícil del movimiento.",
+"pt": "Expire na fase mais difícil do movimento.",
+"de": "In der schwersten Phase der Bewegung ausatmen.",
+"it": "Espira durante la fase più difficile del movimento."
+},
+"Soulevé de terre": {
+"en": "Deadlift",
+"es": "Peso muerto",
+"pt": "Levantamento terra",
+"de": "Kreuzheben",
+"it": "Stacco da terra"
+},
+"Soulevé de terre sumo": {
+"en": "Sumo deadlift",
+"es": "Peso muerto sumo",
+"pt": "Levantamento terra sumô",
+"de": "Sumo-Kreuzheben",
+"it": "Stacco sumo"
+},
+"Soulevé de terre une jambe": {
+"en": "Single-leg deadlift",
+"es": "Peso muerto a una pierna",
+"pt": "Levantamento terra unilateral",
+"de": "Einbeiniges Kreuzheben",
+"it": "Stacco a una gamba"
+},
+"Soupe de lentilles corail & citron": {
+"en": "Red lentil & lemon soup",
+"es": "Sopa de lentejas rojas y limón",
+"pt": "Sopa de lentilha vermelha e limão",
+"de": "Rote-Linsen-Suppe mit Zitrone",
+"it": "Zuppa di lenticchie rosse e limone"
+},
+"Souplesse arrière des cuisses": {
+"en": "Back-of-thigh flexibility",
+"es": "Flexibilidad de la parte posterior del muslo",
+"pt": "Flexibilidade da parte posterior da coxa",
+"de": "Beweglichkeit der Oberschenkelrückseite",
+"it": "Flessibilità della parte posteriore della coscia"
+},
+"Sous une barre basse ou une table solide.": {
+"en": "Under a low bar or a sturdy table.",
+"es": "Bajo una barra baja o una mesa sólida.",
+"pt": "Sob uma barra baixa ou uma mesa firme.",
+"de": "Unter einer niedrigen Stange oder einem stabilen Tisch.",
+"it": "Sotto una sbarra bassa o un tavolo robusto."
+},
+"Squat avant": {
+"en": "Front squat",
+"es": "Sentadilla frontal",
+"pt": "Agachamento frontal",
+"de": "Frontkniebeuge",
+"it": "Squat frontale"
+},
+"Squat sumo haltère": {
+"en": "Dumbbell sumo squat",
+"es": "Sentadilla sumo con mancuerna",
+"pt": "Agachamento sumô com halter",
+"de": "Sumo-Kniebeuge mit Kurzhantel",
+"it": "Squat sumo con manubrio"
+},
+"Squat à la Smith machine": {
+"en": "Smith machine squat",
+"es": "Sentadilla en máquina Smith",
+"pt": "Agachamento no Smith",
+"de": "Kniebeuge an der Multipresse",
+"it": "Squat al multipower"
+},
+"Squats sautés": {
+"en": "Jump squats",
+"es": "Sentadillas con salto",
+"pt": "Agachamento com salto",
+"de": "Sprungkniebeugen",
+"it": "Squat jump"
+},
+"Suivez du regard.": {
+"en": "Follow with your eyes.",
+"es": "Sigue con la mirada.",
+"pt": "Acompanhe com o olhar.",
+"de": "Mit dem Blick folgen.",
+"it": "Segui con lo sguardo."
+},
+"Superposez oignon, tomates et poivron dans une cocotte.": {
+"en": "Layer onion, tomatoes and pepper in a casserole.",
+"es": "Coloca en capas cebolla, tomates y pimiento en una cazuela.",
+"pt": "Faça camadas de cebola, tomates e pimentão em uma panela.",
+"de": "Zwiebel, Tomaten und Paprika in einem Topf schichten.",
+"it": "Disponi a strati cipolla, pomodori e peperone in una casseruola."
+},
+"Sur mesure": {
+"en": "Custom",
+"es": "A medida",
+"pt": "Sob medida",
+"de": "Nach Maß",
+"it": "Su misura"
+},
+"Sur votre prochain tirage, marquez une pause d’une seconde en fin de mouvement.": {
+"en": "On your next pull, pause for one second at the end of the movement.",
+"es": "En tu próximo tirón, haz una pausa de un segundo al final del movimiento.",
+"pt": "Na sua próxima puxada, faça uma pausa de um segundo no fim do movimento.",
+"de": "Halte beim nächsten Zug am Ende der Bewegung eine Sekunde.",
+"it": "Alla prossima tirata, fai una pausa di un secondo a fine movimento."
+},
+"Surpoids": {
+"en": "Overweight",
+"es": "Sobrepeso",
+"pt": "Sobrepeso",
+"de": "Übergewicht",
+"it": "Sovrappeso"
+},
+"Suspendu(e) à une barre, épaules actives.": {
+"en": "Hanging from a bar, active shoulders.",
+"es": "Colgado/a de una barra, hombros activos.",
+"pt": "Pendurado(a) na barra, ombros ativos.",
+"de": "An einer Stange hängend, Schultern aktiv.",
+"it": "Appeso/a alla sbarra, spalle attive."
+},
+"Séance {n}": {
+"en": "Session {n}",
+"es": "Sesión {n}",
+"pt": "Treino {n}",
+"de": "Einheit {n}",
+"it": "Seduta {n}"
+},
+"Séances par semaine": {
+"en": "Workouts per week",
+"es": "Sesiones por semana",
+"pt": "Treinos por semana",
+"de": "Einheiten pro Woche",
+"it": "Allenamenti a settimana"
+},
+"Série": {
+"en": "Streak",
+"es": "Racha",
+"pt": "Sequência",
+"de": "Serie",
+"it": "Serie"
+},
+"Série 30 jours": {
+"en": "30-day streak",
+"es": "Racha de 30 días",
+"pt": "Sequência de 30 dias",
+"de": "30 Tage in Folge",
+"it": "Serie di 30 giorni"
+},
+"Série {n}": {
+"en": "Set {n}",
+"es": "Serie {n}",
+"pt": "Série {n}",
+"de": "Satz {n}",
+"it": "Serie {n}"
+},
+"Tacos de poulet, salsa & avocat": {
+"en": "Chicken tacos, salsa & avocado",
+"es": "Tacos de pollo, salsa y aguacate",
+"pt": "Tacos de frango, salsa e abacate",
+"de": "Hähnchen-Tacos, Salsa & Avocado",
+"it": "Tacos di pollo, salsa e avocado"
+},
+"Tapioca (fécule)": {
+"en": "Tapioca starch",
+"es": "Almidón de tapioca",
+"pt": "Goma de tapioca",
+"de": "Tapiokastärke",
+"it": "Fecola di tapioca"
+},
+"Tapioca aux œufs & fromage frais": {
+"en": "Tapioca with eggs & cream cheese",
+"es": "Tapioca con huevos y queso crema",
+"pt": "Tapioca com ovos e requeijão",
+"de": "Tapioka mit Eiern & Frischkäse",
+"it": "Tapioca con uova e formaggio spalmabile"
+},
+"Tapis de course": {
+"en": "Treadmill",
+"es": "Cinta de correr",
+"pt": "Esteira",
+"de": "Laufband",
+"it": "Tapis roulant"
+},
+"Tartines complètes, fromage blanc & fruits rouges": {
+"en": "Wholemeal toast, fromage frais & berries",
+"es": "Tostadas integrales, queso batido y frutos rojos",
+"pt": "Torradas integrais, queijo batido e frutas vermelhas",
+"de": "Vollkorntoast, Quark & Beeren",
+"it": "Fette integrali, formaggio fresco e frutti rossi"
+},
+"Tartinez de ricotta.": {
+"en": "Spread with ricotta.",
+"es": "Unta con ricota.",
+"pt": "Passe a ricota.",
+"de": "Mit Ricotta bestreichen.",
+"it": "Spalma la ricotta."
+},
+"Tartinez le pain de fromage frais.": {
+"en": "Spread the bread with cream cheese.",
+"es": "Unta el pan con queso crema.",
+"pt": "Passe requeijão no pão.",
+"de": "Brot mit Frischkäse bestreichen.",
+"it": "Spalma il pane con il formaggio spalmabile."
+},
+"Technique des mouvements": {
+"en": "Movement technique",
+"es": "Técnica de los movimientos",
+"pt": "Técnica dos movimentos",
+"de": "Bewegungstechnik",
+"it": "Tecnica dei movimenti"
+},
+"Tendez l’avant-bras vers l’arrière.": {
+"en": "Extend your forearm backwards.",
+"es": "Estira el antebrazo hacia atrás.",
+"pt": "Estenda o antebraço para trás.",
+"de": "Unterarm nach hinten strecken.",
+"it": "Distendi l’avambraccio all’indietro."
+},
+"Tendez sans écarter les coudes.": {
+"en": "Extend without flaring your elbows.",
+"es": "Estira sin abrir los codos.",
+"pt": "Estenda sem abrir os cotovelos.",
+"de": "Strecken, ohne die Ellbogen auszustellen.",
+"it": "Distendi senza allargare i gomiti."
+},
+"Tenez 30 secondes sans douleur.": {
+"en": "Hold 30 seconds without pain.",
+"es": "Mantén 30 segundos sin dolor.",
+"pt": "Segure 30 segundos sem dor.",
+"de": "30 Sekunden schmerzfrei halten.",
+"it": "Mantieni 30 secondi senza dolore."
+},
+"Tenez en respirant.": {
+"en": "Hold while breathing.",
+"es": "Mantén respirando.",
+"pt": "Segure respirando.",
+"de": "Halten und dabei atmen.",
+"it": "Mantieni respirando."
+},
+"Tension constante pendant la descente.": {
+"en": "Constant tension on the way down.",
+"es": "Tensión constante durante la bajada.",
+"pt": "Tensão constante na descida.",
+"de": "Konstante Spannung beim Absenken.",
+"it": "Tensione costante in discesa."
+},
+"Terminé": {
+"en": "Done",
+"es": "Listo",
+"pt": "Pronto",
+"de": "Fertig",
+"it": "Fatto"
+},
+"Tirage menton prise large": {
+"en": "Wide-grip upright row",
+"es": "Remo al mentón agarre ancho",
+"pt": "Remada alta com pegada aberta",
+"de": "Aufrechtes Rudern, breiter Griff",
+"it": "Tirata al mento presa larga"
+},
+"Tirage vertical prise serrée": {
+"en": "Close-grip lat pulldown",
+"es": "Jalón al pecho agarre cerrado",
+"pt": "Puxada frontal com pegada fechada",
+"de": "Latzug enger Griff",
+"it": "Lat machine presa stretta"
+},
+"Tirage à l’élastique": {
+"en": "Resistance band row",
+"es": "Remo con banda elástica",
+"pt": "Remada com elástico",
+"de": "Rudern mit Widerstandsband",
+"it": "Rematore con elastico"
+},
+"Tirer avec le dos, pas avec les bras": {
+"en": "Pull with your back, not your arms",
+"es": "Tira con la espalda, no con los brazos",
+"pt": "Puxe com as costas, não com os braços",
+"de": "Mit dem Rücken ziehen, nicht mit den Armen",
+"it": "Tira con la schiena, non con le braccia"
+},
+"Tirez la poignée vers le ventre.": {
+"en": "Pull the handle towards your belly.",
+"es": "Tira del agarre hacia el abdomen.",
+"pt": "Puxe o pegador em direção à barriga.",
+"de": "Griff Richtung Bauch ziehen.",
+"it": "Tira la maniglia verso la pancia."
+},
+"Tirez les coudes vers l’arrière.": {
+"en": "Pull your elbows back.",
+"es": "Lleva los codos hacia atrás.",
+"pt": "Puxe os cotovelos para trás.",
+"de": "Ellbogen nach hinten ziehen.",
+"it": "Porta i gomiti indietro."
+},
+"Tirez l’haltère vers la hanche.": {
+"en": "Pull the dumbbell towards your hip.",
+"es": "Tira de la mancuerna hacia la cadera.",
+"pt": "Puxe o halter em direção ao quadril.",
+"de": "Kurzhantel Richtung Hüfte ziehen.",
+"it": "Tira il manubrio verso l’anca."
+},
+"Tirez vers le haut de la poitrine.": {
+"en": "Pull towards your upper chest.",
+"es": "Tira hacia la parte alta del pecho.",
+"pt": "Puxe em direção à parte alta do peito.",
+"de": "Zur oberen Brust ziehen.",
+"it": "Tira verso la parte alta del petto."
+},
+"Tofu teriyaki, soba & légumes": {
+"en": "Teriyaki tofu, soba & vegetables",
+"es": "Tofu teriyaki, soba y verduras",
+"pt": "Tofu teriyaki, soba e legumes",
+"de": "Teriyaki-Tofu, Soba & Gemüse",
+"it": "Tofu teriyaki, soba e verdure"
+},
+"Tortilla de maïs": {
+"en": "Corn tortilla",
+"es": "Tortilla de maíz",
+"pt": "Tortilha de milho",
+"de": "Maistortilla",
+"it": "Tortilla di mais"
+},
+"Tortilla de pommes de terre au four & salade": {
+"en": "Baked Spanish potato omelette & salad",
+"es": "Tortilla de patatas al horno y ensalada",
+"pt": "Tortilha espanhola de batata no forno e salada",
+"de": "Spanische Kartoffeltortilla aus dem Ofen & Salat",
+"it": "Tortilla di patate al forno e insalata"
+},
+"Tostada tomate, huile d’olive & jambon": {
+"en": "Tomato, olive oil & ham toast",
+"es": "Tostada con tomate, aceite de oliva y jamón",
+"pt": "Torrada com tomate, azeite e presunto",
+"de": "Toast mit Tomate, Olivenöl & Schinken",
+"it": "Tostada con pomodoro, olio d’oliva e prosciutto"
+},
+"Touchez les jours où vous vous entraînez, puis ajoutez les exercices de chaque séance. Toute la bibliothèque est disponible, avec la démonstration de chaque mouvement.": {
+"en": "Tap the days you train, then add the exercises for each session. The whole library is available, with a demo of every movement.",
+"es": "Toca los días en que entrenas y añade los ejercicios de cada sesión. Toda la biblioteca está disponible, con la demostración de cada movimiento.",
+"pt": "Toque nos dias em que você treina e adicione os exercícios de cada treino. Toda a biblioteca está disponível, com a demonstração de cada movimento.",
+"de": "Tippe auf deine Trainingstage und füge dann die Übungen jeder Einheit hinzu. Die ganze Bibliothek steht bereit, mit einer Vorführung jeder Bewegung.",
+"it": "Tocca i giorni in cui ti alleni, poi aggiungi gli esercizi di ogni seduta. Tutta la libreria è disponibile, con la dimostrazione di ogni movimento."
+},
+"Touchez pour voir le mouvement": {
+"en": "Tap to see the movement",
+"es": "Toca para ver el movimiento",
+"pt": "Toque para ver o movimento",
+"de": "Tippen, um die Bewegung zu sehen",
+"it": "Tocca per vedere il movimento"
+},
+"Tournez le coude vers le plafond.": {
+"en": "Rotate your elbow towards the ceiling.",
+"es": "Gira el codo hacia el techo.",
+"pt": "Gire o cotovelo em direção ao teto.",
+"de": "Ellbogen Richtung Decke drehen.",
+"it": "Ruota il gomito verso il soffitto."
+},
+"Tournez les poignets en poussant vers le haut.": {
+"en": "Rotate your wrists as you press up.",
+"es": "Gira las muñecas mientras empujas hacia arriba.",
+"pt": "Gire os punhos enquanto empurra para cima.",
+"de": "Handgelenke beim Hochdrücken drehen.",
+"it": "Ruota i polsi mentre spingi verso l’alto."
+},
+"Tournez les épaules de chaque côté.": {
+"en": "Turn your shoulders to each side.",
+"es": "Gira los hombros a cada lado.",
+"pt": "Gire os ombros para cada lado.",
+"de": "Schultern zu jeder Seite drehen.",
+"it": "Ruota le spalle da ogni lato."
+},
+"Tous les cours et le coach au quotidien": {
+"en": "All courses and daily coaching",
+"es": "Todos los cursos y el coach a diario",
+"pt": "Todos os cursos e o coach no dia a dia",
+"de": "Alle Kurse und täglicher Coach",
+"it": "Tutti i corsi e il coach ogni giorno"
+},
+"Tous les programmes d’entraînement, la grille et les exercices animés": {
+"en": "All training programs, the schedule and the animated exercises",
+"es": "Todos los programas de entrenamiento, la rutina y los ejercicios animados",
+"pt": "Todos os programas de treino, a grade e os exercícios animados",
+"de": "Alle Trainingsprogramme, der Plan und die animierten Übungen",
+"it": "Tutti i programmi di allenamento, la scheda e gli esercizi animati"
+},
+"Tout": {
+"en": "All",
+"es": "Todo",
+"pt": "Tudo",
+"de": "Alle",
+"it": "Tutto"
+},
+"Tout NutriPilot, sans limite.": {
+"en": "All of NutriPilot, no limits.",
+"es": "Todo NutriPilot, sin límites.",
+"pt": "Todo o NutriPilot, sem limites.",
+"de": "Ganz NutriPilot, ohne Grenzen.",
+"it": "Tutto NutriPilot, senza limiti."
+},
+"Tout décocher": {
+"en": "Untick all",
+"es": "Desmarcar todo",
+"pt": "Desmarcar tudo",
+"de": "Alle abwählen",
+"it": "Deseleziona tutto"
+},
+"Tout matériel": {
+"en": "All equipment",
+"es": "Todo el material",
+"pt": "Todo equipamento",
+"de": "Alle Geräte",
+"it": "Tutta l’attrezzatura"
+},
+"Tractions supination": {
+"en": "Chin-ups",
+"es": "Dominadas supinas",
+"pt": "Barra fixa supinada",
+"de": "Klimmzüge im Untergriff",
+"it": "Trazioni presa supina"
+},
+"Tranchez tomates et mozzarella.": {
+"en": "Slice the tomatoes and mozzarella.",
+"es": "Corta los tomates y la mozzarella.",
+"pt": "Fatie os tomates e a muçarela.",
+"de": "Tomaten und Mozzarella in Scheiben schneiden.",
+"it": "Affetta pomodori e mozzarella."
+},
+"Trapèzes": {
+"en": "Trapezius",
+"es": "Trapecios",
+"pt": "Trapézio",
+"de": "Trapezmuskel",
+"it": "Trapezi"
+},
+"Triceps, pectoraux": {
+"en": "Triceps, chest",
+"es": "Tríceps, pecho",
+"pt": "Tríceps, peito",
+"de": "Trizeps, Brust",
+"it": "Tricipiti, petto"
+},
+"Un bon échauffement améliore la performance et limite les blessures.": {
+"en": "A good warm-up improves performance and limits injuries.",
+"es": "Un buen calentamiento mejora el rendimiento y limita las lesiones.",
+"pt": "Um bom aquecimento melhora o desempenho e reduz lesões.",
+"de": "Gutes Aufwärmen verbessert die Leistung und beugt Verletzungen vor.",
+"it": "Un buon riscaldamento migliora la prestazione e limita gli infortuni."
+},
+"Un tronc solide protège le dos et rend chaque mouvement plus fort.": {
+"en": "A strong core protects your back and makes every movement stronger.",
+"es": "Un core fuerte protege la espalda y hace cada movimiento más potente.",
+"pt": "Um core forte protege as costas e deixa cada movimento mais forte.",
+"de": "Ein starker Rumpf schützt den Rücken und macht jede Bewegung kräftiger.",
+"it": "Un core solido protegge la schiena e rende ogni movimento più forte."
+},
+"Une formule pour chaque objectif.": {
+"en": "A plan for every goal.",
+"es": "Un plan para cada objetivo.",
+"pt": "Um plano para cada objetivo.",
+"de": "Ein Paket für jedes Ziel.",
+"it": "Un piano per ogni obiettivo."
+},
+"Utilisez cette routine avant votre prochaine séance.": {
+"en": "Use this routine before your next workout.",
+"es": "Usa esta rutina antes de tu próxima sesión.",
+"pt": "Use esta rotina antes do seu próximo treino.",
+"de": "Nutze diese Routine vor deiner nächsten Einheit.",
+"it": "Usa questa routine prima del prossimo allenamento."
+},
+"Verrouillez hanches et genoux ensemble en haut.": {
+"en": "Lock out hips and knees together at the top.",
+"es": "Bloquea caderas y rodillas a la vez arriba.",
+"pt": "Estenda quadril e joelhos juntos no topo.",
+"de": "Oben Hüfte und Knie gleichzeitig strecken.",
+"it": "Distendi anche e ginocchia insieme in alto."
+},
+"Versez dans un bol.": {
+"en": "Pour into a bowl.",
+"es": "Vierte en un bol.",
+"pt": "Despeje em uma tigela.",
+"de": "In eine Schale geben.",
+"it": "Versa in una ciotola."
+},
+"Versez la ricotta dans un bol.": {
+"en": "Spoon the ricotta into a bowl.",
+"es": "Pon la ricota en un bol.",
+"pt": "Coloque a ricota em uma tigela.",
+"de": "Ricotta in eine Schale geben.",
+"it": "Versa la ricotta in una ciotola."
+},
+"Version douce : sans saut ni pompe.": {
+"en": "Gentle version: no jump, no push-up.",
+"es": "Versión suave: sin salto ni flexión.",
+"pt": "Versão leve: sem salto nem flexão.",
+"de": "Sanfte Version: ohne Sprung und Liegestütz.",
+"it": "Versione dolce: senza salto né piegamento."
+},
+"Voir les formules": {
+"en": "See the plans",
+"es": "Ver los planes",
+"pt": "Ver os planos",
+"de": "Pakete ansehen",
+"it": "Vedi i piani"
+},
+"Vos charges": {
+"en": "Your weights",
+"es": "Tus cargas",
+"pt": "Suas cargas",
+"de": "Deine Gewichte",
+"it": "I tuoi carichi"
+},
+"Vos préférences, NutriPilot construit les séances.": {
+"en": "Your preferences, NutriPilot builds the sessions.",
+"es": "Tus preferencias; NutriPilot crea las sesiones.",
+"pt": "Suas preferências; o NutriPilot monta os treinos.",
+"de": "Deine Vorlieben, NutriPilot baut die Einheiten.",
+"it": "Le tue preferenze, NutriPilot crea le sedute."
+},
+"Votre formule": {
+"en": "Your plan",
+"es": "Tu plan",
+"pt": "Seu plano",
+"de": "Dein Paket",
+"it": "Il tuo piano"
+},
+"Votre grille : 2 séances par semaine.": {
+"en": "Your schedule: 2 sessions a week.",
+"es": "Tu rutina: 2 sesiones por semana.",
+"pt": "Sua grade: 2 treinos por semana.",
+"de": "Dein Plan: 2 Einheiten pro Woche.",
+"it": "La tua scheda: 2 sedute a settimana."
+},
+"Votre grille : {n} séances par semaine.": {
+"en": "Your schedule: {n} sessions a week.",
+"es": "Tu rutina: {n} sesiones por semana.",
+"pt": "Sua grade: {n} treinos por semana.",
+"de": "Dein Plan: {n} Einheiten pro Woche.",
+"it": "La tua scheda: {n} sedute a settimana."
+},
+"Votre plan aujourd’hui": {
+"en": "Your plan today",
+"es": "Tu plan de hoy",
+"pt": "Seu plano de hoje",
+"de": "Dein Plan für heute",
+"it": "Il tuo piano di oggi"
+},
+"Vélo": {
+"en": "Exercise bike",
+"es": "Bicicleta",
+"pt": "Bicicleta ergométrica",
+"de": "Fahrrad",
+"it": "Bici"
+},
+"Vélo elliptique": {
+"en": "Elliptical trainer",
+"es": "Elíptica",
+"pt": "Elíptico",
+"de": "Crosstrainer",
+"it": "Ellittica"
+},
+"Yaourt grec, orange & amandes": {
+"en": "Greek yoghurt, orange & almonds",
+"es": "Yogur griego, naranja y almendras",
+"pt": "Iogurte grego, laranja e amêndoas",
+"de": "Griechischer Joghurt, Orange & Mandeln",
+"it": "Yogurt greco, arancia e mandorle"
+},
+"Yaourt, mangue & piment doux": {
+"en": "Yoghurt, mango & mild chilli",
+"es": "Yogur, mango y chile suave",
+"pt": "Iogurte, manga e pimenta suave",
+"de": "Joghurt, Mango & milder Chili",
+"it": "Yogurt, mango e peperoncino dolce"
+},
+"Yaourt, papaye & graines de chia": {
+"en": "Yoghurt, papaya & chia seeds",
+"es": "Yogur, papaya y semillas de chía",
+"pt": "Iogurte, mamão e sementes de chia",
+"de": "Joghurt, Papaya & Chiasamen",
+"it": "Yogurt, papaya e semi di chia"
+},
+"depuis le début": {
+"en": "since the start",
+"es": "desde el inicio",
+"pt": "desde o início",
+"de": "seit Beginn",
+"it": "dall’inizio"
+},
+"dès {p} / mois": {
+"en": "from {p} / month",
+"es": "desde {p} / mes",
+"pt": "a partir de {p} / mês",
+"de": "ab {p} / Monat",
+"it": "da {p} / mese"
+},
+"exercices": {
+"en": "exercises",
+"es": "ejercicios",
+"pt": "exercícios",
+"de": "Übungen",
+"it": "esercizi"
+},
+"jours suivis d’affilée": {
+"en": "days tracked in a row",
+"es": "días seguidos registrados",
+"pt": "dias seguidos registrados",
+"de": "Tage in Folge erfasst",
+"it": "giorni di fila registrati"
+},
+"langues": {
+"en": "languages",
+"es": "idiomas",
+"pt": "idiomas",
+"de": "Sprachen",
+"it": "lingue"
+},
+"lip.": {
+"en": "fat",
+"es": "grasas",
+"pt": "gord.",
+"de": "Fett",
+"it": "grassi"
+},
+"objectif {n} g": {
+"en": "goal {n} g",
+"es": "objetivo {n} g",
+"pt": "meta {n} g",
+"de": "Ziel {n} g",
+"it": "obiettivo {n} g"
+},
+"par jour": {
+"en": "per day",
+"es": "al día",
+"pt": "por dia",
+"de": "pro Tag",
+"it": "al giorno"
+},
+"programmes": {
+"en": "programs",
+"es": "programas",
+"pt": "programas",
+"de": "Programme",
+"it": "programmi"
+},
+"recettes": {
+"en": "recipes",
+"es": "recetas",
+"pt": "receitas",
+"de": "Rezepte",
+"it": "ricette"
+},
+"sem.": {
+"en": "wk",
+"es": "sem.",
+"pt": "sem.",
+"de": "Wo.",
+"it": "sett."
+},
+"sur 7 jours · objectif {n}": {
+"en": "over 7 days · goal {n}",
+"es": "en 7 días · objetivo {n}",
+"pt": "em 7 dias · meta {n}",
+"de": "über 7 Tage · Ziel {n}",
+"it": "su 7 giorni · obiettivo {n}"
+},
+"{d} dans le panier": {
+"en": "{d} in the basket",
+"es": "{d} en el carrito",
+"pt": "{d} no carrinho",
+"de": "{d} im Korb",
+"it": "{d} nel carrello"
+},
+"{n} articles": {
+"en": "{n} items",
+"es": "{n} artículos",
+"pt": "{n} itens",
+"de": "{n} Artikel",
+"it": "{n} articoli"
+},
+"{n} dans cette séance": {
+"en": "{n} in this session",
+"es": "{n} en esta sesión",
+"pt": "{n} neste treino",
+"de": "{n} in dieser Einheit",
+"it": "{n} in questa seduta"
+},
+"{n} exercices animés": {
+"en": "{n} animated exercises",
+"es": "{n} ejercicios animados",
+"pt": "{n} exercícios animados",
+"de": "{n} animierte Übungen",
+"it": "{n} esercizi animati"
+},
+"{n} langues": {
+"en": "{n} languages",
+"es": "{n} idiomas",
+"pt": "{n} idiomas",
+"de": "{n} Sprachen",
+"it": "{n} lingue"
+},
+"{n} mouvements": {
+"en": "{n} movements",
+"es": "{n} movimientos",
+"pt": "{n} movimentos",
+"de": "{n} Bewegungen",
+"it": "{n} movimenti"
+},
+"{n} recettes": {
+"en": "{n} recipes",
+"es": "{n} recetas",
+"pt": "{n} receitas",
+"de": "{n} Rezepte",
+"it": "{n} ricette"
+},
+"{n} recettes du monde entier": {
+"en": "{n} recipes from around the world",
+"es": "{n} recetas de todo el mundo",
+"pt": "{n} receitas do mundo todo",
+"de": "{n} Rezepte aus aller Welt",
+"it": "{n} ricette da tutto il mondo"
+},
+"{n} séries": {
+"en": "{n} sets",
+"es": "{n} series",
+"pt": "{n} séries",
+"de": "{n} Sätze",
+"it": "{n} serie"
+},
+"À genoux, corde derrière la tête.": {
+"en": "Kneeling, rope behind your head.",
+"es": "De rodillas, cuerda detrás de la cabeza.",
+"pt": "Ajoelhado(a), corda atrás da cabeça.",
+"de": "Kniend, Seil hinter dem Kopf.",
+"it": "In ginocchio, corda dietro la testa."
+},
+"À genoux, roue sous les épaules.": {
+"en": "Kneeling, wheel under your shoulders.",
+"es": "De rodillas, rueda bajo los hombros.",
+"pt": "Ajoelhado(a), roda abaixo dos ombros.",
+"de": "Kniend, Roller unter den Schultern.",
+"it": "In ginocchio, ruota sotto le spalle."
+},
+"À quatre pattes, une main derrière la tête.": {
+"en": "On all fours, one hand behind your head.",
+"es": "A cuatro patas, una mano detrás de la cabeza.",
+"pt": "De quatro apoios, uma mão atrás da cabeça.",
+"de": "Im Vierfüßlerstand, eine Hand hinter dem Kopf.",
+"it": "A quattro zampe, una mano dietro la testa."
+},
+"Écartez la corde en bas du mouvement.": {
+"en": "Spread the rope apart at the bottom.",
+"es": "Separa la cuerda al final del movimiento.",
+"pt": "Abra a corda no final do movimento.",
+"de": "Seil unten auseinanderziehen.",
+"it": "Allarga la corda in fondo al movimento."
+},
+"Écarté couché haltères": {
+"en": "Dumbbell fly",
+"es": "Aperturas con mancuernas",
+"pt": "Crucifixo com halteres",
+"de": "Kurzhantel-Flys",
+"it": "Croci con manubri"
+},
+"Écrasez la patate douce en purée.": {
+"en": "Mash the sweet potato.",
+"es": "Haz puré con el boniato.",
+"pt": "Amasse a batata-doce.",
+"de": "Süßkartoffel zu Püree stampfen.",
+"it": "Schiaccia la patata dolce a purè."
+},
+"Élastique": {
+"en": "Band",
+"es": "Banda elástica",
+"pt": "Elástico",
+"de": "Widerstandsband",
+"it": "Elastico"
+},
+"Élastique accroché à hauteur de poitrine.": {
+"en": "Band anchored at chest height.",
+"es": "Banda anclada a la altura del pecho.",
+"pt": "Elástico preso na altura do peito.",
+"de": "Band auf Brusthöhe befestigt.",
+"it": "Elastico fissato all’altezza del petto."
+},
+"Élévations frontales": {
+"en": "Front raises",
+"es": "Elevaciones frontales",
+"pt": "Elevação frontal",
+"de": "Frontheben",
+"it": "Alzate frontali"
+},
+"Épaules, trapèzes": {
+"en": "Shoulders, trapezius",
+"es": "Hombros, trapecios",
+"pt": "Ombros, trapézio",
+"de": "Schultern, Trapezmuskel",
+"it": "Spalle, trapezi"
+},
+"Épaules, triceps": {
+"en": "Shoulders, triceps",
+"es": "Hombros, tríceps",
+"pt": "Ombros, tríceps",
+"de": "Schultern, Trizeps",
+"it": "Spalle, tricipiti"
+},
+"Épices": {
+"en": "Spices",
+"es": "Especias",
+"pt": "Especiarias",
+"de": "Gewürze",
+"it": "Spezie"
+},
+"Étalez la fécule dans une poêle chaude pour former une galette.": {
+"en": "Spread the starch in a hot pan to form a pancake.",
+"es": "Extiende el almidón en una sartén caliente para formar una tortita.",
+"pt": "Espalhe a goma em uma frigideira quente para formar a tapioca.",
+"de": "Stärke in einer heißen Pfanne zu einem Fladen verteilen.",
+"it": "Distribuisci la fecola in una padella calda per formare una crêpe."
+},
+"Étirement des ischio-jambiers": {
+"en": "Hamstring stretch",
+"es": "Estiramiento de isquiotibiales",
+"pt": "Alongamento de posteriores de coxa",
+"de": "Beinbeuger-Dehnung",
+"it": "Allungamento dei femorali"
+},
+"Étirez bien en bas.": {
+"en": "Stretch fully at the bottom.",
+"es": "Estira bien abajo.",
+"pt": "Alongue bem embaixo.",
+"de": "Unten gut dehnen.",
+"it": "Allunga bene in basso."
+},
+"à partir de": {
+"en": "from",
+"es": "desde",
+"pt": "a partir de",
+"de": "ab",
+"it": "a partire da"
+},
+"Œufs brouillés, toast complet & avocat": {
+"en": "Scrambled eggs, wholemeal toast & avocado",
+"es": "Huevos revueltos, tostada integral y aguacate",
+"pt": "Ovos mexidos, torrada integral e abacate",
+"de": "Rührei, Vollkorntoast & Avocado",
+"it": "Uova strapazzate, toast integrale e avocado"
+},
+"Œufs à la ranchera, haricots & tortilla": {
+"en": "Ranchero eggs, beans & tortilla",
+"es": "Huevos rancheros, frijoles y tortilla",
+"pt": "Ovos rancheros, feijão e tortilha",
+"de": "Huevos Rancheros, Bohnen & Tortilla",
+"it": "Uova alla ranchera, fagioli e tortilla"
+},
+"−1 kg": {
+"en": "−1 kg",
+"es": "−1 kg",
+"pt": "−1 kg",
+"de": "−1 kg",
+"it": "−1 kg"
+},
+"−5 kg": {
+"en": "−5 kg",
+"es": "−5 kg",
+"pt": "−5 kg",
+"de": "−5 kg",
+"it": "−5 kg"
+},
+"Création de votre semaine…": {
+"en": "Creating your week…",
+"es": "Creando tu semana…",
+"pt": "Criando sua semana…",
+"de": "Deine Woche wird erstellt…",
+"it": "Creazione della tua settimana…"
+},
+"Aucune alternative avec vos préférences actuelles.": {
+"en": "No alternatives with your current preferences.",
+"es": "No hay alternativas con tus preferencias actuales.",
+"pt": "Nenhuma alternativa com suas preferências atuais.",
+"de": "Keine Alternativen mit deinen aktuellen Vorlieben.",
+"it": "Nessuna alternativa con le tue preferenze attuali."
+},
+"Votre plan sera créé automatiquement, puis la recette ajoutée au jour choisi.": {
+"en": "Your plan will be created automatically, then the recipe added to the chosen day.",
+"es": "Tu plan se creará automáticamente y luego se añadirá la receta al día elegido.",
+"pt": "Seu plano será criado automaticamente e a receita adicionada ao dia escolhido.",
+"de": "Dein Plan wird automatisch erstellt und das Rezept zum gewählten Tag hinzugefügt.",
+"it": "Il tuo piano verrà creato automaticamente, poi la ricetta aggiunta al giorno scelto."
+},
+"Recette ajoutée à votre plan ✓": {
+"en": "Recipe added to your plan ✓",
+"es": "Receta añadida a tu plan ✓",
+"pt": "Receita adicionada ao seu plano ✓",
+"de": "Rezept zu deinem Plan hinzugefügt ✓",
+"it": "Ricetta aggiunta al tuo piano ✓"
+},
+"Créez votre semaine : NutriPilot regroupe automatiquement les ingrédients par rayon.": {
+"en": "Create your week: NutriPilot groups the ingredients by aisle automatically.",
+"es": "Crea tu semana: NutriPilot agrupa los ingredientes por sección automáticamente.",
+"pt": "Crie sua semana: o NutriPilot agrupa os ingredientes por seção automaticamente.",
+"de": "Erstelle deine Woche: NutriPilot sortiert die Zutaten automatisch nach Regal.",
+"it": "Crea la tua settimana: NutriPilot raggruppa gli ingredienti per reparto automaticamente."
+},
+"Journée parfaite. Bravo !": {
+"en": "Perfect day. Well done!",
+"es": "Día perfecto. ¡Bravo!",
+"pt": "Dia perfeito. Parabéns!",
+"de": "Perfekter Tag. Super!",
+"it": "Giornata perfetta. Bravo!"
+},
+"Photo ajoutée ✓": {
+"en": "Photo added ✓",
+"es": "Foto añadida ✓",
+"pt": "Foto adicionada ✓",
+"de": "Foto hinzugefügt ✓",
+"it": "Foto aggiunta ✓"
+},
+"Touchez encore pour retirer ce jour et ses exercices.": {
+"en": "Tap again to remove this day and its exercises.",
+"es": "Toca de nuevo para quitar este día y sus ejercicios.",
+"pt": "Toque de novo para remover este dia e seus exercícios.",
+"de": "Tippe erneut, um diesen Tag und seine Übungen zu entfernen.",
+"it": "Tocca di nuovo per rimuovere questo giorno e i suoi esercizi."
+},
+"Aucun exercice pour ce filtre.": {
+"en": "No exercises for this filter.",
+"es": "No hay ejercicios para este filtro.",
+"pt": "Nenhum exercício para este filtro.",
+"de": "Keine Übungen für diesen Filter.",
+"it": "Nessun esercizio per questo filtro."
+},
+"C’est reparti !": {
+"en": "Let’s go again!",
+"es": "¡A por la siguiente!",
+"pt": "Bora de novo!",
+"de": "Weiter geht’s!",
+"it": "Si riparte!"
+},
+"Choisissez au moins un jour pour commencer votre grille.": {
+"en": "Choose at least one day to start your schedule.",
+"es": "Elige al menos un día para empezar tu rutina.",
+"pt": "Escolha pelo menos um dia para começar sua grade.",
+"de": "Wähle mindestens einen Tag, um deinen Plan zu beginnen.",
+"it": "Scegli almeno un giorno per iniziare la tua scheda."
+},
+"Ajoutez au moins un exercice.": {
+"en": "Add at least one exercise.",
+"es": "Añade al menos un ejercicio.",
+"pt": "Adicione pelo menos um exercício.",
+"de": "Füge mindestens eine Übung hinzu.",
+"it": "Aggiungi almeno un esercizio."
+},
+"{p}/{n} jours proches du repère protéines · {f}/{n} jours proches du repère fibres. Utilisez ces tendances pour simplifier la prochaine semaine.": {
+"en": "{p}/{n} days close to your protein target · {f}/{n} days close to your fibre target. Use these trends to simplify next week.",
+"es": "{p}/{n} días cerca de la referencia de proteínas · {f}/{n} días cerca de la referencia de fibra. Usa estas tendencias para simplificar la próxima semana.",
+"pt": "{p}/{n} dias próximos da meta de proteína · {f}/{n} dias próximos da meta de fibras. Use essas tendências para simplificar a próxima semana.",
+"de": "{p}/{n} Tage nahe am Eiweißziel · {f}/{n} Tage nahe am Ballaststoffziel. Nutze diese Trends, um die nächste Woche zu vereinfachen.",
+"it": "{p}/{n} giorni vicini al riferimento proteico · {f}/{n} giorni vicini al riferimento di fibre. Usa queste tendenze per semplificare la prossima settimana."
+},
+"Modèle chargé : modifiez-le librement.": {
+"en": "Template loaded: edit it freely.",
+"es": "Plantilla cargada: modifícala libremente.",
+"pt": "Modelo carregado: edite à vontade.",
+"de": "Vorlage geladen: frei anpassen.",
+"it": "Modello caricato: modificalo liberamente."
+},
+"Liste de courses NutriPilot": {
+"en": "NutriPilot shopping list",
+"es": "Lista de la compra NutriPilot",
+"pt": "Lista de compras NutriPilot",
+"de": "NutriPilot-Einkaufsliste",
+"it": "Lista della spesa NutriPilot"
+},
+"Liste copiée ✓": {
+"en": "List copied ✓",
+"es": "Lista copiada ✓",
+"pt": "Lista copiada ✓",
+"de": "Liste kopiert ✓",
+"it": "Lista copiata ✓"
+},
+"Repas remplacé ✓": {
+"en": "Meal swapped ✓",
+"es": "Comida cambiada ✓",
+"pt": "Refeição trocada ✓",
+"de": "Mahlzeit ersetzt ✓",
+"it": "Pasto sostituito ✓"
+},
+"Ajouté à votre grille ✓": {
+"en": "Added to your schedule ✓",
+"es": "Añadido a tu rutina ✓",
+"pt": "Adicionado à sua grade ✓",
+"de": "Zu deinem Plan hinzugefügt ✓",
+"it": "Aggiunto alla tua scheda ✓"
+},
+"j": {
+"en": "d",
+"es": "d",
+"pt": "d",
+"de": "T.",
+"it": "g"
+},
+"Leçons": {
+"en": "Lessons",
+"es": "Lecciones",
+"pt": "Aulas",
+"de": "Lektionen",
+"it": "Lezioni"
 }
 };

@@ -52,6 +52,8 @@ const STATIC_FILES = new Set([
   '/index.html',
   '/app.js',
   '/i18n.js',
+  '/food.js',
+  '/exercises.js',
   '/styles.css',
   '/sw.js',
   '/manifest.webmanifest',
@@ -514,11 +516,18 @@ function langFromRequest(req) {
   return LANG_NAMES[code] ? code : 'fr';
 }
 
-async function callAI(input, max = 1600) {
+async function callAI(input, max = 1600, timeoutMs = 45_000) {
   if (!OPENAI_API_KEY || !OPENAI_MODEL) throw new Error('IA non configurée');
   const langCode = requestLang.getStore();
   if (langCode && langCode !== 'fr' && LANG_NAMES[langCode]) {
-    input = `${input}\nIMPORTANT : rédige tous les textes destinés à l'utilisateur (titres, noms d'aliments et de plats, conseils, étapes, réponses) en ${LANG_NAMES[langCode]}. Les clés JSON restent identiques.`;
+    const note = `\nIMPORTANT : rédige tous les textes destinés à l'utilisateur (titres, noms d'aliments et de plats, conseils, étapes, réponses) en ${LANG_NAMES[langCode]}. Les clés JSON restent identiques.`;
+    if (Array.isArray(input)) {
+      input = input.map((msg, i) => (i === 0 && Array.isArray(msg.content)
+        ? { ...msg, content: msg.content.map((c, j) => (j === 0 && c.type === 'input_text' ? { ...c, text: c.text + note } : c)) }
+        : msg));
+    } else {
+      input = `${input}${note}`;
+    }
   }
   const { response, data } = await fetchJson('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -527,7 +536,7 @@ async function callAI(input, max = 1600) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ model: OPENAI_MODEL, input, max_output_tokens: max }),
-  }, 45_000);
+  }, timeoutMs);
   if (!response.ok) {
     const error = publicError('Le service IA est temporairement indisponible.', 502);
     error.internalMessage = safeText(data?.error?.message || `OpenAI HTTP ${response.status}`, 500);
@@ -746,13 +755,19 @@ async function weekPlan(body) {
 
   if (!OPENAI_API_KEY || !OPENAI_MODEL) return fallback;
 
-  const input = `Crée un plan alimentaire français réaliste sur 7 jours pour un adulte visant une perte de poids progressive.
+  const input = `Crée un plan alimentaire réaliste sur 7 jours pour un adulte (objectif : ${safeText(body.goal || 'perte de poids progressive', 60)}).
 Cible indicative: ${Math.round(kcal)} kcal/j, ${Math.round(protein)} g protéines/j. Nombre de prises: exactement ${mealsPerDay}/jour.
 Style: ${diet}. Allergies/à éviter: ${allergies}. Cuisine préférée: ${cuisine}. Budget: ${budget}. Temps cuisine: ${cooking}.
-Le plan doit rester agréable, varié, faisable en France et ne doit pas recommander de restriction extrême.
+Le plan doit rester agréable, varié, adapté aux plats et produits courants de la cuisine indiquée (${cuisine}) et ne doit pas recommander de restriction extrême. Ingrédients courts : 3 à 6 par repas.
 Chaque journée doit contenir exactement ${mealsPerDay} repas. Chaque repas doit contenir kcal, protéines, glucides, lipides, fibres, temps et ingrédients avec grammes approximatifs.
 Retourne UNIQUEMENT JSON: {"days":[{"day":"Lundi","meals":[{"type":"Petit-déjeuner","name":"...","kcal":350,"protein":25,"carbs":40,"fat":10,"fiber":7,"ingredients":[{"name":"Skyr","grams":200}],"prep":"10 min"}]}],"principles":["..."],"note":"..."}.`;
-  const raw = await callAI(input, 4200);
+  let raw;
+  try {
+    raw = await callAI(input, 9000, 110_000);
+  } catch (error) {
+    console.error('week-plan AI failed', error.internalMessage || error.message);
+    return { ...fallback, source: 'fallback-error' };
+  }
   const days = Array.isArray(raw.days) ? raw.days.slice(0, 7).map((d, i) => ({
     day: safeText(d.day || names[i], 30),
     meals: Array.isArray(d.meals) ? d.meals.slice(0, mealsPerDay).map(normalizePlanMeal) : [],

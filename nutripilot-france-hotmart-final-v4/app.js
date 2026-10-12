@@ -1,4 +1,6 @@
 import { DICT } from './i18n.js';
+import { WORLD_RECIPES, CUISINES, INGREDIENTS, ingredientAisle } from './food.js';
+import { EXTRA_EXERCISES, EQUIPMENT, EQUIP_OF, moveSvg } from './exercises.js';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -227,6 +229,338 @@ const curatedRecipes = [
   },
 ];
 
+// ---- Nutrition v3: world recipe library, instant 7-day plan, smart swaps ----------
+const RECIPE_TYPE = { 'Petit-déjeuner': 'b', Collation: 's' };
+const MEAT_RE = /(poulet|dinde|steak|jambon|boeuf|bœuf|porc|saucisse)/i;
+const FISH_RE = /(saumon|thon|crevette|cabillaud|poisson|sardine)/i;
+const ALL_RECIPES = [
+  ...curatedRecipes.map((r) => ({
+    ...r, cuisine: r.cuisine || 'fr', type: RECIPE_TYPE[r.category] || 'm', prepMin: Number.parseInt(r.prep, 10) || 20,
+    meat: r.ingredients.some(([n]) => MEAT_RE.test(n)), fish: r.ingredients.some(([n]) => FISH_RE.test(n)),
+  })),
+  ...WORLD_RECIPES,
+];
+const LANG_CUISINE = { fr: 'fr', pt: 'br', es: 'es', it: 'it', de: 'de', en: 'us', nl: 'de', pl: 'de', tr: 'me', ar: 'me', ja: 'as', ko: 'as', zh: 'as', id: 'as', hi: 'in' };
+const CUISINE_FLAG = Object.fromEntries(CUISINES.map(([k, , f]) => [k, f]));
+const SLOT_PLANS = {
+  2: [['m', 'Déjeuner', 0.5], ['m', 'Dîner', 0.5]],
+  3: [['b', 'Petit-déjeuner', 0.25], ['m', 'Déjeuner', 0.38], ['m', 'Dîner', 0.37]],
+  4: [['b', 'Petit-déjeuner', 0.23], ['m', 'Déjeuner', 0.34], ['m', 'Dîner', 0.32], ['s', 'Collation', 0.11]],
+};
+const ALLERGY_RULES = [
+  [/(lactose|lait|laitier|dairy|milk|leite|lacteo|lácteo|latte|milch|laktose)/i, (n) => INGREDIENTS[n]?.[5] === 'D' && !['Boisson soja', 'Lait de coco léger'].includes(n)],
+  [/(gluten|ble|blé|wheat|trigo|grano|weizen|frumento)/i, (n) => /(pain|pâte|pates|couscous|boulgour|pita|chapati|avoine|granola|soba|pizza|burger)/i.test(n)],
+  [/(arachide|cacahu|peanut|amendoim|erdnuss|arachidi|mani)/i, (n) => n === 'Beurre de cacahuète'],
+  [/(noix|nuts|nozes|nueces|nusse|nüsse|guscio|amande|almond|amendoa|amêndoa|mandel|mandorl)/i, (n) => ['Amandes', 'Noix'].includes(n)],
+  [/(poisson|fish|peixe|pescado|fisch|pesce)/i, (n) => INGREDIENTS[n]?.[6] === 'f' && n !== 'Crevettes'],
+  [/(crustac|crevette|shrimp|camar|gamba|garnel|gamber|fruits de mer|seafood|mariscos|frutos do mar)/i, (n) => n === 'Crevettes'],
+  [/(oeuf|œuf|egg|ovo|huevo|\bei\b|eier|uova|uovo)/i, (n) => n === 'Œufs' || n === 'Œuf'],
+  [/(soja|soy)/i, (n) => ['Tofu', 'Edamame', 'Sauce soja', 'Boisson soja'].includes(n)],
+  [/(sesame|sésame|gergelim|sesam)/i, (n) => ['Graines de sésame', 'Houmous'].includes(n)],
+];
+let recipeCuisine = 'all';
+let recipeType = 'all';
+let recipeFilter = 'all';
+let recipeQuery = '';
+
+function planCuisines() {
+  const p = state.profile || {};
+  if (Array.isArray(p.cuisines) && p.cuisines.length) return p.cuisines;
+  const base = LANG_CUISINE[lang()] || 'fr';
+  if (p.cuisine === 'med') return [...new Set([base, 'it', 'es', 'me'])];
+  if (p.cuisine === 'world') return CUISINES.map((c) => c[0]);
+  return [base];
+}
+
+function recipeAllowed(r) {
+  const p = state.profile || {};
+  if (p.diet === 'vegetarian' && (r.meat || r.fish)) return false;
+  if (p.diet === 'pescatarian' && r.meat) return false;
+  const text = String(p.allergies || '').trim();
+  if (!text) return true;
+  const rules = ALLERGY_RULES.filter(([re]) => re.test(text)).map(([, fn]) => fn);
+  const words = text.split(/[,;/\n]+/).map((x) => foldText(x.trim())).filter((x) => x.length >= 3);
+  return !r.ingredients.some(([n]) => rules.some((fn) => fn(n)) || words.some((w) => foldText(n).includes(w) || foldText(L(n, null, false)).includes(w)));
+}
+
+function scaledMeal(r, target, label) {
+  const f = clamp(target / Math.max(1, r.kcal), 0.6, 1.7);
+  const g5 = (g) => Math.max(5, Math.round(g * f / 5) * 5);
+  return {
+    type: label, name: r.name, recipeId: r.id, local: true, cuisine: r.cuisine,
+    kcal: Math.round(r.kcal * f), protein: Math.round(r.protein * f), carbs: Math.round(r.carbs * f), fat: Math.round(r.fat * f), fiber: Math.round(r.fiber * f),
+    prep: r.prep, ingredients: r.ingredients.map(([n, g]) => ({ name: n, grams: g5(g) })),
+  };
+}
+
+function rankRecipes(type, target, used = new Set(), cuisines = planCuisines(), exclude = '') {
+  const p = state.profile || {};
+  const pool = ALL_RECIPES.filter((r) => r.type === type && r.id !== exclude && recipeAllowed(r));
+  const quick = p.cooking === '<15 min';
+  const score = (r) => (cuisines.includes(r.cuisine) ? 3 : 0.7)
+    * (used.has(r.id) ? 0.12 : 1)
+    * (p.diet === 'high-protein' || p.track === 'muscle' ? 1 + (r.protein * 4) / Math.max(1, r.kcal) * 3 : 1)
+    * (p.diet === 'mediterranean' && ['it', 'es', 'me', 'fr'].includes(r.cuisine) ? 1.4 : 1)
+    * (quick && r.prepMin > 18 ? 0.35 : 1)
+    * (1 - Math.min(0.5, Math.abs(r.kcal - target) / Math.max(target, 1) / 2))
+    * (0.55 + Math.random() * 0.9);
+  return pool.map((r) => [r, score(r)]).sort((a, b) => b[1] - a[1]).map(([r]) => r);
+}
+
+function buildLocalWeek() {
+  const p = state.profile;
+  const slots = SLOT_PLANS[p.mealsPerDay] || SLOT_PLANS[3];
+  const cuisines = planCuisines();
+  const used = new Set();
+  return Array.from({ length: 7 }, (_, i) => ({
+    date: addDays(i), day: '',
+    meals: slots.map(([type, label, part]) => {
+      const target = p.dailyKcal * part;
+      const r = rankRecipes(type, target, used, cuisines)[0];
+      if (!r) return null;
+      used.add(r.id);
+      return scaledMeal(r, target, label);
+    }).filter(Boolean),
+  }));
+}
+
+function planDayLabel(day, i) {
+  if (day.date) return new Date(`${day.date}T12:00:00`).toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'short' });
+  return L(day.day || `Jour ${i + 1}`);
+}
+function mealTypeCode(label) { return label === 'Petit-déjeuner' ? 'b' : label === 'Collation' ? 's' : 'm'; }
+
+async function generateWeek(button) {
+  if (button.dataset.generateWeek === 'ai') return generateWeekAI(button);
+  state.weekPlan = buildLocalWeek();
+  state.planSource = 'local';
+  state.shoppingChecked = {};
+  saveState();
+  track('WeekPlanGenerated', { source: 'library' });
+  render();
+  toast('Votre semaine est prête ✓');
+}
+
+async function generateWeekAI(button) {
+  button.disabled = true;
+  const original = button.innerHTML;
+  button.textContent = L('Création de votre semaine…');
+  try {
+    const p = state.profile;
+    const cuisineNames = planCuisines().map((c) => CUISINES.find((x) => x[0] === c)?.[1] || c).join(', ');
+    const response = await apiFetch('/api/week-plan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dailyKcal: p.dailyKcal, protein: p.protein, diet: p.diet, allergies: p.allergies, cooking: p.cooking, cuisine: cuisineNames, budget: p.budget, mealsPerDay: p.mealsPerDay, goal: p.goal }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    if (String(data.source || '').startsWith('fallback')) {
+      state.weekPlan = buildLocalWeek();
+      state.planSource = 'local';
+    } else {
+      state.weekPlan = (data.days || []).map((d, i) => ({ ...d, date: addDays(i) }));
+      state.planSource = 'ai';
+    }
+    state.shoppingChecked = {};
+    saveState();
+    track('WeekPlanGenerated', { source: state.planSource });
+    render();
+    toast('Votre semaine est prête ✓');
+  } catch {
+    state.weekPlan = buildLocalWeek();
+    state.planSource = 'local';
+    saveState();
+    render();
+    toast('Votre semaine est prête ✓');
+  } finally {
+    button.disabled = false;
+    button.innerHTML = original;
+  }
+}
+
+function cuisinePicker() {
+  const chosen = planCuisines();
+  return `<div class="cuisine-row">${CUISINES.map(([k, name, flag]) => `<button class="cuisine-chip ${chosen.includes(k) ? 'on' : ''}" data-plan-cuisine="${k}"><span>${flag}</span>${L(name)}</button>`).join('')}</div>`;
+}
+
+function weekPlanHtml() {
+  const p = state.profile;
+  return `<div class="week-plan">${state.weekPlan.map((day, dayIndex) => {
+    const sum = (day.meals || []).reduce((acc, m) => { ['kcal', 'protein', 'carbs', 'fat'].forEach((k) => { acc[k] += Number(m[k] || 0); }); return acc; }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+    return `<details class="plan-day" ${dayIndex === 0 ? 'open' : ''}><summary><span class="pd-date">${esc(planDayLabel(day, dayIndex))}</span><span class="pd-kcal">${fmt(sum.kcal)} kcal</span><span class="pd-bar"><i style="width:${clamp(sum.kcal / Math.max(1, p.dailyKcal) * 100, 0, 100)}%"></i></span></summary>
+      <div class="day-meals">${(day.meals || []).map((meal, mealIndex) => {
+        const r = meal.recipeId ? ALL_RECIPES.find((x) => x.id === meal.recipeId) : null;
+        return `<div class="plan-meal">
+          <div class="plan-meal-top"><span class="pm-flag">${r ? CUISINE_FLAG[r.cuisine] || '🍽️' : '✨'}</span><div><small>${esc(L(meal.type))} · ${esc(L(meal.prep || ''))}</small><b>${esc(L(meal.name))}</b></div><span class="pill">${fmt(meal.kcal)} kcal</span></div>
+          <div class="meal-macro-line"><span>P ${fmt(meal.protein)} g</span><span>G ${fmt(meal.carbs)} g</span><span>L ${fmt(meal.fat)} g</span><span>${L('Fibres')} ${fmt(meal.fiber)} g</span></div>
+          <div class="inline-actions three"><button class="chip-btn" data-add-plan-meal data-day="${dayIndex}" data-meal="${mealIndex}">${icon('plus')} ${L('Journal')}</button><button class="chip-btn" data-plan-recipe data-day="${dayIndex}" data-meal="${mealIndex}">${icon('book')} ${L('Recette')}</button><button class="chip-btn" data-swap-plan data-day="${dayIndex}" data-meal="${mealIndex}">${icon('swap')} ${L('Remplacer')}</button></div>
+        </div>`;
+      }).join('')}</div></details>`;
+  }).join('')}</div>`;
+}
+
+function localRecipeView(meal) {
+  const r = ALL_RECIPES.find((x) => x.id === meal.recipeId);
+  if (!r) return null;
+  return { ...r, kcal: meal.kcal, protein: meal.protein, carbs: meal.carbs, fat: meal.fat, fiber: meal.fiber, ingredients: (meal.ingredients || []).map((i) => [i.name, i.grams]) };
+}
+
+function planSwapSheet() {
+  const { dayIndex, mealIndex } = modal;
+  const meal = state.weekPlan?.[dayIndex]?.meals?.[mealIndex];
+  if (!meal) return '';
+  const used = new Set((state.weekPlan || []).flatMap((d) => (d.meals || []).map((m) => m.recipeId)));
+  const options = rankRecipes(mealTypeCode(meal.type), meal.kcal, used, planCuisines(), meal.recipeId).slice(0, 6);
+  return `<div class="sheet-head"><div><span class="tag">${esc(L(meal.type))}</span><h2>${L('Remplacer ce repas')}</h2><div class="fine">${L('Même objectif calorique, adapté à vos préférences.')}</div></div><button class="icon-btn" data-close>×</button></div>
+    <div class="swap-list">${options.map((r) => { const m = scaledMeal(r, meal.kcal, meal.type); return `<button class="swap-option" data-swap-choose="${esc(r.id)}"><span class="pm-flag">${CUISINE_FLAG[r.cuisine] || '🍽️'}</span><span><b>${esc(L(r.name))}</b><small>${fmt(m.kcal)} kcal · P ${fmt(m.protein)} g · ${esc(L(r.prep))}</small></span><span class="guide-arrow">${icon('swap')}</span></button>`; }).join('') || `<div class="empty">${L('Aucune alternative avec vos préférences actuelles.')}</div>`}</div>
+    <button class="btn btn-ghost btn-wide" data-swap-ai>${icon('sparkle')} ${L('Autre envie ? Idées sur mesure')}</button>`;
+}
+
+function planPickSheet() {
+  const r = ALL_RECIPES.find((x) => x.id === modal.recipeId);
+  const has = state.weekPlan?.length;
+  return `<div class="sheet-head"><div><span class="tag">${L('Plan 7 jours')}</span><h2>${L('Ajouter à mon plan')}</h2><div class="fine">${esc(L(r?.name || ''))}</div></div><button class="icon-btn" data-close>×</button></div>
+    ${has ? '' : `<p class="screen-sub">${L('Votre plan sera créé automatiquement, puis la recette ajoutée au jour choisi.')}</p>`}
+    <div class="day-pick-grid">${Array.from({ length: 7 }, (_, i) => { const d = addDays(i); return `<button class="day-pick" data-plan-pick-day="${i}"><small>${esc(new Date(`${d}T12:00:00`).toLocaleDateString(locale(), { weekday: 'short' }))}</small><b>${new Date(`${d}T12:00:00`).getDate()}</b></button>`; }).join('')}</div>`;
+}
+
+function addRecipeToPlan(recipeId, dayIndex) {
+  const r = ALL_RECIPES.find((x) => x.id === recipeId);
+  if (!r) return;
+  if (!state.weekPlan?.length) state.weekPlan = buildLocalWeek();
+  const day = state.weekPlan[dayIndex];
+  const slots = SLOT_PLANS[state.profile.mealsPerDay] || SLOT_PLANS[3];
+  const slot = slots.find(([type]) => type === r.type) || slots[slots.length - 1];
+  const idx = day.meals.findIndex((m) => mealTypeCode(m.type) === r.type);
+  const target = state.profile.dailyKcal * slot[2];
+  const meal = scaledMeal(r, idx >= 0 ? day.meals[idx].kcal || target : target, idx >= 0 ? day.meals[idx].type : slot[1]);
+  if (idx >= 0) day.meals[idx] = meal; else day.meals.push(meal);
+  saveState();
+  toast('Recette ajoutée à votre plan ✓');
+}
+
+function recipeList() {
+  const favs = new Set(state.recipeFavorites || []);
+  const q = foldText(recipeQuery);
+  return ALL_RECIPES.filter((r) => (recipeCuisine === 'all' || r.cuisine === recipeCuisine)
+    && (recipeType === 'all' || r.type === recipeType)
+    && (recipeFilter === 'all' || (recipeFilter === 'quick' && r.prepMin <= 15) || (recipeFilter === 'protein' && r.protein >= 30) || (recipeFilter === 'veg' && !r.meat && !r.fish) || (recipeFilter === 'fav' && favs.has(r.id)) || (recipeFilter === 'fit' && recipeAllowed(r)))
+    && (!q || foldText(L(r.name, null, false)).includes(q) || foldText(r.name).includes(q) || r.ingredients.some(([n]) => foldText(L(n, null, false)).includes(q))));
+}
+
+function recipeGridHtml() {
+  const favs = new Set(state.recipeFavorites || []);
+  const list = recipeList();
+  return list.map((r) => `<article class="recipe-card r-${r.type}" data-recipe-id="${esc(r.id)}" role="button" tabindex="0">
+    <div class="recipe-card-top"><span class="rc-flag">${CUISINE_FLAG[r.cuisine] || '🍽️'}</span><span class="pill">${esc(L(r.category))}</span><button class="heart ${favs.has(r.id) ? 'active' : ''}" data-fav-recipe="${esc(r.id)}" aria-label="${L('Favori')}">${favs.has(r.id) ? '♥' : '♡'}</button></div>
+    <h3>${esc(L(r.name))}</h3>
+    <div class="recipe-stats"><span><b>${fmt(r.kcal)}</b> kcal</span><span><b>${fmt(r.protein)}</b> g ${L('prot.')}</span><span>${icon('timer')} ${esc(L(r.prep))}</span></div>
+  </article>`).join('') || `<div class="empty">${L('Aucune recette dans ce filtre.')}</div>`;
+}
+
+function recipesScreen() {
+  const types = [['all', 'Tout'], ['b', 'Petit-déjeuner'], ['m', 'Repas'], ['s', 'Collation']];
+  const filters = [['all', 'Toutes'], ['fit', 'Adaptées à mon profil'], ['quick', 'Rapides'], ['protein', 'Protéinées'], ['veg', 'Végétariennes'], ['fav', 'Favoris']];
+  return `<div class="mobile-app">
+    ${appHeader('Nutrition')}
+    <div class="screen">
+      ${programTabs('recipes')}
+      <div class="recipes-hero"><b>${L('{n} recettes du monde entier', { n: ALL_RECIPES.length })}</b><span>${L('Grammes, calories et macros calculés pour chaque portion.')}</span></div>
+      <label class="search-box">${icon('search')}<input id="recipe-search" type="search" value="${esc(recipeQuery)}" placeholder="${L('Rechercher un plat ou un ingrédient')}"></label>
+      <div class="cuisine-row scroll"><button class="cuisine-chip ${recipeCuisine === 'all' ? 'on' : ''}" data-recipe-cuisine="all"><span>🌍</span>${L('Toutes')}</button>${CUISINES.map(([k, name, flag]) => `<button class="cuisine-chip ${recipeCuisine === k ? 'on' : ''}" data-recipe-cuisine="${k}"><span>${flag}</span>${L(name)}</button>`).join('')}</div>
+      <div class="segmented seg-4 slim">${types.map(([k, label]) => `<button class="${recipeType === k ? 'active' : ''}" data-recipe-type="${k}">${L(label)}</button>`).join('')}</div>
+      <div class="chip-row">${filters.map(([k, label]) => `<button class="mini-choice ${recipeFilter === k ? 'selected' : ''}" data-recipe-filter="${k}">${L(label)}</button>`).join('')}</div>
+      <div id="recipe-grid" class="recipe-grid">${recipeGridHtml()}</div>
+    </div>
+    ${bottom('program')}
+  </div>`;
+}
+
+function recipeSheet(recipe) {
+  const isFav = state.recipeFavorites.includes(recipe.id);
+  const fromLib = ALL_RECIPES.some((x) => x.id === recipe.id);
+  return `<div class="sheet-head"><div><span class="tag">${CUISINE_FLAG[recipe.cuisine] || ''} ${esc(L(recipe.category || 'RECETTE'))}</span><h2>${esc(L(recipe.name))}</h2></div><button class="icon-btn" data-close>×</button></div>
+    <div class="recipe-hero-stats"><div><b>${fmt(recipe.kcal)}</b><span>kcal</span></div><div><b>${fmt(recipe.protein)}</b><span>${L('prot.')}</span></div><div><b>${fmt(recipe.carbs)}</b><span>${L('gluc.')}</span></div><div><b>${fmt(recipe.fat)}</b><span>${L('lip.')}</span></div><div><b>${esc(L(recipe.prep))}</b><span>${L('temps')}</span></div></div>
+    <div class="section-label"><h3>${L('Ingrédients')}</h3><span class="fine">${L('1 portion')}</span></div>
+    <div class="ingredient-table">${recipe.ingredients.map((item) => `<div><span>${esc(L(item[0]))}</span><b>${fmt(item[1])} g</b></div>`).join('')}</div>
+    <div class="section-label"><h3>${L('Préparation')}</h3></div>
+    <ol class="steps-list">${recipe.steps.map((step) => `<li>${esc(L(step))}</li>`).join('')}</ol>
+    <div class="modal-actions three">
+      <button class="btn btn-ghost" data-fav-recipe="${esc(recipe.id)}">${isFav ? `♥ ${L('Favori')}` : `♡ ${L('Favori')}`}</button>
+      ${fromLib ? `<button class="btn btn-ghost" data-plan-add-recipe="${esc(recipe.id)}">${icon('calendar')} ${L('Au plan')}</button>` : ''}
+      <button class="btn btn-lime" data-add-curated="${esc(recipe.id)}" data-kcal="${recipe.kcal}">${L('Ajouter au journal →')}</button>
+    </div>`;
+}
+
+function addCuratedRecipe(id, view = null) {
+  const recipe = view || ALL_RECIPES.find((r) => r.id === id);
+  if (!recipe) return;
+  state.meals.push({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    day: todayKey(),
+    type: recipe.category || mealTypeFromHour(),
+    title: L(recipe.name),
+    foods: recipe.ingredients.map(([name, grams]) => ({ name: L(name), grams, kcal: 0 })),
+    total: { kcal: recipe.kcal, protein: recipe.protein, carbs: recipe.carbs, fat: recipe.fat, fiber: recipe.fiber },
+    icon: '⌁',
+    source: 'recipe',
+  });
+  saveState();
+  toast('Recette ajoutée au journal ✓');
+  modal = null;
+  document.querySelector('.modal-wrap')?.remove();
+  render();
+}
+
+function planShopping() {
+  const map = new Map();
+  for (const day of state.weekPlan || []) {
+    for (const meal of day.meals || []) {
+      for (const raw of meal.ingredients || []) {
+        const item = normalizeIngredient(raw);
+        if (!item.name) continue;
+        item.name = ({ Tomate: 'Tomates', 'Œuf': 'Œufs' })[item.name] || item.name;
+        const key = foldText(item.name.trim());
+        const previous = map.get(key) || { key, name: item.name, grams: 0, category: ingredientAisle(item.name) || shoppingCategory(item.name) };
+        previous.grams += Number(item.grams || 0);
+        map.set(key, previous);
+      }
+    }
+  }
+  for (const extra of state.shoppingExtra || []) {
+    const key = `x-${foldText(extra)}`;
+    map.set(key, { key, name: extra, grams: 0, category: 'Mes ajouts', custom: true });
+  }
+  const order = ['Mes ajouts', 'Protéines', 'Légumes', 'Fruits', 'Féculents', 'Produits laitiers / alternatives', 'Divers'];
+  return [...map.values()].sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category) || L(a.name).localeCompare(L(b.name), locale()));
+}
+
+function shoppingListHtml(items = []) {
+  const groups = new Map();
+  for (const item of items) {
+    if (!groups.has(item.category)) groups.set(item.category, []);
+    groups.get(item.category).push(item);
+  }
+  return [...groups.entries()].map(([category, list]) => `<div class="shopping-group"><h4>${esc(L(category))}<span>${list.filter((i) => state.shoppingChecked[i.key]).length}/${list.length}</span></h4>${list.map((item) => `<label class="${state.shoppingChecked[item.key] ? 'done' : ''}"><input type="checkbox" data-shop="${esc(item.key)}" ${state.shoppingChecked[item.key] ? 'checked' : ''}><span>${esc(L(item.name))}</span><b>${item.grams ? (item.grams >= 1000 ? `${fmt(item.grams / 1000, 1)} kg` : `${fmt(item.grams)} g`) : ''}</b>${item.custom ? `<button class="icon-btn sm" data-shop-remove="${esc(item.name)}" aria-label="${L('Retirer')}">×</button>` : ''}</label>`).join('')}</div>`).join('');
+}
+
+function shoppingScreen() {
+  const shopping = planShopping();
+  const done = shopping.filter((i) => state.shoppingChecked[i.key]).length;
+  return `<div class="mobile-app">
+    ${appHeader('Nutrition')}
+    <div class="screen">
+      ${programTabs('shopping')}
+      ${state.weekPlan?.length ? `<div class="shop-hero"><div><small>${L('Liste de la semaine')}</small><b>${L('{n} articles', { n: shopping.length })}</b><span class="pd-bar light"><i style="width:${shopping.length ? Math.round(done / shopping.length * 100) : 0}%"></i></span><span class="fine">${L('{d} dans le panier', { d: done })}</span></div><div class="shop-actions"><button class="icon-btn" data-shop-share aria-label="${L('Partager')}">${icon('share')}</button><button class="icon-btn" data-shop-reset aria-label="${L('Tout décocher')}">↺</button></div></div>` : ''}
+      <div class="shop-add"><input id="shop-extra" placeholder="${L('Ajouter un article (ex. café, éponges)')}"><button class="btn btn-primary" data-shop-add>${icon('plus')}</button></div>
+      ${shopping.length
+        ? `<div class="day-card shopping-list">${shoppingListHtml(shopping)}</div>`
+        : `<div class="day-card empty-cta"><h3>${L('Votre liste arrive avec votre plan.')}</h3><p class="screen-sub">${L('Créez votre semaine : NutriPilot regroupe automatiquement les ingrédients par rayon.')}</p><button class="btn btn-primary btn-wide" data-generate-week>${L('Créer ma semaine')}</button></div>`}
+    </div>
+    ${bottom('program')}
+  </div>`;
+}
+
 const defaultState = {
   onboarding: false,
   premium: false,
@@ -282,6 +616,10 @@ const defaultState = {
   menoLog: {},
   menoTasks: {},
   menoStart: '',
+  measures: {},
+  shoppingExtra: [],
+  gridDraft: null,
+  planSource: '',
   achievements: [],
   scanCount: 0,
   utms: {},
@@ -353,6 +691,12 @@ window.__npCollect = () => {
   GUIDE_COLLECTIONS.forEach((c) => { touch(c.title); touch(c.sub); c.guides.forEach((g) => [g.title, g.intro, g.action, ...g.points].forEach(touch)); });
   TOUR.forEach((x) => { touch(x[1]); touch(x[2]); });
   COACH_STYLES.forEach((c) => { touch(c.name); touch(c.desc); });
+  WORLD_RECIPES.forEach((r) => { [r.name, r.category, r.difficulty, ...r.steps].forEach(touch); });
+  Object.keys(INGREDIENTS).forEach(touch); CUISINES.forEach((c) => touch(c[1]));
+  Object.values(EXERCISES).forEach((e) => [e.name, e.muscle, ...(e.cues || [])].forEach(touch)); Object.values(EQUIPMENT).forEach(touch);
+  MEASURES.forEach((m) => touch(m[1])); COMPARE_ROWS.forEach((r) => touch(r[0])); Object.values(PLAN_LOOK).forEach((x) => touch(x.tagline));
+  badgeList().forEach((b) => touch(b[1])); REPS_CHOICES.forEach(touch);
+  ['Enregistrer un repas', 'Atteindre mon objectif d’eau', 'Atteindre 80 % de mes protéines', 'Faire ma séance du jour', 'Remplir mon journal ménopause', 'Faire mon check-in', 'Insuffisance pondérale', 'Corpulence normale', 'Surpoids', 'Obésité', 'Formules', 'Nos formules', 'Cours nutrition', 'Monter ma grille', 'Générateur intelligent', 'Importer', 'Choisissez vos jours et vos exercices, un par un.', 'Vos préférences, NutriPilot construit les séances.', 'Le programme de votre coach ou votre plan alimentaire.', 'Tout matériel', 'À la maison', 'Recettes du monde', 'Exercices animés', 'Espace Ménopause 40+', 'Cours', '{n} recettes', '{n} mouvements', 'Journal, programme, séances', 'Première leçon offerte', 'Repas', 'Tout', 'Adaptées à mon profil', 'Mes ajouts', 'Passer à cette formule', 'Choisir', 'Retour à l’accueil', 'Continuer à explorer', 'Mettre à jour ma grille', 'Enregistrer ma grille', 'Sur mesure', 'Ma grille', 'Séance {n}', 'Votre grille : {n} séances par semaine.', 'Monter', 'Retirer', 'Jour {n}'].forEach(touch);
   TRAIN_FOCUS.forEach((x) => touch(x[1])); EX_GROUPS.forEach(touch); BUILDER_GROUPS.forEach(touch);
   Object.values(LOCKED_COPY).forEach((x) => x.slice(0, 3).forEach(touch));
   MENO_SYMPTOMS.forEach((x) => touch(x[1])); MENO_LEVELS.forEach((x) => touch(x[1])); Object.values(MENO_STAGE).forEach(touch);
@@ -538,7 +882,7 @@ function mealTypeFromHour() {
   return 'Dîner';
 }
 
-const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang', 'menopause'];
+const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang', 'menopause', 'plans'];
 function guardRoute() {
   if (!routeAllowed()) route = 'app';
   if (!state.premium) {
@@ -557,7 +901,7 @@ function guardRoute() {
 }
 
 function routeAllowed() {
-  return ['app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support', 'menopause'].includes(route);
+  return ['app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support', 'menopause', 'plans'].includes(route);
 }
 
 async function init() {
@@ -892,28 +1236,6 @@ function startSaving() {
   }, 380);
 }
 
-function hubScreen() {
-  const p = state.profile || {};
-  const tracks = t('tracks');
-  const hasPlan = state.onboarding && p.dailyKcal;
-  const proj = hasPlan ? projection(p) : null;
-  return `<div class="mobile-app">
-    <div class="app-head"><div class="app-head-row">${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${LANGS.find((x) => x[0] === lang())?.[2] || '🌐'}</button>${state.premium ? '' : `<button class="btn btn-lime btn-small" data-go="paywall">${esc(t('unlock'))}</button>`}</div></div></div>
-    <div class="screen">
-      <h1 class="screen-title">${esc(t('hello'))}${p.name ? ` ${esc(p.name)}` : ''} 👋</h1>
-      <p class="screen-sub">${esc(t('hubSub'))}</p>
-      ${hasPlan ? `<button class="today-card hub-plan" data-go="plan"><small>${esc(t('myProgram'))}</small><b>${fmt(p.dailyKcal)} kcal · ${p.protein} g prot.</b>${proj ? `<span>${kgFmt(p.weight)} → ${kgFmt(p.target)} kg · ${esc(dateFr(proj.end))}</span>` : ''}<em>${esc(t('seePlan'))} →</em></button>` : ''}
-      <div class="section-label"><h3>${esc(t('hubQuiz'))}</h3></div>
-      <p class="screen-sub guide-sub">${esc(t('hubQuizSub'))}</p>
-      <div class="track-list light">${TRACKS.map(([id, , , emoji], i) => `<button class="track-card" data-track="${id}"><span class="track-emoji">${emoji}</span><span><b>${esc(tracks[i][0])}</b><small>${esc(tracks[i][1])}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>
-      <div class="section-label"><h3>${esc(t('hubExplore'))}</h3></div>
-      <div class="explore-grid">${t('exploreTiles').map(([r, label]) => `<button class="explore-tile" data-go="${r}">${icon(r === 'recipes' ? 'program' : r === 'training' ? 'dumbbell' : r === 'guides' ? 'star' : r === 'menopause' ? 'flower' : 'scan')}<b>${esc(label)}</b></button>`).join('')}</div>
-      <button class="guide-card hub-link" data-go="tour"><span class="guide-check">${icon('star')}</span><span><b>${esc(t('hubTour'))}</b><small>${esc(t('hubTourSub'))}</small></span><span class="guide-arrow">→</span></button>
-      <button class="guide-card hub-link" data-go="support"><span class="guide-check">${icon('help')}</span><span><b>${esc(t('hubSupport'))}</b><small>${esc(t('hubSupportSub'))}</small></span><span class="guide-arrow">→</span></button>
-    </div>
-    ${bottom('app')}
-  </div>`;
-}
 
 function exploreBanner() {
   if (state.premium) return '';
@@ -1104,6 +1426,12 @@ const ICONS = {
   help: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17h.01"/>',
   star: '<path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h10"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>',
+  timer: '<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.5l2.2 1.6M9.5 3.5h5"/>',
+  list: '<path d="M9 6.5h11M9 12h11M9 17.5h11M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01"/>',
+  share: '<path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/>',
+  swap: '<path d="M7 4.5 3.5 8 7 11.5M3.5 8h13M17 12.5l3.5 3.5-3.5 3.5M20.5 16h-13"/>',
+  camera: '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.3l1.4-2h5.6l1.4 2h2.3A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.4"/>',
   drop: '<path d="M12 3.5c3.5 4.2 6 7.6 6 10.6a6 6 0 0 1-12 0c0-3 2.5-6.4 6-10.6z"/><path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2.5"/>',
   flame: '<path d="M12 21c3.9 0 6.5-2.6 6.5-6.2 0-3.4-2.4-5.6-4-8.3-.4 1.9-1.4 3-2.6 3.6.3-2.4-.6-5-2.9-7.1C9 6.5 5.5 9.4 5.5 14.4 5.5 18.4 8.1 21 12 21z"/>',
   calendar: '<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10h16"/>',
@@ -1218,7 +1546,7 @@ const PROGRAM_FEATURES = [
 const DEFAULT_PLANS = [
   {
     tier: 'complete', label: 'Kit complet', sub: 'Nutrition + Entraînement + Ménopause + Académie', badge: 'Meilleure offre',
-    features: ['Tout le programme Nutrition : plan de repas, recettes, courses', 'Tous les programmes d’entraînement et l’agenda', 'L’espace Ménopause 40+ complet', 'Toute l’Académie et le coach au quotidien', 'Scanner de repas illimité'],
+    features: ['Tout le programme Nutrition : plan de repas, recettes, courses', 'Tous les programmes d’entraînement, la grille et les exercices animés', 'L’espace Ménopause 40+ complet', 'Tous les cours et le coach au quotidien', 'Scanner de repas illimité'],
     monthly: { price: 44.99, storeId: 'np_complete_monthly' }, annual: { price: 189.99, storeId: 'np_complete_annual' },
   },
   {
@@ -1228,12 +1556,12 @@ const DEFAULT_PLANS = [
   },
   {
     tier: 'nutrition', label: 'Nutrition', sub: 'Mincir et mieux manger',
-    features: ['Plan de repas 7 jours personnalisé', 'Recettes de chef et liste de courses', '« Que manger ensuite ? », mode frigo et restaurant', 'Cours nutrition et coach au quotidien', 'Scanner de repas illimité'],
+    features: ['Plan de repas 7 jours personnalisé', 'Recettes du monde entier avec grammes et calories', 'Liste de courses automatique', '« Que manger ensuite ? », mode frigo et restaurant', 'Cours nutrition et coach au quotidien', 'Scanner de repas illimité'],
     monthly: { price: 24.99, storeId: 'np_nutrition_monthly' }, annual: { price: 99.99, storeId: 'np_nutrition_annual' },
   },
   {
     tier: 'training', label: 'Entraînement', sub: 'Salle ou maison, selon votre objectif',
-    features: ['Plus de 10 programmes : haut du corps, bas du corps, force, maison…', 'Agenda de la semaine selon vos jours', 'Bibliothèque d’exercices et suivi des charges', 'Cours musculation', 'Scanner de repas illimité'],
+    features: ['Plus de 10 programmes : haut du corps, bas du corps, force, maison…', 'Grille d’entraînement à monter vous-même', 'Plus de 100 exercices avec démonstration animée', 'Agenda, chronomètre de repos et suivi des charges', 'Cours de technique et de musculation', 'Scanner de repas illimité'],
     monthly: { price: 19.99, storeId: 'np_training_monthly' }, annual: { price: 79.99, storeId: 'np_training_annual' },
   },
 ];
@@ -1447,7 +1775,7 @@ function drawerHtml() {
         ${item('program', 'fork', 'Nutrition')}
         ${item('training', 'dumbbell', 'Entraînement')}
         ${item('menopause', 'flower', 'Ménopause 40+')}
-        ${item('guides', 'book', 'Académie')}
+        ${item('guides', 'book', 'Cours nutrition')}
         ${item('progress', 'progress', 'Progrès')}
         <small>${L('Outils')}</small>
         ${item('add', 'scan', 'Scanner un repas')}
@@ -1459,8 +1787,9 @@ function drawerHtml() {
         ${item('tour', 'star', 'Découvrir l’application')}
         ${item('settings', 'settings', 'Réglages')}
         ${item('lang', 'globe', 'Langue')}
+        ${item('plans', 'star', 'Nos formules')}
       </nav>
-      ${state.premium ? '' : `<button class="btn btn-lime btn-wide" data-go="paywall">${esc(t('unlock'))}</button>`}
+      ${state.premium ? '' : `<button class="btn btn-lime btn-wide" data-go="plans">${esc(t('unlock'))}</button>`}
       <p class="drawer-foot">NutriPilot · ${esc(config.supportEmail)}</p>
     </aside>
   </div>`;
@@ -1506,7 +1835,7 @@ function bottom(active) {
     ['program', 'program', 'Nutrition'],
     ['add', 'scan', 'Scanner'],
     menoFocus() ? ['menopause', 'flower', 'Ménopause'] : ['training', 'dumbbell', 'Sport'],
-    ['progress', 'progress', 'Progrès'],
+    state.premium ? ['progress', 'progress', 'Progrès'] : ['plans', 'star', 'Formules'],
   ];
   return `<nav class="bottom-nav">${tabs.map(([r, ico, label]) => `<button class="nav-btn ${r === active ? 'active' : ''} ${r === 'add' ? 'center' : ''}" ${r === 'add' ? 'data-open-add' : `data-go="${r}"`} aria-label="${L(label)}"><span>${icon(ico)}</span>${L(label)}</button>`).join('')}</nav>`;
 }
@@ -1555,6 +1884,56 @@ function bottleSvg(percent) {
   </svg>`;
 }
 
+// ---- v10 screens: today, progress, plans, hub ---------------------------------
+function macroMeter(label, cls, value, target) {
+  const pct = clamp(value / Math.max(1, target) * 100, 0, 100);
+  return `<div class="macro-meter"><span class="mm-label"><i class="dot ${cls}"></i>${L(label)}</span><b>${fmt(value)} g</b><span class="mm-bar ${cls}"><i style="width:${pct}%"></i></span></div>`;
+}
+
+function weekDots() {
+  const p = state.profile;
+  const start = new Date();
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  return `<div class="week-dots">${Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const key = todayKey(d);
+    const kcal = totals(key).kcal;
+    const pct = clamp(kcal / Math.max(1, p.dailyKcal), 0, 1);
+    const c = 2 * Math.PI * 13;
+    const isToday = key === todayKey();
+    const future = key > todayKey();
+    return `<div class="wd-dot ${isToday ? 'today' : ''} ${future ? 'future' : ''}"><small>${esc(d.toLocaleDateString(locale(), { weekday: 'narrow' }))}</small><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" class="wdt"/><circle cx="16" cy="16" r="13" class="wdv" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - pct)).toFixed(1)}"/></svg><b>${d.getDate()}</b></div>`;
+  }).join('')}</div>`;
+}
+
+function dailyMissions() {
+  const t = totals();
+  const p = state.profile;
+  const list = [
+    ['fork', 'Enregistrer un repas', state.meals.some((m) => m.day === todayKey()), 'add'],
+    ['drop', 'Atteindre mon objectif d’eau', waterToday() >= waterGoal(), 'water'],
+    ['sparkle', 'Atteindre 80 % de mes protéines', t.protein >= p.protein * 0.8, 'planner'],
+  ];
+  if (hasFeature('training') && todaySession()) list.push(['dumbbell', 'Faire ma séance du jour', doneOn(todayKey()), 'training']);
+  if (hasFeature('menopause') && (p.track === 'menopause' || (p.menopause && p.menopause !== 'no'))) list.push(['flower', 'Remplir mon journal ménopause', Boolean(state.menoLog?.[todayKey()] && Object.keys(state.menoLog[todayKey()]).length), 'menopause']);
+  list.push(['check', 'Faire mon check-in', Boolean(state.checkins[todayKey()]?.energy), 'checkin']);
+  const done = list.filter((x) => x[2]).length;
+  const c = 2 * Math.PI * 20;
+  return `<section class="missions">
+    <div class="missions-head"><svg viewBox="0 0 48 48" class="mi-ring"><circle cx="24" cy="24" r="20" class="mit"/><circle cx="24" cy="24" r="20" class="miv" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - done / list.length)).toFixed(1)}"/><text x="24" y="28" text-anchor="middle">${done}/${list.length}</text></svg><div><b>${L('Missions du jour')}</b><small>${done === list.length ? L('Journée parfaite. Bravo !') : L('Petites actions, gros résultats.')}</small></div></div>
+    <div class="mission-list">${list.map(([ico, label, ok, go]) => `<button class="mission ${ok ? 'ok' : ''}" ${go === 'add' ? 'data-open-add' : go === 'water' ? 'data-water="250"' : go === 'checkin' ? 'data-scroll="checkin"' : `data-go="${go}"`}><span class="mi-ico">${ok ? icon('check') : icon(ico)}</span><span>${L(label)}</span></button>`).join('')}</div>
+  </section>`;
+}
+
+function recipeIdeas() {
+  const type = new Date().getHours() < 10 ? 'b' : new Date().getHours() >= 15 && new Date().getHours() < 18 ? 's' : 'm';
+  const left = Math.max(250, state.profile.dailyKcal - totals().kcal);
+  const ideas = rankRecipes(type, Math.min(left, state.profile.dailyKcal * 0.38)).slice(0, 6);
+  if (!ideas.length) return '';
+  return `<div class="section-label"><h3>${L('Idées pour vous')}</h3><button class="link-btn" data-go="recipes">${L('Voir tout →')}</button></div>
+    <div class="idea-strip">${ideas.map((r) => `<button class="idea-card r-${r.type}" data-recipe-id="${esc(r.id)}"><span class="rc-flag">${CUISINE_FLAG[r.cuisine] || '🍽️'}</span><b>${esc(L(r.name))}</b><small>${fmt(r.kcal)} kcal · ${fmt(r.protein)} g ${L('prot.')}</small></button>`).join('')}</div>`;
+}
+
 function dashboard() {
   const t = totals();
   const p = state.profile;
@@ -1567,20 +1946,23 @@ function dashboard() {
   const progress = progressPercent();
   const todayMeals = state.meals.filter((meal) => meal.day === todayKey()).slice().reverse();
   const checkin = state.checkins[todayKey()] || {};
-  const dayPlan = state.weekPlan?.[0]?.meals || [];
+  const todayPlan = (state.weekPlan || []).find((d) => d.date === todayKey()) || (state.weekPlan?.[0]?.date ? null : state.weekPlan?.[0]);
+  const dayPlan = todayPlan?.meals || [];
   const animate = !window.__npTodayAnimated;
   window.__npTodayAnimated = true;
   const rem = state.reminders?.water?.on;
   const meno = hasFeature('menopause') && (p.track === 'menopause' || (p.menopause && p.menopause !== 'no'));
+  const session = hasFeature('training') ? todaySession() : null;
   const sideCard = meno
     ? `<button class="mini-card meno-mini" data-go="menopause">${icon('flower')}<b>${L('Ménopause')}</b><small>${state.menoLog?.[todayKey()] ? L('Journal rempli ✓') : L('Noter mes symptômes')}</small></button>`
     : hasFeature('training')
-      ? `<button class="mini-card" data-go="training">${icon('dumbbell')}<b>${esc(L(todaySession()?.name || 'Repos'))}</b><small>${L('{n}/{total} cette semaine', { n: weekWorkouts(), total: trainingDays().length })}</small></button>`
-      : `<button class="mini-card" data-go="recipes">${icon('fork')}<b>${L('Recettes')}</b><small>${L('{n} idées', { n: curatedRecipes.length })}</small></button>`;
+      ? `<button class="mini-card train-mini" data-go="training">${icon('dumbbell')}<b>${esc(L(session?.name || 'Repos'))}</b><small>${L('{n}/{total} cette semaine', { n: weekWorkouts(), total: trainingDays().length })}</small></button>`
+      : `<button class="mini-card" data-go="recipes">${icon('fork')}<b>${L('Recettes')}</b><small>${L('{n} idées', { n: ALL_RECIPES.length })}</small></button>`;
 
   return `<div class="mobile-app today ${animate ? 'animate' : ''}">
     ${appHeader(p.name ? L('Bonjour {name} 👋', { name: p.name }) : L('Bonjour 👋'))}
     <div class="screen">
+      ${weekDots()}
       <section class="hero-ring-card">
         <div class="ring-wrap">
           <svg class="day-ring" viewBox="0 0 220 220" role="img" aria-label="${L('{n} kcal restantes', { n: fmt(left) })}">
@@ -1591,11 +1973,11 @@ function dashboard() {
           </svg>
           <div class="ring-center"><strong data-count="${over ? over : left}">${fmt(over ? over : left)}</strong><small>${L(over ? 'kcal au-dessus' : 'kcal restantes')}</small></div>
         </div>
-        <div class="ring-legend">
-          <div><i class="dot kcal"></i><span>${L('Mangé')}</span><b>${fmt(t.kcal)}</b><small>/ ${fmt(p.dailyKcal)}</small></div>
-          <div><i class="dot prot"></i><span>${L('Protéines')}</span><b>${fmt(t.protein)}</b><small>/ ${p.protein} g</small></div>
-          <div><i class="dot carb"></i><span>${L('Glucides')}</span><b>${fmt(t.carbs)}</b><small>/ ${p.carbs} g</small></div>
-          <div><i class="dot fat"></i><span>${L('Lipides')}</span><b>${fmt(t.fat)}</b><small>/ ${p.fat} g</small></div>
+        <div class="ring-side">
+          <div class="eaten"><small>${L('Mangé')}</small><b><span data-count="${t.kcal}">${fmt(t.kcal)}</span> kcal</b></div>
+          ${macroMeter('Protéines', 'prot', t.protein, p.protein)}
+          ${macroMeter('Glucides', 'carb', t.carbs, p.carbs)}
+          ${macroMeter('Lipides', 'fat', t.fat, p.fat)}
         </div>
         <button class="btn btn-lime btn-wide scan-main" data-add-tab="photo">${icon('scan')}<span>${L('Scanner mon repas')}</span></button>
       </section>
@@ -1606,7 +1988,7 @@ function dashboard() {
           <div class="water-info">
             <small>${L('Hydratation')}</small>
             <b><span data-count="${water}">${fmt(water)}</span> ml</b>
-            <span class="fine">${L('sur {n} ml', { n: fmt(wGoal) })}</span>
+            <span class="mm-bar water"><i style="width:${clamp(water / wGoal * 100, 0, 100)}%"></i></span>
             <div class="water-actions"><button data-water="-250" aria-label="−250 ml">${icon('minus')}</button><button data-water="250">+250</button><button data-water="500">+500</button></div>
             <button class="remind-chip ${rem ? 'on' : ''}" data-reminders>${icon('bell')}<span>${rem ? L('Rappels activés') : L('Activer les rappels')}</span></button>
           </div>
@@ -1617,27 +1999,348 @@ function dashboard() {
         </div>
       </div>
 
+      ${dailyMissions()}
+
       <div class="quick-grid">
         <button data-go="planner">${icon('sparkle')}<span>${L('Que manger ensuite ?')}</span></button>
         <button data-go="program">${icon('calendar')}<span>${L('Plan 7 jours')}</span></button>
+        <button data-go="recipes">${icon('fork')}<span>${L('Recettes')}</span></button>
         <button data-go="coach">${icon('coach')}<span>${L('Coach')}</span></button>
-        <button data-go="guides">${icon('book')}<span>${L('Académie')}</span></button>
       </div>
 
-      <div class="section-label"><h3>${L('Votre prochaine décision')}</h3><button class="link-btn" data-go="planner">${L('Ouvrir →')}</button></div>
-      ${dashboardInsight(t, p)}
+      ${session ? `<button class="today-train" data-session="${esc(session.id)}" data-program="${esc(currentProgram().id)}">${exAnim(session.ex[0][0], 'sm')}<span><small>${L('Séance du jour')}</small><b>${esc(L(session.name))}</b><em>${esc(L(session.focus))} · ${L('{n} exercices', { n: session.ex.length })}</em></span><span class="tt-go">${doneOn(todayKey()) ? icon('check') : icon('chevron')}</span></button>` : ''}
 
-      ${dayPlan.length ? `<div class="section-label"><h3>${L('Repères de votre plan')}</h3><button class="link-btn" data-go="program">${L('7 jours →')}</button></div><div class="day-card">${dayPlan.slice(0, 3).map((meal, index) => `<div class="plan-preview"><span><b>${esc(L(meal.type))}</b><small>${esc(meal.name)}</small></span><button class="pill pill-button" data-add-plan-meal data-day="0" data-meal="${index}">${fmt(meal.kcal)} kcal +</button></div>`).join('')}</div>` : ''}
+      ${dayPlan.length ? `<div class="section-label"><h3>${L('Votre plan aujourd’hui')}</h3><button class="link-btn" data-go="program">${L('7 jours →')}</button></div><div class="plan-today">${dayPlan.map((meal) => { const idx = state.weekPlan.indexOf(todayPlan); const mi = dayPlan.indexOf(meal); return `<div class="pt-row"><span class="pm-flag">${CUISINE_FLAG[meal.cuisine] || '🍽️'}</span><span><small>${esc(L(meal.type))}</small><b>${esc(L(meal.name))}</b></span><button class="pill pill-button" data-add-plan-meal data-day="${idx}" data-meal="${mi}">${fmt(meal.kcal)} kcal ${icon('plus')}</button></div>`; }).join('')}</div>` : `<button class="cta-card" data-go="program">${icon('calendar')}<span><b>${L('Créez votre plan de la semaine')}</b><small>${L('Repas, recettes et liste de courses en un clic.')}</small></span>${icon('chevron')}</button>`}
+
+      ${recipeIdeas()}
 
       <div class="section-label"><h3>${L('Repas aujourd’hui')}</h3><span class="streak">${icon('flame')} ${L('{n} j', { n: streak() })}</span></div>
       ${mealsHtml(todayMeals)}
+      <div class="section-label"><h3>${L('Votre prochaine décision')}</h3></div>
+      ${dashboardInsight(t, p)}
 
-      <div class="section-label"><h3>${L('Check-in rapide')}</h3><span class="fine">${L('aide le bilan hebdo')}</span></div>
+      <div class="section-label" id="checkin"><h3>${L('Check-in rapide')}</h3><span class="fine">${L('aide le bilan hebdo')}</span></div>
       <div class="checkin-card">
         <div><b>${L('Faim')}</b><div class="checkin-buttons">${[['low','Faible'],['normal','Normale'],['high','Forte']].map(([v,l]) => `<button class="mini-choice ${checkin.hunger === v ? 'selected' : ''}" data-checkin="hunger" data-value="${v}">${L(l)}</button>`).join('')}</div></div>
         <div><b>${L('Énergie')}</b><div class="checkin-buttons">${[['low','Basse'],['normal','OK'],['high','Haute']].map(([v,l]) => `<button class="mini-choice ${checkin.energy === v ? 'selected' : ''}" data-checkin="energy" data-value="${v}">${L(l)}</button>`).join('')}</div></div>
         <div><b>${L('Sommeil')}</b><div class="checkin-buttons">${[['bad','Mauvais'],['ok','Correct'],['good','Bon']].map(([v,l]) => `<button class="mini-choice ${checkin.sleep === v ? 'selected' : ''}" data-checkin="sleep" data-value="${v}">${L(l)}</button>`).join('')}</div></div>
       </div>
+    </div>
+    ${bottom('app')}
+  </div>`;
+}
+
+// ---- Progress -----------------------------------------------------------------
+let progressRange = 90;
+const MEASURES = [['waist', 'Tour de taille'], ['hips', 'Hanches'], ['chest', 'Poitrine'], ['arm', 'Bras'], ['thigh', 'Cuisse']];
+
+function measureSeries(key) {
+  if (key === 'waist') return state.waist || [];
+  return Object.entries(state.measures || {}).filter(([, v]) => v?.[key]).map(([day, v]) => ({ day, value: v[key] })).sort((a, b) => a.day.localeCompare(b.day));
+}
+
+function weightChart(series, target) {
+  if (!series.length) return '';
+  const w = 340, h = 190, x0 = 34, x1 = 326, y0 = 18, y1 = 158;
+  const vals = series.map((v) => Number(v.value));
+  const min = Math.min(...vals, target) - 0.6;
+  const max = Math.max(...vals, target) + 0.6;
+  const t0 = new Date(`${series[0].day}T12:00:00`).getTime();
+  const t1 = Math.max(t0 + 86400000, new Date(`${series.at(-1).day}T12:00:00`).getTime());
+  const X = (d) => x0 + (new Date(`${d}T12:00:00`).getTime() - t0) / (t1 - t0) * (x1 - x0);
+  const Y = (v) => y1 - (v - min) / Math.max(0.5, max - min) * (y1 - y0);
+  const pts = series.map((v) => [X(v.day), Y(Number(v.value))]);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  const area = `${line} L ${pts.at(-1)[0].toFixed(1)} ${y1} L ${pts[0][0].toFixed(1)} ${y1} Z`;
+  const ty = Y(target);
+  const ticks = [max - 0.6, (max + min) / 2, min + 0.6];
+  return `<svg class="wchart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${L('Courbe de poids')}">
+    <defs><linearGradient id="wfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--lime2)" stop-opacity=".5"/><stop offset="1" stop-color="var(--lime2)" stop-opacity="0"/></linearGradient></defs>
+    ${ticks.map((v) => `<line x1="${x0}" x2="${x1}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="wgrid"/><text x="${x0 - 6}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" class="wtick">${fmt(v, 1)}</text>`).join('')}
+    <line x1="${x0}" x2="${x1}" y1="${ty.toFixed(1)}" y2="${ty.toFixed(1)}" class="wgoal"/><text x="${x1}" y="${(ty - 6).toFixed(1)}" text-anchor="end" class="wgoal-t">${L('Objectif')} ${fmt(target, 1)}</text>
+    <path d="${area}" fill="url(#wfill)"/><path d="${line}" class="wline"/>
+    ${pts.map((p, i) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i === pts.length - 1 ? 6 : 3.5}" class="${i === pts.length - 1 ? 'wlast' : 'wpt'}"/>`).join('')}
+    <text x="${x0}" y="${h - 6}" class="wtick">${esc(new Date(`${series[0].day}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'short' }))}</text>
+    <text x="${x1}" y="${h - 6}" text-anchor="end" class="wtick">${esc(new Date(`${series.at(-1).day}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'short' }))}</text>
+  </svg>`;
+}
+
+function barChart(items, target, unit, cls = '') {
+  const max = Math.max(target || 0, ...items.map((x) => x.value), 1) * 1.1;
+  return `<div class="bars ${cls}">${target ? `<span class="bars-target" style="bottom:${(target / max * 100).toFixed(1)}%"><em>${fmt(target)} ${unit}</em></span>` : ''}${items.map((x) => `<div class="bar-col ${x.today ? 'today' : ''}"><span class="bar" style="height:${Math.max(2, x.value / max * 100).toFixed(1)}%"><em>${x.value ? fmt(x.value) : ''}</em></span><small>${esc(x.label)}</small></div>`).join('')}</div>`;
+}
+
+function personalRecords() {
+  const best = {};
+  for (const w of state.workoutLog || []) for (const [id, kg] of Object.entries(w.loads || {})) if (kg > (best[id]?.kg || 0)) best[id] = { kg, day: w.day };
+  return Object.entries(best).sort((a, b) => b[1].kg - a[1].kg).slice(0, 6);
+}
+
+function badgeList() {
+  const workouts = (state.workoutLog || []).length;
+  const lost = startWeight() - lastWeight();
+  const waterDays = Object.entries(state.water || {}).filter(([, v]) => v >= waterGoal()).length;
+  return [
+    ['🥇', 'Premier repas', state.meals.length >= 1],
+    ['🔥', 'Série 3 jours', streak() >= 3],
+    ['🏆', 'Série 7 jours', streak() >= 7],
+    ['👑', 'Série 30 jours', streak() >= 30],
+    ['📸', '5 scans', state.scanCount >= 5],
+    ['🗓️', 'Plan 7 jours', (state.weekPlan || []).length >= 7],
+    ['💧', 'Hydratation 7 jours', waterDays >= 7],
+    ['💪', 'Première séance', workouts >= 1],
+    ['🏋️', '10 séances', workouts >= 10],
+    ['🚀', '50 séances', workouts >= 50],
+    ['📉', '−1 kg', state.profile.goal === 'lose' && lost >= 1],
+    ['🎯', '−5 kg', state.profile.goal === 'lose' && lost >= 5],
+    ['♡', '3 recettes favorites', (state.recipeFavorites || []).length >= 3],
+    ['🍽️', '50 repas suivis', state.meals.length >= 50],
+  ];
+}
+function achievements() {
+  return `<div class="achievement-grid">${badgeList().map(([ico, label, unlocked]) => `<div class="achievement ${unlocked ? '' : 'locked'}"><span>${ico}</span><b>${esc(L(label))}</b></div>`).join('')}</div>`;
+}
+
+function progressScreen() {
+  if (!state.weights.length) state.weights = [{ day: todayKey(), value: Number(state.profile.weight) }];
+  const p = state.profile;
+  const cutoff = progressRange ? addDays(-progressRange) : '0000';
+  const series = state.weights.filter((x) => x.day >= cutoff);
+  const start = startWeight();
+  const end = lastWeight();
+  const target = Number(p.target || end);
+  const pct = progressPercent();
+  const change = end - start;
+  const h = Number(p.height || 0) / 100;
+  const bmi = h ? end / (h * h) : 0;
+  const bmiLabel = !bmi ? '' : bmi < 18.5 ? 'Insuffisance pondérale' : bmi < 25 ? 'Corpulence normale' : bmi < 30 ? 'Surpoids' : 'Obésité';
+  const recent = state.weights.filter((x) => x.day >= addDays(-28));
+  const rate = recent.length >= 2 ? (Number(recent.at(-1).value) - Number(recent[0].value)) / Math.max(1, (new Date(recent.at(-1).day) - new Date(recent[0].day)) / 604800000) : 0;
+  const toGo = target - end;
+  const weeksLeft = rate && Math.sign(rate) === Math.sign(toGo) ? Math.abs(toGo / rate) : null;
+  const eta = weeksLeft && weeksLeft < 150 ? new Date(Date.now() + weeksLeft * 604800000) : (projection(p)?.end || null);
+  const data = weeklyData();
+  const logged = data.filter((x) => x.kcal > 0);
+  const avgKcal = logged.length ? Math.round(logged.reduce((s, x) => s + x.kcal, 0) / logged.length) : 0;
+  const avgProt = logged.length ? Math.round(logged.reduce((s, x) => s + x.protein, 0) / logged.length) : 0;
+  const avgWater = Math.round(data.reduce((s, x) => s + x.water, 0) / 7);
+  const weeks = Array.from({ length: 8 }, (_, i) => {
+    const from = new Date(); from.setDate(from.getDate() - ((from.getDay() + 6) % 7) - (7 - i) * 7);
+    const fromKey = todayKey(from); const to = new Date(from); to.setDate(from.getDate() + 6); const toKey = todayKey(to);
+    return { label: from.toLocaleDateString(locale(), { day: 'numeric', month: 'numeric' }), value: new Set((state.workoutLog || []).filter((w) => w.day >= fromKey && w.day <= toKey).map((w) => w.day)).size, today: i === 7 };
+  });
+  const prs = personalRecords();
+  const badges = badgeList();
+  return `<div class="mobile-app">
+    ${appHeader('Progrès')}
+    <div class="screen">
+      <section class="prog-hero">
+        <div class="ph-main"><small>${L('Poids actuel')}</small><b><span data-count="${end}">${fmt(end, 1)}</span> kg</b><span class="ph-delta ${change <= 0 ? 'down' : 'up'}">${change <= 0 ? '↓' : '↑'} ${fmt(Math.abs(change), 1)} kg ${L('depuis le début')}</span></div>
+        <div class="ph-goal"><div class="ph-track"><i style="width:${pct}%"></i><span style="left:${pct}%"></span></div><div class="ph-ends"><span>${fmt(start, 1)} kg</span><span>${Math.round(pct)} %</span><span>${fmt(target, 1)} kg</span></div></div>
+        <div class="ph-stats"><div><small>${L('Restant')}</small><b>${fmt(Math.abs(toGo), 1)} kg</b></div><div><small>${L('Rythme')}</small><b>${rate ? `${rate > 0 ? '+' : ''}${fmt(rate, 2)} kg/${L('sem.')}` : '—'}</b></div><div><small>${L('Arrivée estimée')}</small><b>${eta ? esc(dateFr(eta)) : '—'}</b></div></div>
+      </section>
+
+      <div class="section-label"><h3>${L('Courbe de poids')}</h3><div class="range-chips">${[[30, '1 M'], [90, '3 M'], [0, L('Tout')]].map(([d, l]) => `<button class="${progressRange === d ? 'on' : ''}" data-prog-range="${d}">${l}</button>`).join('')}</div></div>
+      <div class="chart-card">${weightChart(series.length ? series : state.weights.slice(-1), target)}</div>
+
+      <section class="log-card">
+        <div class="log-weight"><button class="icon-btn" data-weight-step="-0.1" aria-label="−">${icon('minus')}</button><label><input id="weight-now" type="number" step=".1" min="30" max="300" inputmode="decimal" value="${String(Math.round(end * 10) / 10)}"><span>kg</span></label><button class="icon-btn" data-weight-step="0.1" aria-label="+">${icon('plus')}</button></div>
+        <details class="measure-box"><summary>${icon('scale')} ${L('Ajouter des mensurations')}</summary><div class="measure-grid">${MEASURES.map(([k, label]) => `<label>${L(label)}<input type="number" step=".5" min="10" max="250" inputmode="decimal" data-measure="${k}" placeholder="cm"></label>`).join('')}</div></details>
+        <button class="btn btn-primary btn-wide" data-save-progress>${L('Enregistrer ma pesée')}</button>
+      </section>
+
+      <div class="stat-grid">
+        <div class="stat"><small>${L('IMC')}</small><b>${bmi ? fmt(bmi, 1) : '—'}</b><em>${esc(L(bmiLabel))}</em></div>
+        <div class="stat"><small>${L('Série')}</small><b>${streak()} ${L('j')}</b><em>${L('jours suivis d’affilée')}</em></div>
+        <div class="stat"><small>${L('Calories moy.')}</small><b>${avgKcal ? fmt(avgKcal) : '—'}</b><em>${L('sur 7 jours · objectif {n}', { n: fmt(p.dailyKcal) })}</em></div>
+        <div class="stat"><small>${L('Protéines moy.')}</small><b>${avgProt ? `${fmt(avgProt)} g` : '—'}</b><em>${L('objectif {n} g', { n: p.protein })}</em></div>
+        <div class="stat"><small>${L('Eau moy.')}</small><b>${fmt(avgWater / 1000, 1)} L</b><em>${L('par jour')}</em></div>
+        <div class="stat"><small>${L('Séances')}</small><b>${(state.workoutLog || []).filter((w) => w.day >= addDays(-30)).length}</b><em>${L('30 derniers jours')}</em></div>
+      </div>
+
+      <div class="section-label"><h3>${L('Calories, 7 derniers jours')}</h3></div>
+      <div class="chart-card">${barChart(data.map((d) => ({ label: new Date(`${d.day}T12:00:00`).toLocaleDateString(locale(), { weekday: 'narrow' }), value: d.kcal, today: d.day === todayKey() })), p.dailyKcal, 'kcal')}</div>
+
+      ${hasFeature('training') || (state.workoutLog || []).length ? `<div class="section-label"><h3>${L('Séances par semaine')}</h3></div><div class="chart-card">${barChart(weeks, trainingDays().length, '', 'train')}</div>
+      ${prs.length ? `<div class="section-label"><h3>${L('Records personnels')}</h3></div><div class="pr-list">${prs.map(([id, r]) => `<button class="pr" data-exercise="${esc(id)}">${EXERCISES[id] ? exAnim(id, 'xs') : ''}<span><b>${esc(L(exName(id)))}</b><small>${esc(dateLabel(r.day))}</small></span><em>${fmt(r.kg, 1)} kg</em></button>`).join('')}</div>` : ''}` : ''}
+
+      <div class="section-label"><h3>${L('Mensurations')}</h3></div>
+      <div class="measure-table">${MEASURES.map(([k, label]) => { const s = measureSeries(k); const first = s[0]?.value; const last = s.at(-1)?.value; return `<div><span>${L(label)}</span><b>${last ? `${fmt(last, 1)} cm` : '—'}</b><em class="${last && first && last - first < 0 ? 'down' : ''}">${last && first && s.length > 1 ? `${last - first > 0 ? '+' : ''}${fmt(last - first, 1)} cm` : ''}</em></div>`; }).join('')}</div>
+
+      <div class="section-label"><h3>${L('Photos de progression')}</h3><span class="fine">${L('Restent sur cet appareil')}</span></div>
+      <div id="photo-strip" class="photo-strip"><label class="photo-add">${icon('camera')}<span>${L('Ajouter')}</span><input type="file" accept="image/*" id="progress-photo" hidden></label></div>
+
+      <div class="section-label"><h3>${L('Badges')}</h3><span class="fine">${badges.filter((b) => b[2]).length}/${badges.length}</span></div>
+      ${achievements()}
+      <div class="insight"><strong>${L('Ne corrigez pas votre alimentation sur une seule pesée.')}</strong>${L('Eau, sel, digestion, sommeil et cycle peuvent déplacer le poids sans refléter une variation équivalente de masse grasse.')}</div>
+    </div>
+    ${bottom('progress')}
+  </div>`;
+}
+
+// Progress photos: stored only in this browser (IndexedDB), never synced.
+const PhotoStore = {
+  db: null,
+  async open() {
+    if (this.db) return this.db;
+    this.db = await new Promise((resolve, reject) => {
+      const req = indexedDB.open('nutripilot-photos', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('photos', { keyPath: 'id' });
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return this.db;
+  },
+  async all() {
+    try {
+      const db = await this.open();
+      return await new Promise((resolve) => { const r = db.transaction('photos').objectStore('photos').getAll(); r.onsuccess = () => resolve(r.result || []); r.onerror = () => resolve([]); });
+    } catch { return []; }
+  },
+  async add(blob) {
+    const db = await this.open();
+    const item = { id: `${Date.now()}`, day: todayKey(), blob };
+    await new Promise((resolve, reject) => { const tx = db.transaction('photos', 'readwrite'); tx.objectStore('photos').put(item); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); });
+  },
+  async remove(id) {
+    const db = await this.open();
+    await new Promise((resolve) => { const tx = db.transaction('photos', 'readwrite'); tx.objectStore('photos').delete(id); tx.oncomplete = resolve; tx.onerror = resolve; });
+  },
+};
+
+async function renderPhotos() {
+  const strip = $('#photo-strip');
+  if (!strip) return;
+  const photos = (await PhotoStore.all()).sort((a, b) => a.id.localeCompare(b.id));
+  strip.querySelectorAll('.photo').forEach((x) => x.remove());
+  photos.forEach((ph) => {
+    const url = URL.createObjectURL(ph.blob);
+    const el = document.createElement('div');
+    el.className = 'photo';
+    el.innerHTML = `<img src="${url}" alt=""><small>${esc(new Date(`${ph.day}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'short' }))}</small><button aria-label="${L('Retirer')}" data-photo-remove="${ph.id}">×</button>`;
+    strip.insertBefore(el, strip.querySelector('.photo-add'));
+  });
+  $('#progress-photo')?.addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const blob = await compressImage(file, 900);
+    await PhotoStore.add(blob);
+    toast('Photo ajoutée ✓');
+    renderPhotos();
+  }, { once: true });
+}
+
+async function compressImage(file, maxSide) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bmp.width * k); canvas.height = Math.round(bmp.height * k);
+    canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    return await new Promise((resolve) => canvas.toBlob((b) => resolve(b || file), 'image/jpeg', 0.82));
+  } catch { return file; }
+}
+
+// ---- Plans page ---------------------------------------------------------------
+const PLAN_LOOK = {
+  complete: { icon: 'star', cls: 'pl-complete', tagline: 'Tout NutriPilot, sans limite.' },
+  menopause: { icon: 'flower', cls: 'pl-meno', tagline: 'Pensé pour les femmes en (pré)ménopause.' },
+  nutrition: { icon: 'fork', cls: 'pl-nutri', tagline: 'Mincir et mieux manger, sans régime extrême.' },
+  training: { icon: 'dumbbell', cls: 'pl-train', tagline: 'Salle ou maison, chaque séance guidée.' },
+};
+const COMPARE_ROWS = [
+  ['Scanner de repas illimité', ['complete', 'menopause', 'nutrition', 'training']],
+  ['Coach au quotidien', ['complete', 'menopause', 'nutrition', 'training']],
+  ['Plan de repas 7 jours', ['complete', 'menopause', 'nutrition']],
+  ['Recettes du monde et liste de courses', ['complete', 'menopause', 'nutrition']],
+  ['Cours nutrition', ['complete', 'menopause', 'nutrition']],
+  ['Programmes d’entraînement et grille', ['complete', 'training']],
+  ['Bibliothèque d’exercices animés', ['complete', 'training']],
+  ['Cours de technique et de musculation', ['complete', 'training']],
+  ['Journal des symptômes de la ménopause', ['complete', 'menopause']],
+  ['Programme guidé de 8 semaines', ['complete', 'menopause']],
+  ['Séances force, os et équilibre', ['complete', 'menopause']],
+];
+
+function plansScreen() {
+  const plans = Billing.plans();
+  const mine = state.premium ? planTier() : '';
+  const tiers = plans.map((x) => x.tier);
+  return `<div class="mobile-app plans-page">
+    ${appHeader('Nos formules')}
+    <div class="screen">
+      <section class="plans-hero">
+        <h1>${L('Une formule pour chaque objectif.')}</h1>
+        <p>${L('Nutrition, entraînement, ménopause ou tout à la fois. Changez de formule quand vous voulez.')}</p>
+        <div class="ph-chips"><span>${icon('fork')} ${L('{n} recettes', { n: ALL_RECIPES.length })}</span><span>${icon('dumbbell')} ${L('{n} exercices animés', { n: Object.keys(EXERCISES).length })}</span><span>${icon('globe')} ${L('{n} langues', { n: LANGS.length })}</span></div>
+      </section>
+      <div class="plan-cards">${plans.map((x) => {
+        const look = PLAN_LOOK[x.tier] || PLAN_LOOK.complete;
+        const fromMonth = euro(x.annual.price / 12);
+        return `<article class="plan-card ${look.cls} ${mine === x.tier ? 'mine' : ''}">
+          <div class="pc-head"><span class="pc-ico">${icon(look.icon)}</span><div><h2>${esc(L(x.label))}</h2><p>${L(look.tagline)}</p></div>${x.badge ? `<span class="pc-badge">${esc(L(x.badge))}</span>` : ''}</div>
+          <ul>${x.features.map((f) => `<li>${icon('check')}<span>${esc(L(f))}</span></li>`).join('')}</ul>
+          <div class="pc-foot"><div class="pc-price"><small>${L('à partir de')}</small><b>${fromMonth}</b><small>${L('/ mois, en annuel')}</small></div>
+          ${mine === x.tier ? `<span class="pc-mine">${icon('check')} ${L('Votre formule')}</span>` : `<button class="btn ${x.tier === 'complete' ? 'btn-lime' : 'btn-primary'}" data-choose-plan="${esc(x.tier)}">${L(state.premium ? 'Choisir cette formule' : 'Choisir')}</button>`}</div>
+        </article>`;
+      }).join('')}</div>
+      <div class="section-label"><h3>${L('Comparer les formules')}</h3></div>
+      <div class="compare">
+        <div class="cmp-row head"><span></span>${tiers.map((t) => `<b class="${PLAN_LOOK[t]?.cls || ''}">${icon(PLAN_LOOK[t]?.icon || 'star')}</b>`).join('')}</div>
+        ${COMPARE_ROWS.map(([label, inc]) => `<div class="cmp-row"><span>${L(label)}</span>${tiers.map((t) => `<i class="${inc.includes(t) ? 'yes' : 'no'}">${inc.includes(t) ? icon('check') : '–'}</i>`).join('')}</div>`).join('')}
+        <div class="cmp-row legend">${tiers.map((t) => `<span><b class="${PLAN_LOOK[t]?.cls || ''}">${icon(PLAN_LOOK[t]?.icon || 'star')}</b>${esc(L(plans.find((p) => p.tier === t).label))}</span>`).join('')}</div>
+      </div>
+      <div class="plans-faq">
+        <details><summary>${L('Comment fonctionne l’essai gratuit ?')}</summary><p>${L('Dans l’application iPhone et Android, chaque formule commence par 3 jours gratuits. Vous pouvez annuler avant la fin de l’essai sans rien payer.')}</p></details>
+        <details><summary>${L('Puis-je changer de formule ?')}</summary><p>${L('Oui, à tout moment depuis les réglages de votre compte App Store ou Google Play.')}</p></details>
+        <details><summary>${L('Puis-je explorer avant de m’abonner ?')}</summary><p>${L('Oui : recettes, exercices, programmes et la première leçon de chaque cours sont visibles gratuitement.')}</p></details>
+      </div>
+      <button class="btn btn-ghost btn-wide" data-go="app">${L(state.premium ? 'Retour à l’accueil' : 'Continuer à explorer')}</button>
+    </div>
+    ${bottom('plans')}
+  </div>`;
+}
+
+// ---- Hub (explorers) ----------------------------------------------------------
+function hubScreen() {
+  const p = state.profile || {};
+  const tracks = t('tracks');
+  const hasPlan = state.onboarding && p.dailyKcal;
+  const proj = hasPlan ? projection(p) : null;
+  const plans = Billing.plans();
+  const explore = [['recipes', 'fork', 'Recettes du monde', '{n} recettes', ALL_RECIPES.length], ['training', 'dumbbell', 'Exercices animés', '{n} mouvements', Object.keys(EXERCISES).length], ['menopause', 'flower', 'Espace Ménopause 40+', 'Journal, programme, séances', 0], ['guides', 'book', 'Cours', 'Première leçon offerte', 0]];
+  return `<div class="mobile-app hub">
+    <header class="app-head"><div class="app-head-row"><button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${LANGS.find((x) => x[0] === lang())?.[2] || '🌐'}</button></div></div></header>
+    <div class="screen">
+      <section class="hub-hero">
+        <small>${esc(t('hello'))}${p.name ? ` ${esc(p.name)}` : ''} 👋</small>
+        <h1>${L('Nutrition, entraînement et bien-être, dans une seule app.')}</h1>
+        <div class="hh-stats"><div><b>${ALL_RECIPES.length}</b><span>${L('recettes')}</span></div><div><b>${Object.keys(EXERCISES).length}</b><span>${L('exercices')}</span></div><div><b>${allPrograms().filter((x) => !x.custom).length}</b><span>${L('programmes')}</span></div><div><b>${LANGS.length}</b><span>${L('langues')}</span></div></div>
+        <button class="btn btn-lime btn-wide" data-go="plans">${L('Voir les formules')}</button>
+      </section>
+      ${hasPlan ? `<button class="today-card hub-plan" data-go="plan"><small>${esc(t('myProgram'))}</small><b>${fmt(p.dailyKcal)} kcal · ${p.protein} g prot.</b>${proj ? `<span>${kgFmt(p.weight)} → ${kgFmt(p.target)} kg · ${esc(dateFr(proj.end))}</span>` : ''}<em>${esc(t('seePlan'))} →</em></button>` : ''}
+
+      <div class="section-label"><h3>${L('Nos formules')}</h3><button class="link-btn" data-go="plans">${L('Comparer →')}</button></div>
+      <div class="plan-strip">${plans.map((x) => { const look = PLAN_LOOK[x.tier] || PLAN_LOOK.complete; return `<button class="plan-mini ${look.cls}" data-choose-plan="${esc(x.tier)}"><span class="pc-ico">${icon(look.icon)}</span><b>${esc(L(x.label))}</b><small>${L(look.tagline)}</small><em>${L('dès {p} / mois', { p: euro(x.annual.price / 12) })}</em></button>`; }).join('')}</div>
+
+      <div class="section-label"><h3>${esc(t('hubQuiz'))}</h3></div>
+      <p class="screen-sub guide-sub">${esc(t('hubQuizSub'))}</p>
+      <div class="track-list light">${TRACKS.map(([id, , , emoji], i) => `<button class="track-card" data-track="${id}"><span class="track-emoji">${emoji}</span><span><b>${esc(tracks[i][0])}</b><small>${esc(tracks[i][1])}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>
+
+      <div class="section-label"><h3>${esc(t('hubExplore'))}</h3></div>
+      <div class="explore-big">${explore.map(([r, ico, title, sub, n]) => `<button class="xb-card xb-${r}" data-go="${r}">${r === 'training' ? exAnim('squat', 'sm') : `<span class="xb-ico">${icon(ico)}</span>`}<b>${L(title)}</b><small>${L(sub, { n })}</small></button>`).join('')}</div>
+
+      <div class="section-label"><h3>${L('Ce que fait NutriPilot')}</h3></div>
+      <div class="feature-rows">
+        <div>${icon('scan')}<span><b>${L('Scanner de repas')}</b><small>${L('Photo, texte, code-barres ou étiquette : calories et macros en quelques secondes.')}</small></span></div>
+        <div>${icon('calendar')}<span><b>${L('Plan 7 jours et courses')}</b><small>${L('Des repas de votre culture, ajustés à vos calories, avec la liste de courses.')}</small></span></div>
+        <div>${icon('dumbbell')}<span><b>${L('Entraînement guidé')}</b><small>${L('Programmes, grille sur mesure, démonstrations animées et suivi des charges.')}</small></span></div>
+        <div>${icon('flower')}<span><b>${L('Ménopause 40+')}</b><small>${L('Journal des symptômes, alimentation adaptée et programme de 8 semaines.')}</small></span></div>
+        <div>${icon('progress')}<span><b>${L('Progrès')}</b><small>${L('Courbe de poids, mensurations, records, photos et badges.')}</small></span></div>
+      </div>
+      <button class="guide-card hub-link" data-go="tour"><span class="guide-check">${icon('star')}</span><span><b>${esc(t('hubTour'))}</b><small>${esc(t('hubTourSub'))}</small></span><span class="guide-arrow">→</span></button>
+      <button class="guide-card hub-link" data-go="support"><span class="guide-check">${icon('help')}</span><span><b>${esc(t('hubSupport'))}</b><small>${esc(t('hubSupportSub'))}</small></span><span class="guide-arrow">→</span></button>
+      <button class="link-btn center-link" data-go="access">${L('Déjà client ? Se connecter')}</button>
     </div>
     ${bottom('app')}
   </div>`;
@@ -1748,45 +2451,8 @@ function checkReminders() {
   saveState(false);
 }
 
-function planShopping() {
-  const map = new Map();
-  for (const day of state.weekPlan || []) {
-    for (const meal of day.meals || []) {
-      for (const raw of meal.ingredients || []) {
-        const item = normalizeIngredient(raw);
-        if (!item.name) continue;
-        const key = foldText(item.name.trim());
-        const previous = map.get(key) || { key, name: item.name, grams: 0, category: shoppingCategory(item.name) };
-        previous.grams += Number(item.grams || 0);
-        map.set(key, previous);
-      }
-    }
-  }
-  const order = ['Protéines', 'Légumes', 'Fruits', 'Féculents', 'Produits laitiers / alternatives', 'Divers'];
-  return [...map.values()].sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category) || a.name.localeCompare(b.name, 'fr'));
-}
 
-function shoppingListHtml(items = []) {
-  const groups = new Map();
-  for (const item of items) {
-    if (!groups.has(item.category)) groups.set(item.category, []);
-    groups.get(item.category).push(item);
-  }
-  return [...groups.entries()].map(([category, list]) => `<div class="shopping-group"><h4>${esc(L(category))}</h4>${list.map((item) => `<label><input type="checkbox" data-shop="${esc(item.key)}" ${state.shoppingChecked[item.key] ? 'checked' : ''}><span>${esc(L(item.name))}</span><b>${item.grams ? `${fmt(item.grams)} g` : ''}</b></label>`).join('')}</div>`).join('');
-}
 
-function weekPlanHtml() {
-  return `<div class="week-plan">${state.weekPlan.map((day, dayIndex) => {
-    const dayKcal = (day.meals || []).reduce((sum, meal) => sum + Number(meal.kcal || 0), 0);
-    return `<details class="day-card" ${dayIndex === 0 ? 'open' : ''}><summary>${esc(day.day)} <span>${fmt(dayKcal)} kcal</span></summary><div class="day-meals">${(day.meals || []).map((meal, mealIndex) => `
-      <div class="plan-meal">
-        <div class="plan-meal-top"><div><b>${esc(L(meal.type))}</b><small>${esc(meal.name)}</small></div><span class="pill">${fmt(meal.kcal)} kcal</span></div>
-        <div class="meal-macro-line"><span>P ${fmt(meal.protein)} g</span><span>G ${fmt(meal.carbs)} g</span><span>L ${fmt(meal.fat)} g</span><span>Fibres ${fmt(meal.fiber)} g</span></div>
-        ${meal.ingredients?.length ? `<div class="ingredient-preview">${meal.ingredients.slice(0, 5).map((x) => { const i = normalizeIngredient(x); return `<span>${esc(i.name)}${i.grams ? ` ${fmt(i.grams)} g` : ''}</span>`; }).join('')}</div>` : ''}
-        <div class="inline-actions"><button class="link-btn" data-add-plan-meal data-day="${dayIndex}" data-meal="${mealIndex}">${L('＋ Journal')}</button><button class="link-btn" data-plan-recipe data-day="${dayIndex}" data-meal="${mealIndex}">${L('Voir recette')}</button><button class="link-btn" data-swap-plan data-day="${dayIndex}" data-meal="${mealIndex}">${L('Remplacer')}</button></div>
-      </div>`).join('')}</div></details>`;
-  }).join('')}</div>`;
-}
 
 function weeklyReviewHtml() {
   const review = state.weekReview || {};
@@ -2064,7 +2730,7 @@ function lessonAccess(guide) {
 }
 
 function programTabs(active) {
-  const tabs = [['program', 'Mon plan'], ['recipes', 'Recettes'], ['shopping', 'Courses'], ['guides', 'Académie']];
+  const tabs = [['program', 'Mon plan'], ['recipes', 'Recettes'], ['shopping', 'Courses'], ['guides', 'Leçons']];
   return `<div class="segmented" role="tablist">${tabs.map(([r, label]) => `<button role="tab" aria-selected="${r === active}" class="${r === active ? 'active' : ''}" data-go="${r}">${L(label)}</button>`).join('')}</div>`;
 }
 
@@ -2072,28 +2738,16 @@ function guidesScreen() {
   const p = state.profile || {};
   const read = new Set(state.guidesRead || []);
   const priority = { menopause: p.track === 'menopause' || (p.menopause && p.menopause !== 'no') ? 0 : 3, weightloss: ['lose', 'menopause', 'eat'].includes(p.track) ? 1 : 2, strength: p.track === 'muscle' ? 0 : 2, basics: 1 };
-  const academy = GUIDE_COLLECTIONS.filter((c) => c.id !== 'menopause');
+  const academy = GUIDE_COLLECTIONS.filter((c) => !['menopause', 'strength', 'movement'].includes(c.id));
   const courses = [...academy].sort((a, b) => (priority[a.id] ?? 5) - (priority[b.id] ?? 5));
-  const lessons = allGuides().filter((g) => g.collection !== 'menopause');
+  const lessons = allGuides().filter((g) => !['menopause', 'strength', 'movement'].includes(g.collection));
   const done = lessons.filter((g) => read.has(g.id)).length;
   return `<div class="mobile-app">
     ${appHeader('Nutrition')}
     <div class="screen">
       ${programTabs('guides')}
-      <div class="today-card academy-hero"><small>${L('ACADÉMIE NUTRIPILOT')}</small><h2>${L('{n} cours · {total} leçons courtes', { n: academy.length, total: lessons.length })}</h2><div class="progress"><i style="width:${Math.round(done / Math.max(1, lessons.length) * 100)}%"></i></div><span>${L('{n}/{total} leçons terminées', { n: done, total: lessons.length })}</span></div>
-      ${courses.map((c) => {
-        const cDone = c.guides.filter((g) => read.has(g.id)).length;
-        return `
-        <div class="course-card">
-          <div class="course-head"><div><span class="tag">${esc(L(c.level || 'Cours'))}</span><h3>${esc(L(c.title))}</h3><p>${esc(L(c.sub))}</p></div><span class="course-count">${cDone}/${c.guides.length}</span></div>
-          <div class="progress"><i style="width:${Math.round(cDone / c.guides.length * 100)}%"></i></div>
-          <div class="guide-list">${c.guides.map((g, index) => {
-            const access = lessonAccess({ ...g, index, tier: c.tier });
-            const locked = access === 'paywall' || access === 'upgrade';
-            return `<button class="guide-card ${read.has(g.id) ? 'read' : ''} ${locked ? 'locked' : ''}" data-guide="${esc(g.id)}"><span class="guide-check">${read.has(g.id) ? icon('check') : locked ? icon('lock') : index + 1}</span><span><b>${esc(L(g.title))}</b><small>${L('{time} de lecture', { time: g.time })}${access === 'free' ? ` · ${L('Leçon gratuite')}` : ''}</small></span><span class="guide-arrow">→</span></button>`;
-          }).join('')}</div>
-        </div>`;
-      }).join('')}
+      <div class="today-card academy-hero"><small>${L('COURS NUTRITION')}</small><h2>${L('{n} cours · {total} leçons courtes', { n: academy.length, total: lessons.length })}</h2><div class="progress"><i style="width:${Math.round(done / Math.max(1, lessons.length) * 100)}%"></i></div><span>${L('{n}/{total} leçons terminées', { n: done, total: lessons.length })}</span></div>
+      ${courses.map((c) => courseCardHtml(c, read)).join('')}
       <div class="fine center-fine">${L('Contenus d’information générale. Ils ne remplacent pas l’avis d’un médecin.')}</div>
     </div>
     ${bottom('program')}
@@ -2102,6 +2756,7 @@ function guidesScreen() {
 
 function guideSheet(guide) {
   return `<div class="sheet-head"><div><span class="tag">${L('Leçon {n}/{total}', { n: (guide.index ?? 0) + 1, total: guide.total || 1 })} · ${esc(guide.time)}</span><h2>${esc(L(guide.title))}</h2></div><button class="icon-btn" data-close>×</button></div>
+    ${guide.demo && EXERCISES[guide.demo] ? `<div class="ex-demo">${moveSvg(guide.demo, { equip: exEquip(guide.demo) })}</div>` : ''}
     <p class="guide-intro">${esc(L(guide.intro))}</p>
     <ul class="guide-points">${guide.points.map((x) => `<li>${esc(L(x))}</li>`).join('')}</ul>
     <div class="warn success"><b>${L('À faire aujourd’hui')}</b><br>${esc(L(guide.action))}</div>
@@ -2111,19 +2766,6 @@ function guideSheet(guide) {
     })()}`;
 }
 
-function shoppingScreen() {
-  const shopping = planShopping();
-  return `<div class="mobile-app">
-    ${appHeader('Nutrition')}
-    <div class="screen">
-      ${programTabs('shopping')}
-      ${shopping.length
-        ? `<div class="section-label"><h3>${L('Liste de la semaine')}</h3><span class="fine">${L('{n} ingrédients', { n: shopping.length })}</span></div><div class="day-card shopping-list">${shoppingListHtml(shopping)}</div>`
-        : `<div class="day-card"><h3>${L('Votre liste arrive avec votre plan.')}</h3><p class="screen-sub">${L('Générez votre plan de 7 jours : NutriPilot regroupe automatiquement les ingrédients par rayon.')}</p><button class="btn btn-primary btn-wide" data-generate-week>${L('Créer ma semaine')}</button></div>`}
-    </div>
-    ${bottom('program')}
-  </div>`;
-}
 
 // ---- Entraînement ----------------------------------------------------------
 const EXERCISES = {
@@ -2219,6 +2861,7 @@ Object.assign(EXERCISES, {
   'jumping': { name: 'Corde à sauter ou jumping jacks', muscle: 'Cardio', home: true, cues: ['Restez sur l’avant du pied.', 'Rythme régulier.', 'Faites des pauses si besoin.'] },
 });
 ['pushup', 'bw-squat', 'glute-bridge', 'split-squat', 'superman', 'mountain', 'plank', 'lunge', 'row', 'ohp', 'lateral', 'curl', 'rdl', 'calf'].forEach((id) => { EXERCISES[id].home = true; });
+Object.assign(EXERCISES, EXTRA_EXERCISES);
 
 const EX_GROUPS = ['Pectoraux', 'Dos', 'Épaules', 'Bras', 'Jambes', 'Fessiers', 'Abdos & gainage', 'Cardio', 'Mobilité & équilibre'];
 const EX_GROUP_OF = {
@@ -2416,7 +3059,7 @@ function alternativesFor(exId, place) {
 
 let trainTab = 'mine';
 let trainFocus = 'all';
-let libGroup = 'Pectoraux';
+let libGroup = 'all';
 let builder = null;
 
 function weekStrip() {
@@ -2434,11 +3077,12 @@ function weekStrip() {
 function trainingScreen() {
   const program = currentProgram();
   const today = todaySession();
-  const tabs = [['mine', 'Ma semaine'], ['programs', 'Programmes'], ['create', 'Créer'], ['library', 'Exercices']];
+  const tabs = [['mine', 'Ma semaine'], ['programs', 'Programmes'], ['create', 'Créer'], ['library', 'Exercices'], ['lessons', 'Leçons']];
   let body = '';
   if (trainTab === 'mine') body = trainingMine(program);
   else if (trainTab === 'programs') body = trainingPrograms(program);
   else if (trainTab === 'create') body = trainingCreate();
+  else if (trainTab === 'lessons') body = trainingLessons();
   else body = trainingLibrary();
   return `<div class="mobile-app">
     ${appHeader('Entraînement')}
@@ -2448,7 +3092,7 @@ function trainingScreen() {
         ${weekStrip()}
         ${today ? `<button class="btn btn-lime btn-wide" data-session="${esc(today.id)}" data-program="${esc(program.id)}">${L('Commencer la séance')}</button>` : `<button class="btn btn-ghost-dark btn-wide" data-session="${esc(nextSession(program).id)}" data-program="${esc(program.id)}">${L('Faire quand même : {name}', { name: esc(L(nextSession(program).name)) })}</button>`}
       </section>
-      <div class="segmented seg-4">${tabs.map(([k, label]) => `<button class="${trainTab === k ? 'active' : ''}" data-train-tab="${k}">${L(label)}</button>`).join('')}</div>
+      <div class="tab-scroll">${tabs.map(([k, label]) => `<button class="${trainTab === k ? 'active' : ''}" data-train-tab="${k}">${L(label)}</button>`).join('')}</div>
       ${body}
     </div>
     ${bottom('training')}
@@ -2507,11 +3151,219 @@ function defaultBuilder() {
   };
 }
 
+// ---- Training v3: library with animated demos, grid builder, lessons ------------
+let libEquip = 'all';
+let libQuery = '';
+let createMode = 'grid';
+let pickerState = null;
+let restTimer = null;
+
+function confirmSoft(button) {
+  if (button.dataset.armed) return true;
+  button.dataset.armed = '1';
+  toast('Touchez encore pour retirer ce jour et ses exercices.');
+  setTimeout(() => { delete button.dataset.armed; }, 2500);
+  return false;
+}
+function exEquip(id) { return EXERCISES[id]?.equip || EQUIP_OF[id] || 'bw'; }
+function exAnim(id, cls = '') { return `<span class="ex-anim ${cls}">${moveSvg(id, { equip: exEquip(id) })}</span>`; }
+const REPS_CHOICES = ['5', '6–8', '8–10', '8–12', '10–12', '12–15', '15–20', '30 s', '45 s', '60 s', '10 min', '20 min'];
+
+function libraryList(group, equip, query) {
+  const q = foldText(query || '');
+  return Object.keys(EXERCISES).filter((id) => (group === 'all' || exGroup(id) === group)
+    && (equip === 'all' || exEquip(id) === equip || (equip === 'home' && EXERCISES[id].home))
+    && (!q || foldText(L(EXERCISES[id].name, null, false)).includes(q) || foldText(EXERCISES[id].name).includes(q) || foldText(L(EXERCISES[id].muscle || '', null, false)).includes(q)));
+}
+
+function exCardHtml(id, attrs = `data-exercise="${esc(id)}"`, extra = '') {
+  const ex = EXERCISES[id];
+  return `<button class="lib-card" ${attrs}>${exAnim(id)}<span class="lib-info"><b>${esc(L(ex.name))}</b><small>${esc(L(ex.muscle || ''))}</small><span class="lib-tags"><i>${esc(L(EQUIPMENT[exEquip(id)] || ''))}</i>${ex.home ? `<i class="home">${L('Maison')}</i>` : ''}</span></span>${extra}</button>`;
+}
+
+function trainingLibrary() {
+  const groups = [['all', 'Tous'], ...EX_GROUPS.map((g) => [g, g])];
+  const equips = [['all', 'Tout matériel'], ['home', 'À la maison'], ...Object.entries(EQUIPMENT)];
+  const list = libraryList(libGroup, libEquip, libQuery);
+  return `
+    <label class="search-box">${icon('search')}<input id="lib-search" type="search" value="${esc(libQuery)}" placeholder="${L('Rechercher un exercice ou un muscle')}"></label>
+    <div class="chip-row">${groups.map(([k, label]) => `<button class="mini-choice ${libGroup === k ? 'selected' : ''}" data-lib-group="${esc(k)}">${L(label)}</button>`).join('')}</div>
+    <div class="chip-row">${equips.map(([k, label]) => `<button class="mini-choice ghost ${libEquip === k ? 'selected' : ''}" data-lib-equip="${esc(k)}">${L(label)}</button>`).join('')}</div>
+    <div class="section-label"><h3>${L('{n} exercices', { n: list.length })}</h3><span class="fine">${L('Touchez pour voir le mouvement')}</span></div>
+    <div id="lib-grid" class="lib-grid">${list.map((id) => exCardHtml(id)).join('') || `<div class="empty">${L('Aucun exercice pour ce filtre.')}</div>`}</div>`;
+}
+
+function exerciseSheet(id) {
+  const ex = EXERCISES[id];
+  const used = allPrograms().filter((p) => p.sessions.some((s) => s.ex.some((e) => e[0] === id)));
+  const history = (state.workoutLog || []).filter((w) => w.loads?.[id]).slice(-6);
+  return `<div class="sheet-head"><div><span class="tag">${esc(L(exGroup(id)))}</span><h2>${esc(L(ex.name))}</h2><div class="fine">${esc(L(ex.muscle))} · ${esc(L(EQUIPMENT[exEquip(id)] || ''))}</div></div><button class="icon-btn" data-close>×</button></div>
+    <div class="ex-demo">${moveSvg(id, { equip: exEquip(id) })}<span class="demo-badge">${L('Démonstration animée')}</span></div>
+    <div class="section-label"><h3>${L('Exécution')}</h3></div>
+    <ol class="steps-list">${(ex.cues || []).map((c) => `<li>${esc(L(c))}</li>`).join('')}</ol>
+    <div class="ex-reco">
+      <div><b>${L('Force')}</b><small>4 × 4–6 · ${L('repos {t}', { t: '2–3 min' })}</small></div>
+      <div><b>${L('Muscle')}</b><small>3 × 8–12 · ${L('repos {t}', { t: '60–90 s' })}</small></div>
+      <div><b>${L('Endurance')}</b><small>2 × 15–20 · ${L('repos {t}', { t: '30–45 s' })}</small></div>
+    </div>
+    ${history.length ? `<div class="section-label"><h3>${L('Vos charges')}</h3></div><div class="load-history">${history.map((w) => `<span><b>${fmt(w.loads[id], 1)} kg</b><small>${esc(dateLabel(w.day))}</small></span>`).join('')}</div>` : lastLoad(id) ? `<div class="warn success">${L('Dernière charge : {n} kg', { n: lastLoad(id) })}</div>` : ''}
+    ${used.length ? `<div class="section-label"><h3>${L('Dans les programmes')}</h3></div><div class="chip-row wrap">${used.slice(0, 6).map((p) => `<span class="pill">${esc(L(p.name))}</span>`).join('')}</div>` : ''}
+    <div class="modal-actions"><button class="btn btn-ghost" data-close>${L('Fermer')}</button><button class="btn btn-lime" data-grid-add-ex="${esc(id)}">${icon('plus')} ${L('Ajouter à ma grille')}</button></div>`;
+}
+
+function restLabel(rest) {
+  if (!rest) return '';
+  return L('repos {t}', { t: rest >= 60 ? (rest % 60 ? `${Math.floor(rest / 60)} min ${String(rest % 60).padStart(2, '0')}` : `${rest / 60} min`) : `${rest} s` });
+}
+
+function sessionSheet(sessionId, programId) {
+  const program = findProgram(programId) || currentProgram();
+  const session = program.sessions.find((x) => x.id === sessionId) || program.sessions[0];
+  const exs = sessionExercises(program, session);
+  const totalSets = exs.reduce((s, e) => s + Number(e[1] || 0), 0);
+  const minutes = Math.round(exs.reduce((s, e) => s + Number(e[1] || 0) * (45 + Number(e[3] || 60)), 0) / 60);
+  return `<div class="sheet-head"><div><span class="tag">${esc(L(program.name))}</span><h2>${esc(L(session.name))}</h2><div class="fine">${esc(L(session.focus))}</div></div><button class="icon-btn" data-close>×</button></div>
+    <div class="session-meta"><span>${icon('dumbbell')} ${L('{n} exercices', { n: exs.length })}</span><span>${icon('list')} ${L('{n} séries', { n: totalSets })}</span><span>${icon('timer')} ≈ ${minutes} min</span></div>
+    <div class="session-list">${exs.map(([id, sets, reps, rest], index) => {
+      const ex = EXERCISES[id] || { name: exName(id), muscle: '', cues: [] };
+      return `<details class="ex-card" ${index === 0 ? 'open' : ''}>
+        <summary>${EXERCISES[id] ? exAnim(id, 'sm') : `<span class="ex-num">${index + 1}</span>`}<span class="ex-main"><b>${esc(L(ex.name))}</b><small>${sets} × ${esc(L(reps))}${rest ? ` · ${restLabel(rest)}` : ''}</small></span><span class="ex-chev">${icon('chevron')}</span></summary>
+        ${EXERCISES[id] ? `<div class="ex-demo sm">${moveSvg(id, { equip: exEquip(id) })}</div>` : ''}
+        ${(ex.cues || []).length ? `<ul class="guide-points">${ex.cues.map((c) => `<li>${esc(L(c))}</li>`).join('')}</ul>` : ''}
+        <div class="set-dots">${Array.from({ length: Number(sets) || 1 }, (_, s) => `<button class="set-dot" data-set-dot="${esc(id)}-${s}" aria-label="${L('Série {n}', { n: s + 1 })}">${s + 1}</button>`).join('')}</div>
+        <div class="ex-actions">
+          <label class="ex-load">${L('Charge utilisée (kg)')} <input type="number" inputmode="decimal" min="0" step="0.5" data-load="${esc(id)}" value="${esc(lastLoad(id))}" placeholder="—"></label>
+          ${rest ? `<button class="chip-btn" data-rest="${Number(rest)}">${icon('timer')} ${L('Repos')}</button>` : ''}
+          ${EXERCISES[id] ? `<button class="chip-btn" data-swap-ex="${index}" data-program="${esc(program.id)}" data-session-id="${esc(session.id)}">${L('Remplacer l’exercice')}</button>` : ''}
+        </div>
+      </details>`;
+    }).join('')}</div>
+    <button class="btn btn-primary btn-wide" data-finish-session="${esc(session.id)}" data-program="${esc(program.id)}">✓ ${L('Terminer la séance')}</button>`;
+}
+
+function startRest(seconds) {
+  clearInterval(restTimer?.id);
+  document.querySelector('.rest-pill')?.remove();
+  const el = document.createElement('div');
+  el.className = 'rest-pill';
+  document.body.appendChild(el);
+  const end = Date.now() + seconds * 1000;
+  const tick = () => {
+    const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+    el.innerHTML = `${icon('timer')}<b>${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}</b><span>${L('Repos')}</span><button aria-label="${L('Fermer')}">×</button><i style="width:${(1 - left / seconds) * 100}%"></i>`;
+    el.querySelector('button').onclick = () => { clearInterval(restTimer.id); el.remove(); };
+    if (left <= 0) {
+      clearInterval(restTimer.id);
+      navigator.vibrate?.([200, 100, 200]);
+      el.classList.add('done');
+      el.querySelector('span').textContent = L('C’est reparti !');
+      setTimeout(() => el.remove(), 2500);
+    }
+  };
+  restTimer = { id: setInterval(tick, 250) };
+  tick();
+}
+
+// ---- Grid builder (manual weekly schedule) ------------------------------------
+function gridDraft() {
+  if (!state.gridDraft) state.gridDraft = { name: '', days: [] };
+  return state.gridDraft;
+}
+function gridFromProgram(program) {
+  const days = trainingDays();
+  const wds = program.sessions.map((_, i) => days[i] ?? WEEKDAY_ORDER[(i * 2) % 7]);
+  state.gridDraft = {
+    name: L(program.name),
+    days: program.sessions.map((s, i) => ({ wd: wds[i], name: L(s.name), ex: sessionExercises(program, s).map((e) => [...e]) })).sort((a, b) => WEEKDAY_ORDER.indexOf(a.wd) - WEEKDAY_ORDER.indexOf(b.wd)),
+    editing: program.custom ? program.id : '',
+  };
+}
+
 function trainingCreate() {
+  const modes = [['grid', 'calendar', 'Monter ma grille', 'Choisissez vos jours et vos exercices, un par un.'], ['auto', 'sparkle', 'Générateur intelligent', 'Vos préférences, NutriPilot construit les séances.'], ['import', 'book', 'Importer', 'Le programme de votre coach ou votre plan alimentaire.']];
+  return `<div class="mode-cards">${modes.map(([k, ico, title, sub]) => `<button class="mode-card ${createMode === k ? 'on' : ''}" data-create-mode="${k}">${icon(ico)}<b>${L(title)}</b><small>${L(sub)}</small></button>`).join('')}</div>
+    ${createMode === 'grid' ? gridBuilderHtml() : createMode === 'auto' ? trainingAutoBuilder() : trainingImport()}`;
+}
+
+function gridBuilderHtml() {
+  const g = gridDraft();
+  const used = new Set(g.days.map((d) => d.wd));
+  const templates = [...WORKOUT_PROGRAMS, ...(state.customPrograms || [])];
+  return `<section class="create-card grid-card">
+      <h3>${icon('calendar')} ${L('Ma grille d’entraînement')}</h3>
+      <p class="screen-sub">${L('Touchez les jours où vous vous entraînez, puis ajoutez les exercices de chaque séance. Toute la bibliothèque est disponible, avec la démonstration de chaque mouvement.')}</p>
+      <input class="text-input" id="grid-name" value="${esc(g.name)}" placeholder="${L('Nom de ma grille (ex. Ma routine 4 jours)')}">
+      <div class="field-label">${L('Jours d’entraînement')}</div>
+      <div class="day-picker">${WEEKDAY_ORDER.map((wd) => `<button class="${used.has(wd) ? 'on' : ''}" data-grid-day="${wd}">${esc(dateForWeekday(wd).toLocaleDateString(locale(), { weekday: 'short' }).replace('.', ''))}</button>`).join('')}</div>
+      <div class="field-label">${L('Partir d’un modèle')}</div>
+      <div class="chip-row">${templates.map((p) => `<button class="mini-choice ghost" data-grid-template="${esc(p.id)}">${esc(L(p.name))}</button>`).join('')}</div>
+    </section>
+    ${g.days.length ? g.days.map((d, di) => `<section class="grid-day">
+      <div class="grid-day-head"><span class="wd">${esc(dateForWeekday(d.wd).toLocaleDateString(locale(), { weekday: 'long' }))}</span><input class="text-input slim" data-grid-session-name="${di}" value="${esc(d.name)}" placeholder="${L('Nom de la séance')}"></div>
+      ${d.ex.length ? `<div class="grid-ex-list">${d.ex.map(([id, sets, reps], ei) => `<div class="grid-ex">
+        <button class="grid-ex-main" data-exercise="${esc(id)}">${EXERCISES[id] ? exAnim(id, 'xs') : ''}<span><b>${esc(L(exName(id)))}</b><small>${esc(L(exGroup(id)))}</small></span></button>
+        <div class="grid-ex-ctrl">
+          <div class="stepper sm"><button data-grid-sets="${di}:${ei}" data-delta="-1" aria-label="−">${icon('minus')}</button><b>${sets}×</b><button data-grid-sets="${di}:${ei}" data-delta="1" aria-label="+">${icon('plus')}</button></div>
+          <select data-grid-reps="${di}:${ei}">${REPS_CHOICES.map((r) => `<option value="${r}" ${String(reps) === r ? 'selected' : ''}>${esc(L(r))}</option>`).join('')}${REPS_CHOICES.includes(String(reps)) ? '' : `<option selected value="${esc(reps)}">${esc(L(String(reps)))}</option>`}</select>
+          <button class="icon-btn sm" data-grid-move="${di}:${ei}" data-delta="-1" aria-label="${L('Monter')}" ${ei === 0 ? 'disabled' : ''}>↑</button>
+          <button class="icon-btn sm" data-grid-remove="${di}:${ei}" aria-label="${L('Retirer')}">${icon('close')}</button>
+        </div>
+      </div>`).join('')}</div>` : `<div class="empty slim">${L('Aucun exercice pour l’instant.')}</div>`}
+      <button class="btn btn-ghost btn-wide" data-grid-pick="${di}">${icon('plus')} ${L('Ajouter un exercice')}</button>
+    </section>`).join('') : `<div class="empty">${L('Choisissez au moins un jour pour commencer votre grille.')}</div>`}
+    ${g.days.length ? `<button class="btn btn-lime btn-wide btn-xl" data-grid-save>${L(g.editing ? 'Mettre à jour ma grille' : 'Enregistrer ma grille')}</button>` : ''}`;
+}
+
+function exPickerSheet() {
+  const ps = pickerState;
+  const groups = [['all', 'Tous'], ...EX_GROUPS.map((g) => [g, g])];
+  const list = libraryList(ps.group, ps.equip, ps.query);
+  const day = gridDraft().days[ps.day];
+  return `<div class="sheet-head"><div><span class="tag">${esc(day ? dateForWeekday(day.wd).toLocaleDateString(locale(), { weekday: 'long' }) : '')}</span><h2>${L('Ajouter un exercice')}</h2><div class="fine">${L('{n} dans cette séance', { n: day?.ex.length || 0 })}</div></div><button class="icon-btn" data-close>×</button></div>
+    <label class="search-box">${icon('search')}<input id="picker-search" type="search" value="${esc(ps.query)}" placeholder="${L('Rechercher un exercice ou un muscle')}"></label>
+    <div class="chip-row">${groups.map(([k, label]) => `<button class="mini-choice ${ps.group === k ? 'selected' : ''}" data-pick-group="${esc(k)}">${L(label)}</button>`).join('')}</div>
+    <div class="chip-row">${[['all', 'Tout matériel'], ['home', 'À la maison'], ...Object.entries(EQUIPMENT)].map(([k, label]) => `<button class="mini-choice ghost ${ps.equip === k ? 'selected' : ''}" data-pick-equip="${esc(k)}">${L(label)}</button>`).join('')}</div>
+    <div id="picker-grid" class="lib-grid">${pickerGridHtml(list, day)}</div>
+    <button class="btn btn-primary btn-wide sticky-bottom" data-close>${L('Terminé')}</button>`;
+}
+function pickerGridHtml(list, day) {
+  const inDay = new Set((day?.ex || []).map((e) => e[0]));
+  return list.map((id) => exCardHtml(id, `data-pick-ex="${esc(id)}"`, `<span class="pick-mark ${inDay.has(id) ? 'on' : ''}">${inDay.has(id) ? icon('check') : icon('plus')}</span>`)).join('') || `<div class="empty">${L('Aucun exercice pour ce filtre.')}</div>`;
+}
+
+function defaultSetsFor(id) {
+  if (exGroup(id) === 'Cardio') return [1, exEquip(id) === 'cardio' ? '20 min' : '45 s', 0];
+  if (exGroup(id) === 'Mobilité & équilibre') return [2, '30 s', 30];
+  if (['Jambes', 'Pectoraux', 'Dos', 'Fessiers'].includes(exGroup(id)) && ['bar', 'machine'].includes(exEquip(id))) return [4, '8–10', 120];
+  return [3, '10–12', 75];
+}
+
+function saveGrid() {
+  const g = gridDraft();
+  const name = ($('#grid-name')?.value || g.name || '').trim() || L('Ma grille');
+  const days = g.days.filter((d) => d.ex.length);
+  if (!days.length) return toast('Ajoutez au moins un exercice.');
+  const id = g.editing || `grid-${Date.now().toString(36)}`;
+  const program = {
+    id, custom: true, grid: true, name, level: 'Sur mesure', place: days.every((d) => d.ex.every(([x]) => EXERCISES[x]?.home)) ? 'home' : 'gym', days: days.length, focus: [], style: '',
+    desc: L('Votre grille : {n} séances par semaine.', { n: days.length }),
+    sessions: days.map((d, i) => ({ id: `G${i + 1}`, name: d.name || L('Séance {n}', { n: i + 1 }), focus: [...new Set(d.ex.map(([x]) => L(exGroup(x))))].slice(0, 3).join(' · '), ex: d.ex.map((e) => [...e]) })),
+  };
+  state.customPrograms = [...(state.customPrograms || []).filter((p) => p.id !== id), program];
+  state.workoutProgram = id;
+  state.trainingWeekdays = days.map((d) => d.wd);
+  state.gridDraft = { ...g, editing: id, name };
+  if (state.exerciseSwaps) delete state.exerciseSwaps[id];
+  saveState();
+  trainTab = 'mine';
+  toast('Votre programme est prêt ✓');
+  render();
+}
+
+function trainingAutoBuilder() {
   builder = builder || defaultBuilder();
   const b = builder;
-  return `
-    <section class="create-card">
+  return `<section class="create-card">
       <h3>${icon('sparkle')} ${L('Créer mon programme sur mesure')}</h3>
       <p class="screen-sub">${L('Choisissez vos jours, votre lieu, votre style et combien de fois par semaine travailler chaque zone. NutriPilot construit les séances.')}</p>
       <div class="field-label">${L('Jours d’entraînement')}</div>
@@ -2525,8 +3377,11 @@ function trainingCreate() {
       <div class="field-label">${L('Fréquence par zone (fois par semaine)')}</div>
       <div class="freq-list">${BUILDER_GROUPS.map((g) => `<div class="freq-row"><span>${L(g)}</span><div class="stepper"><button data-b-freq="${esc(g)}" data-delta="-1" aria-label="−">${icon('minus')}</button><b>${b.freq[g] || 0}×</b><button data-b-freq="${esc(g)}" data-delta="1" aria-label="+">${icon('plus')}</button></div></div>`).join('')}</div>
       <button class="btn btn-lime btn-wide btn-xl" data-build-program>${L('Générer mon programme')}</button>
-    </section>
-    <section class="create-card">
+    </section>`;
+}
+
+function trainingImport() {
+  return `<section class="create-card">
       <h3>${icon('book')} ${L('Importer mon programme')}</h3>
       <p class="screen-sub">${L('Vous suivez déjà le programme de votre coach ou le vôtre ? Collez-le ici, tel quel. NutriPilot le transforme en séances avec agenda et suivi des charges.')}</p>
       <textarea id="import-training" rows="6" placeholder="${L('Ex. Lundi : squat 4x8, presse 3x12, leg curl 3x12. Mercredi : développé couché 4x8, rowing 4x10…')}"></textarea>
@@ -2540,42 +3395,40 @@ function trainingCreate() {
     </section>`;
 }
 
-function trainingLibrary() {
-  const list = Object.keys(EXERCISES).filter((id) => exGroup(id) === libGroup);
-  return `
-    <div class="chip-row">${EX_GROUPS.map((g) => `<button class="mini-choice ${libGroup === g ? 'selected' : ''}" data-lib-group="${esc(g)}">${L(g)}</button>`).join('')}</div>
-    <div class="guide-list">${list.map((id) => `<button class="guide-card" data-exercise="${esc(id)}"><span class="guide-check">${icon('dumbbell')}</span><span><b>${esc(L(EXERCISES[id].name))}</b><small>${esc(L(EXERCISES[id].muscle))}${EXERCISES[id].home ? ` · ${L('Maison')}` : ''}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>`;
+function trainingLessons() {
+  const read = new Set(state.guidesRead || []);
+  const cols = GUIDE_COLLECTIONS.filter((c) => ['movement', 'strength'].includes(c.id));
+  return cols.map((c) => courseCardHtml(c, read)).join('')
+    + `<div class="fine center-fine">${L('Échauffez-vous 5 à 10 minutes avant chaque séance. Choisissez une charge qui vous laisse 1 à 2 répétitions en réserve. Arrêtez en cas de douleur et demandez un avis médical si vous avez un problème de santé.')}</div>`;
 }
 
-function exerciseSheet(id) {
-  const ex = EXERCISES[id];
-  const used = allPrograms().filter((p) => p.sessions.some((s) => s.ex.some((e) => e[0] === id)));
-  return `<div class="sheet-head"><div><span class="tag">${esc(L(exGroup(id)))}</span><h2>${esc(L(ex.name))}</h2><div class="fine">${esc(L(ex.muscle))}</div></div><button class="icon-btn" data-close>×</button></div>
-    <ul class="guide-points">${(ex.cues || []).map((c) => `<li>${esc(L(c))}</li>`).join('')}</ul>
-    ${lastLoad(id) ? `<div class="warn success">${L('Dernière charge : {n} kg', { n: lastLoad(id) })}</div>` : ''}
-    ${used.length ? `<div class="section-label"><h3>${L('Dans les programmes')}</h3></div><div class="chip-row">${used.slice(0, 6).map((p) => `<span class="pill">${esc(L(p.name))}</span>`).join('')}</div>` : ''}
-    <button class="btn btn-primary btn-wide" data-close>${L('J’ai compris')}</button>`;
-}
-
-function sessionSheet(sessionId, programId) {
-  const program = findProgram(programId) || currentProgram();
-  const session = program.sessions.find((x) => x.id === sessionId) || program.sessions[0];
-  const exs = sessionExercises(program, session);
-  return `<div class="sheet-head"><div><span class="tag">${esc(L(program.name))}</span><h2>${esc(L(session.name))}</h2><div class="fine">${esc(L(session.focus))}</div></div><button class="icon-btn" data-close>×</button></div>
-    <div class="session-list">${exs.map(([id, sets, reps, rest], index) => {
-      const ex = EXERCISES[id] || { name: exName(id), muscle: '', cues: [] };
-      const restLabel = rest ? L('repos {t}', { t: rest >= 60 ? (rest % 60 ? `${Math.floor(rest / 60)} min ${String(rest % 60).padStart(2, '0')}` : `${rest / 60} min`) : `${rest} s` }) : '';
-      return `<details class="ex-card">
-        <summary><span class="ex-num">${index + 1}</span><span class="ex-main"><b>${esc(L(ex.name))}</b><small>${sets} × ${esc(L(reps))}${restLabel ? ` · ${restLabel}` : ''}${ex.muscle ? ` · ${esc(L(ex.muscle))}` : ''}</small></span></summary>
-        ${(ex.cues || []).length ? `<ul class="guide-points">${ex.cues.map((c) => `<li>${esc(L(c))}</li>`).join('')}</ul>` : ''}
-        <div class="ex-actions">
-          <label class="ex-load">${L('Charge utilisée (kg)')} <input type="number" inputmode="decimal" min="0" step="0.5" data-load="${esc(id)}" value="${esc(lastLoad(id))}" placeholder="—"></label>
-          ${EXERCISES[id] ? `<button class="link-btn" data-swap-ex="${index}" data-program="${esc(program.id)}" data-session-id="${esc(session.id)}">${L('Remplacer l’exercice')}</button>` : ''}
-        </div>
-      </details>`;
+function courseCardHtml(c, read = new Set(state.guidesRead || [])) {
+  const cDone = c.guides.filter((g) => read.has(g.id)).length;
+  return `<div class="course-card">
+    <div class="course-head"><div><span class="tag">${esc(L(c.level || 'Cours'))}</span><h3>${esc(L(c.title))}</h3><p>${esc(L(c.sub))}</p></div><span class="course-count">${cDone}/${c.guides.length}</span></div>
+    <div class="progress"><i style="width:${Math.round(cDone / c.guides.length * 100)}%"></i></div>
+    <div class="guide-list">${c.guides.map((g, index) => {
+      const access = lessonAccess({ ...g, index, tier: c.tier });
+      const locked = access === 'paywall' || access === 'upgrade';
+      return `<button class="guide-card ${read.has(g.id) ? 'read' : ''} ${locked ? 'locked' : ''}" data-guide="${esc(g.id)}">${g.demo && EXERCISES[g.demo] ? exAnim(g.demo, 'xs') : `<span class="guide-check">${read.has(g.id) ? icon('check') : locked ? icon('lock') : index + 1}</span>`}<span><b>${esc(L(g.title))}</b><small>${L('{time} de lecture', { time: g.time })}${access === 'free' ? ` · ${L('Leçon gratuite')}` : ''}</small></span><span class="guide-arrow">${read.has(g.id) ? icon('check') : locked ? icon('lock') : '→'}</span></button>`;
     }).join('')}</div>
-    <button class="btn btn-primary btn-wide" data-finish-session="${esc(session.id)}" data-program="${esc(program.id)}">✓ ${L('Terminer la séance')}</button>`;
+  </div>`;
 }
+
+GUIDE_COLLECTIONS.push({
+  id: 'movement', tier: 'training', level: 'Cours', title: 'Technique des mouvements', sub: 'Les gestes de base de la musculation, expliqués et animés.',
+  guides: [
+    { id: 'mv-brace', demo: 'plank', title: 'Respiration et gainage', time: '2 min', intro: 'Un tronc solide protège le dos et rend chaque mouvement plus fort.', points: ['Inspirez par le ventre avant l’effort, comme pour gonfler une ceinture.', 'Serrez les abdominaux comme si quelqu’un allait vous pousser.', 'Soufflez pendant la phase la plus difficile du mouvement.'], action: 'Faites 3 gainages de 30 secondes en respirant calmement.' },
+    { id: 'mv-squat', demo: 'goblet-squat', title: 'Bien squatter', time: '3 min', intro: 'Le squat est le roi des exercices pour les jambes et les fessiers.', points: ['Pieds largeur d’épaules, pointes légèrement ouvertes.', 'Descendez en poussant les hanches en arrière, genoux dans l’axe des pieds.', 'Gardez les talons au sol et le dos neutre, remontez en poussant le sol.'], action: 'Faites 2 séries de 10 squats goblet légers en vous filmant de profil.' },
+    { id: 'mv-hinge', demo: 'rdl', title: 'La charnière de hanche', time: '3 min', intro: 'Savoir plier aux hanches, c’est la base du soulevé de terre et d’un dos en bonne santé.', points: ['Genoux souples, poussez les fesses vers le mur derrière vous.', 'La barre ou les haltères glissent le long des jambes.', 'Le dos reste plat : arrêtez la descente quand il commence à s’arrondir.'], action: 'Entraînez le geste avec un bâton le long du dos : tête, haut du dos et bassin restent en contact.' },
+    { id: 'mv-push', demo: 'bench', title: 'Pousser sans douleur d’épaule', time: '2 min', intro: 'Développés et pompes demandent des épaules stables.', points: ['Serrez les omoplates et descendez-les vers les poches arrière.', 'Coudes à environ 45° du corps, pas à 90°.', 'Contrôlez la descente en 2 secondes.'], action: 'Faites 2 séries de pompes inclinées en gardant les coudes à 45°.' },
+    { id: 'mv-pull', demo: 'lat-pulldown', title: 'Tirer avec le dos, pas avec les bras', time: '2 min', intro: 'Pour un dos large et une posture droite, le mouvement part des omoplates.', points: ['Commencez chaque tirage en abaissant et rapprochant les omoplates.', 'Pensez à amener les coudes vers les hanches.', 'Gardez la poitrine haute, sans balancer.'], action: 'Sur votre prochain tirage, marquez une pause d’une seconde en fin de mouvement.' },
+    { id: 'mv-warmup', demo: 'jumping', title: 'L’échauffement en 6 minutes', time: '2 min', intro: 'Un bon échauffement améliore la performance et limite les blessures.', points: ['2 minutes de cardio léger pour monter la température.', '2 minutes de mobilité : hanches, épaules, chevilles.', '2 séries légères du premier exercice de la séance.'], action: 'Utilisez cette routine avant votre prochaine séance.' },
+  ],
+});
+
+
+
 
 function buildCustomProgram(b) {
   const style = COACH_STYLES.find((c) => c.id === b.style) || COACH_STYLES[0];
@@ -2879,27 +3732,7 @@ function recipeMiniCard(recipe) {
   return `<button class="recipe-mini" data-recipe-id="${esc(recipe.id)}"><span>${esc(L(recipe.category))}</span><b>${esc(L(recipe.name))}</b><small>${recipe.kcal} kcal · ${recipe.protein} g ${L('prot.')} · ${esc(L(recipe.prep))}</small></button>`;
 }
 
-function recipesScreen() {
-  const favoriteSet = new Set(state.recipeFavorites || []);
-  return `<div class="mobile-app">
-    ${appHeader('Nutrition')}
-    <div class="screen">
-      ${programTabs('recipes')}
-      <div class="recipe-filter-row"><button class="mini-choice selected" data-recipe-filter="all">${L('Toutes')}</button><button class="mini-choice" data-recipe-filter="quick">${L('Rapides')}</button><button class="mini-choice" data-recipe-filter="protein">${L('Protéinées')}</button><button class="mini-choice" data-recipe-filter="veg">${L('Végétariennes')}</button><button class="mini-choice" data-recipe-filter="fav">${L('Favoris')}</button></div>
-      <div id="recipe-grid" class="recipe-grid">${recipeGridHtml('all', favoriteSet)}</div>
-    </div>
-    ${bottom('program')}
-  </div>`;
-}
 
-function recipeGridHtml(filter = 'all', favoriteSet = new Set()) {
-  let list = curatedRecipes.slice();
-  if (filter === 'quick') list = list.filter((r) => Number.parseInt(r.prep) <= 18);
-  if (filter === 'protein') list = list.filter((r) => r.protein >= 35);
-  if (filter === 'veg') list = list.filter((r) => r.tags.includes('végétarien'));
-  if (filter === 'fav') list = list.filter((r) => favoriteSet.has(r.id));
-  return list.map((r) => `<article class="recipe-card"><div class="recipe-card-top"><span class="pill">${esc(L(r.category))}</span><button class="heart ${favoriteSet.has(r.id) ? 'active' : ''}" data-fav-recipe="${esc(r.id)}">♡</button></div><h3>${esc(L(r.name))}</h3><div class="recipe-stats"><span>${r.kcal} kcal</span><span>${r.protein} g ${L('prot.')}</span><span>${r.fiber} g ${L('fibres')}</span></div><small>${esc(L(r.prep))} · ${esc(L(r.difficulty))}</small><button class="btn btn-ghost btn-wide" data-recipe-id="${esc(r.id)}">${L('Voir la recette')}</button></article>`).join('') || `<div class="empty">${L('Aucune recette dans ce filtre.')}</div>`;
-}
 
 function planner() {
   const t = totals();
@@ -2995,20 +3828,9 @@ function weeklyInsight(data, p) {
   if (logged.length < 2) return `<div class="insight"><strong>${L('Encore un peu de données.')}</strong>${L('Avec 2–3 jours suivis, NutriPilot commencera à distinguer des tendances utiles.')}</div>`;
   const proteinDays = logged.filter((x) => x.protein >= p.protein * 0.85).length;
   const fiberDays = logged.filter((x) => x.fiber >= p.fiber * 0.8).length;
-  return `<div class="insight"><strong>${proteinDays >= logged.length / 2 ? 'Votre structure protéique prend forme.' : 'La protéine est votre levier le plus clair.'}</strong>${proteinDays}/${logged.length} jours proches du repère protéines · ${fiberDays}/${logged.length} jours proches du repère fibres. Utilisez ces tendances pour simplifier la prochaine semaine.</div>`;
+  return `<div class="insight"><strong>${L(proteinDays >= logged.length / 2 ? 'Votre structure protéique prend forme.' : 'La protéine est votre levier le plus clair.')}</strong>${L('{p}/{n} jours proches du repère protéines · {f}/{n} jours proches du repère fibres. Utilisez ces tendances pour simplifier la prochaine semaine.', { p: proteinDays, f: fiberDays, n: logged.length })}</div>`;
 }
 
-function achievements() {
-  const values = [
-    ['🥇', 'Premier repas', state.meals.length >= 1],
-    ['📸', '5 scans', state.scanCount >= 5],
-    ['🔥', 'Série 3 jours', streak() >= 3],
-    ['🏆', 'Série 7 jours', streak() >= 7],
-    ['🗓️', 'Plan 7 jours', state.weekPlan.length >= 7],
-    ['♡', '3 recettes favorites', state.recipeFavorites.length >= 3],
-  ];
-  return `<div class="achievement-grid">${values.map(([ico, label, unlocked]) => `<div class="achievement ${unlocked ? '' : 'locked'}"><span>${ico}</span><b>${esc(L(label))}</b></div>`).join('')}</div>`;
-}
 
 function chartPoints(values) {
   if (!values.length) return [];
@@ -3018,34 +3840,6 @@ function chartPoints(values) {
   return values.map((v, i) => ({ x: 20 + i * (300 / Math.max(1, values.length - 1)), y: 155 - (Number(v.value) - min) / range * 125 }));
 }
 
-function progressScreen() {
-  if (!state.weights.length) state.weights = [{ day: todayKey(), value: Number(state.profile.weight) }];
-  const values = state.weights.slice(-16);
-  const points = chartPoints(values);
-  const start = Number(values[0]?.value || 0);
-  const end = Number(values.at(-1)?.value || 0);
-  const target = Number(state.profile.target || end);
-  const remaining = Math.abs(end - target);
-  const waistStart = Number(state.waist[0]?.value || 0);
-  const waistEnd = Number(state.waist.at(-1)?.value || 0);
-  const recentCutoff = addDays(-6);
-  const recentWeights = values.filter((item) => String(item.day || '') >= recentCutoff);
-  const weeklyAverage = recentWeights.length ? recentWeights.reduce((sum, item) => sum + Number(item.value || 0), 0) / recentWeights.length : end;
-  return `<div class="mobile-app">
-    ${appHeader('Progression')}
-    <div class="screen">
-      <span class="tag">${L('VOTRE TRAJECTOIRE')}</span>
-      <h1 class="screen-title">${L('Regardez la tendance.')}</h1>
-      <p class="screen-sub">${L('Une mesure isolée bouge. Votre trajectoire sur plusieurs semaines raconte davantage.')}</p>
-      <div class="progress-hero"><div><small>${L('Poids actuel')}</small><b>${fmt(end, 1)} kg</b></div><div><small>${L('Objectif')}</small><b>${fmt(target, 1)} kg</b></div><div><small>${L('Restant')}</small><b>${fmt(remaining, 1)} kg</b></div></div>
-      <div class="chart"><svg viewBox="0 0 340 180" preserveAspectRatio="none"><path d="${points.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${p.y}`).join(' ')}"></path>${points.map((p) => `<circle cx="${p.x}" cy="${p.y}" r="5"></circle>`).join('')}</svg></div>
-      <div class="kpi-grid"><div class="kpi"><small>${L('Évolution enregistrée')}</small><b>${end - start > 0 ? '+' : ''}${fmt(end - start, 1)} kg</b></div><div class="kpi"><small>${L('Moyenne 7 jours')}</small><b>${fmt(weeklyAverage, 1)} kg</b></div><div class="kpi"><small>${L('Tour de taille')}</small><b>${waistEnd ? `${waistEnd - waistStart > 0 ? '+' : ''}${fmt(waistEnd - waistStart, 1)} cm` : '—'}</b></div></div>
-      <div class="day-card"><h3>${L('Ajouter une mesure')}</h3><div class="field"><label>${L('Poids aujourd’hui')}</label><input id="weight-now" type="number" step=".1" min="30" max="300" value="${fmt(end, 1).replace(',', '.')}"></div><div class="field"><label>${L('Tour de taille (optionnel)')}</label><input id="waist-now" type="number" step=".1" min="40" max="200" placeholder="${L('cm')}"></div><button class="btn btn-primary btn-wide" data-save-progress>${L('Enregistrer')}</button></div>
-      <div class="insight"><strong>${L('Ne corrigez pas votre alimentation sur une seule pesée.')}</strong>${L('Eau, sel, digestion, sommeil et cycle peuvent déplacer le poids sans refléter une variation équivalente de masse grasse.')}</div>
-    </div>
-    ${bottom('progress')}
-  </div>`;
-}
 
 function settings() {
   return `<div class="mobile-app">
@@ -3058,8 +3852,8 @@ function settings() {
       <button class="btn btn-primary btn-wide" data-start>${L('🎯 Recalculer mon programme')}</button>
       <div class="section-label"><h3>${L('Abonnement')}</h3></div>
       ${config.manageSubscriptionUrl ? `<a class="btn btn-ghost btn-wide" href="${esc(config.manageSubscriptionUrl)}" target="_blank" rel="noopener">${L('Gérer mon abonnement')}</a>` : ''}
-      <div class="fine center-fine">${L('Formule actuelle : {plan}', { plan: esc(L(({ complete: 'Complet', nutrition: 'Nutrition', training: 'Entraînement' })[planTier()])) })}</div>
-      ${planTier() !== 'complete' ? `<button class="btn btn-lime btn-wide" data-upgrade>${L('Passer au Kit complet')}</button>` : ''}
+      <div class="fine center-fine">${L('Formule actuelle : {plan}', { plan: esc(L(({ complete: 'Kit complet', nutrition: 'Nutrition', training: 'Entraînement', menopause: 'Ménopause 40+' })[planTier()])) })}</div>
+      <button class="btn ${planTier() !== 'complete' ? 'btn-lime' : 'btn-ghost'} btn-wide" data-go="plans">${L('Voir les formules')}</button>
       <div class="section-label"><h3>${L('Données & appareil')}</h3></div>
       <button class="btn btn-ghost btn-wide" data-export>${L('Exporter mes données (.json)')}</button>
       <button class="btn btn-ghost btn-wide" data-install>${L('Ajouter NutriPilot à l’écran d’accueil')}</button>
@@ -3102,9 +3896,15 @@ function renderModal() {
   if (!modal) return;
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : addSheet()}</div>`;
   document.body.appendChild(wrap);
   bindModal(wrap);
+  if (modal.type === 'ex-picker') {
+    $('#picker-search', wrap)?.addEventListener('input', (event) => {
+      pickerState.query = event.target.value;
+      $('#picker-grid', wrap).innerHTML = pickerGridHtml(libraryList(pickerState.group, pickerState.equip, pickerState.query), gridDraft().days[pickerState.day]);
+    });
+  }
   if (modal.type === 'support') {
     const log = $('#support-log', wrap);
     if (log) log.scrollTop = log.scrollHeight;
@@ -3211,10 +4011,6 @@ function mealSheet(meal) {
   return `<div class="sheet-head"><div><span class="tag">${esc(meal.type || 'REPAS')}</span><h2>${esc(meal.title)}</h2><div class="fine">${dateLabel(meal.day)}</div></div><button class="icon-btn" data-close>×</button></div><div class="result-total compact-total"><strong>${fmt(meal.total?.kcal)}</strong> kcal<div class="result-macros"><span><b>${fmt(meal.total?.protein, 1)}</b>${L('P')}</span><span><b>${fmt(meal.total?.carbs, 1)}</b>${L('G')}</span><span><b>${fmt(meal.total?.fat, 1)}</b>${L('L')}</span><span><b>${fmt(meal.total?.fiber, 1)}</b>${L('Fibres')}</span></div>${totalWeight ? `<div class="fine result-weight">≈ ${fmt(totalWeight)} g enregistrés au total</div>` : ''}</div><div class="extended-nutrition">${advanced}</div><div class="meal-detail-list">${(meal.foods || []).map((food) => `<div><span>${esc(food.name)}${food.grams ? ` · ${fmt(food.grams)} g` : ''}</span><b>${fmt(food.kcal)} kcal</b></div>`).join('')}</div><button class="btn btn-danger-soft btn-wide" data-delete-meal="${esc(meal.id)}">${L('Supprimer du journal')}</button>`;
 }
 
-function recipeSheet(recipe) {
-  const isFav = state.recipeFavorites.includes(recipe.id);
-  return `<div class="sheet-head"><div><span class="tag">${esc(L(recipe.category || 'RECETTE'))}</span><h2>${esc(L(recipe.name))}</h2></div><button class="icon-btn" data-close>×</button></div><div class="recipe-hero-stats"><div><b>${fmt(recipe.kcal)}</b><span>kcal</span></div><div><b>${fmt(recipe.protein)}</b><span>${L('prot.')}</span></div><div><b>${fmt(recipe.fiber)}</b><span>${L('fibres')}</span></div><div><b>${esc(L(recipe.prep))}</b><span>${L('temps')}</span></div></div><div class="section-label"><h3>${L('Ingrédients')}</h3><span class="fine">${L('1 portion')}</span></div><div class="ingredient-table">${recipe.ingredients.map((item) => `<div><span>${esc(L(item[0]))}</span><b>${fmt(item[1])} g</b></div>`).join('')}</div><div class="section-label"><h3>${L('Préparation')}</h3></div><ol class="steps-list">${recipe.steps.map((step) => `<li>${esc(L(step))}</li>`).join('')}</ol><div class="modal-actions"><button class="btn btn-ghost" data-fav-recipe="${esc(recipe.id)}">${isFav ? `♥ ${L('Favori')}` : `♡ ${L('Favori')}`}</button><button class="btn btn-lime" data-add-curated="${esc(recipe.id)}">${L('Ajouter au journal →')}</button></div>`;
-}
 
 function planRecipeSheet() {
   if (modal.loading) return `<div class="loader"><div class="loader-dots"><i></i><i></i><i></i></div><h3>${L('Création de la recette…')}</h3></div>`;
@@ -3274,30 +4070,6 @@ function voiceInput(button, root) {
   recognition.start();
 }
 
-async function generateWeek(button) {
-  button.disabled = true;
-  const original = button.textContent;
-  button.textContent = 'Création de votre semaine…';
-  try {
-    const p = state.profile;
-    const response = await apiFetch('/api/week-plan', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dailyKcal: p.dailyKcal, protein: p.protein, diet: p.diet, allergies: p.allergies, cooking: p.cooking, cuisine: p.cuisine, budget: p.budget, mealsPerDay: p.mealsPerDay }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error);
-    state.weekPlan = data.days || [];
-    state.shoppingChecked = {};
-    saveState();
-    track('WeekPlanGenerated');
-    render();
-    toast('Votre semaine est prête ✓');
-  } catch (error) {
-    toast(error.message);
-    button.disabled = false;
-    button.textContent = original;
-  }
-}
 
 async function doCompose(button) {
   const box = $('#compose-results');
@@ -3449,6 +4221,8 @@ async function verifyCode() {
 async function openPlanRecipe(dayIndex, mealIndex) {
   const meal = state.weekPlan?.[dayIndex]?.meals?.[mealIndex];
   if (!meal) return;
+  const view = meal.recipeId ? localRecipeView(meal) : null;
+  if (view) { modal = { type: 'recipe', recipe: view }; return renderModal(); }
   modal = { type: 'plan-recipe', loading: true, recipe: null, error: '' };
   renderModal();
   try {
@@ -3465,25 +4239,6 @@ async function openPlanRecipe(dayIndex, mealIndex) {
   }
 }
 
-function addCuratedRecipe(id) {
-  const recipe = curatedRecipes.find((r) => r.id === id);
-  if (!recipe) return;
-  state.meals.push({
-    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    day: todayKey(),
-    type: recipe.category,
-    title: L(recipe.name),
-    foods: recipe.ingredients.map(([name, grams]) => ({ name, grams, kcal: 0 })),
-    total: { kcal: recipe.kcal, protein: recipe.protein, carbs: recipe.carbs, fat: recipe.fat, fiber: recipe.fiber },
-    icon: '⌁',
-    source: 'recipe',
-  });
-  saveState();
-  toast('Recette ajoutée au journal ✓');
-  modal = null;
-  document.querySelector('.modal-wrap')?.remove();
-  render();
-}
 
 function toggleRecipeFavorite(id) {
   const set = new Set(state.recipeFavorites || []);
@@ -3529,6 +4284,7 @@ function render() {
   else if (route === 'coach') html = coachScreen();
   else if (route === 'insights') html = insights();
   else if (route === 'progress') html = progressScreen();
+  else if (route === 'plans') html = plansScreen();
   else if (route === 'settings') html = settings();
   else if (route === 'legal') html = legal();
   else html = access();
@@ -3541,13 +4297,23 @@ function render() {
   document.documentElement.lang = lang();
   bind();
   if (route === 'analyzing' && !analyzingTimer) startAnalyzing();
-  if (route === 'app' && state.premium) runCountUps();
+  if ((route === 'app' && state.premium) || route === 'progress') runCountUps();
+  if (route === 'progress') renderPhotos();
   if (route === 'saving' && !savingTimer) startSaving();
 }
 
 function bind() {
+  app.oninput = (event) => {
+    const el = event.target;
+    if (el.id === 'lib-search') { libQuery = el.value; const grid = $('#lib-grid'); if (grid) grid.innerHTML = libraryList(libGroup, libEquip, libQuery).map((id) => exCardHtml(id)).join('') || `<div class="empty">${L('Aucun exercice pour ce filtre.')}</div>`; }
+    if (el.id === 'recipe-search') { recipeQuery = el.value; const grid = $('#recipe-grid'); if (grid) grid.innerHTML = recipeGridHtml(); }
+    if (el.id === 'grid-name') gridDraft().name = el.value;
+    if (el.dataset.gridSessionName !== undefined) gridDraft().days[Number(el.dataset.gridSessionName)].name = el.value;
+    if (el.dataset.gridReps !== undefined) { const [d, e] = el.dataset.gridReps.split(':').map(Number); gridDraft().days[d].ex[e][2] = el.value; }
+    if (el.id === 'grid-name' || el.dataset.gridSessionName !== undefined || el.dataset.gridReps !== undefined) saveState(false);
+  };
   app.onclick = async (event) => {
-    const button = event.target.closest('button');
+    const button = event.target.closest('button, [role="button"]');
     if (!button) return;
 
     if (!state.premium && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
@@ -3706,6 +4472,43 @@ function bind() {
       saveState();
       return render();
     }
+    if (button.dataset.libEquip) { libEquip = button.dataset.libEquip; return render(); }
+    if (button.dataset.createMode) { createMode = button.dataset.createMode; return render(); }
+    if (button.dataset.gridDay) {
+      const g = gridDraft(); const wd = Number(button.dataset.gridDay);
+      const idx = g.days.findIndex((d) => d.wd === wd);
+      if (idx >= 0) { if (g.days[idx].ex.length && !confirmSoft(button)) return; g.days.splice(idx, 1); }
+      else { g.days.push({ wd, name: '', ex: [] }); g.days.sort((a, b) => WEEKDAY_ORDER.indexOf(a.wd) - WEEKDAY_ORDER.indexOf(b.wd)); g.days.forEach((d, i) => { if (!d.name) d.name = L('Séance {n}', { n: String.fromCharCode(65 + i) }); }); }
+      saveState(false); return render();
+    }
+    if (button.dataset.gridTemplate) { const prog = findProgram(button.dataset.gridTemplate); if (prog) { gridFromProgram(prog); saveState(false); toast('Modèle chargé : modifiez-le librement.'); } return render(); }
+    if (button.dataset.gridSets) { const [d, e] = button.dataset.gridSets.split(':').map(Number); const row = gridDraft().days[d].ex[e]; row[1] = clamp(Number(row[1]) + Number(button.dataset.delta), 1, 10); saveState(false); return render(); }
+    if (button.dataset.gridMove) { const [d, e] = button.dataset.gridMove.split(':').map(Number); const list = gridDraft().days[d].ex; if (e > 0) [list[e - 1], list[e]] = [list[e], list[e - 1]]; saveState(false); return render(); }
+    if (button.dataset.gridRemove) { const [d, e] = button.dataset.gridRemove.split(':').map(Number); gridDraft().days[d].ex.splice(e, 1); saveState(false); return render(); }
+    if (button.dataset.gridPick !== undefined) { pickerState = { day: Number(button.dataset.gridPick), group: 'all', equip: 'all', query: '' }; modal = { type: 'ex-picker' }; return renderModal(); }
+    if (button.dataset.gridSave !== undefined) { if (!state.premium) return nav('paywall'); return saveGrid(); }
+    if (button.dataset.recipeCuisine) { recipeCuisine = button.dataset.recipeCuisine; return render(); }
+    if (button.dataset.recipeType) { recipeType = button.dataset.recipeType; return render(); }
+    if (button.dataset.planCuisine) {
+      const set = new Set(planCuisines()); const k = button.dataset.planCuisine;
+      if (set.has(k) && set.size > 1) set.delete(k); else set.add(k);
+      state.profile.cuisines = [...set]; saveState(); return render();
+    }
+    if (button.dataset.choosePlan) { selectedTier = button.dataset.choosePlan; selectedPeriod = 'annual'; track('PlanChosen', { plan: selectedTier }); return nav(state.premium ? 'upgrade' : 'paywall'); }
+    if (button.dataset.scroll) { document.getElementById(button.dataset.scroll)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (button.dataset.progRange !== undefined) { progressRange = Number(button.dataset.progRange); return render(); }
+    if (button.dataset.weightStep) { const input = $('#weight-now'); if (input) input.value = (Math.round((Number(input.value || lastWeight()) + Number(button.dataset.weightStep)) * 10) / 10).toFixed(1); return; }
+    if (button.dataset.photoRemove) { await PhotoStore.remove(button.dataset.photoRemove); return renderPhotos(); }
+    if (button.dataset.shopAdd !== undefined) { const input = $('#shop-extra'); const v = input?.value.trim(); if (!v) return; state.shoppingExtra = [...new Set([...(state.shoppingExtra || []), v.slice(0, 60)])]; saveState(); return render(); }
+    if (button.dataset.shopRemove) { event.preventDefault(); state.shoppingExtra = (state.shoppingExtra || []).filter((x) => x !== button.dataset.shopRemove); saveState(); return render(); }
+    if (button.dataset.shopReset !== undefined) { state.shoppingChecked = {}; saveState(); return render(); }
+    if (button.dataset.shopShare !== undefined) {
+      const items = planShopping().filter((i) => !state.shoppingChecked[i.key]);
+      const text = `${L('Liste de courses NutriPilot')}\n${items.map((i) => `• ${L(i.name)}${i.grams ? ` – ${i.grams >= 1000 ? `${fmt(i.grams / 1000, 1)} kg` : `${fmt(i.grams)} g`}` : ''}`).join('\n')}`;
+      try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Liste copiée ✓'); } } catch {}
+      return;
+    }
+    if (button.dataset.planAddRecipe) { if (!state.premium) return nav('paywall'); modal = { type: 'plan-pick', recipeId: button.dataset.planAddRecipe }; return renderModal(); }
     if (button.dataset.trainFocus) { trainFocus = button.dataset.trainFocus; return render(); }
     if (button.dataset.libGroup) { libGroup = button.dataset.libGroup; return render(); }
     if (button.dataset.exercise) { modal = { type: 'exercise', id: button.dataset.exercise }; return renderModal(); }
@@ -3784,7 +4587,7 @@ function bind() {
       saveState();
       return render();
     }
-    if (button.dataset.meal) {
+    if (button.dataset.meal && button.dataset.day === undefined) {
       const meal = state.meals.find((x) => String(x.id) === String(button.dataset.meal));
       if (meal) { modal = { type: 'meal', meal }; renderModal(); }
       return;
@@ -3815,6 +4618,7 @@ function bind() {
       const dayIndex = Number(button.dataset.day);
       const mealIndex = Number(button.dataset.meal);
       const meal = state.weekPlan?.[dayIndex]?.meals?.[mealIndex];
+      if (meal && !button.dataset.swapAi) { modal = { type: 'plan-swap', dayIndex, mealIndex }; return renderModal(); }
       if (meal) {
         pendingPlanSwap = { dayIndex, mealIndex, options: [] };
         nav('planner');
@@ -3859,26 +4663,18 @@ function bind() {
       return render();
     }
 
-    if (button.dataset.recipeId) {
-      const recipe = curatedRecipes.find((r) => r.id === button.dataset.recipeId);
+    if (button.dataset.recipeId && !event.target.closest('[data-fav-recipe]')) {
+      const recipe = ALL_RECIPES.find((r) => r.id === button.dataset.recipeId);
       if (recipe) { modal = { type: 'recipe', recipe }; renderModal(); }
       return;
     }
     if (button.dataset.favRecipe) {
       toggleRecipeFavorite(button.dataset.favRecipe);
-      if (route === 'recipes') {
-        const selected = $('.mini-choice[data-recipe-filter].selected')?.dataset.recipeFilter || 'all';
-        $('#recipe-grid').innerHTML = recipeGridHtml(selected, new Set(state.recipeFavorites));
-        button.classList.toggle('active', state.recipeFavorites.includes(button.dataset.favRecipe));
-      }
+      if (route === 'recipes') { const grid = $('#recipe-grid'); if (grid) grid.innerHTML = recipeGridHtml(); }
+      else render();
       return;
     }
-    if (button.dataset.recipeFilter) {
-      $$('.mini-choice[data-recipe-filter]').forEach((x) => x.classList.remove('selected'));
-      button.classList.add('selected');
-      $('#recipe-grid').innerHTML = recipeGridHtml(button.dataset.recipeFilter, new Set(state.recipeFavorites));
-      return;
-    }
+    if (button.dataset.recipeFilter) { recipeFilter = button.dataset.recipeFilter; return render(); }
 
     if (button.dataset.quickCoach) return sendCoach(button.dataset.quickCoach);
     if (button.dataset.coachSend !== undefined) return sendCoach();
@@ -3903,6 +4699,10 @@ function bind() {
         state.waist = state.waist.filter((x) => x.day !== today);
         state.waist.push({ day: today, value: waist });
       }
+      const m = {};
+      $$('[data-measure]').forEach((el) => { const v = Number(el.value); if (v >= 10 && v <= 250) m[el.dataset.measure] = v; });
+      if (m.waist) { state.waist = state.waist.filter((x) => x.day !== today); state.waist.push({ day: today, value: m.waist }); }
+      if (Object.keys(m).length) state.measures = { ...(state.measures || {}), [today]: { ...(state.measures?.[today] || {}), ...m } };
       saveState();
       toast('Progression enregistrée ✓');
       return render();
@@ -3978,8 +4778,10 @@ function bindModal(root) {
     if (!button) return;
 
     if (button.dataset.close !== undefined) {
+      const refresh = modal?.refresh;
       modal = null;
       root.remove();
+      if (refresh) render();
       return;
     }
     if (button.dataset.guide) { root.remove(); return openLesson(button.dataset.guide); }
@@ -4092,11 +4894,51 @@ function bindModal(root) {
     }
     if (button.dataset.favRecipe) {
       toggleRecipeFavorite(button.dataset.favRecipe);
-      const recipe = curatedRecipes.find((r) => r.id === button.dataset.favRecipe);
-      if (recipe) { modal = { type: 'recipe', recipe }; renderModal(); }
+      if (route === 'recipes') { const grid = $('#recipe-grid'); if (grid) grid.innerHTML = recipeGridHtml(); }
+      if (modal?.type === 'recipe') renderModal();
       return;
     }
-    if (button.dataset.addCurated) return addCuratedRecipe(button.dataset.addCurated);
+    if (button.dataset.addCurated) return addCuratedRecipe(button.dataset.addCurated, modal?.type === 'recipe' && modal.recipe?.id === button.dataset.addCurated ? modal.recipe : null);
+    if (button.dataset.planAddRecipe) { if (!state.premium) { modal = null; root.remove(); return nav('paywall'); } modal = { type: 'plan-pick', recipeId: button.dataset.planAddRecipe }; return renderModal(); }
+    if (button.dataset.planPickDay !== undefined) { addRecipeToPlan(modal.recipeId, Number(button.dataset.planPickDay)); modal = null; root.remove(); return render(); }
+    if (button.dataset.swapChoose) {
+      const { dayIndex, mealIndex } = modal;
+      const meal = state.weekPlan[dayIndex].meals[mealIndex];
+      const r = ALL_RECIPES.find((x) => x.id === button.dataset.swapChoose);
+      state.weekPlan[dayIndex].meals[mealIndex] = scaledMeal(r, meal.kcal, meal.type);
+      saveState(); modal = null; root.remove(); toast('Repas remplacé ✓'); return render();
+    }
+    if (button.dataset.swapAi !== undefined) {
+      const { dayIndex, mealIndex } = modal; modal = null; root.remove();
+      const meal = state.weekPlan[dayIndex].meals[mealIndex];
+      pendingPlanSwap = { dayIndex, mealIndex, options: [] };
+      nav('planner');
+      setTimeout(() => { $('[data-planner-mode="pleasure"]')?.click(); setTimeout(() => { const input = $('#swap-meal'); if (input) input.value = L(meal.name); }, 0); }, 0);
+      return;
+    }
+    if (button.dataset.pickGroup) { pickerState.group = button.dataset.pickGroup; return renderModal(); }
+    if (button.dataset.pickEquip) { pickerState.equip = button.dataset.pickEquip; return renderModal(); }
+    if (button.dataset.pickEx) {
+      const day = gridDraft().days[pickerState.day];
+      const id = button.dataset.pickEx;
+      const at = day.ex.findIndex((e) => e[0] === id);
+      if (at >= 0) day.ex.splice(at, 1); else day.ex.push([id, ...defaultSetsFor(id)]);
+      saveState(false);
+      $('#picker-grid', root).innerHTML = pickerGridHtml(libraryList(pickerState.group, pickerState.equip, pickerState.query), day);
+      const fine = root.querySelector('.sheet-head .fine'); if (fine) fine.textContent = L('{n} dans cette séance', { n: day.ex.length });
+      modal.refresh = true;
+      return;
+    }
+    if (button.dataset.gridAddEx) {
+      const g = gridDraft();
+      if (!g.days.length) { g.days.push({ wd: WEEKDAY_ORDER[0], name: L('Séance {n}', { n: 'A' }), ex: [] }); }
+      const day = g.days[g.days.length - 1];
+      if (!day.ex.some((e) => e[0] === button.dataset.gridAddEx)) day.ex.push([button.dataset.gridAddEx, ...defaultSetsFor(button.dataset.gridAddEx)]);
+      saveState(false); modal = null; root.remove(); trainTab = 'create'; createMode = 'grid'; toast('Ajouté à votre grille ✓');
+      return nav('training');
+    }
+    if (button.dataset.rest) return startRest(Number(button.dataset.rest));
+    if (button.dataset.setDot) { button.classList.toggle('done'); navigator.vibrate?.(15); return; }
   };
 
   root.oninput = (event) => {
