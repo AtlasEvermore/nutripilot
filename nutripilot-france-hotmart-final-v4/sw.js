@@ -1,5 +1,5 @@
-const CACHE = 'nutripilot-v8-20261012-r2';
-const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'];
+const CACHE = 'nutripilot-v9-20261012-r1';
+const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)).then(() => self.skipWaiting()));

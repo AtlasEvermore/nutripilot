@@ -273,6 +273,15 @@ const defaultState = {
   basicsFilled: {},
   workoutLog: [],
   workoutProgram: '',
+  trainingWeekdays: [],
+  customPrograms: [],
+  customExercises: [],
+  exerciseSwaps: {},
+  reminders: null,
+  waterGoal: 2000,
+  menoLog: {},
+  menoTasks: {},
+  menoStart: '',
   achievements: [],
   scanCount: 0,
   utms: {},
@@ -339,10 +348,16 @@ window.__npCollect = () => {
   }
   analyzingSteps.forEach(touch); Object.values(MOTIVATION_LINE).forEach(touch); PROGRAM_FEATURES.forEach(touch);
   DEFAULT_PLANS.forEach((x) => [x.label, x.sub, x.badge, ...x.features].forEach(touch));
-  WORKOUT_PROGRAMS.forEach((x) => { [x.name, x.level, x.desc].forEach(touch); x.sessions.forEach((se) => { touch(se.name); touch(se.focus); se.ex.forEach((e) => touch(e[2])); }); });
+  [...WORKOUT_PROGRAMS, ...MENO_PROGRAMS].forEach((x) => { [x.name, x.level, x.desc].forEach(touch); x.sessions.forEach((se) => { touch(se.name); touch(se.focus); se.ex.forEach((e) => touch(e[2])); }); });
   Object.values(EXERCISES).forEach((e) => [e.name, e.muscle, ...e.cues].forEach(touch));
   GUIDE_COLLECTIONS.forEach((c) => { touch(c.title); touch(c.sub); c.guides.forEach((g) => [g.title, g.intro, g.action, ...g.points].forEach(touch)); });
   TOUR.forEach((x) => { touch(x[1]); touch(x[2]); });
+  COACH_STYLES.forEach((c) => { touch(c.name); touch(c.desc); });
+  TRAIN_FOCUS.forEach((x) => touch(x[1])); EX_GROUPS.forEach(touch); BUILDER_GROUPS.forEach(touch);
+  Object.values(LOCKED_COPY).forEach((x) => x.slice(0, 3).forEach(touch));
+  MENO_SYMPTOMS.forEach((x) => touch(x[1])); MENO_LEVELS.forEach((x) => touch(x[1])); Object.values(MENO_STAGE).forEach(touch);
+  MENO_WEEKS.forEach(([theme, list]) => { touch(theme); list.forEach(touch); });
+  ['Kit complet', 'Nutrition', 'Entraînement', 'Ménopause 40+', 'Ménopause', 'Repos', 'Maison', 'Salle'].forEach(touch);
   FAQ.forEach((x) => { touch(x[0]); touch(x[1]); });
   curatedRecipes.forEach((r) => { [r.name, r.category, r.prep, r.difficulty, ...r.steps].forEach(touch); r.ingredients.forEach((i) => touch(i[0])); });
   localFood.forEach((f) => touch(f[0]));
@@ -523,7 +538,7 @@ function mealTypeFromHour() {
   return 'Dîner';
 }
 
-const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang'];
+const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang', 'menopause'];
 function guardRoute() {
   if (!routeAllowed()) route = 'app';
   if (!state.premium) {
@@ -542,7 +557,7 @@ function guardRoute() {
 }
 
 function routeAllowed() {
-  return ['app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support'].includes(route);
+  return ['app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support', 'menopause'].includes(route);
 }
 
 async function init() {
@@ -595,6 +610,7 @@ async function init() {
   saveState(false);
   render();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  startReminderLoop();
 }
 
 window.addEventListener('hashchange', () => {
@@ -727,7 +743,7 @@ const I18N = {
     myProgram: 'Votre programme', seePlan: 'Voir mon plan', unlock: 'Débloquer', explore: 'Mode découverte', exploreSub: 'Débloquez votre formule pour tout utiliser.',
     tracks: [['Perdre du poids', 'Mincir sans régime extrême'], ['Ménopause & 40+', 'Retrouver un ventre plat après 40 ans'], ['Prendre du muscle', 'Programme salle + nutrition sportive'], ['Manger mieux', 'Plus d’énergie, sans prise de tête']],
     features: ['Scanner de repas en une photo', 'Plan de repas 7 jours', 'Recettes de chef minceur', 'Programmes salle & maison', 'Guides ménopause', 'Coach au quotidien', 'Suivi du poids et des mensurations', 'Liste de courses automatique', 'Mode restaurant et mode frigo', 'Nutritionnistes & coachs (bientôt)'],
-    exploreTiles: [['recipes', 'Recettes'], ['training', 'Entraînements'], ['guides', 'Guides'], ['tour', 'Fonctions']],
+    exploreTiles: [['recipes', 'Recettes'], ['training', 'Entraînements'], ['guides', 'Guides'], ['menopause', 'Ménopause 40+']],
   },
   en: {
     langTitle: 'Choose your language', langCta: 'Continue',
@@ -741,7 +757,7 @@ const I18N = {
     myProgram: 'Your programme', seePlan: 'See my plan', unlock: 'Unlock', explore: 'Preview mode', exploreSub: 'Unlock your plan to use everything.',
     tracks: [['Lose weight', 'Slim down without extreme dieting'], ['Menopause & 40+', 'A flatter belly after 40'], ['Build muscle', 'Gym programme + sports nutrition'], ['Eat better', 'More energy, no hassle']],
     features: ['Meal scanner in one photo', '7-day meal plan', 'Chef-made slimming recipes', 'Gym & home workouts', 'Menopause guides', 'Daily coach', 'Weight and measurement tracking', 'Automatic shopping list', 'Restaurant and fridge modes', 'Nutritionists & coaches (soon)'],
-    exploreTiles: [['recipes', 'Recipes'], ['training', 'Workouts'], ['guides', 'Guides'], ['tour', 'Features']],
+    exploreTiles: [['recipes', 'Recipes'], ['training', 'Workouts'], ['guides', 'Guides'], ['menopause', 'Menopause 40+']],
   },
   es: {
     langTitle: 'Elige tu idioma', langCta: 'Continuar',
@@ -755,7 +771,7 @@ const I18N = {
     myProgram: 'Tu programa', seePlan: 'Ver mi plan', unlock: 'Desbloquear', explore: 'Modo descubrimiento', exploreSub: 'Desbloquea tu plan para usarlo todo.',
     tracks: [['Perder peso', 'Adelgazar sin dietas extremas'], ['Menopausia y 40+', 'Un vientre más plano después de los 40'], ['Ganar músculo', 'Programa de gimnasio + nutrición deportiva'], ['Comer mejor', 'Más energía, sin complicaciones']],
     features: ['Escáner de comidas con una foto', 'Plan de comidas de 7 días', 'Recetas de chef para adelgazar', 'Entrenamientos en gimnasio y casa', 'Guías de menopausia', 'Coach diario', 'Seguimiento de peso y medidas', 'Lista de la compra automática', 'Modos restaurante y nevera', 'Nutricionistas y coaches (pronto)'],
-    exploreTiles: [['recipes', 'Recetas'], ['training', 'Entrenamientos'], ['guides', 'Guías'], ['tour', 'Funciones']],
+    exploreTiles: [['recipes', 'Recetas'], ['training', 'Entrenamientos'], ['guides', 'Guías'], ['menopause', 'Menopausia 40+']],
   },
   pt: {
     langTitle: 'Escolha o seu idioma', langCta: 'Continuar',
@@ -769,7 +785,7 @@ const I18N = {
     myProgram: 'Seu programa', seePlan: 'Ver meu plano', unlock: 'Desbloquear', explore: 'Modo descoberta', exploreSub: 'Desbloqueie seu plano para usar tudo.',
     tracks: [['Perder peso', 'Emagrecer sem dieta radical'], ['Menopausa e 40+', 'Barriga mais lisa depois dos 40'], ['Ganhar músculo', 'Treino de academia + nutrição esportiva'], ['Comer melhor', 'Mais energia, sem complicação']],
     features: ['Scanner de refeições com uma foto', 'Plano alimentar de 7 dias', 'Receitas de chef para emagrecer', 'Treinos na academia e em casa', 'Guias de menopausa', 'Coach diário', 'Acompanhamento de peso e medidas', 'Lista de compras automática', 'Modos restaurante e geladeira', 'Nutricionistas e coaches (em breve)'],
-    exploreTiles: [['recipes', 'Receitas'], ['training', 'Treinos'], ['guides', 'Guias'], ['tour', 'Funções']],
+    exploreTiles: [['recipes', 'Receitas'], ['training', 'Treinos'], ['guides', 'Guias'], ['menopause', 'Menopausa 40+']],
   },
   de: {
     langTitle: 'Wähle deine Sprache', langCta: 'Weiter',
@@ -783,7 +799,7 @@ const I18N = {
     myProgram: 'Dein Programm', seePlan: 'Meinen Plan ansehen', unlock: 'Freischalten', explore: 'Entdeckungsmodus', exploreSub: 'Schalte dein Abo frei, um alles zu nutzen.',
     tracks: [['Abnehmen', 'Ohne extreme Diät'], ['Wechseljahre & 40+', 'Ein flacherer Bauch nach 40'], ['Muskeln aufbauen', 'Gym-Programm + Sporternährung'], ['Besser essen', 'Mehr Energie, ganz einfach']],
     features: ['Mahlzeiten-Scanner per Foto', '7-Tage-Ernährungsplan', 'Leichte Rezepte vom Koch', 'Training im Gym & zu Hause', 'Wechseljahre-Ratgeber', 'Täglicher Coach', 'Gewicht & Maße verfolgen', 'Automatische Einkaufsliste', 'Restaurant- und Kühlschrank-Modus', 'Ernährungsberater & Coaches (bald)'],
-    exploreTiles: [['recipes', 'Rezepte'], ['training', 'Workouts'], ['guides', 'Ratgeber'], ['tour', 'Funktionen']],
+    exploreTiles: [['recipes', 'Rezepte'], ['training', 'Workouts'], ['guides', 'Ratgeber'], ['menopause', 'Wechseljahre 40+']],
   },
   it: {
     langTitle: 'Scegli la tua lingua', langCta: 'Continua',
@@ -797,7 +813,7 @@ const I18N = {
     myProgram: 'Il tuo programma', seePlan: 'Vedi il mio piano', unlock: 'Sblocca', explore: 'Modalità scoperta', exploreSub: 'Sblocca il tuo piano per usare tutto.',
     tracks: [['Perdere peso', 'Dimagrire senza diete estreme'], ['Menopausa e 40+', 'Una pancia più piatta dopo i 40'], ['Aumentare i muscoli', 'Programma palestra + nutrizione sportiva'], ['Mangiare meglio', 'Più energia, senza complicazioni']],
     features: ['Scanner dei pasti con una foto', 'Piano pasti di 7 giorni', 'Ricette dello chef per dimagrire', 'Allenamenti in palestra e a casa', 'Guide sulla menopausa', 'Coach quotidiano', 'Monitoraggio di peso e misure', 'Lista della spesa automatica', 'Modalità ristorante e frigo', 'Nutrizionisti e coach (presto)'],
-    exploreTiles: [['recipes', 'Ricette'], ['training', 'Allenamenti'], ['guides', 'Guide'], ['tour', 'Funzioni']],
+    exploreTiles: [['recipes', 'Ricette'], ['training', 'Allenamenti'], ['guides', 'Guide'], ['menopause', 'Menopausa 40+']],
   },
 };
 function lang() {
@@ -891,7 +907,7 @@ function hubScreen() {
       <p class="screen-sub guide-sub">${esc(t('hubQuizSub'))}</p>
       <div class="track-list light">${TRACKS.map(([id, , , emoji], i) => `<button class="track-card" data-track="${id}"><span class="track-emoji">${emoji}</span><span><b>${esc(tracks[i][0])}</b><small>${esc(tracks[i][1])}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>
       <div class="section-label"><h3>${esc(t('hubExplore'))}</h3></div>
-      <div class="explore-grid">${t('exploreTiles').map(([r, label]) => `<button class="explore-tile" data-go="${r}">${icon(r === 'recipes' ? 'program' : r === 'training' ? 'dumbbell' : r === 'guides' ? 'star' : 'scan')}<b>${esc(label)}</b></button>`).join('')}</div>
+      <div class="explore-grid">${t('exploreTiles').map(([r, label]) => `<button class="explore-tile" data-go="${r}">${icon(r === 'recipes' ? 'program' : r === 'training' ? 'dumbbell' : r === 'guides' ? 'star' : r === 'menopause' ? 'flower' : 'scan')}<b>${esc(label)}</b></button>`).join('')}</div>
       <button class="guide-card hub-link" data-go="tour"><span class="guide-check">${icon('star')}</span><span><b>${esc(t('hubTour'))}</b><small>${esc(t('hubTourSub'))}</small></span><span class="guide-arrow">→</span></button>
       <button class="guide-card hub-link" data-go="support"><span class="guide-check">${icon('help')}</span><span><b>${esc(t('hubSupport'))}</b><small>${esc(t('hubSupportSub'))}</small></span><span class="guide-arrow">→</span></button>
     </div>
@@ -1087,6 +1103,23 @@ const ICONS = {
   dumbbell: '<path d="M6.5 8v8M17.5 8v8M4 10v4M20 10v4M6.5 12h11"/>',
   help: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17h.01"/>',
   star: '<path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h10"/>',
+  drop: '<path d="M12 3.5c3.5 4.2 6 7.6 6 10.6a6 6 0 0 1-12 0c0-3 2.5-6.4 6-10.6z"/><path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2.5"/>',
+  flame: '<path d="M12 21c3.9 0 6.5-2.6 6.5-6.2 0-3.4-2.4-5.6-4-8.3-.4 1.9-1.4 3-2.6 3.6.3-2.4-.6-5-2.9-7.1C9 6.5 5.5 9.4 5.5 14.4 5.5 18.4 8.1 21 12 21z"/>',
+  calendar: '<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10h16"/>',
+  book: '<path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v15H7.5A2.5 2.5 0 0 0 5 20.5z"/><path d="M5 20.5V5.5M9 7.5h6"/>',
+  flower: '<circle cx="12" cy="10" r="2.4"/><path d="M12 7.6c0-2.6 3.6-2.6 3.6 0 2.6 0 2.6 3.6 0 3.6M12 7.6c0-2.6-3.6-2.6-3.6 0-2.6 0-2.6 3.6 0 3.6M15.6 11.2c0 2.6-3.6 2.6-3.6.2M8.4 11.2c0 2.6 3.6 2.6 3.6.2M12 12.4V21M12 17c-2-2.2-4.2-2.2-5-1"/>',
+  scale: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9.5a4 4 0 0 1 6 0M12 9.5l1.4-1.8"/>',
+  user: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/>',
+  globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.3 3.5 8.5s-1.1 6.1-3.5 8.5c-2.4-2.4-3.5-5.3-3.5-8.5s1.1-6.1 3.5-8.5z"/>',
+  logout: '<path d="M14 4.5h3.5A2.5 2.5 0 0 1 20 7v10a2.5 2.5 0 0 1-2.5 2.5H14M10 16.5 5.5 12 10 7.5M5.5 12H15"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  chevron: '<path d="m9 6 6 6-6 6"/>',
+  sparkle: '<path d="M12 3.5 13.8 10l6.7 2-6.7 2L12 20.5 10.2 14 3.5 12l6.7-2z"/>',
+  fork: '<path d="M7 3.5v7a2 2 0 0 0 4 0v-7M9 10.5v10M16.5 20.5V3.5c-2 1-3 3.6-3 6.5v3h3"/>',
 };
 function icon(name, cls = '') {
   return `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -1184,18 +1217,23 @@ const PROGRAM_FEATURES = [
 // Web: only plans with a Hotmart `offer` can be bought (legacy).
 const DEFAULT_PLANS = [
   {
-    tier: 'complete', label: 'Kit complet', sub: 'Nutrition + Entraînement + Académie', badge: 'Meilleure offre',
-    features: ['Tout le programme Nutrition', 'Tous les programmes d’entraînement', 'Toute l’Académie : cours et guides', 'Coach NutriPilot au quotidien'],
-    monthly: { price: 34.99, storeId: 'np_complete_monthly' }, annual: { price: 149.99, storeId: 'np_complete_annual' },
+    tier: 'complete', label: 'Kit complet', sub: 'Nutrition + Entraînement + Ménopause + Académie', badge: 'Meilleure offre',
+    features: ['Tout le programme Nutrition : plan de repas, recettes, courses', 'Tous les programmes d’entraînement et l’agenda', 'L’espace Ménopause 40+ complet', 'Toute l’Académie et le coach au quotidien', 'Scanner de repas illimité'],
+    monthly: { price: 44.99, storeId: 'np_complete_monthly' }, annual: { price: 189.99, storeId: 'np_complete_annual' },
+  },
+  {
+    tier: 'menopause', label: 'Ménopause 40+', sub: 'Le programme pensé pour les femmes en (pré)ménopause',
+    features: ['Journal des symptômes et tendances', 'Alimentation adaptée : plan de repas, recettes, courses', 'Séances force, os et équilibre', 'Programme guidé de 8 semaines et cours', 'Scanner de repas illimité'],
+    monthly: { price: 29.99, storeId: 'np_menopause_monthly' }, annual: { price: 119.99, storeId: 'np_menopause_annual' },
   },
   {
     tier: 'nutrition', label: 'Nutrition', sub: 'Mincir et mieux manger',
-    features: ['Scanner de repas', 'Plan de repas, recettes et courses', 'Cours nutrition et guides ménopause', 'Coach NutriPilot au quotidien'],
+    features: ['Plan de repas 7 jours personnalisé', 'Recettes de chef et liste de courses', '« Que manger ensuite ? », mode frigo et restaurant', 'Cours nutrition et coach au quotidien', 'Scanner de repas illimité'],
     monthly: { price: 24.99, storeId: 'np_nutrition_monthly' }, annual: { price: 99.99, storeId: 'np_nutrition_annual' },
   },
   {
-    tier: 'training', label: 'Entraînement', sub: 'Salle ou maison',
-    features: ['Programmes salle et maison', 'Exercices détaillés et suivi des charges', 'Cours musculation', 'Repères caloriques et protéines'],
+    tier: 'training', label: 'Entraînement', sub: 'Salle ou maison, selon votre objectif',
+    features: ['Plus de 10 programmes : haut du corps, bas du corps, force, maison…', 'Agenda de la semaine selon vos jours', 'Bibliothèque d’exercices et suivi des charges', 'Cours musculation', 'Scanner de repas illimité'],
     monthly: { price: 19.99, storeId: 'np_training_monthly' }, annual: { price: 79.99, storeId: 'np_training_annual' },
   },
 ];
@@ -1204,16 +1242,21 @@ let selectedPeriod = 'annual';
 
 function planTier(planId = state.subscriptionPlan) {
   const id = String(planId || '');
+  if (id.includes('menopause')) return 'menopause';
   if (id.includes('nutrition')) return 'nutrition';
   if (id.includes('training')) return 'training';
   return 'complete'; // complete plans and legacy Hotmart customers keep full access
 }
+// What each plan unlocks. The scanner and the coach are part of every paid plan.
+const PLAN_ACCESS = {
+  complete: ['scanner', 'coach', 'nutrition', 'training', 'menopause'],
+  menopause: ['scanner', 'coach', 'nutrition', 'menopause'],
+  nutrition: ['scanner', 'coach', 'nutrition'],
+  training: ['scanner', 'coach', 'training'],
+};
 function hasFeature(feature) {
-  const tier = planTier();
-  if (tier === 'complete') return true;
-  if (feature === 'training') return tier === 'training';
-  if (feature === 'nutrition') return tier === 'nutrition';
-  return true;
+  if (!state.premium) return false;
+  return (PLAN_ACCESS[planTier()] || PLAN_ACCESS.complete).includes(feature);
 }
 
 const Billing = {
@@ -1264,7 +1307,7 @@ function euro(value) {
 
 function comboSaving(plans, period) {
   const complete = plans.find((x) => x.tier === 'complete');
-  const separate = plans.filter((x) => x.tier !== 'complete').reduce((sum, x) => sum + x[period].price, 0);
+  const separate = plans.filter((x) => ['nutrition', 'training', 'menopause'].includes(x.tier)).reduce((sum, x) => sum + x[period].price, 0);
   return complete && separate ? Math.round((1 - complete[period].price / separate) * 100) : 0;
 }
 
@@ -1289,7 +1332,7 @@ async function joinWaitlist() {
 }
 
 function defaultTier() {
-  return 'complete';
+  return state.profile?.track === 'menopause' ? 'menopause' : 'complete';
 }
 
 function paywall() {
@@ -1322,12 +1365,12 @@ function paywall() {
           const perMonth = selectedPeriod === 'annual' ? o.price / 12 : o.price;
           const saving = selectedPeriod === 'annual' ? Math.round((1 - o.price / (x.monthly.price * 12)) * 100) : 0;
           return `<button class="plan-option ${x.tier === plan.tier ? 'selected' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}">
-            ${x.badge ? `<span class="plan-badge">${esc(L(x.badge))}</span>` : ''}
+            ${x.tier === 'menopause' && state.profile?.track === 'menopause' ? `<span class="plan-badge reco">${esc(L('Recommandé pour vous'))}</span>` : x.badge ? `<span class="plan-badge">${esc(L(x.badge))}</span>` : ''}
             <span class="plan-radio"></span>
             <span class="plan-main"><b>${esc(L(x.label))}</b><small>${esc(L(x.sub))}</small>
               <span class="plan-feats">${x.features.map((f) => `<i>✓ ${esc(L(f))}</i>`).join('')}</span></span>
             <span class="plan-per"><b>${euro(perMonth)}</b><small>${L('/ mois')}</small>${saving > 0 ? `<em>−${saving} %</em>` : ''}</span>
-            ${x.tier === 'complete' ? `<span class="plan-combo">${L('Économisez {n} % par rapport à Nutrition + Entraînement séparés', { n: comboSaving(plans, selectedPeriod) })}</span>` : ''}
+            ${x.tier === 'complete' ? `<span class="plan-combo">${L('Économisez {n} % par rapport aux 3 formules séparées', { n: comboSaving(plans, selectedPeriod) })}</span>` : ''}
           </button>`;
         }).join('')}
       </div>
@@ -1356,23 +1399,105 @@ function paywall() {
   </div>`;
 }
 
+const LOCKED_COPY = {
+  training: ['Entraînement', 'Ajoutez l’entraînement à votre programme', 'Plus de 10 programmes salle et maison, agenda de la semaine, bibliothèque d’exercices et suivi des charges.', 'training'],
+  nutrition: ['Nutrition', 'Ajoutez la nutrition à votre programme', 'Plan de repas 7 jours, recettes de chef, liste de courses et « Que manger ensuite ? ».', 'program'],
+  menopause: ['Ménopause', 'Ajoutez l’espace Ménopause 40+', 'Journal des symptômes, alimentation adaptée, séances force et équilibre, programme guidé de 8 semaines.', 'menopause'],
+};
 function lockedScreen(feature) {
-  const isTraining = feature === 'training';
+  const [title, heading, text, tab] = LOCKED_COPY[feature] || LOCKED_COPY.nutrition;
   return `<div class="mobile-app">
-    ${appHeader(isTraining ? 'Entraînement' : 'Nutrition')}
+    ${appHeader(title)}
     <div class="screen">
       <div class="today-card locked-card">${icon('lock')}
-        <h2>${L(isTraining ? 'Ajoutez l’entraînement à votre programme' : 'Ajoutez la nutrition à votre programme')}</h2>
-        <p>${L(isTraining ? 'Programmes salle et maison, exercices détaillés et suivi de vos charges.' : 'Scanner de repas, plan de 7 jours, recettes, liste de courses et guides.')}</p>
-        <button class="btn btn-lime btn-wide" data-upgrade>${L('Passer à la formule Complète')}</button>
+        <h2>${L(heading)}</h2>
+        <p>${L(text)}</p>
+        <button class="btn btn-lime btn-wide" data-upgrade="${feature === 'menopause' ? 'menopause' : 'complete'}">${L(feature === 'menopause' ? 'Découvrir la formule Ménopause' : 'Passer au Kit complet')}</button>
       </div>
     </div>
-    ${bottom(isTraining ? 'training' : 'program')}
+    ${bottom(tab)}
   </div>`;
 }
 
 function appHeader(title) {
-  return `<div class="app-head"><div class="app-head-row"><div><div class="head-logo">${logo()}</div><small class="head-date">${new Date().toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</small><h2>${esc(L(title, null, !/👋/.test(title)))}</h2></div><div class="head-actions"><button class="icon-btn coach-btn" data-go="coach" aria-label="${L('Coach')}">${icon('coach')}</button><button class="icon-btn" data-go="settings" aria-label="${L('Réglages')}">⚙</button></div></div></div>${exploreBanner()}`;
+  return `<header class="app-head"><div class="app-head-row">
+    <button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>
+    <div class="head-titles"><small class="head-date">${new Date().toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</small><h2>${esc(L(title, null, !/👋/.test(title)))}</h2></div>
+    <div class="head-actions"><button class="icon-btn coach-btn" data-go="coach" aria-label="${L('Coach')}">${icon('coach')}</button></div>
+  </div></header>${exploreBanner()}`;
+}
+
+// ---- Side drawer -----------------------------------------------------------
+function drawerHtml() {
+  const p = state.profile || {};
+  const initials = (p.name || 'NP').trim().split(/\s+/).map((x) => x[0]).join('').slice(0, 2).toUpperCase();
+  const tierLabel = state.premium ? L(({ complete: 'Kit complet', nutrition: 'Nutrition', training: 'Entraînement', menopause: 'Ménopause 40+' })[planTier()]) : t('explore');
+  const item = (r, ico, label, extra = '') => `<button class="drawer-item ${route === r ? 'active' : ''}" ${r === 'add' ? 'data-open-add' : r === 'reminders' ? 'data-reminders' : `data-go="${r}"`} ${extra}>${icon(ico)}<span>${L(label)}</span></button>`;
+  return `<div class="drawer-wrap">
+    <aside class="drawer" role="dialog" aria-label="${L('Menu')}">
+      <div class="drawer-head">
+        <span class="avatar">${esc(initials)}</span>
+        <div><b>${esc(p.name || 'NutriPilot')}</b><small>${esc(tierLabel)}</small></div>
+        <button class="icon-btn" data-drawer-close aria-label="${L('Fermer')}">${icon('close')}</button>
+      </div>
+      <div class="drawer-stats"><div>${icon('flame')}<b>${streak()}</b><small>${L('jours de suite')}</small></div><div>${icon('scale')}<b>${fmt(lastWeight(), 1)}</b><small>kg</small></div><div>${icon('drop')}<b>${fmt(waterToday() / 1000, 1)}</b><small>L</small></div></div>
+      <nav class="drawer-nav">
+        <small>${L('Mon programme')}</small>
+        ${item('app', 'home', 'Aujourd’hui')}
+        ${item('program', 'fork', 'Nutrition')}
+        ${item('training', 'dumbbell', 'Entraînement')}
+        ${item('menopause', 'flower', 'Ménopause 40+')}
+        ${item('guides', 'book', 'Académie')}
+        ${item('progress', 'progress', 'Progrès')}
+        <small>${L('Outils')}</small>
+        ${item('add', 'scan', 'Scanner un repas')}
+        ${item('planner', 'sparkle', 'Que manger ensuite ?')}
+        ${item('coach', 'coach', 'Coach')}
+        ${item('reminders', 'bell', 'Rappels')}
+        <small>${L('Aide')}</small>
+        ${item('support', 'help', 'Aide & support')}
+        ${item('tour', 'star', 'Découvrir l’application')}
+        ${item('settings', 'settings', 'Réglages')}
+        ${item('lang', 'globe', 'Langue')}
+      </nav>
+      ${state.premium ? '' : `<button class="btn btn-lime btn-wide" data-go="paywall">${esc(t('unlock'))}</button>`}
+      <p class="drawer-foot">NutriPilot · ${esc(config.supportEmail)}</p>
+    </aside>
+  </div>`;
+}
+
+function openDrawer() {
+  closeDrawer(true);
+  const wrap = document.createElement('div');
+  wrap.innerHTML = drawerHtml();
+  const el = wrap.firstElementChild;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('open'));
+  el.addEventListener('click', (event) => {
+    const btn = event.target.closest('button');
+    if (event.target === el || (btn && btn.dataset.drawerClose !== undefined)) return closeDrawer();
+    if (!btn) return;
+    closeDrawer(true);
+    if (btn.dataset.openAdd !== undefined) return state.premium ? openAdd('photo') : nav('paywall');
+    if (btn.dataset.reminders !== undefined) { modal = { type: 'reminders' }; return renderModal(); }
+    if (btn.dataset.go) return nav(btn.dataset.go);
+  });
+  document.addEventListener('keydown', drawerEsc);
+}
+function drawerEsc(event) { if (event.key === 'Escape') closeDrawer(); }
+function closeDrawer(instant = false) {
+  const el = document.querySelector('.drawer-wrap');
+  document.removeEventListener('keydown', drawerEsc);
+  if (!el) return;
+  if (instant) return el.remove();
+  el.classList.remove('open');
+  setTimeout(() => el.remove(), 260);
+}
+
+function menoFocus() {
+  const p = state.profile || {};
+  if (state.premium) return hasFeature('menopause') && (planTier() === 'menopause' || p.track === 'menopause');
+  return p.track === 'menopause';
 }
 
 function bottom(active) {
@@ -1380,7 +1505,7 @@ function bottom(active) {
     ['app', 'home', 'Aujourd’hui'],
     ['program', 'program', 'Nutrition'],
     ['add', 'scan', 'Scanner'],
-    ['training', 'dumbbell', 'Sport'],
+    menoFocus() ? ['menopause', 'flower', 'Ménopause'] : ['training', 'dumbbell', 'Sport'],
     ['progress', 'progress', 'Progrès'],
   ];
   return `<nav class="bottom-nav">${tabs.map(([r, ico, label]) => `<button class="nav-btn ${r === active ? 'active' : ''} ${r === 'add' ? 'center' : ''}" ${r === 'add' ? 'data-open-add' : `data-go="${r}"`} aria-label="${L(label)}"><span>${icon(ico)}</span>${L(label)}</button>`).join('')}</nav>`;
@@ -1405,64 +1530,222 @@ function dashboardInsight(t, p) {
   return `<div class="insight"><strong>${L('Vous êtes bien cadré aujourd’hui.')}</strong>Il reste environ ${fmt(left)} kcal. Utilisez le plan ou composez votre prochain repas selon votre envie.</div>`;
 }
 
+function ringArc(r, value, max, cls, width) {
+  const c = 2 * Math.PI * r;
+  const pct = clamp(value / Math.max(1, max), 0, 1);
+  return `<circle class="ring-track ${cls}" r="${r}" cx="110" cy="110" stroke-width="${width}"/><circle class="ring-val ${cls}" r="${r}" cx="110" cy="110" stroke-width="${width}" stroke-dasharray="${c.toFixed(1)}" style="--off:${(c * (1 - pct)).toFixed(1)};--full:${c.toFixed(1)}"/>`;
+}
+
+function waterGoal() {
+  return Number(state.waterGoal || 2000);
+}
+
+function bottleSvg(percent) {
+  const level = 100 - clamp(percent, 0, 100);
+  return `<svg class="bottle" viewBox="0 0 80 150" aria-hidden="true">
+    <defs><clipPath id="bottleClip"><path d="M28 6h24v14c0 4 12 8 12 22v94a8 8 0 0 1-8 8H24a8 8 0 0 1-8-8V42c0-14 12-18 12-22z"/></clipPath></defs>
+    <g clip-path="url(#bottleClip)">
+      <rect x="0" y="0" width="80" height="150" class="bottle-bg"/>
+      <g class="bottle-fill" style="transform:translateY(${(level * 1.5).toFixed(1)}px)">
+        <path class="wave w1" d="M0 6 Q20 0 40 6 T80 6 T120 6 T160 6 V160 H0 Z"/>
+        <path class="wave w2" d="M0 8 Q20 2 40 8 T80 8 T120 8 T160 8 V160 H0 Z"/>
+      </g>
+    </g>
+    <path class="bottle-line" d="M28 6h24v14c0 4 12 8 12 22v94a8 8 0 0 1-8 8H24a8 8 0 0 1-8-8V42c0-14 12-18 12-22z"/>
+  </svg>`;
+}
+
 function dashboard() {
   const t = totals();
   const p = state.profile;
   const left = Math.max(0, p.dailyKcal - t.kcal);
-  const percent = clamp(t.kcal / Math.max(1, p.dailyKcal) * 100, 0, 100);
+  const over = Math.max(0, t.kcal - p.dailyKcal);
   const water = waterToday();
+  const wGoal = waterGoal();
   const current = lastWeight();
   const target = Number(p.target || current);
   const progress = progressPercent();
   const todayMeals = state.meals.filter((meal) => meal.day === todayKey()).slice().reverse();
   const checkin = state.checkins[todayKey()] || {};
   const dayPlan = state.weekPlan?.[0]?.meals || [];
+  const animate = !window.__npTodayAnimated;
+  window.__npTodayAnimated = true;
+  const rem = state.reminders?.water?.on;
+  const meno = hasFeature('menopause') && (p.track === 'menopause' || (p.menopause && p.menopause !== 'no'));
+  const sideCard = meno
+    ? `<button class="mini-card meno-mini" data-go="menopause">${icon('flower')}<b>${L('Ménopause')}</b><small>${state.menoLog?.[todayKey()] ? L('Journal rempli ✓') : L('Noter mes symptômes')}</small></button>`
+    : hasFeature('training')
+      ? `<button class="mini-card" data-go="training">${icon('dumbbell')}<b>${esc(L(todaySession()?.name || 'Repos'))}</b><small>${L('{n}/{total} cette semaine', { n: weekWorkouts(), total: trainingDays().length })}</small></button>`
+      : `<button class="mini-card" data-go="recipes">${icon('fork')}<b>${L('Recettes')}</b><small>${L('{n} idées', { n: curatedRecipes.length })}</small></button>`;
 
-  return `<div class="mobile-app">
+  return `<div class="mobile-app today ${animate ? 'animate' : ''}">
     ${appHeader(p.name ? L('Bonjour {name} 👋', { name: p.name }) : L('Bonjour 👋'))}
     <div class="screen">
-      <div class="today-card journey-card">
-        <div class="today-top"><div><span class="tag dark-tag">${L('OBJECTIF DE POIDS')}</span><h2>${fmt(current, 1)} kg <span>→</span> ${fmt(target, 1)} kg</h2></div><span class="pill dark-pill">${Math.round(progress)}%</span></div>
-        <div class="journey-line"><i style="width:${progress}%"></i></div>
-        <div class="journey-meta"><span>${L('Départ {w} kg', { w: fmt(startWeight(), 1) })}</span><span>${L('{w} kg jusqu’à l’objectif', { w: fmt(Math.abs(current - target), 1) })}</span></div>
-      </div>
+      <section class="hero-ring-card">
+        <div class="ring-wrap">
+          <svg class="day-ring" viewBox="0 0 220 220" role="img" aria-label="${L('{n} kcal restantes', { n: fmt(left) })}">
+            ${ringArc(98, t.kcal, p.dailyKcal, 'kcal', 14)}
+            ${ringArc(78, t.protein, p.protein, 'prot', 7)}
+            ${ringArc(66, t.carbs, p.carbs, 'carb', 7)}
+            ${ringArc(54, t.fat, p.fat, 'fat', 7)}
+          </svg>
+          <div class="ring-center"><strong data-count="${over ? over : left}">${fmt(over ? over : left)}</strong><small>${L(over ? 'kcal au-dessus' : 'kcal restantes')}</small></div>
+        </div>
+        <div class="ring-legend">
+          <div><i class="dot kcal"></i><span>${L('Mangé')}</span><b>${fmt(t.kcal)}</b><small>/ ${fmt(p.dailyKcal)}</small></div>
+          <div><i class="dot prot"></i><span>${L('Protéines')}</span><b>${fmt(t.protein)}</b><small>/ ${p.protein} g</small></div>
+          <div><i class="dot carb"></i><span>${L('Glucides')}</span><b>${fmt(t.carbs)}</b><small>/ ${p.carbs} g</small></div>
+          <div><i class="dot fat"></i><span>${L('Lipides')}</span><b>${fmt(t.fat)}</b><small>/ ${p.fat} g</small></div>
+        </div>
+        <button class="btn btn-lime btn-wide scan-main" data-add-tab="photo">${icon('scan')}<span>${L('Scanner mon repas')}</span></button>
+      </section>
 
-      <button class="btn btn-lime btn-wide scan-main" data-add-tab="photo">${L('📸 Scanner mon repas — analyse IA')}</button>
-
-      <div class="today-card calories-card">
-        <div class="today-top"><b>${L('Aujourd’hui')}</b><span class="pill dark-pill">${fmt(left)} kcal restantes</span></div>
-        <div class="today-main">
-          <div class="big-ring" style="--p:${percent}%"><div><strong>${fmt(t.kcal)}</strong><small>/ ${fmt(p.dailyKcal)} kcal</small></div></div>
-          <div class="small-stats">${macroStat('Protéines', t.protein, p.protein)}${macroStat('Glucides', t.carbs, p.carbs)}${macroStat('Lipides', t.fat, p.fat)}${macroStat('Fibres', t.fiber, p.fiber)}</div>
+      <div class="duo">
+        <section class="water-tile">
+          ${bottleSvg(water / wGoal * 100)}
+          <div class="water-info">
+            <small>${L('Hydratation')}</small>
+            <b><span data-count="${water}">${fmt(water)}</span> ml</b>
+            <span class="fine">${L('sur {n} ml', { n: fmt(wGoal) })}</span>
+            <div class="water-actions"><button data-water="-250" aria-label="−250 ml">${icon('minus')}</button><button data-water="250">+250</button><button data-water="500">+500</button></div>
+            <button class="remind-chip ${rem ? 'on' : ''}" data-reminders>${icon('bell')}<span>${rem ? L('Rappels activés') : L('Activer les rappels')}</span></button>
+          </div>
+        </section>
+        <div class="duo-col">
+          <button class="mini-card" data-go="progress">${icon('scale')}<b>${fmt(current, 1)} kg</b><small>${L('{w} kg jusqu’à l’objectif', { w: fmt(Math.abs(current - target), 1) })}</small><span class="mini-bar"><i style="width:${progress}%"></i></span></button>
+          ${sideCard}
         </div>
       </div>
 
-      <div class="action-grid">
-        <button class="action-card primary" data-go="planner"><span class="aico">✦</span><b>${L('Que manger ensuite ?')}</b><small>${L('{n} kcal à organiser', { n: fmt(left) })}</small></button>
-        <button class="action-card" data-go="program"><span class="aico">▦</span><b>${L('Plan 7 jours')}</b><small>${L(state.weekPlan.length ? 'Votre semaine est prête' : 'Créer ma semaine')}</small></button>
-        ${hasFeature('training') ? `<button class="action-card" data-go="training"><span class="aico">${icon('dumbbell')}</span><b>${L('Séance du jour')}</b><small>${esc(nextSession().name)} · ${weekWorkouts()}/${currentProgram().days} cette semaine</small></button>` : `<button class="action-card" data-go="recipes"><span class="aico">⌁</span><b>${L('Recettes')}</b><small>${curatedRecipes.length} idées détaillées</small></button>`}
-        <button class="action-card" data-go="insights"><span class="aico">↗</span><b>${L('Analyse semaine')}</b><small>Score ${scoreDay()}/100</small></button>
+      <div class="quick-grid">
+        <button data-go="planner">${icon('sparkle')}<span>${L('Que manger ensuite ?')}</span></button>
+        <button data-go="program">${icon('calendar')}<span>${L('Plan 7 jours')}</span></button>
+        <button data-go="coach">${icon('coach')}<span>${L('Coach')}</span></button>
+        <button data-go="guides">${icon('book')}<span>${L('Académie')}</span></button>
       </div>
 
       <div class="section-label"><h3>${L('Votre prochaine décision')}</h3><button class="link-btn" data-go="planner">${L('Ouvrir →')}</button></div>
       ${dashboardInsight(t, p)}
 
-      ${dayPlan.length ? `<div class="section-label"><h3>${L('Repères de votre plan')}</h3><button class="link-btn" data-go="program">${L('7 jours →')}</button></div><div class="day-card">${dayPlan.slice(0, 3).map((meal, index) => `<div class="plan-preview"><span><b>${esc(meal.type)}</b><small>${esc(meal.name)}</small></span><button class="pill pill-button" data-add-plan-meal data-day="0" data-meal="${index}">${fmt(meal.kcal)} kcal +</button></div>`).join('')}</div>` : ''}
+      ${dayPlan.length ? `<div class="section-label"><h3>${L('Repères de votre plan')}</h3><button class="link-btn" data-go="program">${L('7 jours →')}</button></div><div class="day-card">${dayPlan.slice(0, 3).map((meal, index) => `<div class="plan-preview"><span><b>${esc(L(meal.type))}</b><small>${esc(meal.name)}</small></span><button class="pill pill-button" data-add-plan-meal data-day="0" data-meal="${index}">${fmt(meal.kcal)} kcal +</button></div>`).join('')}</div>` : ''}
 
-      <div class="section-label"><h3>${L('Repas aujourd’hui')}</h3><span class="streak">🔥 ${streak()} j</span></div>
+      <div class="section-label"><h3>${L('Repas aujourd’hui')}</h3><span class="streak">${icon('flame')} ${L('{n} j', { n: streak() })}</span></div>
       ${mealsHtml(todayMeals)}
-
-      <div class="section-label"><h3>${L('Hydratation')}</h3><span class="fine">${L('repère pratique 2 L')}</span></div>
-      <div class="water-card"><div class="water-row"><div><b>💧 ${fmt(water)} ml</b><div class="fine">${L('Aujourd’hui')}</div></div><div class="water-actions"><button data-water="250">+250</button><button data-water="500">+500</button></div></div><div class="mini-bar"><i style="width:${clamp(water / 2000 * 100, 0, 100)}%"></i></div></div>
 
       <div class="section-label"><h3>${L('Check-in rapide')}</h3><span class="fine">${L('aide le bilan hebdo')}</span></div>
       <div class="checkin-card">
-        <div><b>${L('Faim')}</b><div class="checkin-buttons">${[['low','Faible'],['normal','Normale'],['high','Forte']].map(([v,l]) => `<button class="mini-choice ${checkin.hunger === v ? 'selected' : ''}" data-checkin="hunger" data-value="${v}">${l}</button>`).join('')}</div></div>
+        <div><b>${L('Faim')}</b><div class="checkin-buttons">${[['low','Faible'],['normal','Normale'],['high','Forte']].map(([v,l]) => `<button class="mini-choice ${checkin.hunger === v ? 'selected' : ''}" data-checkin="hunger" data-value="${v}">${L(l)}</button>`).join('')}</div></div>
         <div><b>${L('Énergie')}</b><div class="checkin-buttons">${[['low','Basse'],['normal','OK'],['high','Haute']].map(([v,l]) => `<button class="mini-choice ${checkin.energy === v ? 'selected' : ''}" data-checkin="energy" data-value="${v}">${L(l)}</button>`).join('')}</div></div>
+        <div><b>${L('Sommeil')}</b><div class="checkin-buttons">${[['bad','Mauvais'],['ok','Correct'],['good','Bon']].map(([v,l]) => `<button class="mini-choice ${checkin.sleep === v ? 'selected' : ''}" data-checkin="sleep" data-value="${v}">${L(l)}</button>`).join('')}</div></div>
       </div>
     </div>
     ${bottom('app')}
   </div>`;
+}
+
+function runCountUps() {
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('.animate [data-count]').forEach((el) => {
+    const target = Number(el.dataset.count || 0);
+    const start = performance.now();
+    const step = (now) => {
+      const k = Math.min(1, (now - start) / 900);
+      el.textContent = fmt(Math.round(target * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+// ---- Reminders --------------------------------------------------------------
+const DEFAULT_REMINDERS = { water: { on: false, every: 120, from: 8, to: 21 }, meals: { on: false, times: ['08:00', '12:30', '19:30'] }, workout: { on: false, time: '18:00' }, weigh: { on: false, day: 1, time: '08:00' } };
+function reminders() {
+  return deepMerge(clone(DEFAULT_REMINDERS), state.reminders || {});
+}
+
+function remindersSheet() {
+  const r = reminders();
+  const hours = Array.from({ length: 24 }, (_, h) => h);
+  const opt = (value, current, label) => `<option value="${value}" ${String(value) === String(current) ? 'selected' : ''}>${label}</option>`;
+  const perm = 'Notification' in window ? Notification.permission : 'unsupported';
+  return `<div class="sheet-head"><div><span class="tag">${L('Rappels')}</span><h2>${L('Restez sur la bonne voie')}</h2></div><button class="icon-btn" data-close>×</button></div>
+    <div class="rem-list">
+      <label class="rem-row"><span>${icon('drop')}<b>${L('Boire de l’eau')}</b><small>${L('Un rappel régulier pendant la journée')}</small></span><input type="checkbox" class="switch" data-rem="water" ${r.water.on ? 'checked' : ''}></label>
+      <div class="rem-detail"><label>${L('Toutes les')}<select data-rem-field="water.every">${[60, 90, 120, 180].map((m) => opt(m, r.water.every, m % 60 ? `${Math.floor(m / 60)} h ${m % 60}` : `${m / 60} h`)).join('')}</select></label>
+        <label>${L('De')}<select data-rem-field="water.from">${hours.map((h) => opt(h, r.water.from, `${h} h`)).join('')}</select></label>
+        <label>${L('À')}<select data-rem-field="water.to">${hours.map((h) => opt(h, r.water.to, `${h} h`)).join('')}</select></label>
+        <label>${L('Objectif')}<select data-water-goal>${[1500, 1750, 2000, 2250, 2500, 3000].map((ml) => opt(ml, waterGoal(), `${fmt(ml)} ml`)).join('')}</select></label></div>
+      <label class="rem-row"><span>${icon('fork')}<b>${L('Repas')}</b><small>${L('Petit-déjeuner, déjeuner et dîner')}</small></span><input type="checkbox" class="switch" data-rem="meals" ${r.meals.on ? 'checked' : ''}></label>
+      <div class="rem-detail">${r.meals.times.map((tm, i) => `<label>${L(['Petit-déjeuner', 'Déjeuner', 'Dîner'][i])}<input type="time" value="${tm}" data-rem-field="meals.times.${i}"></label>`).join('')}</div>
+      <label class="rem-row"><span>${icon('dumbbell')}<b>${L('Séance du jour')}</b><small>${L('Les jours d’entraînement de votre agenda')}</small></span><input type="checkbox" class="switch" data-rem="workout" ${r.workout.on ? 'checked' : ''}></label>
+      <div class="rem-detail"><label>${L('Heure')}<input type="time" value="${r.workout.time}" data-rem-field="workout.time"></label></div>
+      <label class="rem-row"><span>${icon('scale')}<b>${L('Pesée de la semaine')}</b><small>${L('Pour suivre la tendance')}</small></span><input type="checkbox" class="switch" data-rem="weigh" ${r.weigh.on ? 'checked' : ''}></label>
+    </div>
+    ${perm === 'denied' ? `<div class="warn">${L('Les notifications sont bloquées dans les réglages de votre appareil. Autorisez-les pour recevoir les rappels.')}</div>` : ''}
+    <p class="fine">${L('Dans l’application iPhone et Android, les rappels arrivent même application fermée. Sur le web, ils s’affichent quand NutriPilot est ouvert ou installé sur l’écran d’accueil.')}</p>
+    <button class="btn btn-primary btn-wide" data-save-reminders>${L('Enregistrer mes rappels')}</button>`;
+}
+
+function setPath(obj, pathStr, value) {
+  const parts = pathStr.split('.');
+  let cur = obj;
+  parts.slice(0, -1).forEach((k) => { cur[k] = cur[k] ?? {}; cur = cur[k]; });
+  cur[parts.at(-1)] = value;
+}
+
+async function saveReminders(root) {
+  const r = reminders();
+  $$('[data-rem]', root).forEach((el) => { r[el.dataset.rem].on = el.checked; });
+  $$('[data-rem-field]', root).forEach((el) => {
+    const v = el.type === 'time' ? el.value : Number(el.value);
+    setPath(r, el.dataset.remField, v);
+  });
+  const goal = $('[data-water-goal]', root);
+  if (goal) state.waterGoal = Number(goal.value);
+  state.reminders = r;
+  saveState();
+  const anyOn = Object.values(r).some((x) => x.on);
+  if (anyOn && window.NutriPilotNative?.scheduleReminders) {
+    await window.NutriPilotNative.scheduleReminders(r);
+  } else if (anyOn && 'Notification' in window && Notification.permission === 'default') {
+    try { await Notification.requestPermission(); } catch {}
+  }
+  track('RemindersSaved', { water: r.water.on, meals: r.meals.on, workout: r.workout.on });
+  toast('Rappels enregistrés ✓');
+}
+
+let reminderTimer = null;
+function startReminderLoop() {
+  clearInterval(reminderTimer);
+  reminderTimer = setInterval(checkReminders, 60 * 1000);
+}
+function notify(title, body) {
+  const show = () => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      navigator.serviceWorker?.ready.then((reg) => reg.showNotification(title, { body, icon: '/icon-192.png', badge: '/icon-192.png', tag: title })).catch(() => toast(body));
+    } else {
+      toast(body);
+    }
+  };
+  show();
+}
+function checkReminders() {
+  if (!state.premium || window.NutriPilotNative?.scheduleReminders) return;
+  const r = reminders();
+  const now = new Date();
+  const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const fired = state.remindersFired || {};
+  const once = (key, fn) => { if (fired[key]) return; fired[key] = Date.now(); fn(); };
+  const today = todayKey();
+  if (r.water.on && now.getHours() >= r.water.from && now.getHours() < r.water.to && waterToday() < waterGoal()) {
+    const slot = Math.floor((now.getHours() * 60 + now.getMinutes()) / r.water.every);
+    once(`w-${today}-${slot}`, () => notify('NutriPilot', L('Un verre d’eau ? Il vous reste {n} ml pour aujourd’hui.', { n: fmt(waterGoal() - waterToday()) })));
+  }
+  if (r.meals.on) r.meals.times.forEach((tm, i) => { if (tm === hm) once(`m-${today}-${i}`, () => notify('NutriPilot', L('C’est l’heure de votre {meal}. Scannez-le en une photo.', { meal: L(['Petit-déjeuner', 'Déjeuner', 'Dîner'][i]).toLowerCase() }))); });
+  if (r.workout.on && r.workout.time === hm && todaySession()) once(`t-${today}`, () => notify('NutriPilot', L('Séance du jour : {name}. On y va ?', { name: L(todaySession().name) })));
+  if (r.weigh.on && now.getDay() === r.weigh.day && r.weigh.time === hm) once(`p-${today}`, () => notify('NutriPilot', L('C’est le jour de la pesée. Notez votre poids pour suivre la tendance.')));
+  state.remindersFired = Object.fromEntries(Object.entries(fired).filter(([, ts]) => Date.now() - ts < 2 * 86400000));
+  saveState(false);
 }
 
 function planShopping() {
@@ -1776,7 +2059,7 @@ function openLesson(id) {
 
 function lessonAccess(guide) {
   if (!state.premium) return guide.index === 0 ? 'free' : 'paywall';
-  if (guide.tier === 'all' || hasFeature(guide.tier)) return 'open';
+  if (guide.tier === 'all' || hasFeature(guide.tier) || (guide.tier === 'nutrition' && hasFeature('menopause'))) return 'open';
   return 'upgrade';
 }
 
@@ -1789,14 +2072,15 @@ function guidesScreen() {
   const p = state.profile || {};
   const read = new Set(state.guidesRead || []);
   const priority = { menopause: p.track === 'menopause' || (p.menopause && p.menopause !== 'no') ? 0 : 3, weightloss: ['lose', 'menopause', 'eat'].includes(p.track) ? 1 : 2, strength: p.track === 'muscle' ? 0 : 2, basics: 1 };
-  const courses = [...GUIDE_COLLECTIONS].sort((a, b) => (priority[a.id] ?? 5) - (priority[b.id] ?? 5));
-  const lessons = allGuides();
+  const academy = GUIDE_COLLECTIONS.filter((c) => c.id !== 'menopause');
+  const courses = [...academy].sort((a, b) => (priority[a.id] ?? 5) - (priority[b.id] ?? 5));
+  const lessons = allGuides().filter((g) => g.collection !== 'menopause');
   const done = lessons.filter((g) => read.has(g.id)).length;
   return `<div class="mobile-app">
     ${appHeader('Nutrition')}
     <div class="screen">
       ${programTabs('guides')}
-      <div class="today-card academy-hero"><small>${L('ACADÉMIE NUTRIPILOT')}</small><h2>${L('{n} cours · {total} leçons courtes', { n: GUIDE_COLLECTIONS.length, total: lessons.length })}</h2><div class="progress"><i style="width:${Math.round(done / Math.max(1, lessons.length) * 100)}%"></i></div><span>${L('{n}/{total} leçons terminées', { n: done, total: lessons.length })}</span></div>
+      <div class="today-card academy-hero"><small>${L('ACADÉMIE NUTRIPILOT')}</small><h2>${L('{n} cours · {total} leçons courtes', { n: academy.length, total: lessons.length })}</h2><div class="progress"><i style="width:${Math.round(done / Math.max(1, lessons.length) * 100)}%"></i></div><span>${L('{n}/{total} leçons terminées', { n: done, total: lessons.length })}</span></div>
       ${courses.map((c) => {
         const cDone = c.guides.filter((g) => read.has(g.id)).length;
         return `
@@ -1912,23 +2196,198 @@ const WORKOUT_PROGRAMS = [
   },
 ];
 
+// ---- Training v2: library, styles, programs, builder, import, agenda ---------
+Object.assign(EXERCISES, {
+  'pullup': { name: 'Tractions (ou tractions assistées)', muscle: 'Dos, biceps', cues: ['Prise un peu plus large que les épaules.', 'Tirez la poitrine vers la barre en serrant les omoplates.', 'Utilisez un élastique ou la machine d’assistance si besoin.'] },
+  'face-pull': { name: 'Face pull à la poulie', muscle: 'Arrière d’épaules', cues: ['Poulie à hauteur du visage, corde en main.', 'Tirez vers le front en écartant les mains.', 'Gardez les coudes hauts et contrôlez le retour.'] },
+  'reverse-fly': { name: 'Oiseau haltères', muscle: 'Arrière d’épaules, haut du dos', home: true, cues: ['Buste penché, dos plat.', 'Écartez les bras jusqu’à l’horizontale.', 'Charge légère, mouvement lent.'] },
+  'hammer-curl': { name: 'Curl marteau', muscle: 'Biceps, avant-bras', home: true, cues: ['Paumes face à face.', 'Montez sans bouger les coudes.', 'Descendez lentement.'] },
+  'overhead-ext': { name: 'Extension triceps au-dessus de la tête', muscle: 'Triceps', home: true, cues: ['Haltère tenu à deux mains derrière la tête.', 'Coudes pointés vers le haut.', 'Tendez les bras sans cambrer.'] },
+  'chest-press': { name: 'Presse pectorale (machine)', muscle: 'Pectoraux', cues: ['Réglez les poignées à hauteur de poitrine.', 'Poussez sans verrouiller les coudes.', 'Revenez lentement.'] },
+  'floor-press': { name: 'Développé au sol haltères', muscle: 'Pectoraux, triceps', home: true, cues: ['Allongé(e) au sol, genoux fléchis.', 'Descendez jusqu’à ce que les coudes touchent le sol.', 'Poussez en expirant.'] },
+  'leg-raise': { name: 'Relevés de jambes allongé(e)', muscle: 'Abdominaux', home: true, cues: ['Bas du dos plaqué au sol.', 'Montez les jambes en contrôlant.', 'Redescendez sans toucher le sol.'] },
+  'dead-bug': { name: 'Dead bug', muscle: 'Abdominaux profonds', home: true, cues: ['Dos plaqué au sol, bras vers le plafond.', 'Allongez bras et jambe opposés.', 'Expirez à chaque extension.'] },
+  'bird-dog': { name: 'Bird dog', muscle: 'Gainage, bas du dos', home: true, cues: ['À quatre pattes, dos plat.', 'Tendez bras et jambe opposés.', 'Tenez 2 secondes sans tourner le bassin.'] },
+  'step-up': { name: 'Montées sur banc ou marche', muscle: 'Quadriceps, fessiers', home: true, cues: ['Posez tout le pied sur la marche.', 'Montez en poussant sur la jambe d’appui.', 'Redescendez lentement.'] },
+  'farmer-walk': { name: 'Marche du fermier', muscle: 'Prise, gainage, épaules', home: true, cues: ['Une charge lourde dans chaque main.', 'Épaules basses, buste droit.', 'Marchez à petits pas réguliers.'] },
+  'wall-sit': { name: 'Chaise contre le mur', muscle: 'Quadriceps', home: true, cues: ['Dos plaqué au mur, genoux à 90°.', 'Poids du corps sur les talons.', 'Respirez calmement.'] },
+  'balance': { name: 'Équilibre sur une jambe', muscle: 'Équilibre, chevilles', home: true, cues: ['Tenez-vous près d’un mur ou d’une chaise.', 'Levez un pied et gardez le bassin droit.', 'Changez de jambe.'] },
+  'brisk-walk': { name: 'Marche rapide', muscle: 'Cardio', home: true, cues: ['Un rythme où vous pouvez parler mais pas chanter.', 'Balancez les bras.', 'Augmentez la durée progressivement.'] },
+  'cat-cow': { name: 'Chat-vache', muscle: 'Mobilité du dos', home: true, cues: ['À quatre pattes.', 'Arrondissez puis creusez doucement le dos.', 'Suivez le rythme de votre respiration.'] },
+  'hip-opener': { name: 'Ouverture de hanches (fente basse)', muscle: 'Mobilité des hanches', home: true, cues: ['Genou arrière au sol, sur un coussin.', 'Avancez doucement le bassin.', 'Tenez sans douleur.'] },
+  'goblet-squat': { name: 'Squat goblet', muscle: 'Quadriceps, fessiers', home: true, cues: ['Haltère tenu contre la poitrine.', 'Descendez entre les genoux, dos droit.', 'Remontez en poussant dans les talons.'] },
+  'jumping': { name: 'Corde à sauter ou jumping jacks', muscle: 'Cardio', home: true, cues: ['Restez sur l’avant du pied.', 'Rythme régulier.', 'Faites des pauses si besoin.'] },
+});
+['pushup', 'bw-squat', 'glute-bridge', 'split-squat', 'superman', 'mountain', 'plank', 'lunge', 'row', 'ohp', 'lateral', 'curl', 'rdl', 'calf'].forEach((id) => { EXERCISES[id].home = true; });
+
+const EX_GROUPS = ['Pectoraux', 'Dos', 'Épaules', 'Bras', 'Jambes', 'Fessiers', 'Abdos & gainage', 'Cardio', 'Mobilité & équilibre'];
+const EX_GROUP_OF = {
+  bench: 'Pectoraux', 'incline-db': 'Pectoraux', 'cable-fly': 'Pectoraux', dips: 'Pectoraux', pushup: 'Pectoraux', 'chest-press': 'Pectoraux', 'floor-press': 'Pectoraux',
+  'lat-pulldown': 'Dos', row: 'Dos', 'seated-row': 'Dos', pullup: 'Dos', superman: 'Dos',
+  ohp: 'Épaules', lateral: 'Épaules', 'face-pull': 'Épaules', 'reverse-fly': 'Épaules',
+  curl: 'Bras', 'hammer-curl': 'Bras', triceps: 'Bras', 'overhead-ext': 'Bras',
+  squat: 'Jambes', 'leg-press': 'Jambes', 'leg-ext': 'Jambes', lunge: 'Jambes', 'bw-squat': 'Jambes', 'split-squat': 'Jambes', 'goblet-squat': 'Jambes', 'step-up': 'Jambes', 'wall-sit': 'Jambes', calf: 'Jambes', 'leg-curl': 'Jambes', rdl: 'Fessiers',
+  'hip-thrust': 'Fessiers', abduction: 'Fessiers', 'glute-bridge': 'Fessiers',
+  plank: 'Abdos & gainage', 'dead-bug': 'Abdos & gainage', 'leg-raise': 'Abdos & gainage', 'bird-dog': 'Abdos & gainage', 'farmer-walk': 'Abdos & gainage',
+  mountain: 'Cardio', 'brisk-walk': 'Cardio', jumping: 'Cardio',
+  balance: 'Mobilité & équilibre', 'cat-cow': 'Mobilité & équilibre', 'hip-opener': 'Mobilité & équilibre',
+};
+function exGroup(id) { return EXERCISES[id]?.group || EX_GROUP_OF[id] || 'Abdos & gainage'; }
+function exName(id) { return EXERCISES[id]?.name || (state.customExercises || {})[id]?.name || id; }
+
+const COACH_STYLES = [
+  { id: 'hypertrophy', name: 'Hypertrophie', desc: 'Volume modéré à élevé, 8 à 12 répétitions, 60 à 90 s de repos. Pour prendre du muscle.', reps: '8–12', sets: 3, rest: 75 },
+  { id: 'strength', name: 'Force', desc: 'Charges lourdes, 4 à 6 répétitions, repos longs. Pour devenir plus fort(e).', reps: '4–6', sets: 4, rest: 150 },
+  { id: 'athletic', name: 'Athlétique', desc: 'Mouvements complets et rythme soutenu. Pour être en forme, tonique et dynamique.', reps: '8–10', sets: 3, rest: 60 },
+  { id: 'fatloss', name: 'Perte de gras', desc: 'Circuits, peu de repos, 12 à 15 répétitions. Pour dépenser plus et se tonifier.', reps: '12–15', sets: 3, rest: 40 },
+  { id: 'glutes', name: 'Fessiers', desc: 'Priorité aux fessiers et aux jambes, avec contraction et contrôle.', reps: '10–15', sets: 4, rest: 60 },
+  { id: 'gentle', name: 'Douceur & mobilité', desc: 'Renforcement en douceur, gainage, équilibre et mobilité.', reps: '10–12', sets: 2, rest: 45 },
+];
+
+const TRAIN_FOCUS = [['all', 'Tous'], ['fat', 'Perdre du gras'], ['muscle', 'Prendre du muscle'], ['upper', 'Haut du corps'], ['lower', 'Bas du corps'], ['glutes', 'Fessiers'], ['strength', 'Force'], ['home', 'À la maison'], ['fitness', 'Remise en forme']];
+
+WORKOUT_PROGRAMS.forEach((p) => {
+  p.focus = ({ 'gym-full-3': ['fitness', 'fat', 'muscle'], 'gym-upper-lower-4': ['muscle', 'upper', 'lower'], 'gym-glutes-3': ['glutes', 'lower'], 'home-full-3': ['home', 'fitness', 'fat'] })[p.id] || [];
+  p.style = ({ 'gym-full-3': 'athletic', 'gym-upper-lower-4': 'hypertrophy', 'gym-glutes-3': 'glutes', 'home-full-3': 'fatloss' })[p.id] || 'athletic';
+});
+WORKOUT_PROGRAMS.push(
+  {
+    id: 'gym-beginner-2', name: 'Débutant 2 jours · salle', level: 'Débutant', place: 'gym', days: 2, focus: ['fitness', 'fat'], style: 'athletic',
+    desc: 'Deux séances complètes par semaine pour prendre de bonnes habitudes, sans y passer sa vie.',
+    sessions: [
+      { id: 'D1', name: 'Corps entier A', focus: 'Jambes · Pectoraux · Dos', ex: [['leg-press', 3, '10–12', 90], ['chest-press', 3, '10–12', 90], ['lat-pulldown', 3, '10–12', 90], ['hip-thrust', 2, '12', 60], ['plank', 3, '30 s', 45]] },
+      { id: 'D2', name: 'Corps entier B', focus: 'Jambes · Dos · Épaules', ex: [['goblet-squat', 3, '10', 90], ['seated-row', 3, '12', 90], ['ohp', 2, '10', 90], ['leg-curl', 2, '12', 60], ['dead-bug', 3, '10', 45]] },
+    ],
+  },
+  {
+    id: 'gym-ppl', name: 'Push / Pull / Legs · salle', level: 'Intermédiaire', place: 'gym', days: 3, focus: ['muscle', 'upper', 'lower', 'strength'], style: 'hypertrophy',
+    desc: 'Pousser, tirer, jambes : le grand classique pour prendre du muscle. Faites-le 3 ou 6 fois par semaine.',
+    sessions: [
+      { id: 'PU', name: 'Push', focus: 'Pectoraux · Épaules · Triceps', ex: [['bench', 4, '6–8', 150], ['incline-db', 3, '8–10', 90], ['ohp', 3, '8–10', 90], ['lateral', 3, '12–15', 60], ['triceps', 3, '10–12', 60], ['dips', 2, '8–10', 90]] },
+      { id: 'PL', name: 'Pull', focus: 'Dos · Biceps · Arrière d’épaules', ex: [['pullup', 4, '6–8', 120], ['row', 3, '8–10', 90], ['seated-row', 3, '10–12', 90], ['face-pull', 3, '15', 60], ['curl', 3, '10–12', 60], ['hammer-curl', 2, '12', 60]] },
+      { id: 'LG', name: 'Legs', focus: 'Quadriceps · Ischios · Mollets', ex: [['squat', 4, '6–8', 150], ['rdl', 3, '8–10', 120], ['leg-press', 3, '10–12', 90], ['leg-curl', 3, '12', 60], ['calf', 4, '12–15', 45], ['leg-raise', 3, '12', 45]] },
+    ],
+  },
+  {
+    id: 'gym-upper-focus', name: 'Haut du corps & bras · salle', level: 'Intermédiaire', place: 'gym', days: 4, focus: ['upper', 'muscle'], style: 'hypertrophy',
+    desc: 'Trois séances haut du corps (pectoraux, dos, épaules, bras) et une séance jambes pour l’équilibre.',
+    sessions: [
+      { id: 'UA', name: 'Haut du corps A', focus: 'Pectoraux · Dos', ex: [['bench', 4, '6–8', 120], ['row', 4, '8–10', 90], ['incline-db', 3, '10', 90], ['lat-pulldown', 3, '10–12', 90], ['curl', 3, '10–12', 60], ['triceps', 3, '12', 60]] },
+      { id: 'LA', name: 'Jambes', focus: 'Quadriceps · Ischios · Fessiers', ex: [['squat', 4, '6–8', 150], ['rdl', 3, '8–10', 120], ['leg-ext', 3, '12–15', 60], ['leg-curl', 3, '12', 60], ['calf', 3, '15', 45]] },
+      { id: 'UB', name: 'Haut du corps B', focus: 'Épaules · Dos · Pectoraux', ex: [['ohp', 4, '8', 120], ['pullup', 3, '6–8', 120], ['chest-press', 3, '10–12', 90], ['face-pull', 3, '15', 60], ['lateral', 3, '15', 45]] },
+      { id: 'AR', name: 'Bras & épaules', focus: 'Biceps · Triceps · Épaules', ex: [['lateral', 4, '15', 45], ['reverse-fly', 3, '15', 45], ['curl', 3, '10–12', 60], ['overhead-ext', 3, '12', 60], ['hammer-curl', 3, '12', 60], ['triceps', 3, '12–15', 45]] },
+    ],
+  },
+  {
+    id: 'gym-strength-3', name: 'Force · salle', level: 'Confirmé', place: 'gym', days: 3, focus: ['strength', 'muscle'], style: 'strength',
+    desc: 'Les grands mouvements en séries lourdes, en alternant deux séances. Ajoutez un peu de charge chaque semaine.',
+    sessions: [
+      { id: 'FA', name: 'Force A', focus: 'Squat · Développé couché · Rowing', ex: [['squat', 5, '5', 180], ['bench', 5, '5', 180], ['row', 5, '5', 150], ['plank', 3, '45 s', 60]] },
+      { id: 'FB', name: 'Force B', focus: 'Squat · Développé militaire · Soulevé', ex: [['squat', 5, '5', 180], ['ohp', 5, '5', 150], ['rdl', 3, '5', 180], ['pullup', 3, '6–8', 120]] },
+    ],
+  },
+  {
+    id: 'home-db-4', name: 'Maison avec haltères', level: 'Intermédiaire', place: 'home', days: 4, focus: ['home', 'muscle', 'fat'], style: 'athletic',
+    desc: 'Deux haltères suffisent : haut et bas du corps en alternance, 4 fois par semaine.',
+    sessions: [
+      { id: 'HH1', name: 'Haut du corps 1', focus: 'Pectoraux · Dos · Bras', ex: [['floor-press', 4, '10–12', 75], ['row', 4, '10–12', 75], ['ohp', 3, '10', 75], ['curl', 3, '12', 45], ['overhead-ext', 3, '12', 45]] },
+      { id: 'HB1', name: 'Bas du corps 1', focus: 'Jambes · Fessiers', ex: [['goblet-squat', 4, '12', 75], ['rdl', 3, '10–12', 75], ['lunge', 3, '10 / jambe', 60], ['glute-bridge', 3, '15', 45], ['calf', 3, '15', 45]] },
+      { id: 'HH2', name: 'Haut du corps 2', focus: 'Épaules · Pectoraux · Gainage', ex: [['pushup', 4, '8–12', 60], ['reverse-fly', 3, '15', 45], ['lateral', 3, '15', 45], ['hammer-curl', 3, '12', 45], ['plank', 3, '40 s', 45]] },
+      { id: 'HB2', name: 'Bas du corps 2', focus: 'Fessiers · Quadriceps', ex: [['split-squat', 3, '10 / jambe', 60], ['step-up', 3, '10 / jambe', 60], ['wall-sit', 3, '40 s', 45], ['glute-bridge', 3, '20', 45], ['dead-bug', 3, '10', 45]] },
+    ],
+  },
+  {
+    id: 'home-burn-3', name: 'Brûle-graisses maison', level: 'Débutant', place: 'home', days: 3, focus: ['home', 'fat', 'fitness'], style: 'fatloss',
+    desc: 'Circuits de 25 minutes sans matériel pour dépenser plus et gagner en souffle.',
+    sessions: [
+      { id: 'B1', name: 'Circuit 1', focus: 'Cardio · Jambes · Gainage', ex: [['jumping', 4, '40 s', 20], ['bw-squat', 4, '15', 20], ['mountain', 4, '30 s', 20], ['plank', 4, '30 s', 40]] },
+      { id: 'B2', name: 'Circuit 2', focus: 'Haut du corps · Cardio', ex: [['pushup', 4, '10', 20], ['jumping', 4, '40 s', 20], ['superman', 4, '12', 20], ['dead-bug', 4, '10', 40]] },
+      { id: 'B3', name: 'Circuit 3', focus: 'Fessiers · Cardio', ex: [['lunge', 4, '10 / jambe', 20], ['glute-bridge', 4, '15', 20], ['mountain', 4, '30 s', 20], ['brisk-walk', 1, '15 min', 0]] },
+    ],
+  },
+);
+
+const MENO_PROGRAMS = [
+  {
+    id: 'meno-home', name: 'Force & os · maison', level: 'Tous niveaux', place: 'home', days: 3, focus: ['menopause'], style: 'gentle', meno: true,
+    desc: 'Renforcement musculaire et exercices en charge pour protéger les muscles et les os, à la maison.',
+    sessions: [
+      { id: 'MH1', name: 'Force bas du corps', focus: 'Jambes · Fessiers · Équilibre', ex: [['goblet-squat', 3, '10–12', 75], ['step-up', 3, '8 / jambe', 60], ['glute-bridge', 3, '12–15', 45], ['balance', 3, '30 s / jambe', 30], ['bird-dog', 2, '10', 30]] },
+      { id: 'MH2', name: 'Force haut du corps', focus: 'Dos · Pectoraux · Épaules', ex: [['row', 3, '10–12', 60], ['floor-press', 3, '10–12', 60], ['ohp', 3, '10', 60], ['farmer-walk', 3, '40 s', 45], ['dead-bug', 2, '10', 30]] },
+      { id: 'MH3', name: 'Corps entier & marche', focus: 'Corps entier · Cardio', ex: [['bw-squat', 3, '12', 45], ['pushup', 3, '8–10', 45], ['superman', 3, '12', 30], ['brisk-walk', 1, '20 min', 0]] },
+    ],
+  },
+  {
+    id: 'meno-gym', name: 'Force & os · salle', level: 'Tous niveaux', place: 'gym', days: 3, focus: ['menopause'], style: 'strength', meno: true,
+    desc: 'Séances en salle avec charges progressives : la meilleure stratégie pour la densité osseuse et le métabolisme.',
+    sessions: [
+      { id: 'MG1', name: 'Bas du corps', focus: 'Jambes · Fessiers', ex: [['leg-press', 3, '8–10', 90], ['rdl', 3, '8–10', 90], ['hip-thrust', 3, '10', 75], ['calf', 3, '12', 45], ['balance', 2, '30 s / jambe', 30]] },
+      { id: 'MG2', name: 'Haut du corps', focus: 'Dos · Pectoraux · Épaules', ex: [['lat-pulldown', 3, '8–10', 90], ['chest-press', 3, '8–10', 90], ['seated-row', 3, '10', 75], ['lateral', 2, '12–15', 45], ['plank', 3, '30 s', 30]] },
+      { id: 'MG3', name: 'Corps entier', focus: 'Corps entier', ex: [['goblet-squat', 3, '10', 75], ['row', 3, '10', 75], ['step-up', 3, '8 / jambe', 60], ['farmer-walk', 3, '40 s', 45]] },
+    ],
+  },
+  {
+    id: 'meno-gentle', name: 'Mobilité, équilibre & marche', level: 'Débutant', place: 'home', days: 3, focus: ['menopause'], style: 'gentle', meno: true,
+    desc: 'Pour reprendre en douceur : mobilité, équilibre, gainage et marche active.',
+    sessions: [
+      { id: 'MD1', name: 'Mobilité & équilibre', focus: 'Mobilité · Équilibre', ex: [['cat-cow', 2, '10', 20], ['hip-opener', 2, '30 s / jambe', 20], ['balance', 3, '30 s / jambe', 30], ['bird-dog', 2, '10', 30]] },
+      { id: 'MD2', name: 'Marche active', focus: 'Cardio', ex: [['brisk-walk', 1, '30 min', 0]] },
+      { id: 'MD3', name: 'Renforcement doux', focus: 'Jambes · Gainage', ex: [['wall-sit', 3, '30 s', 45], ['glute-bridge', 3, '12', 30], ['dead-bug', 2, '10', 30], ['balance', 2, '30 s / jambe', 30]] },
+    ],
+  },
+];
+
+function allPrograms() {
+  return [...WORKOUT_PROGRAMS, ...MENO_PROGRAMS, ...(state.customPrograms || [])];
+}
+function findProgram(id) { return allPrograms().find((x) => x.id === id); }
+
 function recommendedProgramId(p = state.profile || {}) {
-  if (p.trainPlace === 'home') return 'home-full-3';
+  if (p.track === 'menopause') return p.trainPlace === 'gym' ? 'meno-gym' : 'meno-home';
+  if (p.trainPlace === 'home') return Number(p.trainDays) >= 4 ? 'home-db-4' : p.goal === 'lose' ? 'home-burn-3' : 'home-full-3';
   if (p.trainPlace === 'gym') {
-    if (Number(p.trainDays) >= 4 && p.trainLevel !== 'beginner') return 'gym-upper-lower-4';
+    if (p.trainLevel === 'beginner' && Number(p.trainDays) <= 2) return 'gym-beginner-2';
+    if (p.trainLevel === 'advanced' && p.goal === 'gain') return 'gym-strength-3';
+    if (Number(p.trainDays) >= 4 && p.trainLevel !== 'beginner') return p.goal === 'gain' ? 'gym-upper-focus' : 'gym-upper-lower-4';
     if (p.sex === 'female' && p.track !== 'muscle') return 'gym-glutes-3';
-    return 'gym-full-3';
+    return p.goal === 'gain' && p.trainLevel !== 'beginner' ? 'gym-ppl' : 'gym-full-3';
   }
   return 'home-full-3';
 }
 
 function currentProgram() {
-  return WORKOUT_PROGRAMS.find((x) => x.id === (state.workoutProgram || recommendedProgramId())) || WORKOUT_PROGRAMS[0];
+  return findProgram(state.workoutProgram) || findProgram(recommendedProgramId()) || WORKOUT_PROGRAMS[0];
 }
 
+const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const DEFAULT_DAYS = { 1: [3], 2: [1, 4], 3: [1, 3, 5], 4: [1, 2, 4, 5], 5: [1, 2, 3, 5, 6], 6: [1, 2, 3, 4, 5, 6], 7: [1, 2, 3, 4, 5, 6, 0] };
+function trainingDays() {
+  const days = Array.isArray(state.trainingWeekdays) && state.trainingWeekdays.length ? state.trainingWeekdays : DEFAULT_DAYS[currentProgram().days] || DEFAULT_DAYS[3];
+  return WEEKDAY_ORDER.filter((d) => days.includes(d));
+}
+function sessionForWeekday(weekday, program = currentProgram()) {
+  const days = trainingDays();
+  const idx = days.indexOf(weekday);
+  if (idx < 0) return null;
+  return program.sessions[idx % program.sessions.length];
+}
+function todaySession() { return sessionForWeekday(new Date().getDay()); }
+function weekStartKey() {
+  const d = new Date();
+  const diff = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - diff);
+  return todayKey(d);
+}
+function dateForWeekday(weekday) {
+  const d = new Date();
+  const diff = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - diff + WEEKDAY_ORDER.indexOf(weekday));
+  return d;
+}
+function doneOn(dayKey) { return (state.workoutLog || []).some((x) => x.day === dayKey); }
+
 function nextSession(program = currentProgram()) {
-  const done = (state.workoutLog || []).filter((x) => x.programId === program.id).length;
-  return program.sessions[done % program.sessions.length];
+  return todaySession() || program.sessions[(state.workoutLog || []).filter((x) => x.programId === program.id).length % program.sessions.length];
 }
 
 function lastLoad(exerciseId) {
@@ -1941,48 +2400,479 @@ function lastLoad(exerciseId) {
 }
 
 function weekWorkouts() {
-  const since = Date.now() - 7 * 86400000;
-  return (state.workoutLog || []).filter((x) => new Date(x.at).getTime() >= since).length;
+  const start = weekStartKey();
+  return new Set((state.workoutLog || []).filter((x) => x.day >= start).map((x) => x.day)).size;
+}
+
+function sessionExercises(program, session) {
+  const swaps = state.exerciseSwaps?.[program.id]?.[session.id] || {};
+  return session.ex.map((e, i) => (swaps[i] ? [swaps[i], ...e.slice(1)] : e));
+}
+
+function alternativesFor(exId, place) {
+  const group = exGroup(exId);
+  return Object.keys(EXERCISES).filter((id) => id !== exId && exGroup(id) === group && (place !== 'home' || EXERCISES[id].home));
+}
+
+let trainTab = 'mine';
+let trainFocus = 'all';
+let libGroup = 'Pectoraux';
+let builder = null;
+
+function weekStrip() {
+  const program = currentProgram();
+  const todayWd = new Date().getDay();
+  return `<div class="week-strip">${WEEKDAY_ORDER.map((wd) => {
+    const s = sessionForWeekday(wd, program);
+    const date = dateForWeekday(wd);
+    const key = todayKey(date);
+    const label = date.toLocaleDateString(locale(), { weekday: 'short' }).replace('.', '');
+    return `<button class="wday ${wd === todayWd ? 'today' : ''} ${s ? 'train' : 'rest'} ${doneOn(key) ? 'done' : ''}" ${s ? `data-session="${esc(s.id)}" data-program="${esc(program.id)}"` : 'disabled'}><small>${esc(label)}</small><b>${date.getDate()}</b><i>${doneOn(key) ? '✓' : s ? esc(s.id) : '·'}</i></button>`;
+  }).join('')}</div>`;
 }
 
 function trainingScreen() {
   const program = currentProgram();
-  const next = nextSession(program);
-  const week = weekWorkouts();
+  const today = todaySession();
+  const tabs = [['mine', 'Ma semaine'], ['programs', 'Programmes'], ['create', 'Créer'], ['library', 'Exercices']];
+  let body = '';
+  if (trainTab === 'mine') body = trainingMine(program);
+  else if (trainTab === 'programs') body = trainingPrograms(program);
+  else if (trainTab === 'create') body = trainingCreate();
+  else body = trainingLibrary();
   return `<div class="mobile-app">
     ${appHeader('Entraînement')}
     <div class="screen">
-      <div class="today-card train-card">
-        <small>${esc(L(program.level))} · ${L('{n} séances / semaine', { n: program.days })}</small>
-        <h2>${esc(L(program.name))}</h2>
-        <div class="train-week">${Array.from({ length: program.days }, (_, i) => `<i class="${i < week ? 'on' : ''}"></i>`).join('')}<span>${L('{n}/{total} cette semaine', { n: Math.min(week, program.days), total: program.days })}</span></div>
-        <button class="btn btn-lime btn-wide" data-session="${esc(next.id)}">${L('Commencer : {name} →', { name: esc(L(next.name)) })}</button>
-      </div>
-      <div class="section-label"><h3>${L('Séances du programme')}</h3></div>
-      <div class="guide-list">${program.sessions.map((s) => `<button class="guide-card" data-session="${esc(s.id)}"><span class="guide-check">${esc(s.id)}</span><span><b>${esc(L(s.name))}</b><small>${esc(L(s.focus))} · ${L('{n} exercices', { n: s.ex.length })}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>
-      <button class="guide-card hub-link" data-guide="st-progress"><span class="guide-check">${icon('star')}</span><span><b>${L('Cours : Musculation, bien débuter')}</b><small>${L('5 leçons courtes pour progresser sans se blesser')}</small></span><span class="guide-arrow">→</span></button>
-      <div class="section-label"><h3>${L('Changer de programme')}</h3></div>
-      <div class="program-switch">${WORKOUT_PROGRAMS.map((x) => `<button class="mini-choice ${x.id === program.id ? 'selected' : ''}" data-workout-program="${esc(x.id)}">${esc(L(x.name))}</button>`).join('')}</div>
-      <p class="screen-sub">${esc(L(program.desc))}</p>
-      <div class="fine center-fine">${L('Échauffez-vous 5 à 10 minutes avant chaque séance. Choisissez une charge qui vous laisse 1 à 2 répétitions en réserve. Arrêtez en cas de douleur et demandez un avis médical si vous avez un problème de santé.')}</div>
+      <section class="train-hero">
+        <div class="train-hero-top"><div><small>${L('Aujourd’hui')}</small><h2>${today ? esc(L(today.name)) : L('Jour de repos')}</h2><span>${today ? esc(L(today.focus)) : L('Récupération, marche ou mobilité')}</span></div><span class="train-count"><b>${weekWorkouts()}</b>/${trainingDays().length}</span></div>
+        ${weekStrip()}
+        ${today ? `<button class="btn btn-lime btn-wide" data-session="${esc(today.id)}" data-program="${esc(program.id)}">${L('Commencer la séance')}</button>` : `<button class="btn btn-ghost-dark btn-wide" data-session="${esc(nextSession(program).id)}" data-program="${esc(program.id)}">${L('Faire quand même : {name}', { name: esc(L(nextSession(program).name)) })}</button>`}
+      </section>
+      <div class="segmented seg-4">${tabs.map(([k, label]) => `<button class="${trainTab === k ? 'active' : ''}" data-train-tab="${k}">${L(label)}</button>`).join('')}</div>
+      ${body}
     </div>
     ${bottom('training')}
   </div>`;
 }
 
-function sessionSheet(sessionId) {
-  const program = currentProgram();
+function trainingMine(program) {
+  const days = trainingDays();
+  return `
+    <div class="program-banner">
+      <div><small>${esc(L(program.level))} · ${L(program.place === 'home' ? 'Maison' : 'Salle')}</small><h3>${esc(L(program.name))}</h3><p>${esc(L(program.desc))}</p></div>
+      <button class="link-btn" data-train-tab="programs">${L('Changer')}</button>
+    </div>
+    <div class="section-label"><h3>${L('Mes jours d’entraînement')}</h3><span class="fine">${L('{n} par semaine', { n: days.length })}</span></div>
+    <div class="day-picker">${WEEKDAY_ORDER.map((wd) => `<button class="${days.includes(wd) ? 'on' : ''}" data-train-day="${wd}">${esc(dateForWeekday(wd).toLocaleDateString(locale(), { weekday: 'short' }).replace('.', ''))}</button>`).join('')}</div>
+    <p class="fine">${L('Les séances du programme se répartissent automatiquement sur les jours choisis.')}</p>
+    <div class="section-label"><h3>${L('Séances du programme')}</h3></div>
+    <div class="guide-list">${program.sessions.map((s) => `<button class="guide-card" data-session="${esc(s.id)}" data-program="${esc(program.id)}"><span class="guide-check">${esc(s.id)}</span><span><b>${esc(L(s.name))}</b><small>${esc(L(s.focus))} · ${L('{n} exercices', { n: s.ex.length })}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>
+    <button class="guide-card hub-link" data-guide="st-progress"><span class="guide-check">${icon('book')}</span><span><b>${L('Cours : Musculation, bien débuter')}</b><small>${L('5 leçons courtes pour progresser sans se blesser')}</small></span><span class="guide-arrow">→</span></button>
+    <div class="fine center-fine">${L('Échauffez-vous 5 à 10 minutes avant chaque séance. Choisissez une charge qui vous laisse 1 à 2 répétitions en réserve. Arrêtez en cas de douleur et demandez un avis médical si vous avez un problème de santé.')}</div>`;
+}
+
+function programCard(x, current) {
+  const style = COACH_STYLES.find((c) => c.id === x.style);
+  return `<article class="program-card ${x.id === current.id ? 'current' : ''}">
+    <div class="pc-top"><span class="pill">${esc(L(x.level))}</span><span class="pill">${L('{n} j / sem.', { n: x.days || x.sessions.length })}</span><span class="pill">${L(x.place === 'home' ? 'Maison' : 'Salle')}</span></div>
+    <h3>${esc(L(x.name))}</h3>
+    ${style ? `<small class="pc-style">${L('Style {name}', { name: esc(L(style.name)) })}</small>` : ''}
+    <p>${esc(L(x.desc || ''))}</p>
+    ${x.id === current.id ? `<span class="pc-current">✓ ${L('Programme actuel')}</span>` : `<button class="btn btn-primary btn-wide" data-workout-program="${esc(x.id)}">${L('Choisir ce programme')}</button>`}
+  </article>`;
+}
+
+function trainingPrograms(current) {
+  const list = [...WORKOUT_PROGRAMS, ...(state.customPrograms || [])].filter((x) => trainFocus === 'all' || (x.focus || []).includes(trainFocus));
+  const reco = recommendedProgramId();
+  return `
+    <div class="chip-row">${TRAIN_FOCUS.map(([k, label]) => `<button class="mini-choice ${trainFocus === k ? 'selected' : ''}" data-train-focus="${k}">${L(label)}</button>`).join('')}</div>
+    ${list.some((x) => x.id === reco) ? `<div class="section-label"><h3>${L('Recommandé pour vous')}</h3></div>${programCard(findProgram(reco), current)}` : ''}
+    <div class="section-label"><h3>${L('Tous les programmes')}</h3><span class="fine">${list.length}</span></div>
+    <div class="program-list">${list.filter((x) => x.id !== reco).map((x) => programCard(x, current)).join('') || `<div class="empty">${L('Aucun programme pour ce filtre.')}</div>`}</div>
+    <div class="section-label"><h3>${L('Styles de coaching')}</h3></div>
+    <p class="screen-sub">${L('Chaque style correspond à une méthode d’entraînement. Choisissez-en un dans « Créer » pour générer un programme sur mesure.')}</p>
+    <div class="style-grid">${COACH_STYLES.map((c) => `<button class="style-card" data-builder-style="${c.id}"><b>${esc(L(c.name))}</b><small>${esc(L(c.desc))}</small></button>`).join('')}</div>`;
+}
+
+const BUILDER_GROUPS = ['Jambes', 'Fessiers', 'Pectoraux', 'Dos', 'Épaules', 'Bras', 'Abdos & gainage', 'Cardio'];
+function defaultBuilder() {
+  const p = state.profile || {};
+  return {
+    days: trainingDays().slice(),
+    place: p.trainPlace === 'home' ? 'home' : 'gym',
+    duration: 45,
+    style: p.track === 'muscle' ? 'hypertrophy' : p.goal === 'lose' ? 'fatloss' : 'athletic',
+    freq: { Jambes: 2, Fessiers: p.sex === 'female' ? 2 : 1, Pectoraux: 2, Dos: 2, Épaules: 1, Bras: 1, 'Abdos & gainage': 2, Cardio: p.goal === 'lose' ? 2 : 0 },
+  };
+}
+
+function trainingCreate() {
+  builder = builder || defaultBuilder();
+  const b = builder;
+  return `
+    <section class="create-card">
+      <h3>${icon('sparkle')} ${L('Créer mon programme sur mesure')}</h3>
+      <p class="screen-sub">${L('Choisissez vos jours, votre lieu, votre style et combien de fois par semaine travailler chaque zone. NutriPilot construit les séances.')}</p>
+      <div class="field-label">${L('Jours d’entraînement')}</div>
+      <div class="day-picker">${WEEKDAY_ORDER.map((wd) => `<button class="${b.days.includes(wd) ? 'on' : ''}" data-b-day="${wd}">${esc(dateForWeekday(wd).toLocaleDateString(locale(), { weekday: 'short' }).replace('.', ''))}</button>`).join('')}</div>
+      <div class="field-label">${L('Lieu')}</div>
+      <div class="chip-row">${[['gym', 'Salle de sport'], ['home', 'Maison']].map(([k, l]) => `<button class="mini-choice ${b.place === k ? 'selected' : ''}" data-b-place="${k}">${L(l)}</button>`).join('')}</div>
+      <div class="field-label">${L('Durée d’une séance')}</div>
+      <div class="chip-row">${[30, 45, 60, 75].map((m) => `<button class="mini-choice ${b.duration === m ? 'selected' : ''}" data-b-duration="${m}">${m} min</button>`).join('')}</div>
+      <div class="field-label">${L('Style de coaching')}</div>
+      <div class="chip-row">${COACH_STYLES.map((c) => `<button class="mini-choice ${b.style === c.id ? 'selected' : ''}" data-b-style="${c.id}">${L(c.name)}</button>`).join('')}</div>
+      <div class="field-label">${L('Fréquence par zone (fois par semaine)')}</div>
+      <div class="freq-list">${BUILDER_GROUPS.map((g) => `<div class="freq-row"><span>${L(g)}</span><div class="stepper"><button data-b-freq="${esc(g)}" data-delta="-1" aria-label="−">${icon('minus')}</button><b>${b.freq[g] || 0}×</b><button data-b-freq="${esc(g)}" data-delta="1" aria-label="+">${icon('plus')}</button></div></div>`).join('')}</div>
+      <button class="btn btn-lime btn-wide btn-xl" data-build-program>${L('Générer mon programme')}</button>
+    </section>
+    <section class="create-card">
+      <h3>${icon('book')} ${L('Importer mon programme')}</h3>
+      <p class="screen-sub">${L('Vous suivez déjà le programme de votre coach ou le vôtre ? Collez-le ici, tel quel. NutriPilot le transforme en séances avec agenda et suivi des charges.')}</p>
+      <textarea id="import-training" rows="6" placeholder="${L('Ex. Lundi : squat 4x8, presse 3x12, leg curl 3x12. Mercredi : développé couché 4x8, rowing 4x10…')}"></textarea>
+      <button class="btn btn-primary btn-wide" data-import-plan="training">${L('Importer en séances')}</button>
+    </section>
+    <section class="create-card">
+      <h3>${icon('fork')} ${L('Importer mon plan alimentaire')}</h3>
+      <p class="screen-sub">${L('Vous avez déjà un plan de votre diététicien(ne) ? Collez-le : il devient votre plan de repas, avec liste de courses.')}</p>
+      <textarea id="import-nutrition" rows="5" placeholder="${L('Ex. Petit-déjeuner : 2 œufs, pain complet… Déjeuner : poulet 150 g, riz 120 g, légumes…')}"></textarea>
+      <button class="btn btn-primary btn-wide" data-import-plan="nutrition">${L('Importer mon plan')}</button>
+    </section>`;
+}
+
+function trainingLibrary() {
+  const list = Object.keys(EXERCISES).filter((id) => exGroup(id) === libGroup);
+  return `
+    <div class="chip-row">${EX_GROUPS.map((g) => `<button class="mini-choice ${libGroup === g ? 'selected' : ''}" data-lib-group="${esc(g)}">${L(g)}</button>`).join('')}</div>
+    <div class="guide-list">${list.map((id) => `<button class="guide-card" data-exercise="${esc(id)}"><span class="guide-check">${icon('dumbbell')}</span><span><b>${esc(L(EXERCISES[id].name))}</b><small>${esc(L(EXERCISES[id].muscle))}${EXERCISES[id].home ? ` · ${L('Maison')}` : ''}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>`;
+}
+
+function exerciseSheet(id) {
+  const ex = EXERCISES[id];
+  const used = allPrograms().filter((p) => p.sessions.some((s) => s.ex.some((e) => e[0] === id)));
+  return `<div class="sheet-head"><div><span class="tag">${esc(L(exGroup(id)))}</span><h2>${esc(L(ex.name))}</h2><div class="fine">${esc(L(ex.muscle))}</div></div><button class="icon-btn" data-close>×</button></div>
+    <ul class="guide-points">${(ex.cues || []).map((c) => `<li>${esc(L(c))}</li>`).join('')}</ul>
+    ${lastLoad(id) ? `<div class="warn success">${L('Dernière charge : {n} kg', { n: lastLoad(id) })}</div>` : ''}
+    ${used.length ? `<div class="section-label"><h3>${L('Dans les programmes')}</h3></div><div class="chip-row">${used.slice(0, 6).map((p) => `<span class="pill">${esc(L(p.name))}</span>`).join('')}</div>` : ''}
+    <button class="btn btn-primary btn-wide" data-close>${L('J’ai compris')}</button>`;
+}
+
+function sessionSheet(sessionId, programId) {
+  const program = findProgram(programId) || currentProgram();
   const session = program.sessions.find((x) => x.id === sessionId) || program.sessions[0];
-  return `<div class="sheet-head"><div><span class="tag">${esc(L(program.name).toUpperCase())}</span><h2>${esc(L(session.name))}</h2><div class="fine">${esc(L(session.focus))}</div></div><button class="icon-btn" data-close>×</button></div>
-    <div class="session-list">${session.ex.map(([id, sets, reps, rest], index) => {
-      const ex = EXERCISES[id];
+  const exs = sessionExercises(program, session);
+  return `<div class="sheet-head"><div><span class="tag">${esc(L(program.name))}</span><h2>${esc(L(session.name))}</h2><div class="fine">${esc(L(session.focus))}</div></div><button class="icon-btn" data-close>×</button></div>
+    <div class="session-list">${exs.map(([id, sets, reps, rest], index) => {
+      const ex = EXERCISES[id] || { name: exName(id), muscle: '', cues: [] };
+      const restLabel = rest ? L('repos {t}', { t: rest >= 60 ? (rest % 60 ? `${Math.floor(rest / 60)} min ${String(rest % 60).padStart(2, '0')}` : `${rest / 60} min`) : `${rest} s` }) : '';
       return `<details class="ex-card">
-        <summary><span class="ex-num">${index + 1}</span><span class="ex-main"><b>${esc(L(ex.name))}</b><small>${sets} × ${esc(L(reps))} · ${L('repos {t}', { t: rest >= 60 ? `${fmt(Math.round(rest / 60 * 10) / 10, rest % 60 ? 1 : 0)} min` : `${rest} s` })} · ${esc(L(ex.muscle))}</small></span></summary>
-        <ul class="guide-points">${ex.cues.map((c) => `<li>${esc(L(c))}</li>`).join('')}</ul>
-        <label class="ex-load">${L('Charge utilisée (kg)')} <input type="number" inputmode="decimal" min="0" step="0.5" data-load="${esc(id)}" value="${esc(lastLoad(id))}" placeholder="—"></label>
+        <summary><span class="ex-num">${index + 1}</span><span class="ex-main"><b>${esc(L(ex.name))}</b><small>${sets} × ${esc(L(reps))}${restLabel ? ` · ${restLabel}` : ''}${ex.muscle ? ` · ${esc(L(ex.muscle))}` : ''}</small></span></summary>
+        ${(ex.cues || []).length ? `<ul class="guide-points">${ex.cues.map((c) => `<li>${esc(L(c))}</li>`).join('')}</ul>` : ''}
+        <div class="ex-actions">
+          <label class="ex-load">${L('Charge utilisée (kg)')} <input type="number" inputmode="decimal" min="0" step="0.5" data-load="${esc(id)}" value="${esc(lastLoad(id))}" placeholder="—"></label>
+          ${EXERCISES[id] ? `<button class="link-btn" data-swap-ex="${index}" data-program="${esc(program.id)}" data-session-id="${esc(session.id)}">${L('Remplacer l’exercice')}</button>` : ''}
+        </div>
       </details>`;
     }).join('')}</div>
-    <button class="btn btn-primary btn-wide" data-finish-session="${esc(session.id)}">✓ ${L('Terminer la séance')}</button>`;
+    <button class="btn btn-primary btn-wide" data-finish-session="${esc(session.id)}" data-program="${esc(program.id)}">✓ ${L('Terminer la séance')}</button>`;
+}
+
+function buildCustomProgram(b) {
+  const style = COACH_STYLES.find((c) => c.id === b.style) || COACH_STYLES[0];
+  const days = WEEKDAY_ORDER.filter((d) => b.days.includes(d));
+  const n = Math.max(1, days.length);
+  const perSession = { 30: 4, 45: 5, 60: 6, 75: 7 }[b.duration] || 5;
+  const slots = [];
+  BUILDER_GROUPS.forEach((g) => { for (let i = 0; i < (b.freq[g] || 0); i += 1) slots.push(g); });
+  const daysGroups = Array.from({ length: n }, () => []);
+  slots.sort((a, c) => BUILDER_GROUPS.indexOf(a) - BUILDER_GROUPS.indexOf(c));
+  let cursor = 0;
+  slots.forEach((g) => {
+    for (let tries = 0; tries < n; tries += 1) {
+      const d = (cursor + tries) % n;
+      if (!daysGroups[d].includes(g)) { daysGroups[d].push(g); cursor = d + 1; return; }
+    }
+    daysGroups[cursor % n].push(g); cursor += 1;
+  });
+  const pools = {};
+  const usage = {};
+  const pick = (g) => {
+    pools[g] = pools[g] || Object.keys(EXERCISES).filter((id) => exGroup(id) === g && (b.place !== 'home' || EXERCISES[id].home));
+    const list = pools[g];
+    if (!list.length) return null;
+    usage[g] = (usage[g] || 0) + 1;
+    return list[(usage[g] - 1) % list.length];
+  };
+  const big = ['Jambes', 'Fessiers', 'Pectoraux', 'Dos'];
+  const sessions = daysGroups.map((groups, i) => {
+    const order = groups.length ? groups : ['Abdos & gainage'];
+    const ex = [];
+    let guard = 0;
+    while (ex.length < perSession && guard < 40) {
+      const g = order[guard % order.length];
+      const id = pick(g);
+      if (id && !ex.some((e) => e[0] === id)) {
+        const cardio = g === 'Cardio';
+        const isBig = big.includes(g) && ex.filter((e) => exGroup(e[0]) === g).length === 0;
+        ex.push([id, cardio ? 1 : style.sets + (isBig && style.id !== 'gentle' ? 1 : 0), cardio ? (id === 'brisk-walk' ? '20 min' : '40 s') : style.reps, cardio ? 0 : style.rest]);
+      }
+      guard += 1;
+      if (!big.includes(g) && ex.filter((e) => exGroup(e[0]) === g).length >= 2 && order.length > 1) order.push(order.shift());
+    }
+    return { id: `S${i + 1}`, name: order.slice(0, 2).join(' & '), focus: order.join(' · '), ex };
+  });
+  return {
+    id: `custom-${Date.now()}`, name: 'Mon programme sur mesure', level: 'Sur mesure', place: b.place, days: n, focus: ['custom'], style: style.id, custom: true,
+    desc: `${L('Style {name}', { name: L(style.name) })} · ${b.duration} min`, sessions,
+  };
+}
+
+function parseTrainingText(text) {
+  const lines = String(text || '').split(/\n|;/).map((x) => x.trim()).filter(Boolean);
+  const sessions = [];
+  let cur = null;
+  const dayRe = /^(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miércoles|jueves|viernes|sábado|domingo|segunda|terça|quarta|quinta|sexta|sábado|domingo|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|lunedì|martedì|mercoledì|giovedì|venerdì|sabato|domenica|jour|day|día|dia|tag|giorno|séance|seance|session|treino|training|entreno|allenamento)\b/i;
+  const exRe = /(.+?)\s*[:\-–]?\s*(\d+)\s*[x×*]\s*(\d+(?:\s*[-–]\s*\d+)?)/i;
+  for (const raw of lines) {
+    const parts = raw.split(/,(?![^(]*\))/).map((x) => x.trim()).filter(Boolean);
+    for (const part of parts) {
+      const head = part.split(':')[0];
+      if (dayRe.test(head) && (!exRe.test(part) || part.indexOf(':') > -1)) {
+        cur = { id: `I${sessions.length + 1}`, name: head.trim().slice(0, 40), focus: '', ex: [] };
+        sessions.push(cur);
+        const rest = part.split(':').slice(1).join(':');
+        if (!rest.trim()) continue;
+        const m0 = rest.match(exRe);
+        if (m0) cur.ex.push(matchExercise(m0[1], Number(m0[2]), m0[3]));
+        continue;
+      }
+      const m = part.match(exRe);
+      if (m) {
+        if (!cur) { cur = { id: `I${sessions.length + 1}`, name: 'Séance 1', focus: '', ex: [] }; sessions.push(cur); }
+        cur.ex.push(matchExercise(m[1], Number(m[2]), m[3]));
+      }
+    }
+  }
+  return sessions.filter((s) => s.ex.length);
+}
+
+function matchExercise(name, sets, reps) {
+  const clean = String(name).replace(/^[\s\-•*]+/, '').trim();
+  const lower = foldText(clean);
+  const hit = Object.keys(EXERCISES).find((id) => {
+    const n = foldText(EXERCISES[id].name);
+    const short = n.split(/[(:]/)[0].trim();
+    return lower.includes(short) || short.includes(lower);
+  });
+  if (hit) return [hit, sets, String(reps).replace(/\s/g, ''), 90];
+  const key = `custom-ex-${foldText(clean).replace(/[^a-z0-9]+/g, '-').slice(0, 40)}`;
+  state.customExercises = { ...(state.customExercises || {}), [key]: { name: clean.slice(0, 60) } };
+  return [key, sets, String(reps).replace(/\s/g, ''), 90];
+}
+
+async function importPlan(kind, button) {
+  const text = $(kind === 'training' ? '#import-training' : '#import-nutrition')?.value.trim();
+  if (!text || text.length < 10) return toast('Collez votre programme pour l’importer.');
+  button.disabled = true;
+  const label = button.textContent;
+  button.textContent = L('Analyse en cours…');
+  try {
+    let result = null;
+    try {
+      const response = await apiFetch('/api/import-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, text, library: Object.values(EXERCISES).map((e) => e.name), place: builder?.place || state.profile?.trainPlace || 'gym', profile: { dailyKcal: state.profile.dailyKcal, protein: state.profile.protein } }) });
+      if (response.ok) result = await response.json();
+    } catch {}
+    if (kind === 'training') {
+      let sessions = result?.sessions?.length ? result.sessions.map((s, i) => ({ id: `I${i + 1}`, name: String(s.name || `Séance ${i + 1}`).slice(0, 50), focus: String(s.focus || '').slice(0, 80), ex: (s.exercises || []).slice(0, 12).map((e) => matchExercise(e.name || '', Number(e.sets) || 3, e.reps || '10')) })).filter((s) => s.ex.length) : [];
+      if (!sessions.length) sessions = parseTrainingText(text);
+      if (!sessions.length) throw new Error(L('Nous n’avons pas reconnu d’exercices. Écrivez par exemple « Squat 4x10 ».'));
+      const program = { id: `custom-${Date.now()}`, name: result?.name ? String(result.name).slice(0, 60) : 'Mon programme importé', level: 'Sur mesure', place: 'gym', days: sessions.length, focus: ['custom'], style: 'athletic', custom: true, desc: L('Importé depuis votre programme'), sessions };
+      state.customPrograms = [...(state.customPrograms || []), program].slice(-12);
+      state.workoutProgram = program.id;
+      if (!state.trainingWeekdays?.length || state.trainingWeekdays.length !== sessions.length) state.trainingWeekdays = DEFAULT_DAYS[Math.min(7, sessions.length)];
+      saveState();
+      trainTab = 'mine';
+      toast('Programme importé ✓');
+      return render();
+    }
+    if (!result?.days?.length) throw new Error(L('L’import du plan alimentaire nécessite l’assistant. Réessayez dans un instant.'));
+    state.weekPlan = result.days;
+    state.shoppingChecked = {};
+    saveState();
+    toast('Plan alimentaire importé ✓');
+    return nav('program');
+  } catch (error) {
+    toast(error.message || 'Réessayez dans un instant.');
+  } finally {
+    button.disabled = false;
+    button.textContent = label;
+  }
+}
+
+// ---- Ménopause 40+ space ------------------------------------------------------
+const MENO_SYMPTOMS = [
+  ['hot', 'Bouffées de chaleur'], ['night', 'Sueurs nocturnes'], ['sleep', 'Troubles du sommeil'], ['mood', 'Humeur, irritabilité'],
+  ['fatigue', 'Fatigue'], ['cravings', 'Fringales'], ['joints', 'Douleurs articulaires'], ['bloating', 'Ballonnements'],
+];
+const MENO_LEVELS = [[0, 'Aucun'], [1, 'Léger'], [2, 'Moyen'], [3, 'Fort']];
+const MENO_STAGE = { peri: 'Préménopause', post: 'Ménopause', unsure: 'À préciser', no: 'Avant la ménopause' };
+
+const MENO_WEEKS = [
+  ['Comprendre et observer', ['Remplir le journal des symptômes 5 jours', 'Lire « Pourquoi le ventre change »', 'Noter votre poids et votre tour de taille']],
+  ['Des protéines à chaque repas', ['Atteindre votre objectif de protéines 4 jours', 'Ajouter une protéine au petit-déjeuner', 'Lire « Protéines et muscle »']],
+  ['Bouger en force', ['Faire 2 séances force et os', 'Marcher 30 minutes 3 fois', 'Enregistrer vos charges']],
+  ['Sommeil et soirées', ['Prendre un dîner complet 5 soirs', 'Noter votre sommeil 5 jours', 'Lire « Sommeil, bouffées de chaleur et fringales »']],
+  ['Des os solides', ['3 portions de calcium par jour, 4 jours', 'Une séance avec charges ou en charge', 'Lire « Calcium, vitamine D et os solides »']],
+  ['Apaiser les bouffées de chaleur', ['Repérer vos déclencheurs dans le journal', 'Observer l’effet de la caféine tardive et de l’alcool', 'Garder une chambre fraîche la nuit']],
+  ['Humeur et grignotage émotionnel', ['Lire « Humeur, stress et grignotage »', 'Faire 3 pauses respiratoires dans la semaine', 'Prévoir une collation pour l’après-midi']],
+  ['Faire le bilan', ['Comparer votre journal de la semaine 1 et de la semaine 8', 'Préparer vos questions pour votre médecin', 'Choisir vos 3 objectifs pour la suite']],
+];
+
+GUIDE_COLLECTIONS.find((c) => c.id === 'menopause').tier = 'menopause';
+GUIDE_COLLECTIONS.find((c) => c.id === 'menopause').guides.push(
+  {
+    id: 'meno-mood', title: 'Humeur, stress et grignotage', time: '3 min',
+    intro: 'Les variations hormonales peuvent rendre l’humeur plus fragile, et le stress pousse souvent vers le sucré.',
+    points: [
+      'Repérez les moments où vous grignotez sans faim : fatigue, ennui, tension.',
+      'Une pause de 3 respirations lentes avant d’ouvrir le placard aide à choisir plutôt que subir.',
+      'Si la tristesse, l’anxiété ou l’irritabilité durent, parlez-en à votre médecin : un accompagnement existe.',
+    ],
+    action: 'Notez votre humeur dans le journal aujourd’hui et prévoyez une collation pour l’après-midi.',
+  },
+  {
+    id: 'meno-walk', title: 'Le pouvoir de la marche', time: '2 min',
+    intro: 'La marche active est simple, gratuite et utile pour le cœur, l’humeur, le sommeil et les os.',
+    points: [
+      'Visez 30 minutes la plupart des jours, à un rythme où vous pouvez parler mais pas chanter.',
+      'Ajoutez des côtes ou des escaliers pour plus d’effet.',
+      'Associez la marche à 2 séances de renforcement par semaine.',
+    ],
+    action: 'Programmez une marche de 30 minutes dans votre journée.',
+  },
+);
+
+let menoTab = 'today';
+let menoOpenWeek = null;
+
+function menoStage() {
+  return MENO_STAGE[state.profile?.menopause] || MENO_STAGE.unsure;
+}
+function menoWeek() {
+  if (!state.menoStart) return 0;
+  const days = Math.floor((Date.now() - new Date(`${state.menoStart}T00:00:00`).getTime()) / 86400000);
+  return clamp(Math.floor(days / 7), 0, MENO_WEEKS.length - 1);
+}
+function menoAvg(key, fromOffset, toOffset) {
+  const values = [];
+  for (let i = fromOffset; i < toOffset; i += 1) {
+    const v = state.menoLog?.[addDays(-i)]?.[key];
+    if (v !== undefined) values.push(Number(v));
+  }
+  return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+}
+
+function menoInsight() {
+  const lines = [];
+  MENO_SYMPTOMS.forEach(([key, label]) => {
+    const now = menoAvg(key, 0, 7);
+    const before = menoAvg(key, 7, 14);
+    if (now !== null && before !== null && Math.abs(now - before) >= 0.5) {
+      lines.push(L(now < before ? '{s} : en baisse par rapport à la semaine dernière.' : '{s} : en hausse par rapport à la semaine dernière.', { s: L(label) }));
+    }
+  });
+  const days = Object.keys(state.menoLog || {}).length;
+  if (!lines.length) return days < 3 ? L('Remplissez le journal quelques jours : vos tendances apparaîtront ici.') : L('Vos symptômes sont stables cette semaine. Continuez à noter : la tendance compte plus qu’un jour isolé.');
+  return lines.slice(0, 3).join(' ');
+}
+
+function menopauseScreen() {
+  if (state.premium && !state.menoStart) { state.menoStart = todayKey(); saveState(false); }
+  const tabs = [['today', 'Aujourd’hui'], ['program', 'Programme'], ['workouts', 'Séances'], ['lessons', 'Cours']];
+  const week = menoWeek();
+  const done = Object.values(state.menoTasks || {}).flat().filter(Boolean).length;
+  let body = '';
+  if (menoTab === 'today') body = menoToday();
+  else if (menoTab === 'program') body = menoProgram(week);
+  else if (menoTab === 'workouts') body = menoWorkouts();
+  else body = menoLessons();
+  return `<div class="mobile-app meno">
+    ${appHeader('Ménopause 40+')}
+    <div class="screen">
+      <section class="meno-hero">
+        <div><small>${esc(L(menoStage()))}</small><h2>${L('Votre espace Ménopause')}</h2><p>${L('Semaine {n} sur 8 · Actions faites : {d}', { n: week + 1, d: done })}</p></div>
+        <span class="meno-badge">${icon('flower')}</span>
+        <div class="meno-weeks">${MENO_WEEKS.map((_, i) => `<i class="${i < week ? 'past' : i === week ? 'now' : ''}"></i>`).join('')}</div>
+      </section>
+      <div class="segmented seg-4">${tabs.map(([k, label]) => `<button class="${menoTab === k ? 'active' : ''}" data-meno-tab="${k}">${L(label)}</button>`).join('')}</div>
+      ${body}
+      <div class="fine center-fine">${L('Contenus d’information générale. Ils ne remplacent pas l’avis d’un médecin.')}</div>
+    </div>
+    ${bottom('menopause')}
+  </div>`;
+}
+
+function menoToday() {
+  const log = state.menoLog?.[todayKey()] || {};
+  const p = state.profile || {};
+  const bars = (key) => Array.from({ length: 7 }, (_, i) => {
+    const v = state.menoLog?.[addDays(-(6 - i))]?.[key];
+    return `<i style="height:${v === undefined ? 4 : 6 + Number(v) * 10}px" class="${v === undefined ? 'nil' : `l${v}`}"></i>`;
+  }).join('');
+  return `
+    <div class="section-label"><h3>${L('Journal du jour')}</h3><span class="fine">${Object.keys(log).length}/${MENO_SYMPTOMS.length}</span></div>
+    <div class="symptom-list">${MENO_SYMPTOMS.map(([key, label]) => `<div class="symptom-row">
+      <div class="symptom-head"><b>${L(label)}</b><span class="spark">${bars(key)}</span></div>
+      <div class="level-row">${MENO_LEVELS.map(([v, l]) => `<button class="${Number(log[key]) === v && log[key] !== undefined ? 'on l' + v : ''}" data-meno-log="${key}" data-value="${v}">${L(l)}</button>`).join('')}</div>
+    </div>`).join('')}</div>
+    <div class="insight meno-insight"><strong>${L('Vos tendances')}</strong>${esc(menoInsight())}</div>
+    <div class="section-label"><h3>${L('Vos repères du jour')}</h3></div>
+    <div class="meno-targets">
+      <div>${icon('fork')}<b>${L('{n} g de protéines', { n: p.protein || 100 })}</b><small>${L('Une source à chaque repas')}</small></div>
+      <div>${icon('drop')}<b>${L('3 portions de calcium')}</b><small>${L('Laitages ou boissons enrichies, sardines, amandes')}</small></div>
+      <div>${icon('dumbbell')}<b>${L('Bouger 30 minutes')}</b><small>${L('Marche active ou séance force')}</small></div>
+      <div>${icon('sparkle')}<b>${L('{n} g de fibres', { n: p.fiber || 25 })}</b><small>${L('Légumes, fruits, céréales complètes')}</small></div>
+    </div>
+    <div class="section-label"><h3>${L('L’assiette ménopause')}</h3></div>
+    <div class="day-card meno-plate">
+      <div class="plate"><span class="q veg">${L('Légumes')}</span><span class="q prot">${L('Protéines')}</span><span class="q carb">${L('Féculents complets')}</span><span class="q fat">${L('Bonnes graisses')}</span></div>
+      <p class="screen-sub">${L('La moitié de l’assiette en légumes, un quart de protéines, un quart de féculents complets, et une petite part de bonnes graisses (huile d’olive, noix).')}</p>
+      <button class="btn btn-ghost btn-wide" data-go="recipes">${L('Voir les recettes adaptées')}</button>
+    </div>
+    <button class="btn btn-ghost btn-wide" data-export="meno">${L('Exporter mon journal pour mon médecin')}</button>`;
+}
+
+function menoProgram(week) {
+  const tasks = state.menoTasks || {};
+  return `<div class="meno-program">${MENO_WEEKS.map(([theme, list], i) => `
+    <details class="week-card ${i === week ? 'now' : i < week ? 'past' : ''}" ${i === (menoOpenWeek ?? week) ? 'open' : ''}>
+      <summary><span class="wk">${L('Semaine {n}', { n: i + 1 })}</span><b>${L(theme)}</b><small>${(tasks[i] || []).filter(Boolean).length}/${list.length}</small></summary>
+      <div class="task-list">${list.map((task, j) => `<button class="task ${tasks[i]?.[j] ? 'done' : ''}" data-meno-task="${i}" data-task="${j}"><span>${tasks[i]?.[j] ? icon('check') : ''}</span>${L(task)}</button>`).join('')}</div>
+    </details>`).join('')}</div>`;
+}
+
+function menoWorkouts() {
+  const current = currentProgram();
+  return `<p class="screen-sub">${L('Le renforcement musculaire et les exercices en charge aident à préserver les muscles et les os. Choisissez votre formule, 3 séances par semaine.')}</p>
+    ${MENO_PROGRAMS.map((x) => `<article class="program-card ${x.id === current.id ? 'current' : ''}">
+      <div class="pc-top"><span class="pill">${esc(L(x.level))}</span><span class="pill">${L(x.place === 'home' ? 'Maison' : 'Salle')}</span></div>
+      <h3>${esc(L(x.name))}</h3><p>${esc(L(x.desc))}</p>
+      <div class="guide-list">${x.sessions.map((s) => `<button class="guide-card" data-session="${esc(s.id)}" data-program="${esc(x.id)}"><span class="guide-check">${esc(s.id.slice(-1))}</span><span><b>${esc(L(s.name))}</b><small>${esc(L(s.focus))}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>
+      ${x.id === current.id ? `<span class="pc-current">✓ ${L('Programme actuel')}</span>` : `<button class="btn btn-primary btn-wide" data-workout-program="${esc(x.id)}">${L('En faire mon programme')}</button>`}
+    </article>`).join('')}`;
+}
+
+function menoLessons() {
+  const c = GUIDE_COLLECTIONS.find((x) => x.id === 'menopause');
+  const read = new Set(state.guidesRead || []);
+  return `<div class="course-card">
+    <div class="course-head"><div><h3>${esc(L(c.title))}</h3><p>${esc(L(c.sub))}</p></div><span class="course-count">${c.guides.filter((g) => read.has(g.id)).length}/${c.guides.length}</span></div>
+    <div class="guide-list">${c.guides.map((g, index) => {
+      const access = lessonAccess({ ...g, index, tier: c.tier });
+      const locked = access === 'paywall' || access === 'upgrade';
+      return `<button class="guide-card ${read.has(g.id) ? 'read' : ''} ${locked ? 'locked' : ''}" data-guide="${esc(g.id)}"><span class="guide-check">${read.has(g.id) ? icon('check') : locked ? icon('lock') : index + 1}</span><span><b>${esc(L(g.title))}</b><small>${L('{time} de lecture', { time: g.time })}${access === 'free' ? ` · ${L('Leçon gratuite')}` : ''}</small></span><span class="guide-arrow">→</span></button>`;
+    }).join('')}</div>
+  </div>`;
 }
 
 function recipeMiniCard(recipe) {
@@ -2169,7 +3059,7 @@ function settings() {
       <div class="section-label"><h3>${L('Abonnement')}</h3></div>
       ${config.manageSubscriptionUrl ? `<a class="btn btn-ghost btn-wide" href="${esc(config.manageSubscriptionUrl)}" target="_blank" rel="noopener">${L('Gérer mon abonnement')}</a>` : ''}
       <div class="fine center-fine">${L('Formule actuelle : {plan}', { plan: esc(L(({ complete: 'Complet', nutrition: 'Nutrition', training: 'Entraînement' })[planTier()])) })}</div>
-      ${planTier() !== 'complete' ? `<button class="btn btn-lime btn-wide" data-upgrade>${L('Passer à la formule Complète')}</button>` : ''}
+      ${planTier() !== 'complete' ? `<button class="btn btn-lime btn-wide" data-upgrade>${L('Passer au Kit complet')}</button>` : ''}
       <div class="section-label"><h3>${L('Données & appareil')}</h3></div>
       <button class="btn btn-ghost btn-wide" data-export>${L('Exporter mes données (.json)')}</button>
       <button class="btn btn-ghost btn-wide" data-install>${L('Ajouter NutriPilot à l’écran d’accueil')}</button>
@@ -2212,7 +3102,7 @@ function renderModal() {
   if (!modal) return;
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId) : modal.type === 'support' ? supportSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : addSheet()}</div>`;
   document.body.appendChild(wrap);
   bindModal(wrap);
   if (modal.type === 'support') {
@@ -2626,8 +3516,9 @@ function render() {
   else if (route === 'onboarding') html = onboarding();
   else if (route === 'analyzing') html = analyzing();
   else if (route === 'paywall' || route === 'upgrade') html = paywall();
-  else if (route === 'training') html = hasFeature('training') ? trainingScreen() : lockedScreen('training');
-  else if (['program', 'recipes', 'shopping', 'planner'].includes(route) && !hasFeature('nutrition')) html = lockedScreen('nutrition');
+  else if (route === 'training') html = !state.premium || hasFeature('training') ? trainingScreen() : lockedScreen('training');
+  else if (route === 'menopause') html = !state.premium || hasFeature('menopause') ? menopauseScreen() : lockedScreen('menopause');
+  else if (['program', 'recipes', 'shopping', 'planner'].includes(route) && state.premium && !hasFeature('nutrition')) html = lockedScreen('nutrition');
   else if (route === 'shopping') html = shoppingScreen();
   else if (route === 'guides') html = guidesScreen();
   else if (route === 'plan') html = planScreen();
@@ -2641,11 +3532,16 @@ function render() {
   else if (route === 'settings') html = settings();
   else if (route === 'legal') html = legal();
   else html = access();
-  const noFab = ['lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
+  const noFab = state.premium || ['lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
+  if (window.__npLastRoute !== route) {
+    if (window.__npLastRoute) app.firstElementChild?.classList.add('route-in');
+    window.__npLastRoute = route;
+  }
   document.documentElement.lang = lang();
   bind();
   if (route === 'analyzing' && !analyzingTimer) startAnalyzing();
+  if (route === 'app' && state.premium) runCountUps();
   if (route === 'saving' && !savingTimer) startSaving();
 }
 
@@ -2658,6 +3554,8 @@ function bind() {
       track('PaywallFromFeature', { feature: PREMIUM_ACTIONS.find((key) => button.dataset[key] !== undefined) });
       return nav('paywall');
     }
+    if (button.dataset.drawer !== undefined) return openDrawer();
+    if (button.dataset.reminders !== undefined) { modal = { type: 'reminders' }; return renderModal(); }
     if (button.dataset.supportOpen !== undefined) {
       modal = { type: 'support' };
       return renderModal();
@@ -2766,7 +3664,7 @@ function bind() {
       return render();
     }
     if (button.dataset.upgrade !== undefined) {
-      selectedTier = 'complete';
+      selectedTier = button.dataset.upgrade || 'complete';
       return nav('upgrade');
     }
     if (button.dataset.buy !== undefined) {
@@ -2780,11 +3678,79 @@ function bind() {
     if (button.dataset.waitlist !== undefined) return joinWaitlist();
     if (button.dataset.guide) return openLesson(button.dataset.guide);
     if (button.dataset.session) {
-      modal = { type: 'session', sessionId: button.dataset.session };
+      modal = { type: 'session', sessionId: button.dataset.session, programId: button.dataset.program || currentProgram().id };
       return renderModal();
+    }
+    if (button.dataset.trainTab) { trainTab = button.dataset.trainTab; return render(); }
+    if (button.dataset.menoTab) { menoTab = button.dataset.menoTab; return render(); }
+    if (button.dataset.menoLog) {
+      if (!state.premium) { nav('paywall'); return; }
+      const day = todayKey();
+      state.menoLog = state.menoLog || {};
+      state.menoLog[day] = { ...(state.menoLog[day] || {}) };
+      const v = Number(button.dataset.value);
+      if (state.menoLog[day][button.dataset.menoLog] === v) delete state.menoLog[day][button.dataset.menoLog];
+      else state.menoLog[day][button.dataset.menoLog] = v;
+      if (Object.keys(state.menoLog[day]).length === MENO_SYMPTOMS.length) toast('Journal du jour complet ✓');
+      saveState();
+      return render();
+    }
+    if (button.dataset.menoTask !== undefined) {
+      if (!state.premium) { nav('paywall'); return; }
+      const i = Number(button.dataset.menoTask); const j = Number(button.dataset.task); menoOpenWeek = i;
+      state.menoTasks = state.menoTasks || {};
+      const list = [...(state.menoTasks[i] || [])];
+      list[j] = !list[j];
+      state.menoTasks[i] = list;
+      if (list[j]) toast('Action validée ✓');
+      saveState();
+      return render();
+    }
+    if (button.dataset.trainFocus) { trainFocus = button.dataset.trainFocus; return render(); }
+    if (button.dataset.libGroup) { libGroup = button.dataset.libGroup; return render(); }
+    if (button.dataset.exercise) { modal = { type: 'exercise', id: button.dataset.exercise }; return renderModal(); }
+    if (button.dataset.trainDay) {
+      const wd = Number(button.dataset.trainDay);
+      const days = trainingDays();
+      const next = days.includes(wd) ? days.filter((d) => d !== wd) : [...days, wd];
+      if (!next.length) return toast('Gardez au moins un jour d’entraînement.');
+      state.trainingWeekdays = next;
+      saveState();
+      return render();
+    }
+    if (button.dataset.builderStyle) { builder = builder || defaultBuilder(); builder.style = button.dataset.builderStyle; trainTab = 'create'; return render(); }
+    if (button.dataset.bDay) {
+      builder = builder || defaultBuilder();
+      const wd = Number(button.dataset.bDay);
+      builder.days = builder.days.includes(wd) ? builder.days.filter((d) => d !== wd) : [...builder.days, wd];
+      return render();
+    }
+    if (button.dataset.bPlace) { builder.place = button.dataset.bPlace; return render(); }
+    if (button.dataset.bDuration) { builder.duration = Number(button.dataset.bDuration); return render(); }
+    if (button.dataset.bStyle) { builder.style = button.dataset.bStyle; return render(); }
+    if (button.dataset.bFreq) { const g = button.dataset.bFreq; builder.freq[g] = clamp((builder.freq[g] || 0) + Number(button.dataset.delta), 0, 3); return render(); }
+    if (button.dataset.buildProgram !== undefined) {
+      if (!builder.days.length) return toast('Choisissez au moins un jour.');
+      if (!Object.values(builder.freq).some((n) => n > 0)) return toast('Choisissez au moins une zone à travailler.');
+      const program = buildCustomProgram(builder);
+      state.customPrograms = [...(state.customPrograms || []), program].slice(-12);
+      state.workoutProgram = program.id;
+      state.trainingWeekdays = builder.days.slice();
+      saveState();
+      trainTab = 'mine';
+      track('ProgramBuilt', { style: builder.style, days: builder.days.length });
+      toast('Votre programme est prêt ✓');
+      return render();
+    }
+    if (button.dataset.importPlan) {
+      if (!state.premium) return nav('paywall');
+      return importPlan(button.dataset.importPlan, button);
     }
     if (button.dataset.workoutProgram) {
       state.workoutProgram = button.dataset.workoutProgram;
+      const chosen = findProgram(state.workoutProgram);
+      if (chosen && trainingDays().length !== (chosen.days || chosen.sessions.length)) state.trainingWeekdays = DEFAULT_DAYS[chosen.days || chosen.sessions.length] || state.trainingWeekdays;
+      trainTab = 'mine';
       saveState();
       return render();
     }
@@ -2809,6 +3775,7 @@ function bind() {
     if (button.dataset.water) {
       const key = todayKey();
       state.water[key] = clamp(Number(state.water[key] || 0) + Number(button.dataset.water), 0, 6000);
+      if (Number(button.dataset.water) > 0 && state.water[key] >= waterGoal() && state.water[key] - Number(button.dataset.water) < waterGoal()) toast('Objectif d’hydratation atteint 💧');
       saveState();
       return render();
     }
@@ -2953,6 +3920,19 @@ function bind() {
       location.hash = 'access';
       return render();
     }
+    if (button.dataset.export === 'meno') {
+      const keys = Object.keys(state.menoLog || {}).sort();
+      const rows = [[L('Date'), ...MENO_SYMPTOMS.map(([, label]) => L(label))].join(';')];
+      keys.forEach((k) => rows.push([k, ...MENO_SYMPTOMS.map(([key]) => state.menoLog[k]?.[key] ?? '')].join(';')));
+      rows.push('', L('Échelle : 0 = aucun, 1 = léger, 2 = moyen, 3 = fort'));
+      const blob = new Blob(['\ufeff' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const anchor = document.createElement('a');
+      anchor.href = URL.createObjectURL(blob);
+      anchor.download = 'journal-menopause.csv';
+      anchor.click();
+      URL.revokeObjectURL(anchor.href);
+      return;
+    }
     if (button.dataset.export !== undefined) {
       const blob = new Blob([JSON.stringify(syncSafeState(), null, 2)], { type: 'application/json' });
       const anchor = document.createElement('a');
@@ -3003,8 +3983,28 @@ function bindModal(root) {
       return;
     }
     if (button.dataset.guide) { root.remove(); return openLesson(button.dataset.guide); }
+    if (button.dataset.saveReminders !== undefined) { await saveReminders(root); modal = null; root.remove(); return render(); }
     if (button.dataset.supportSend !== undefined) return sendSupport($('#support-input', root)?.value);
     if (button.dataset.supportQuick) return sendSupport(button.dataset.supportQuick);
+    if (button.dataset.swapEx !== undefined) {
+      if (!state.premium) { modal = null; root.remove(); return nav('paywall'); }
+      const program = findProgram(button.dataset.program);
+      const session = program?.sessions.find((x) => x.id === button.dataset.sessionId);
+      if (!program || !session) return;
+      const idx = Number(button.dataset.swapEx);
+      const currentId = sessionExercises(program, session)[idx][0];
+      const options = alternativesFor(currentId, program.place);
+      if (!options.length) return toast('Pas d’alternative pour cet exercice.');
+      const originalId = session.ex[idx][0];
+      const cycle = [originalId, ...alternativesFor(originalId, program.place)];
+      const next = cycle[(cycle.indexOf(currentId) + 1) % cycle.length];
+      state.exerciseSwaps = state.exerciseSwaps || {};
+      state.exerciseSwaps[program.id] = state.exerciseSwaps[program.id] || {};
+      state.exerciseSwaps[program.id][session.id] = { ...(state.exerciseSwaps[program.id][session.id] || {}), [idx]: next === originalId ? undefined : next };
+      saveState();
+      toast(L('Remplacé par : {name}', { name: L(exName(next)) }));
+      return renderModal();
+    }
     if (button.dataset.finishSession && !state.premium) {
       modal = null;
       root.remove();
@@ -3013,9 +4013,10 @@ function bindModal(root) {
     if (button.dataset.finishSession) {
       const loads = {};
       $$('[data-load]', root).forEach((input) => { if (input.value) loads[input.dataset.load] = Number(input.value); });
-      state.workoutLog = [...(state.workoutLog || []), { at: new Date().toISOString(), day: todayKey(), programId: currentProgram().id, sessionId: button.dataset.finishSession, loads }].slice(-300);
+      const programId = button.dataset.program || currentProgram().id;
+      state.workoutLog = [...(state.workoutLog || []), { at: new Date().toISOString(), day: todayKey(), programId, sessionId: button.dataset.finishSession, loads }].slice(-300);
       saveState();
-      track('WorkoutDone', { program: currentProgram().id });
+      track('WorkoutDone', { program: programId });
       modal = null;
       root.remove();
       toast('Séance enregistrée. Bravo ! 💪');

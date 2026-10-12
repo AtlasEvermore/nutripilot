@@ -7398,5 +7398,2693 @@ export const DICT = {
 "pt": "Nutrição: scanner, plano alimentar, receitas, lista de compras, curso de nutrição e coach. Treino: programas na academia e em casa com registro de cargas e curso de musculação. Kit completo: todo o NutriPilot, Academia incluída, pelo melhor preço.",
 "de": "Ernährung: Scanner, Ernährungsplan, Rezepte, Einkaufsliste, Ernährungskurs und Coach. Training: Programme fürs Gym und Zuhause mit Gewichtsprotokoll und Krafttraining-Kurs. Komplett-Paket: ganz NutriPilot inklusive Akademie zum besten Preis.",
 "it": "Nutrizione: scanner, piano pasti, ricette, lista della spesa, corso di nutrizione e coach. Allenamento: programmi in palestra e a casa con registro dei carichi e corso di muscolazione. Kit completo: tutto NutriPilot, Accademia inclusa, al miglior prezzo."
+},
+"Ménopause": {
+"en": "Menopause",
+"es": "Menopausia",
+"pt": "Menopausa",
+"de": "Wechseljahre",
+"it": "Menopausa"
+},
+"Noter mes symptômes": {
+"en": "Log my symptoms",
+"es": "Anotar mis síntomas",
+"pt": "Anotar meus sintomas",
+"de": "Symptome eintragen",
+"it": "Annota i miei sintomi"
+},
+"Menu": {
+"en": "Menu",
+"es": "Menú",
+"pt": "Menu",
+"de": "Menü",
+"it": "Menu"
+},
+"{n} kcal restantes": {
+"en": "{n} kcal left",
+"es": "Quedan {n} kcal",
+"pt": "Restam {n} kcal",
+"de": "Noch {n} kcal",
+"it": "{n} kcal rimanenti"
+},
+"kcal restantes": {
+"en": "kcal left",
+"es": "kcal restantes",
+"pt": "kcal restantes",
+"de": "kcal übrig",
+"it": "kcal rimanenti"
+},
+"Mangé": {
+"en": "Eaten",
+"es": "Consumido",
+"pt": "Consumido",
+"de": "Gegessen",
+"it": "Mangiato"
+},
+"Scanner mon repas": {
+"en": "Scan my meal",
+"es": "Escanear mi comida",
+"pt": "Escanear minha refeição",
+"de": "Mahlzeit scannen",
+"it": "Scansiona il mio pasto"
+},
+"sur {n} ml": {
+"en": "of {n} ml",
+"es": "de {n} ml",
+"pt": "de {n} ml",
+"de": "von {n} ml",
+"it": "su {n} ml"
+},
+"Activer les rappels": {
+"en": "Turn on reminders",
+"es": "Activar recordatorios",
+"pt": "Ativar lembretes",
+"de": "Erinnerungen aktivieren",
+"it": "Attiva i promemoria"
+},
+"Faible": {
+"en": "Low",
+"es": "Baja",
+"pt": "Baixa",
+"de": "Gering",
+"it": "Bassa"
+},
+"Normale": {
+"en": "Normal",
+"es": "Normal",
+"pt": "Normal",
+"de": "Normal",
+"it": "Normale"
+},
+"Forte": {
+"en": "Strong",
+"es": "Fuerte",
+"pt": "Forte",
+"de": "Stark",
+"it": "Forte"
+},
+"OK": {
+"en": "OK",
+"es": "OK",
+"pt": "OK",
+"de": "OK",
+"it": "OK"
+},
+"Sommeil": {
+"en": "Sleep",
+"es": "Sueño",
+"pt": "Sono",
+"de": "Schlaf",
+"it": "Sonno"
+},
+"Mauvais": {
+"en": "Poor",
+"es": "Malo",
+"pt": "Ruim",
+"de": "Schlecht",
+"it": "Scarso"
+},
+"Correct": {
+"en": "Fair",
+"es": "Regular",
+"pt": "Razoável",
+"de": "Mittel",
+"it": "Discreto"
+},
+"Bon": {
+"en": "Good",
+"es": "Bueno",
+"pt": "Bom",
+"de": "Gut",
+"it": "Buono"
+},
+"Fermer": {
+"en": "Close",
+"es": "Cerrar",
+"pt": "Fechar",
+"de": "Schließen",
+"it": "Chiudi"
+},
+"jours de suite": {
+"en": "day streak",
+"es": "días seguidos",
+"pt": "dias seguidos",
+"de": "Tage in Folge",
+"it": "giorni di fila"
+},
+"Mon programme": {
+"en": "My program",
+"es": "Mi programa",
+"pt": "Meu programa",
+"de": "Mein Programm",
+"it": "Il mio programma"
+},
+"Ménopause 40+": {
+"en": "Menopause 40+",
+"es": "Menopausia 40+",
+"pt": "Menopausa 40+",
+"de": "Wechseljahre 40+",
+"it": "Menopausa 40+"
+},
+"Outils": {
+"en": "Tools",
+"es": "Herramientas",
+"pt": "Ferramentas",
+"de": "Werkzeuge",
+"it": "Strumenti"
+},
+"Scanner un repas": {
+"en": "Scan a meal",
+"es": "Escanear una comida",
+"pt": "Escanear uma refeição",
+"de": "Mahlzeit scannen",
+"it": "Scansiona un pasto"
+},
+"Rappels": {
+"en": "Reminders",
+"es": "Recordatorios",
+"pt": "Lembretes",
+"de": "Erinnerungen",
+"it": "Promemoria"
+},
+"Aide": {
+"en": "Help",
+"es": "Ayuda",
+"pt": "Ajuda",
+"de": "Hilfe",
+"it": "Aiuto"
+},
+"Langue": {
+"en": "Language",
+"es": "Idioma",
+"pt": "Idioma",
+"de": "Sprache",
+"it": "Lingua"
+},
+"Restez sur la bonne voie": {
+"en": "Stay on track",
+"es": "Mantén el rumbo",
+"pt": "Mantenha o ritmo",
+"de": "Bleib am Ball",
+"it": "Resta sulla buona strada"
+},
+"Boire de l’eau": {
+"en": "Drink water",
+"es": "Beber agua",
+"pt": "Beber água",
+"de": "Wasser trinken",
+"it": "Bere acqua"
+},
+"Un rappel régulier pendant la journée": {
+"en": "A regular reminder throughout the day",
+"es": "Un recordatorio regular durante el día",
+"pt": "Um lembrete regular ao longo do dia",
+"de": "Eine regelmäßige Erinnerung über den Tag",
+"it": "Un promemoria regolare durante la giornata"
+},
+"Toutes les": {
+"en": "Every",
+"es": "Cada",
+"pt": "A cada",
+"de": "Alle",
+"it": "Ogni"
+},
+"De": {
+"en": "From",
+"es": "De",
+"pt": "Das",
+"de": "Von",
+"it": "Dalle"
+},
+"Petit-déjeuner, déjeuner et dîner": {
+"en": "Breakfast, lunch and dinner",
+"es": "Desayuno, comida y cena",
+"pt": "Café da manhã, almoço e jantar",
+"de": "Frühstück, Mittag- und Abendessen",
+"it": "Colazione, pranzo e cena"
+},
+"Les jours d’entraînement de votre agenda": {
+"en": "On the training days in your schedule",
+"es": "Los días de entrenamiento de tu agenda",
+"pt": "Nos dias de treino da sua agenda",
+"de": "An den Trainingstagen deines Plans",
+"it": "Nei giorni di allenamento della tua agenda"
+},
+"Heure": {
+"en": "Time",
+"es": "Hora",
+"pt": "Horário",
+"de": "Uhrzeit",
+"it": "Ora"
+},
+"Pesée de la semaine": {
+"en": "Weekly weigh-in",
+"es": "Pesaje semanal",
+"pt": "Pesagem da semana",
+"de": "Wöchentliches Wiegen",
+"it": "Pesata settimanale"
+},
+"Pour suivre la tendance": {
+"en": "To follow the trend",
+"es": "Para seguir la tendencia",
+"pt": "Para acompanhar a tendência",
+"de": "Um den Trend zu verfolgen",
+"it": "Per seguire l’andamento"
+},
+"Les notifications sont bloquées dans les réglages de votre appareil. Autorisez-les pour recevoir les rappels.": {
+"en": "Notifications are blocked in your device settings. Allow them to receive reminders.",
+"es": "Las notificaciones están bloqueadas en los ajustes de tu dispositivo. Permítelas para recibir los recordatorios.",
+"pt": "As notificações estão bloqueadas nas configurações do seu aparelho. Permita-as para receber os lembretes.",
+"de": "Benachrichtigungen sind in den Geräteeinstellungen blockiert. Erlaube sie, um Erinnerungen zu erhalten.",
+"it": "Le notifiche sono bloccate nelle impostazioni del dispositivo. Consentile per ricevere i promemoria."
+},
+"Dans l’application iPhone et Android, les rappels arrivent même application fermée. Sur le web, ils s’affichent quand NutriPilot est ouvert ou installé sur l’écran d’accueil.": {
+"en": "In the iPhone and Android app, reminders arrive even when the app is closed. On the web, they appear while NutriPilot is open or installed on your home screen.",
+"es": "En la app de iPhone y Android, los recordatorios llegan incluso con la app cerrada. En la web, aparecen cuando NutriPilot está abierto o instalado en la pantalla de inicio.",
+"pt": "No app para iPhone e Android, os lembretes chegam mesmo com o app fechado. Na web, eles aparecem quando o NutriPilot está aberto ou instalado na tela inicial.",
+"de": "In der iPhone- und Android-App kommen Erinnerungen auch bei geschlossener App. Im Web erscheinen sie, wenn NutriPilot geöffnet oder auf dem Startbildschirm installiert ist.",
+"it": "Nell’app per iPhone e Android i promemoria arrivano anche ad app chiusa. Sul web compaiono quando NutriPilot è aperto o installato nella schermata Home."
+},
+"Enregistrer mes rappels": {
+"en": "Save my reminders",
+"es": "Guardar mis recordatorios",
+"pt": "Salvar meus lembretes",
+"de": "Erinnerungen speichern",
+"it": "Salva i miei promemoria"
+},
+"Journal du jour": {
+"en": "Today’s log",
+"es": "Diario de hoy",
+"pt": "Diário de hoje",
+"de": "Heutiges Tagebuch",
+"it": "Diario di oggi"
+},
+"Bouffées de chaleur": {
+"en": "Hot flushes",
+"es": "Sofocos",
+"pt": "Ondas de calor",
+"de": "Hitzewallungen",
+"it": "Vampate di calore"
+},
+"Aucun": {
+"en": "None",
+"es": "Nada",
+"pt": "Nenhum",
+"de": "Keine",
+"it": "Nessuno"
+},
+"Fort": {
+"en": "Strong",
+"es": "Fuerte",
+"pt": "Forte",
+"de": "Stark",
+"it": "Forte"
+},
+"Sueurs nocturnes": {
+"en": "Night sweats",
+"es": "Sudores nocturnos",
+"pt": "Suores noturnos",
+"de": "Nachtschweiß",
+"it": "Sudorazioni notturne"
+},
+"Troubles du sommeil": {
+"en": "Sleep problems",
+"es": "Problemas de sueño",
+"pt": "Problemas de sono",
+"de": "Schlafprobleme",
+"it": "Disturbi del sonno"
+},
+"Humeur, irritabilité": {
+"en": "Mood, irritability",
+"es": "Ánimo, irritabilidad",
+"pt": "Humor, irritabilidade",
+"de": "Stimmung, Reizbarkeit",
+"it": "Umore, irritabilità"
+},
+"Fatigue": {
+"en": "Fatigue",
+"es": "Cansancio",
+"pt": "Cansaço",
+"de": "Müdigkeit",
+"it": "Stanchezza"
+},
+"Fringales": {
+"en": "Cravings",
+"es": "Antojos",
+"pt": "Vontade de comer",
+"de": "Heißhunger",
+"it": "Voglie"
+},
+"Douleurs articulaires": {
+"en": "Joint pain",
+"es": "Dolor articular",
+"pt": "Dores nas articulações",
+"de": "Gelenkschmerzen",
+"it": "Dolori articolari"
+},
+"Ballonnements": {
+"en": "Bloating",
+"es": "Hinchazón",
+"pt": "Inchaço",
+"de": "Blähungen",
+"it": "Gonfiore"
+},
+"Vos tendances": {
+"en": "Your trends",
+"es": "Tus tendencias",
+"pt": "Suas tendências",
+"de": "Deine Trends",
+"it": "Le tue tendenze"
+},
+"{s} : en baisse par rapport à la semaine dernière.": {
+"en": "{s}: down compared with last week.",
+"es": "{s}: a la baja respecto a la semana pasada.",
+"pt": "{s}: em queda em relação à semana passada.",
+"de": "{s}: weniger als letzte Woche.",
+"it": "{s}: in calo rispetto alla settimana scorsa."
+},
+"Vos repères du jour": {
+"en": "Your daily targets",
+"es": "Tus referencias del día",
+"pt": "Suas metas do dia",
+"de": "Deine Tagesziele",
+"it": "I tuoi riferimenti del giorno"
+},
+"{n} g de protéines": {
+"en": "{n} g of protein",
+"es": "{n} g de proteína",
+"pt": "{n} g de proteína",
+"de": "{n} g Eiweiß",
+"it": "{n} g di proteine"
+},
+"Une source à chaque repas": {
+"en": "A source at every meal",
+"es": "Una fuente en cada comida",
+"pt": "Uma fonte em cada refeição",
+"de": "Eine Quelle zu jeder Mahlzeit",
+"it": "Una fonte a ogni pasto"
+},
+"3 portions de calcium": {
+"en": "3 servings of calcium",
+"es": "3 raciones de calcio",
+"pt": "3 porções de cálcio",
+"de": "3 Portionen Kalzium",
+"it": "3 porzioni di calcio"
+},
+"Laitages ou boissons enrichies, sardines, amandes": {
+"en": "Dairy or fortified drinks, sardines, almonds",
+"es": "Lácteos o bebidas enriquecidas, sardinas, almendras",
+"pt": "Laticínios ou bebidas enriquecidas, sardinha, amêndoas",
+"de": "Milchprodukte oder angereicherte Drinks, Sardinen, Mandeln",
+"it": "Latticini o bevande arricchite, sardine, mandorle"
+},
+"Bouger 30 minutes": {
+"en": "Move for 30 minutes",
+"es": "Moverse 30 minutos",
+"pt": "Mexer-se 30 minutos",
+"de": "30 Minuten Bewegung",
+"it": "Muoversi 30 minuti"
+},
+"Marche active ou séance force": {
+"en": "Brisk walk or strength session",
+"es": "Caminata activa o sesión de fuerza",
+"pt": "Caminhada ativa ou treino de força",
+"de": "Zügiges Gehen oder Krafteinheit",
+"it": "Camminata veloce o seduta di forza"
+},
+"{n} g de fibres": {
+"en": "{n} g of fibre",
+"es": "{n} g de fibra",
+"pt": "{n} g de fibras",
+"de": "{n} g Ballaststoffe",
+"it": "{n} g di fibre"
+},
+"Légumes, fruits, céréales complètes": {
+"en": "Vegetables, fruit, whole grains",
+"es": "Verduras, fruta, cereales integrales",
+"pt": "Legumes, frutas, grãos integrais",
+"de": "Gemüse, Obst, Vollkorn",
+"it": "Verdure, frutta, cereali integrali"
+},
+"L’assiette ménopause": {
+"en": "The menopause plate",
+"es": "El plato menopausia",
+"pt": "O prato da menopausa",
+"de": "Der Wechseljahre-Teller",
+"it": "Il piatto menopausa"
+},
+"Féculents complets": {
+"en": "Whole-grain starches",
+"es": "Féculas integrales",
+"pt": "Carboidratos integrais",
+"de": "Vollkorn-Beilagen",
+"it": "Amidi integrali"
+},
+"Bonnes graisses": {
+"en": "Healthy fats",
+"es": "Grasas saludables",
+"pt": "Gorduras boas",
+"de": "Gesunde Fette",
+"it": "Grassi buoni"
+},
+"La moitié de l’assiette en légumes, un quart de protéines, un quart de féculents complets, et une petite part de bonnes graisses (huile d’olive, noix).": {
+"en": "Half the plate vegetables, a quarter protein, a quarter whole-grain starches, and a small portion of healthy fats (olive oil, nuts).",
+"es": "La mitad del plato verduras, un cuarto de proteína, un cuarto de féculas integrales y una pequeña parte de grasas saludables (aceite de oliva, nueces).",
+"pt": "Metade do prato com legumes, um quarto de proteína, um quarto de carboidratos integrais e uma pequena parte de gorduras boas (azeite, castanhas).",
+"de": "Halber Teller Gemüse, ein Viertel Eiweiß, ein Viertel Vollkorn-Beilagen und ein kleiner Anteil gesunder Fette (Olivenöl, Nüsse).",
+"it": "Metà piatto di verdure, un quarto di proteine, un quarto di amidi integrali e una piccola parte di grassi buoni (olio d’oliva, noci)."
+},
+"Voir les recettes adaptées": {
+"en": "See suitable recipes",
+"es": "Ver recetas adaptadas",
+"pt": "Ver receitas adaptadas",
+"de": "Passende Rezepte ansehen",
+"it": "Vedi le ricette adatte"
+},
+"Exporter mon journal pour mon médecin": {
+"en": "Export my log for my doctor",
+"es": "Exportar mi diario para mi médico",
+"pt": "Exportar meu diário para meu médico",
+"de": "Tagebuch für meine Ärztin/meinen Arzt exportieren",
+"it": "Esporta il diario per il mio medico"
+},
+"Préménopause": {
+"en": "Perimenopause",
+"es": "Perimenopausia",
+"pt": "Perimenopausa",
+"de": "Perimenopause",
+"it": "Perimenopausa"
+},
+"Votre espace Ménopause": {
+"en": "Your Menopause space",
+"es": "Tu espacio Menopausia",
+"pt": "Seu espaço Menopausa",
+"de": "Dein Wechseljahre-Bereich",
+"it": "Il tuo spazio Menopausa"
+},
+"Semaine {n} sur 8 · Actions faites : {d}": {
+"en": "Week {n} of 8 · Actions done: {d}",
+"es": "Semana {n} de 8 · Acciones hechas: {d}",
+"pt": "Semana {n} de 8 · Ações feitas: {d}",
+"de": "Woche {n} von 8 · Erledigt: {d}",
+"it": "Settimana {n} di 8 · Azioni fatte: {d}"
+},
+"Programme": {
+"en": "Program",
+"es": "Programa",
+"pt": "Programa",
+"de": "Programm",
+"it": "Programma"
+},
+"Séances": {
+"en": "Workouts",
+"es": "Sesiones",
+"pt": "Treinos",
+"de": "Einheiten",
+"it": "Sedute"
+},
+"Semaine {n}": {
+"en": "Week {n}",
+"es": "Semana {n}",
+"pt": "Semana {n}",
+"de": "Woche {n}",
+"it": "Settimana {n}"
+},
+"Comprendre et observer": {
+"en": "Understand and observe",
+"es": "Entender y observar",
+"pt": "Entender e observar",
+"de": "Verstehen und beobachten",
+"it": "Capire e osservare"
+},
+"Remplir le journal des symptômes 5 jours": {
+"en": "Fill in the symptom log 5 days",
+"es": "Rellenar el diario de síntomas 5 días",
+"pt": "Preencher o diário de sintomas 5 dias",
+"de": "Symptomtagebuch an 5 Tagen ausfüllen",
+"it": "Compilare il diario dei sintomi per 5 giorni"
+},
+"Lire « Pourquoi le ventre change »": {
+"en": "Read “Why your belly changes”",
+"es": "Leer «Por qué cambia el vientre»",
+"pt": "Ler “Por que a barriga muda”",
+"de": "„Warum sich der Bauch verändert“ lesen",
+"it": "Leggere «Perché la pancia cambia»"
+},
+"Noter votre poids et votre tour de taille": {
+"en": "Record your weight and waist size",
+"es": "Anotar tu peso y tu cintura",
+"pt": "Anotar seu peso e sua cintura",
+"de": "Gewicht und Taillenumfang notieren",
+"it": "Annotare peso e girovita"
+},
+"Des protéines à chaque repas": {
+"en": "Protein at every meal",
+"es": "Proteína en cada comida",
+"pt": "Proteína em cada refeição",
+"de": "Eiweiß zu jeder Mahlzeit",
+"it": "Proteine a ogni pasto"
+},
+"Atteindre votre objectif de protéines 4 jours": {
+"en": "Hit your protein target 4 days",
+"es": "Alcanzar tu objetivo de proteína 4 días",
+"pt": "Atingir sua meta de proteína 4 dias",
+"de": "Eiweißziel an 4 Tagen erreichen",
+"it": "Raggiungere l’obiettivo di proteine per 4 giorni"
+},
+"Ajouter une protéine au petit-déjeuner": {
+"en": "Add protein to breakfast",
+"es": "Añadir proteína al desayuno",
+"pt": "Adicionar proteína ao café da manhã",
+"de": "Eiweiß zum Frühstück ergänzen",
+"it": "Aggiungere proteine a colazione"
+},
+"Lire « Protéines et muscle »": {
+"en": "Read “Protein and muscle”",
+"es": "Leer «Proteína y músculo»",
+"pt": "Ler “Proteína e músculo”",
+"de": "„Eiweiß und Muskeln“ lesen",
+"it": "Leggere «Proteine e muscoli»"
+},
+"Bouger en force": {
+"en": "Get strong",
+"es": "Moverse con fuerza",
+"pt": "Ganhar força",
+"de": "Kraft aufbauen",
+"it": "Muoversi con forza"
+},
+"Faire 2 séances force et os": {
+"en": "Do 2 strength & bone sessions",
+"es": "Hacer 2 sesiones de fuerza y huesos",
+"pt": "Fazer 2 treinos de força e ossos",
+"de": "2 Einheiten Kraft & Knochen absolvieren",
+"it": "Fare 2 sedute forza e ossa"
+},
+"Marcher 30 minutes 3 fois": {
+"en": "Walk 30 minutes 3 times",
+"es": "Caminar 30 minutos 3 veces",
+"pt": "Caminhar 30 minutos 3 vezes",
+"de": "3-mal 30 Minuten gehen",
+"it": "Camminare 30 minuti 3 volte"
+},
+"Enregistrer vos charges": {
+"en": "Log your weights",
+"es": "Registrar tus cargas",
+"pt": "Registrar suas cargas",
+"de": "Gewichte notieren",
+"it": "Registrare i carichi"
+},
+"Sommeil et soirées": {
+"en": "Sleep and evenings",
+"es": "Sueño y noches",
+"pt": "Sono e noites",
+"de": "Schlaf und Abende",
+"it": "Sonno e serate"
+},
+"Prendre un dîner complet 5 soirs": {
+"en": "Have a balanced dinner 5 evenings",
+"es": "Cenar completo 5 noches",
+"pt": "Jantar completo 5 noites",
+"de": "An 5 Abenden ausgewogen essen",
+"it": "Cena completa per 5 sere"
+},
+"Noter votre sommeil 5 jours": {
+"en": "Rate your sleep 5 days",
+"es": "Anotar tu sueño 5 días",
+"pt": "Anotar seu sono 5 dias",
+"de": "Schlaf an 5 Tagen notieren",
+"it": "Annotare il sonno per 5 giorni"
+},
+"Lire « Sommeil, bouffées de chaleur et fringales »": {
+"en": "Read “Sleep, hot flushes and cravings”",
+"es": "Leer «Sueño, sofocos y antojos»",
+"pt": "Ler “Sono, ondas de calor e vontade de comer”",
+"de": "„Schlaf, Hitzewallungen und Heißhunger“ lesen",
+"it": "Leggere «Sonno, vampate e voglie»"
+},
+"Des os solides": {
+"en": "Strong bones",
+"es": "Huesos fuertes",
+"pt": "Ossos fortes",
+"de": "Starke Knochen",
+"it": "Ossa forti"
+},
+"3 portions de calcium par jour, 4 jours": {
+"en": "3 servings of calcium a day, 4 days",
+"es": "3 raciones de calcio al día, 4 días",
+"pt": "3 porções de cálcio por dia, 4 dias",
+"de": "3 Portionen Kalzium pro Tag, 4 Tage",
+"it": "3 porzioni di calcio al giorno, 4 giorni"
+},
+"Une séance avec charges ou en charge": {
+"en": "One session with weights or weight-bearing",
+"es": "Una sesión con cargas o de impacto",
+"pt": "Um treino com cargas ou de impacto",
+"de": "Eine Einheit mit Gewichten oder Belastung",
+"it": "Una seduta con carichi o sotto carico"
+},
+"Lire « Calcium, vitamine D et os solides »": {
+"en": "Read “Calcium, vitamin D and strong bones”",
+"es": "Leer «Calcio, vitamina D y huesos fuertes»",
+"pt": "Ler “Cálcio, vitamina D e ossos fortes”",
+"de": "„Kalzium, Vitamin D und starke Knochen“ lesen",
+"it": "Leggere «Calcio, vitamina D e ossa forti»"
+},
+"Apaiser les bouffées de chaleur": {
+"en": "Ease hot flushes",
+"es": "Calmar los sofocos",
+"pt": "Aliviar as ondas de calor",
+"de": "Hitzewallungen lindern",
+"it": "Calmare le vampate"
+},
+"Repérer vos déclencheurs dans le journal": {
+"en": "Spot your triggers in the log",
+"es": "Detectar tus desencadenantes en el diario",
+"pt": "Identificar seus gatilhos no diário",
+"de": "Auslöser im Tagebuch erkennen",
+"it": "Individuare i fattori scatenanti nel diario"
+},
+"Observer l’effet de la caféine tardive et de l’alcool": {
+"en": "Notice the effect of late caffeine and alcohol",
+"es": "Observar el efecto de la cafeína tardía y el alcohol",
+"pt": "Observar o efeito da cafeína tarde e do álcool",
+"de": "Wirkung von spätem Koffein und Alkohol beobachten",
+"it": "Osservare l’effetto di caffeina serale e alcol"
+},
+"Garder une chambre fraîche la nuit": {
+"en": "Keep your bedroom cool at night",
+"es": "Mantener el dormitorio fresco por la noche",
+"pt": "Manter o quarto fresco à noite",
+"de": "Schlafzimmer nachts kühl halten",
+"it": "Tenere la camera fresca di notte"
+},
+"Humeur et grignotage émotionnel": {
+"en": "Mood and emotional eating",
+"es": "Ánimo y picoteo emocional",
+"pt": "Humor e beliscos emocionais",
+"de": "Stimmung und emotionales Essen",
+"it": "Umore e fame emotiva"
+},
+"Lire « Humeur, stress et grignotage »": {
+"en": "Read “Mood, stress and snacking”",
+"es": "Leer «Ánimo, estrés y picoteo»",
+"pt": "Ler “Humor, estresse e beliscos”",
+"de": "„Stimmung, Stress und Naschen“ lesen",
+"it": "Leggere «Umore, stress e spuntini»"
+},
+"Faire 3 pauses respiratoires dans la semaine": {
+"en": "Take 3 breathing breaks this week",
+"es": "Hacer 3 pausas de respiración en la semana",
+"pt": "Fazer 3 pausas de respiração na semana",
+"de": "3 Atempausen in der Woche einlegen",
+"it": "Fare 3 pause di respirazione in settimana"
+},
+"Prévoir une collation pour l’après-midi": {
+"en": "Plan an afternoon snack",
+"es": "Prever un tentempié para la tarde",
+"pt": "Planejar um lanche para a tarde",
+"de": "Einen Nachmittagssnack einplanen",
+"it": "Prevedere uno spuntino pomeridiano"
+},
+"Faire le bilan": {
+"en": "Review your progress",
+"es": "Hacer balance",
+"pt": "Fazer o balanço",
+"de": "Bilanz ziehen",
+"it": "Fare il bilancio"
+},
+"Comparer votre journal de la semaine 1 et de la semaine 8": {
+"en": "Compare your log from week 1 and week 8",
+"es": "Comparar tu diario de la semana 1 y la semana 8",
+"pt": "Comparar seu diário da semana 1 e da semana 8",
+"de": "Tagebuch von Woche 1 und Woche 8 vergleichen",
+"it": "Confrontare il diario della settimana 1 e della settimana 8"
+},
+"Préparer vos questions pour votre médecin": {
+"en": "Prepare your questions for your doctor",
+"es": "Preparar tus preguntas para tu médico",
+"pt": "Preparar suas perguntas para seu médico",
+"de": "Fragen für deine Ärztin/deinen Arzt vorbereiten",
+"it": "Preparare le domande per il tuo medico"
+},
+"Choisir vos 3 objectifs pour la suite": {
+"en": "Choose your next 3 goals",
+"es": "Elegir tus 3 próximos objetivos",
+"pt": "Escolher seus 3 próximos objetivos",
+"de": "Deine 3 nächsten Ziele wählen",
+"it": "Scegliere i tuoi 3 prossimi obiettivi"
+},
+"Le renforcement musculaire et les exercices en charge aident à préserver les muscles et les os. Choisissez votre formule, 3 séances par semaine.": {
+"en": "Strength training and weight-bearing exercise help preserve muscle and bone. Choose your option, 3 sessions a week.",
+"es": "El entrenamiento de fuerza y los ejercicios de impacto ayudan a conservar músculos y huesos. Elige tu opción, 3 sesiones por semana.",
+"pt": "O treino de força e os exercícios de impacto ajudam a preservar músculos e ossos. Escolha sua opção, 3 treinos por semana.",
+"de": "Krafttraining und belastende Übungen helfen, Muskeln und Knochen zu erhalten. Wähle deine Variante, 3 Einheiten pro Woche.",
+"it": "Il rinforzo muscolare e gli esercizi sotto carico aiutano a preservare muscoli e ossa. Scegli la tua formula, 3 sedute a settimana."
+},
+"Maison": {
+"en": "Home",
+"es": "Casa",
+"pt": "Casa",
+"de": "Zuhause",
+"it": "Casa"
+},
+"Force & os · maison": {
+"en": "Strength & bones · home",
+"es": "Fuerza y huesos · casa",
+"pt": "Força e ossos · casa",
+"de": "Kraft & Knochen · Zuhause",
+"it": "Forza e ossa · casa"
+},
+"Renforcement musculaire et exercices en charge pour protéger les muscles et les os, à la maison.": {
+"en": "Strength and weight-bearing exercises to protect muscle and bone, at home.",
+"es": "Fuerza y ejercicios de impacto para proteger músculos y huesos, en casa.",
+"pt": "Força e exercícios de impacto para proteger músculos e ossos, em casa.",
+"de": "Kraft- und Belastungsübungen zum Schutz von Muskeln und Knochen, zu Hause.",
+"it": "Rinforzo ed esercizi sotto carico per proteggere muscoli e ossa, a casa."
+},
+"Force bas du corps": {
+"en": "Lower-body strength",
+"es": "Fuerza tren inferior",
+"pt": "Força parte inferior",
+"de": "Kraft Unterkörper",
+"it": "Forza parte bassa"
+},
+"Jambes · Fessiers · Équilibre": {
+"en": "Legs · Glutes · Balance",
+"es": "Piernas · Glúteos · Equilibrio",
+"pt": "Pernas · Glúteos · Equilíbrio",
+"de": "Beine · Po · Gleichgewicht",
+"it": "Gambe · Glutei · Equilibrio"
+},
+"Force haut du corps": {
+"en": "Upper-body strength",
+"es": "Fuerza tren superior",
+"pt": "Força parte superior",
+"de": "Kraft Oberkörper",
+"it": "Forza parte alta"
+},
+"Dos · Pectoraux · Épaules": {
+"en": "Back · Chest · Shoulders",
+"es": "Espalda · Pecho · Hombros",
+"pt": "Costas · Peito · Ombros",
+"de": "Rücken · Brust · Schultern",
+"it": "Schiena · Petto · Spalle"
+},
+"Corps entier & marche": {
+"en": "Full body & walk",
+"es": "Cuerpo completo y caminata",
+"pt": "Corpo inteiro e caminhada",
+"de": "Ganzkörper & Gehen",
+"it": "Total body e camminata"
+},
+"Corps entier · Cardio": {
+"en": "Full body · Cardio",
+"es": "Cuerpo completo · Cardio",
+"pt": "Corpo inteiro · Cardio",
+"de": "Ganzkörper · Cardio",
+"it": "Total body · Cardio"
+},
+"En faire mon programme": {
+"en": "Make it my program",
+"es": "Convertirlo en mi programa",
+"pt": "Tornar meu programa",
+"de": "Als mein Programm wählen",
+"it": "Rendilo il mio programma"
+},
+"Salle": {
+"en": "Gym",
+"es": "Gimnasio",
+"pt": "Academia",
+"de": "Studio",
+"it": "Palestra"
+},
+"Force & os · salle": {
+"en": "Strength & bones · gym",
+"es": "Fuerza y huesos · gimnasio",
+"pt": "Força e ossos · academia",
+"de": "Kraft & Knochen · Studio",
+"it": "Forza e ossa · palestra"
+},
+"Séances en salle avec charges progressives : la meilleure stratégie pour la densité osseuse et le métabolisme.": {
+"en": "Gym sessions with progressive loads: the best strategy for bone density and metabolism.",
+"es": "Sesiones en gimnasio con cargas progresivas: la mejor estrategia para la densidad ósea y el metabolismo.",
+"pt": "Treinos na academia com cargas progressivas: a melhor estratégia para a densidade óssea e o metabolismo.",
+"de": "Studio-Einheiten mit steigender Last: die beste Strategie für Knochendichte und Stoffwechsel.",
+"it": "Sedute in palestra con carichi progressivi: la strategia migliore per densità ossea e metabolismo."
+},
+"Bas du corps": {
+"en": "Lower body",
+"es": "Tren inferior",
+"pt": "Parte inferior",
+"de": "Unterkörper",
+"it": "Parte bassa"
+},
+"Jambes · Fessiers": {
+"en": "Legs · Glutes",
+"es": "Piernas · Glúteos",
+"pt": "Pernas · Glúteos",
+"de": "Beine · Po",
+"it": "Gambe · Glutei"
+},
+"Corps entier": {
+"en": "Full body",
+"es": "Cuerpo completo",
+"pt": "Corpo inteiro",
+"de": "Ganzkörper",
+"it": "Total body"
+},
+"Programme actuel": {
+"en": "Current program",
+"es": "Programa actual",
+"pt": "Programa atual",
+"de": "Aktuelles Programm",
+"it": "Programma attuale"
+},
+"Mobilité, équilibre & marche": {
+"en": "Mobility, balance & walking",
+"es": "Movilidad, equilibrio y caminata",
+"pt": "Mobilidade, equilíbrio e caminhada",
+"de": "Mobilität, Gleichgewicht & Gehen",
+"it": "Mobilità, equilibrio e camminata"
+},
+"Pour reprendre en douceur : mobilité, équilibre, gainage et marche active.": {
+"en": "A gentle restart: mobility, balance, core and brisk walking.",
+"es": "Para retomar con suavidad: movilidad, equilibrio, core y caminata activa.",
+"pt": "Para retomar com calma: mobilidade, equilíbrio, core e caminhada ativa.",
+"de": "Sanfter Wiedereinstieg: Mobilität, Gleichgewicht, Rumpf und zügiges Gehen.",
+"it": "Per ripartire dolcemente: mobilità, equilibrio, core e camminata veloce."
+},
+"Mobilité & équilibre": {
+"en": "Mobility & balance",
+"es": "Movilidad y equilibrio",
+"pt": "Mobilidade e equilíbrio",
+"de": "Mobilität & Gleichgewicht",
+"it": "Mobilità ed equilibrio"
+},
+"Mobilité · Équilibre": {
+"en": "Mobility · Balance",
+"es": "Movilidad · Equilibrio",
+"pt": "Mobilidade · Equilíbrio",
+"de": "Mobilität · Gleichgewicht",
+"it": "Mobilità · Equilibrio"
+},
+"Marche active": {
+"en": "Brisk walk",
+"es": "Caminata activa",
+"pt": "Caminhada ativa",
+"de": "Zügiges Gehen",
+"it": "Camminata veloce"
+},
+"Cardio": {
+"en": "Cardio",
+"es": "Cardio",
+"pt": "Cardio",
+"de": "Cardio",
+"it": "Cardio"
+},
+"Renforcement doux": {
+"en": "Gentle strength",
+"es": "Fuerza suave",
+"pt": "Força leve",
+"de": "Sanfte Kräftigung",
+"it": "Rinforzo dolce"
+},
+"Humeur, stress et grignotage": {
+"en": "Mood, stress and snacking",
+"es": "Ánimo, estrés y picoteo",
+"pt": "Humor, estresse e beliscos",
+"de": "Stimmung, Stress und Naschen",
+"it": "Umore, stress e spuntini"
+},
+"Le pouvoir de la marche": {
+"en": "The power of walking",
+"es": "El poder de caminar",
+"pt": "O poder da caminhada",
+"de": "Die Kraft des Gehens",
+"it": "Il potere della camminata"
+},
+"Changer": {
+"en": "Change",
+"es": "Cambiar",
+"pt": "Trocar",
+"de": "Ändern",
+"it": "Cambia"
+},
+"Mes jours d’entraînement": {
+"en": "My training days",
+"es": "Mis días de entrenamiento",
+"pt": "Meus dias de treino",
+"de": "Meine Trainingstage",
+"it": "I miei giorni di allenamento"
+},
+"{n} par semaine": {
+"en": "{n} per week",
+"es": "{n} por semana",
+"pt": "{n} por semana",
+"de": "{n} pro Woche",
+"it": "{n} a settimana"
+},
+"Les séances du programme se répartissent automatiquement sur les jours choisis.": {
+"en": "The program’s sessions are spread automatically over the days you choose.",
+"es": "Las sesiones del programa se reparten automáticamente en los días elegidos.",
+"pt": "Os treinos do programa são distribuídos automaticamente nos dias escolhidos.",
+"de": "Die Einheiten werden automatisch auf die gewählten Tage verteilt.",
+"it": "Le sedute del programma si distribuiscono automaticamente sui giorni scelti."
+},
+"Commencer la séance": {
+"en": "Start the workout",
+"es": "Empezar la sesión",
+"pt": "Começar o treino",
+"de": "Einheit starten",
+"it": "Inizia la seduta"
+},
+"Ma semaine": {
+"en": "My week",
+"es": "Mi semana",
+"pt": "Minha semana",
+"de": "Meine Woche",
+"it": "La mia settimana"
+},
+"Programmes": {
+"en": "Programs",
+"es": "Programas",
+"pt": "Programas",
+"de": "Programme",
+"it": "Programmi"
+},
+"Créer": {
+"en": "Create",
+"es": "Crear",
+"pt": "Criar",
+"de": "Erstellen",
+"it": "Crea"
+},
+"Exercices": {
+"en": "Exercises",
+"es": "Ejercicios",
+"pt": "Exercícios",
+"de": "Übungen",
+"it": "Esercizi"
+},
+"Tous": {
+"en": "All",
+"es": "Todos",
+"pt": "Todos",
+"de": "Alle",
+"it": "Tutti"
+},
+"Perdre du gras": {
+"en": "Lose fat",
+"es": "Perder grasa",
+"pt": "Perder gordura",
+"de": "Fett verlieren",
+"it": "Perdere grasso"
+},
+"Force": {
+"en": "Strength",
+"es": "Fuerza",
+"pt": "Força",
+"de": "Kraft",
+"it": "Forza"
+},
+"À la maison": {
+"en": "At home",
+"es": "En casa",
+"pt": "Em casa",
+"de": "Zu Hause",
+"it": "A casa"
+},
+"Remise en forme": {
+"en": "Get fit",
+"es": "Ponerse en forma",
+"pt": "Entrar em forma",
+"de": "Fit werden",
+"it": "Rimettersi in forma"
+},
+"Tous les programmes": {
+"en": "All programs",
+"es": "Todos los programas",
+"pt": "Todos os programas",
+"de": "Alle Programme",
+"it": "Tutti i programmi"
+},
+"{n} j / sem.": {
+"en": "{n} days / wk",
+"es": "{n} días / sem.",
+"pt": "{n} dias / sem.",
+"de": "{n} Tage / Wo.",
+"it": "{n} gg / sett."
+},
+"Athlétique": {
+"en": "Athletic",
+"es": "Atlético",
+"pt": "Atlético",
+"de": "Athletisch",
+"it": "Atletico"
+},
+"Style {name}": {
+"en": "{name} style",
+"es": "Estilo {name}",
+"pt": "Estilo {name}",
+"de": "Stil {name}",
+"it": "Stile {name}"
+},
+"Choisir ce programme": {
+"en": "Choose this program",
+"es": "Elegir este programa",
+"pt": "Escolher este programa",
+"de": "Dieses Programm wählen",
+"it": "Scegli questo programma"
+},
+"Hypertrophie": {
+"en": "Hypertrophy",
+"es": "Hipertrofia",
+"pt": "Hipertrofia",
+"de": "Hypertrophie",
+"it": "Ipertrofia"
+},
+"Perte de gras": {
+"en": "Fat loss",
+"es": "Pérdida de grasa",
+"pt": "Perda de gordura",
+"de": "Fettabbau",
+"it": "Perdita di grasso"
+},
+"Débutant 2 jours · salle": {
+"en": "Beginner 2 days · gym",
+"es": "Principiante 2 días · gimnasio",
+"pt": "Iniciante 2 dias · academia",
+"de": "Einsteiger 2 Tage · Studio",
+"it": "Principiante 2 giorni · palestra"
+},
+"Deux séances complètes par semaine pour prendre de bonnes habitudes, sans y passer sa vie.": {
+"en": "Two full sessions a week to build good habits without living at the gym.",
+"es": "Dos sesiones completas por semana para crear buenos hábitos sin vivir en el gimnasio.",
+"pt": "Dois treinos completos por semana para criar bons hábitos sem morar na academia.",
+"de": "Zwei Ganzkörper-Einheiten pro Woche für gute Gewohnheiten, ohne im Studio zu wohnen.",
+"it": "Due sedute complete a settimana per prendere buone abitudini senza vivere in palestra."
+},
+"Push / Pull / Legs · salle": {
+"en": "Push / Pull / Legs · gym",
+"es": "Push / Pull / Legs · gimnasio",
+"pt": "Push / Pull / Legs · academia",
+"de": "Push / Pull / Legs · Studio",
+"it": "Push / Pull / Legs · palestra"
+},
+"Pousser, tirer, jambes : le grand classique pour prendre du muscle. Faites-le 3 ou 6 fois par semaine.": {
+"en": "Push, pull, legs: the classic split for building muscle. Run it 3 or 6 times a week.",
+"es": "Empuje, tirón, piernas: el gran clásico para ganar músculo. Hazlo 3 o 6 veces por semana.",
+"pt": "Empurrar, puxar, pernas: o grande clássico para ganhar músculo. Faça 3 ou 6 vezes por semana.",
+"de": "Drücken, Ziehen, Beine: der Klassiker für Muskelaufbau. 3- oder 6-mal pro Woche.",
+"it": "Spinta, tirata, gambe: il grande classico per mettere muscoli. Fallo 3 o 6 volte a settimana."
+},
+"Haut du corps & bras · salle": {
+"en": "Upper body & arms · gym",
+"es": "Tren superior y brazos · gimnasio",
+"pt": "Parte superior e braços · academia",
+"de": "Oberkörper & Arme · Studio",
+"it": "Parte alta e braccia · palestra"
+},
+"Trois séances haut du corps (pectoraux, dos, épaules, bras) et une séance jambes pour l’équilibre.": {
+"en": "Three upper-body sessions (chest, back, shoulders, arms) and one leg session for balance.",
+"es": "Tres sesiones de tren superior (pecho, espalda, hombros, brazos) y una de piernas para el equilibrio.",
+"pt": "Três treinos de parte superior (peito, costas, ombros, braços) e um de pernas para o equilíbrio.",
+"de": "Drei Oberkörper-Einheiten (Brust, Rücken, Schultern, Arme) und eine Bein-Einheit für die Balance.",
+"it": "Tre sedute parte alta (petto, schiena, spalle, braccia) e una di gambe per l’equilibrio."
+},
+"Confirmé": {
+"en": "Advanced",
+"es": "Avanzado",
+"pt": "Avançado",
+"de": "Fortgeschritten",
+"it": "Avanzato"
+},
+"Force · salle": {
+"en": "Strength · gym",
+"es": "Fuerza · gimnasio",
+"pt": "Força · academia",
+"de": "Kraft · Studio",
+"it": "Forza · palestra"
+},
+"Les grands mouvements en séries lourdes, en alternant deux séances. Ajoutez un peu de charge chaque semaine.": {
+"en": "The big lifts in heavy sets, alternating two sessions. Add a little weight each week.",
+"es": "Los grandes movimientos en series pesadas, alternando dos sesiones. Añade un poco de carga cada semana.",
+"pt": "Os grandes movimentos em séries pesadas, alternando dois treinos. Aumente um pouco a carga toda semana.",
+"de": "Die großen Grundübungen in schweren Sätzen, zwei Einheiten im Wechsel. Jede Woche etwas mehr Gewicht.",
+"it": "I grandi movimenti in serie pesanti, alternando due sedute. Aggiungi un po’ di carico ogni settimana."
+},
+"Maison avec haltères": {
+"en": "Home with dumbbells",
+"es": "Casa con mancuernas",
+"pt": "Casa com halteres",
+"de": "Zuhause mit Kurzhanteln",
+"it": "Casa con manubri"
+},
+"Deux haltères suffisent : haut et bas du corps en alternance, 4 fois par semaine.": {
+"en": "Two dumbbells are enough: upper and lower body on alternate days, 4 times a week.",
+"es": "Dos mancuernas bastan: tren superior e inferior alternos, 4 veces por semana.",
+"pt": "Dois halteres bastam: parte superior e inferior alternadas, 4 vezes por semana.",
+"de": "Zwei Kurzhanteln reichen: Ober- und Unterkörper im Wechsel, 4-mal pro Woche.",
+"it": "Bastano due manubri: parte alta e bassa alternate, 4 volte a settimana."
+},
+"Brûle-graisses maison": {
+"en": "Home fat burner",
+"es": "Quemagrasa en casa",
+"pt": "Queima-gordura em casa",
+"de": "Fatburner zu Hause",
+"it": "Brucia grassi a casa"
+},
+"Circuits de 25 minutes sans matériel pour dépenser plus et gagner en souffle.": {
+"en": "25-minute equipment-free circuits to burn more and build stamina.",
+"es": "Circuitos de 25 minutos sin material para gastar más y ganar fondo.",
+"pt": "Circuitos de 25 minutos sem equipamento para gastar mais e ganhar fôlego.",
+"de": "25-Minuten-Zirkel ohne Geräte für mehr Kalorienverbrauch und Ausdauer.",
+"it": "Circuiti di 25 minuti senza attrezzi per consumare di più e migliorare il fiato."
+},
+"Styles de coaching": {
+"en": "Coaching styles",
+"es": "Estilos de entrenamiento",
+"pt": "Estilos de treino",
+"de": "Coaching-Stile",
+"it": "Stili di coaching"
+},
+"Chaque style correspond à une méthode d’entraînement. Choisissez-en un dans « Créer » pour générer un programme sur mesure.": {
+"en": "Each style matches a training method. Pick one in “Create” to generate a custom program.",
+"es": "Cada estilo corresponde a un método de entrenamiento. Elige uno en «Crear» para generar un programa a medida.",
+"pt": "Cada estilo corresponde a um método de treino. Escolha um em “Criar” para gerar um programa sob medida.",
+"de": "Jeder Stil entspricht einer Trainingsmethode. Wähle einen unter „Erstellen“, um ein Programm nach Maß zu erzeugen.",
+"it": "Ogni stile corrisponde a un metodo di allenamento. Scegline uno in «Crea» per generare un programma su misura."
+},
+"Volume modéré à élevé, 8 à 12 répétitions, 60 à 90 s de repos. Pour prendre du muscle.": {
+"en": "Moderate to high volume, 8 to 12 reps, 60 to 90 s rest. For building muscle.",
+"es": "Volumen moderado a alto, 8 a 12 repeticiones, 60 a 90 s de descanso. Para ganar músculo.",
+"pt": "Volume moderado a alto, 8 a 12 repetições, 60 a 90 s de descanso. Para ganhar músculo.",
+"de": "Mittleres bis hohes Volumen, 8 bis 12 Wiederholungen, 60 bis 90 s Pause. Für Muskelaufbau.",
+"it": "Volume da moderato ad alto, 8-12 ripetizioni, 60-90 s di recupero. Per mettere muscoli."
+},
+"Charges lourdes, 4 à 6 répétitions, repos longs. Pour devenir plus fort(e).": {
+"en": "Heavy loads, 4 to 6 reps, long rests. To get stronger.",
+"es": "Cargas pesadas, 4 a 6 repeticiones, descansos largos. Para ser más fuerte.",
+"pt": "Cargas pesadas, 4 a 6 repetições, descansos longos. Para ficar mais forte.",
+"de": "Schwere Lasten, 4 bis 6 Wiederholungen, lange Pausen. Um stärker zu werden.",
+"it": "Carichi pesanti, 4-6 ripetizioni, recuperi lunghi. Per diventare più forte."
+},
+"Mouvements complets et rythme soutenu. Pour être en forme, tonique et dynamique.": {
+"en": "Full movements and a brisk pace. To be fit, toned and energetic.",
+"es": "Movimientos completos y ritmo sostenido. Para estar en forma, tonificado y dinámico.",
+"pt": "Movimentos completos e ritmo intenso. Para ficar em forma, tonificado e disposto.",
+"de": "Ganzkörperbewegungen in zügigem Tempo. Für Fitness, Straffheit und Energie.",
+"it": "Movimenti completi e ritmo sostenuto. Per essere in forma, tonici e dinamici."
+},
+"Circuits, peu de repos, 12 à 15 répétitions. Pour dépenser plus et se tonifier.": {
+"en": "Circuits, short rests, 12 to 15 reps. To burn more and tone up.",
+"es": "Circuitos, poco descanso, 12 a 15 repeticiones. Para gastar más y tonificar.",
+"pt": "Circuitos, pouco descanso, 12 a 15 repetições. Para gastar mais e tonificar.",
+"de": "Zirkel, kurze Pausen, 12 bis 15 Wiederholungen. Für mehr Verbrauch und Straffung.",
+"it": "Circuiti, poco recupero, 12-15 ripetizioni. Per consumare di più e tonificare."
+},
+"Priorité aux fessiers et aux jambes, avec contraction et contrôle.": {
+"en": "Glutes and legs first, with squeeze and control.",
+"es": "Prioridad a glúteos y piernas, con contracción y control.",
+"pt": "Prioridade a glúteos e pernas, com contração e controle.",
+"de": "Fokus auf Po und Beine, mit Anspannung und Kontrolle.",
+"it": "Priorità a glutei e gambe, con contrazione e controllo."
+},
+"Douceur & mobilité": {
+"en": "Gentle & mobility",
+"es": "Suave y movilidad",
+"pt": "Leve e mobilidade",
+"de": "Sanft & Mobilität",
+"it": "Dolce e mobilità"
+},
+"Renforcement en douceur, gainage, équilibre et mobilité.": {
+"en": "Gentle strength, core, balance and mobility.",
+"es": "Fuerza suave, core, equilibrio y movilidad.",
+"pt": "Força leve, core, equilíbrio e mobilidade.",
+"de": "Sanfte Kräftigung, Rumpf, Gleichgewicht und Mobilität.",
+"it": "Rinforzo dolce, core, equilibrio e mobilità."
+},
+"Créer mon programme sur mesure": {
+"en": "Build my custom program",
+"es": "Crear mi programa a medida",
+"pt": "Criar meu programa sob medida",
+"de": "Mein Programm nach Maß erstellen",
+"it": "Crea il mio programma su misura"
+},
+"Choisissez vos jours, votre lieu, votre style et combien de fois par semaine travailler chaque zone. NutriPilot construit les séances.": {
+"en": "Choose your days, place, style and how many times a week to train each area. NutriPilot builds the sessions.",
+"es": "Elige tus días, lugar, estilo y cuántas veces por semana trabajar cada zona. NutriPilot crea las sesiones.",
+"pt": "Escolha seus dias, local, estilo e quantas vezes por semana treinar cada região. O NutriPilot monta os treinos.",
+"de": "Wähle Tage, Ort, Stil und wie oft pro Woche jede Zone trainiert wird. NutriPilot baut die Einheiten.",
+"it": "Scegli giorni, luogo, stile e quante volte a settimana allenare ogni zona. NutriPilot crea le sedute."
+},
+"Jours d’entraînement": {
+"en": "Training days",
+"es": "Días de entrenamiento",
+"pt": "Dias de treino",
+"de": "Trainingstage",
+"it": "Giorni di allenamento"
+},
+"Lieu": {
+"en": "Place",
+"es": "Lugar",
+"pt": "Local",
+"de": "Ort",
+"it": "Luogo"
+},
+"Salle de sport": {
+"en": "Gym",
+"es": "Gimnasio",
+"pt": "Academia",
+"de": "Fitnessstudio",
+"it": "Palestra"
+},
+"Durée d’une séance": {
+"en": "Session length",
+"es": "Duración de la sesión",
+"pt": "Duração do treino",
+"de": "Dauer einer Einheit",
+"it": "Durata della seduta"
+},
+"Style de coaching": {
+"en": "Coaching style",
+"es": "Estilo de entrenamiento",
+"pt": "Estilo de treino",
+"de": "Coaching-Stil",
+"it": "Stile di coaching"
+},
+"Fréquence par zone (fois par semaine)": {
+"en": "Frequency per area (times per week)",
+"es": "Frecuencia por zona (veces por semana)",
+"pt": "Frequência por região (vezes por semana)",
+"de": "Häufigkeit pro Zone (mal pro Woche)",
+"it": "Frequenza per zona (volte a settimana)"
+},
+"Jambes": {
+"en": "Legs",
+"es": "Piernas",
+"pt": "Pernas",
+"de": "Beine",
+"it": "Gambe"
+},
+"Bras": {
+"en": "Arms",
+"es": "Brazos",
+"pt": "Braços",
+"de": "Arme",
+"it": "Braccia"
+},
+"Abdos & gainage": {
+"en": "Abs & core",
+"es": "Abdominales y core",
+"pt": "Abdômen e core",
+"de": "Bauch & Rumpf",
+"it": "Addominali e core"
+},
+"Générer mon programme": {
+"en": "Generate my program",
+"es": "Generar mi programa",
+"pt": "Gerar meu programa",
+"de": "Programm erstellen",
+"it": "Genera il mio programma"
+},
+"Importer mon programme": {
+"en": "Import my program",
+"es": "Importar mi programa",
+"pt": "Importar meu programa",
+"de": "Mein Programm importieren",
+"it": "Importa il mio programma"
+},
+"Vous suivez déjà le programme de votre coach ou le vôtre ? Collez-le ici, tel quel. NutriPilot le transforme en séances avec agenda et suivi des charges.": {
+"en": "Already following your coach’s program or your own? Paste it here, as is. NutriPilot turns it into sessions with a schedule and weight tracking.",
+"es": "¿Ya sigues el programa de tu entrenador o el tuyo? Pégalo aquí, tal cual. NutriPilot lo convierte en sesiones con agenda y seguimiento de cargas.",
+"pt": "Já segue o programa do seu treinador ou o seu? Cole aqui, do jeito que está. O NutriPilot transforma em treinos com agenda e registro de cargas.",
+"de": "Du folgst schon dem Programm deines Coaches oder deinem eigenen? Füge es hier unverändert ein. NutriPilot macht daraus Einheiten mit Wochenplan und Gewichtsprotokoll.",
+"it": "Segui già il programma del tuo coach o il tuo? Incollalo qui, così com’è. NutriPilot lo trasforma in sedute con agenda e registro dei carichi."
+},
+"Ex. Lundi : squat 4x8, presse 3x12, leg curl 3x12. Mercredi : développé couché 4x8, rowing 4x10…": {
+"en": "E.g. Monday: squat 4x8, leg press 3x12, leg curl 3x12. Wednesday: bench press 4x8, row 4x10…",
+"es": "Ej. Lunes: sentadilla 4x8, prensa 3x12, curl femoral 3x12. Miércoles: press banca 4x8, remo 4x10…",
+"pt": "Ex. Segunda: agachamento 4x8, leg press 3x12, mesa flexora 3x12. Quarta: supino 4x8, remada 4x10…",
+"de": "Z. B. Montag: Kniebeuge 4x8, Beinpresse 3x12, Beinbeuger 3x12. Mittwoch: Bankdrücken 4x8, Rudern 4x10…",
+"it": "Es. Lunedì: squat 4x8, pressa 3x12, leg curl 3x12. Mercoledì: panca piana 4x8, rematore 4x10…"
+},
+"Importer en séances": {
+"en": "Import as sessions",
+"es": "Importar como sesiones",
+"pt": "Importar como treinos",
+"de": "Als Einheiten importieren",
+"it": "Importa come sedute"
+},
+"Importer mon plan alimentaire": {
+"en": "Import my meal plan",
+"es": "Importar mi plan de comidas",
+"pt": "Importar meu plano alimentar",
+"de": "Meinen Ernährungsplan importieren",
+"it": "Importa il mio piano alimentare"
+},
+"Vous avez déjà un plan de votre diététicien(ne) ? Collez-le : il devient votre plan de repas, avec liste de courses.": {
+"en": "Already have a plan from your dietitian? Paste it: it becomes your meal plan, with a shopping list.",
+"es": "¿Ya tienes un plan de tu dietista? Pégalo: se convierte en tu plan de comidas, con lista de la compra.",
+"pt": "Já tem um plano do seu nutricionista? Cole aqui: ele vira seu plano de refeições, com lista de compras.",
+"de": "Du hast schon einen Plan deiner Ernährungsberatung? Füge ihn ein: Er wird zu deinem Essensplan, mit Einkaufsliste.",
+"it": "Hai già un piano del tuo dietista? Incollalo: diventa il tuo piano pasti, con lista della spesa."
+},
+"Ex. Petit-déjeuner : 2 œufs, pain complet… Déjeuner : poulet 150 g, riz 120 g, légumes…": {
+"en": "E.g. Breakfast: 2 eggs, wholemeal bread… Lunch: chicken 150 g, rice 120 g, vegetables…",
+"es": "Ej. Desayuno: 2 huevos, pan integral… Comida: pollo 150 g, arroz 120 g, verduras…",
+"pt": "Ex. Café da manhã: 2 ovos, pão integral… Almoço: frango 150 g, arroz 120 g, legumes…",
+"de": "Z. B. Frühstück: 2 Eier, Vollkornbrot… Mittag: Hähnchen 150 g, Reis 120 g, Gemüse…",
+"it": "Es. Colazione: 2 uova, pane integrale… Pranzo: pollo 150 g, riso 120 g, verdure…"
+},
+"Importer mon plan": {
+"en": "Import my plan",
+"es": "Importar mi plan",
+"pt": "Importar meu plano",
+"de": "Plan importieren",
+"it": "Importa il mio piano"
+},
+"Presse pectorale (machine)": {
+"en": "Chest press (machine)",
+"es": "Press de pecho (máquina)",
+"pt": "Supino na máquina",
+"de": "Brustpresse (Maschine)",
+"it": "Chest press (macchina)"
+},
+"Développé au sol haltères": {
+"en": "Dumbbell floor press",
+"es": "Press de suelo con mancuernas",
+"pt": "Supino no chão com halteres",
+"de": "Bodendrücken mit Kurzhanteln",
+"it": "Floor press con manubri"
+},
+"Remplacer l’exercice": {
+"en": "Swap exercise",
+"es": "Cambiar el ejercicio",
+"pt": "Trocar o exercício",
+"de": "Übung ersetzen",
+"it": "Sostituisci l’esercizio"
+},
+"Équilibre sur une jambe": {
+"en": "Single-leg balance",
+"es": "Equilibrio sobre una pierna",
+"pt": "Equilíbrio em uma perna",
+"de": "Einbeinstand",
+"it": "Equilibrio su una gamba"
+},
+"30 s / jambe": {
+"en": "30 s / leg",
+"es": "30 s / pierna",
+"pt": "30 s / perna",
+"de": "30 s / Bein",
+"it": "30 s / gamba"
+},
+"Équilibre, chevilles": {
+"en": "Balance, ankles",
+"es": "Equilibrio, tobillos",
+"pt": "Equilíbrio, tornozelos",
+"de": "Gleichgewicht, Knöchel",
+"it": "Equilibrio, caviglie"
+},
+"Tenez-vous près d’un mur ou d’une chaise.": {
+"en": "Stand near a wall or chair.",
+"es": "Ponte cerca de una pared o una silla.",
+"pt": "Fique perto de uma parede ou cadeira.",
+"de": "Stell dich nahe an eine Wand oder einen Stuhl.",
+"it": "Mettiti vicino a un muro o a una sedia."
+},
+"Levez un pied et gardez le bassin droit.": {
+"en": "Lift one foot and keep your hips level.",
+"es": "Levanta un pie y mantén la pelvis recta.",
+"pt": "Levante um pé e mantenha o quadril reto.",
+"de": "Hebe einen Fuß und halte das Becken gerade.",
+"it": "Solleva un piede e tieni il bacino dritto."
+},
+"Changez de jambe.": {
+"en": "Switch legs.",
+"es": "Cambia de pierna.",
+"pt": "Troque de perna.",
+"de": "Bein wechseln.",
+"it": "Cambia gamba."
+},
+"Nutrition + Entraînement + Ménopause + Académie": {
+"en": "Nutrition + Training + Menopause + Academy",
+"es": "Nutrición + Entrenamiento + Menopausia + Academia",
+"pt": "Nutrição + Treino + Menopausa + Academia",
+"de": "Ernährung + Training + Wechseljahre + Akademie",
+"it": "Nutrizione + Allenamento + Menopausa + Accademia"
+},
+"Tout le programme Nutrition : plan de repas, recettes, courses": {
+"en": "The full Nutrition program: meal plan, recipes, shopping",
+"es": "Todo el programa Nutrición: plan de comidas, recetas, compra",
+"pt": "Todo o programa Nutrição: plano de refeições, receitas, compras",
+"de": "Das komplette Ernährungsprogramm: Essensplan, Rezepte, Einkauf",
+"it": "Tutto il programma Nutrizione: piano pasti, ricette, spesa"
+},
+"Tous les programmes d’entraînement et l’agenda": {
+"en": "All training programs and the schedule",
+"es": "Todos los programas de entrenamiento y la agenda",
+"pt": "Todos os programas de treino e a agenda",
+"de": "Alle Trainingsprogramme und der Wochenplan",
+"it": "Tutti i programmi di allenamento e l’agenda"
+},
+"L’espace Ménopause 40+ complet": {
+"en": "The complete Menopause 40+ space",
+"es": "El espacio Menopausia 40+ completo",
+"pt": "O espaço Menopausa 40+ completo",
+"de": "Der komplette Wechseljahre-40+-Bereich",
+"it": "Lo spazio Menopausa 40+ completo"
+},
+"Toute l’Académie et le coach au quotidien": {
+"en": "The whole Academy and daily coaching",
+"es": "Toda la Academia y el coach a diario",
+"pt": "Toda a Academia e o coach no dia a dia",
+"de": "Die ganze Akademie und täglicher Coach",
+"it": "Tutta l’Accademia e il coach ogni giorno"
+},
+"Scanner de repas illimité": {
+"en": "Unlimited meal scanner",
+"es": "Escáner de comidas ilimitado",
+"pt": "Scanner de refeições ilimitado",
+"de": "Unbegrenzter Mahlzeiten-Scanner",
+"it": "Scanner pasti illimitato"
+},
+"Le programme pensé pour les femmes en (pré)ménopause": {
+"en": "The program designed for women in (peri)menopause",
+"es": "El programa pensado para mujeres en (peri)menopausia",
+"pt": "O programa pensado para mulheres na (peri)menopausa",
+"de": "Das Programm für Frauen in den (Prä-)Wechseljahren",
+"it": "Il programma pensato per le donne in (peri)menopausa"
+},
+"Journal des symptômes et tendances": {
+"en": "Symptom log and trends",
+"es": "Diario de síntomas y tendencias",
+"pt": "Diário de sintomas e tendências",
+"de": "Symptomtagebuch und Trends",
+"it": "Diario dei sintomi e tendenze"
+},
+"Alimentation adaptée : plan de repas, recettes, courses": {
+"en": "Tailored eating: meal plan, recipes, shopping",
+"es": "Alimentación adaptada: plan de comidas, recetas, compra",
+"pt": "Alimentação adaptada: plano de refeições, receitas, compras",
+"de": "Angepasste Ernährung: Essensplan, Rezepte, Einkauf",
+"it": "Alimentazione adatta: piano pasti, ricette, spesa"
+},
+"Séances force, os et équilibre": {
+"en": "Strength, bone and balance sessions",
+"es": "Sesiones de fuerza, huesos y equilibrio",
+"pt": "Treinos de força, ossos e equilíbrio",
+"de": "Einheiten für Kraft, Knochen und Gleichgewicht",
+"it": "Sedute di forza, ossa ed equilibrio"
+},
+"Programme guidé de 8 semaines et cours": {
+"en": "Guided 8-week program and lessons",
+"es": "Programa guiado de 8 semanas y cursos",
+"pt": "Programa guiado de 8 semanas e aulas",
+"de": "Begleitetes 8-Wochen-Programm und Kurse",
+"it": "Programma guidato di 8 settimane e lezioni"
+},
+"Plan de repas 7 jours personnalisé": {
+"en": "Personalised 7-day meal plan",
+"es": "Plan de comidas de 7 días personalizado",
+"pt": "Plano de refeições de 7 dias personalizado",
+"de": "Persönlicher 7-Tage-Essensplan",
+"it": "Piano pasti di 7 giorni personalizzato"
+},
+"Recettes de chef et liste de courses": {
+"en": "Chef recipes and shopping list",
+"es": "Recetas de chef y lista de la compra",
+"pt": "Receitas de chef e lista de compras",
+"de": "Rezepte vom Koch und Einkaufsliste",
+"it": "Ricette dello chef e lista della spesa"
+},
+"« Que manger ensuite ? », mode frigo et restaurant": {
+"en": "“What should I eat next?”, fridge and restaurant mode",
+"es": "«¿Qué como ahora?», modo nevera y restaurante",
+"pt": "“O que comer agora?”, modo geladeira e restaurante",
+"de": "„Was esse ich als Nächstes?“, Kühlschrank- und Restaurantmodus",
+"it": "«Cosa mangio adesso?», modalità frigo e ristorante"
+},
+"Cours nutrition et coach au quotidien": {
+"en": "Nutrition lessons and daily coaching",
+"es": "Cursos de nutrición y coach a diario",
+"pt": "Aulas de nutrição e coach no dia a dia",
+"de": "Ernährungskurse und täglicher Coach",
+"it": "Lezioni di nutrizione e coach ogni giorno"
+},
+"Salle ou maison, selon votre objectif": {
+"en": "Gym or home, depending on your goal",
+"es": "Gimnasio o casa, según tu objetivo",
+"pt": "Academia ou casa, conforme seu objetivo",
+"de": "Studio oder Zuhause, je nach Ziel",
+"it": "Palestra o casa, secondo il tuo obiettivo"
+},
+"Plus de 10 programmes : haut du corps, bas du corps, force, maison…": {
+"en": "10+ programs: upper body, lower body, strength, home…",
+"es": "Más de 10 programas: tren superior, inferior, fuerza, casa…",
+"pt": "Mais de 10 programas: parte superior, inferior, força, casa…",
+"de": "Über 10 Programme: Oberkörper, Unterkörper, Kraft, Zuhause…",
+"it": "Oltre 10 programmi: parte alta, parte bassa, forza, casa…"
+},
+"Agenda de la semaine selon vos jours": {
+"en": "Weekly schedule based on your days",
+"es": "Agenda semanal según tus días",
+"pt": "Agenda da semana conforme seus dias",
+"de": "Wochenplan nach deinen Tagen",
+"it": "Agenda settimanale secondo i tuoi giorni"
+},
+"Bibliothèque d’exercices et suivi des charges": {
+"en": "Exercise library and weight tracking",
+"es": "Biblioteca de ejercicios y seguimiento de cargas",
+"pt": "Biblioteca de exercícios e registro de cargas",
+"de": "Übungsbibliothek und Gewichtsprotokoll",
+"it": "Libreria di esercizi e registro dei carichi"
+},
+"Corps entier A": {
+"en": "Full body A",
+"es": "Cuerpo completo A",
+"pt": "Corpo inteiro A",
+"de": "Ganzkörper A",
+"it": "Total body A"
+},
+"Jambes · Pectoraux · Dos": {
+"en": "Legs · Chest · Back",
+"es": "Piernas · Pecho · Espalda",
+"pt": "Pernas · Peito · Costas",
+"de": "Beine · Brust · Rücken",
+"it": "Gambe · Petto · Schiena"
+},
+"Corps entier B": {
+"en": "Full body B",
+"es": "Cuerpo completo B",
+"pt": "Corpo inteiro B",
+"de": "Ganzkörper B",
+"it": "Total body B"
+},
+"Jambes · Dos · Épaules": {
+"en": "Legs · Back · Shoulders",
+"es": "Piernas · Espalda · Hombros",
+"pt": "Pernas · Costas · Ombros",
+"de": "Beine · Rücken · Schultern",
+"it": "Gambe · Schiena · Spalle"
+},
+"Push": {
+"en": "Push",
+"es": "Empuje",
+"pt": "Empurrar",
+"de": "Push",
+"it": "Spinta"
+},
+"Pectoraux · Épaules · Triceps": {
+"en": "Chest · Shoulders · Triceps",
+"es": "Pecho · Hombros · Tríceps",
+"pt": "Peito · Ombros · Tríceps",
+"de": "Brust · Schultern · Trizeps",
+"it": "Petto · Spalle · Tricipiti"
+},
+"Pull": {
+"en": "Pull",
+"es": "Tirón",
+"pt": "Puxar",
+"de": "Pull",
+"it": "Tirata"
+},
+"Dos · Biceps · Arrière d’épaules": {
+"en": "Back · Biceps · Rear delts",
+"es": "Espalda · Bíceps · Deltoides posterior",
+"pt": "Costas · Bíceps · Deltoide posterior",
+"de": "Rücken · Bizeps · hintere Schulter",
+"it": "Schiena · Bicipiti · Deltoidi posteriori"
+},
+"Legs": {
+"en": "Legs",
+"es": "Piernas",
+"pt": "Pernas",
+"de": "Beine",
+"it": "Gambe"
+},
+"Quadriceps · Ischios · Mollets": {
+"en": "Quads · Hamstrings · Calves",
+"es": "Cuádriceps · Isquios · Gemelos",
+"pt": "Quadríceps · Posteriores · Panturrilhas",
+"de": "Quadrizeps · Beinbeuger · Waden",
+"it": "Quadricipiti · Femorali · Polpacci"
+},
+"Haut du corps A": {
+"en": "Upper body A",
+"es": "Tren superior A",
+"pt": "Parte superior A",
+"de": "Oberkörper A",
+"it": "Parte alta A"
+},
+"Pectoraux · Dos": {
+"en": "Chest · Back",
+"es": "Pecho · Espalda",
+"pt": "Peito · Costas",
+"de": "Brust · Rücken",
+"it": "Petto · Schiena"
+},
+"Quadriceps · Ischios · Fessiers": {
+"en": "Quads · Hamstrings · Glutes",
+"es": "Cuádriceps · Isquios · Glúteos",
+"pt": "Quadríceps · Posteriores · Glúteos",
+"de": "Quadrizeps · Beinbeuger · Po",
+"it": "Quadricipiti · Femorali · Glutei"
+},
+"Haut du corps B": {
+"en": "Upper body B",
+"es": "Tren superior B",
+"pt": "Parte superior B",
+"de": "Oberkörper B",
+"it": "Parte alta B"
+},
+"Bras & épaules": {
+"en": "Arms & shoulders",
+"es": "Brazos y hombros",
+"pt": "Braços e ombros",
+"de": "Arme & Schultern",
+"it": "Braccia e spalle"
+},
+"Biceps · Triceps · Épaules": {
+"en": "Biceps · Triceps · Shoulders",
+"es": "Bíceps · Tríceps · Hombros",
+"pt": "Bíceps · Tríceps · Ombros",
+"de": "Bizeps · Trizeps · Schultern",
+"it": "Bicipiti · Tricipiti · Spalle"
+},
+"Force A": {
+"en": "Strength A",
+"es": "Fuerza A",
+"pt": "Força A",
+"de": "Kraft A",
+"it": "Forza A"
+},
+"Squat · Développé couché · Rowing": {
+"en": "Squat · Bench press · Row",
+"es": "Sentadilla · Press banca · Remo",
+"pt": "Agachamento · Supino · Remada",
+"de": "Kniebeuge · Bankdrücken · Rudern",
+"it": "Squat · Panca piana · Rematore"
+},
+"Force B": {
+"en": "Strength B",
+"es": "Fuerza B",
+"pt": "Força B",
+"de": "Kraft B",
+"it": "Forza B"
+},
+"Squat · Développé militaire · Soulevé": {
+"en": "Squat · Overhead press · Deadlift",
+"es": "Sentadilla · Press militar · Peso muerto",
+"pt": "Agachamento · Desenvolvimento · Levantamento terra",
+"de": "Kniebeuge · Schulterdrücken · Kreuzheben",
+"it": "Squat · Lento avanti · Stacco"
+},
+"Épaules · Pectoraux · Gainage": {
+"en": "Shoulders · Chest · Core",
+"es": "Hombros · Pecho · Core",
+"pt": "Ombros · Peito · Core",
+"de": "Schultern · Brust · Rumpf",
+"it": "Spalle · Petto · Core"
+},
+"Circuit 1": {
+"en": "Circuit 1",
+"es": "Circuito 1",
+"pt": "Circuito 1",
+"de": "Zirkel 1",
+"it": "Circuito 1"
+},
+"Cardio · Jambes · Gainage": {
+"en": "Cardio · Legs · Core",
+"es": "Cardio · Piernas · Core",
+"pt": "Cardio · Pernas · Core",
+"de": "Cardio · Beine · Rumpf",
+"it": "Cardio · Gambe · Core"
+},
+"Circuit 2": {
+"en": "Circuit 2",
+"es": "Circuito 2",
+"pt": "Circuito 2",
+"de": "Zirkel 2",
+"it": "Circuito 2"
+},
+"Haut du corps · Cardio": {
+"en": "Upper body · Cardio",
+"es": "Tren superior · Cardio",
+"pt": "Parte superior · Cardio",
+"de": "Oberkörper · Cardio",
+"it": "Parte alta · Cardio"
+},
+"Circuit 3": {
+"en": "Circuit 3",
+"es": "Circuito 3",
+"pt": "Circuito 3",
+"de": "Zirkel 3",
+"it": "Circuito 3"
+},
+"Fessiers · Cardio": {
+"en": "Glutes · Cardio",
+"es": "Glúteos · Cardio",
+"pt": "Glúteos · Cardio",
+"de": "Po · Cardio",
+"it": "Glutei · Cardio"
+},
+"8 / jambe": {
+"en": "8 / leg",
+"es": "8 / pierna",
+"pt": "8 / perna",
+"de": "8 / Bein",
+"it": "8 / gamba"
+},
+"Tractions (ou tractions assistées)": {
+"en": "Pull-ups (or assisted pull-ups)",
+"es": "Dominadas (o asistidas)",
+"pt": "Barra fixa (ou assistida)",
+"de": "Klimmzüge (oder unterstützt)",
+"it": "Trazioni (o assistite)"
+},
+"Dos, biceps": {
+"en": "Back, biceps",
+"es": "Espalda, bíceps",
+"pt": "Costas, bíceps",
+"de": "Rücken, Bizeps",
+"it": "Schiena, bicipiti"
+},
+"Prise un peu plus large que les épaules.": {
+"en": "Grip slightly wider than your shoulders.",
+"es": "Agarre un poco más ancho que los hombros.",
+"pt": "Pegada um pouco mais aberta que os ombros.",
+"de": "Griff etwas breiter als schulterbreit.",
+"it": "Presa un po’ più larga delle spalle."
+},
+"Tirez la poitrine vers la barre en serrant les omoplates.": {
+"en": "Pull your chest to the bar, squeezing your shoulder blades.",
+"es": "Lleva el pecho hacia la barra juntando las escápulas.",
+"pt": "Puxe o peito em direção à barra contraindo as escápulas.",
+"de": "Brust zur Stange ziehen, Schulterblätter zusammen.",
+"it": "Porta il petto verso la sbarra stringendo le scapole."
+},
+"Utilisez un élastique ou la machine d’assistance si besoin.": {
+"en": "Use a band or the assisted machine if needed.",
+"es": "Usa una goma o la máquina asistida si hace falta.",
+"pt": "Use um elástico ou a máquina assistida se precisar.",
+"de": "Bei Bedarf Band oder Unterstützungsmaschine nutzen.",
+"it": "Usa un elastico o la macchina assistita se serve."
+},
+"Face pull à la poulie": {
+"en": "Cable face pull",
+"es": "Face pull en polea",
+"pt": "Face pull na polia",
+"de": "Face Pull am Kabelzug",
+"it": "Face pull ai cavi"
+},
+"Arrière d’épaules": {
+"en": "Rear delts",
+"es": "Deltoides posterior",
+"pt": "Deltoide posterior",
+"de": "Hintere Schulter",
+"it": "Deltoidi posteriori"
+},
+"Poulie à hauteur du visage, corde en main.": {
+"en": "Pulley at face height, rope in hand.",
+"es": "Polea a la altura de la cara, cuerda en mano.",
+"pt": "Polia na altura do rosto, corda nas mãos.",
+"de": "Kabelzug auf Gesichtshöhe, Seil in der Hand.",
+"it": "Cavo all’altezza del viso, corda in mano."
+},
+"Tirez vers le front en écartant les mains.": {
+"en": "Pull towards your forehead, spreading your hands.",
+"es": "Tira hacia la frente separando las manos.",
+"pt": "Puxe em direção à testa afastando as mãos.",
+"de": "Zur Stirn ziehen und die Hände auseinanderführen.",
+"it": "Tira verso la fronte allargando le mani."
+},
+"Gardez les coudes hauts et contrôlez le retour.": {
+"en": "Keep elbows high and control the return.",
+"es": "Mantén los codos altos y controla la vuelta.",
+"pt": "Mantenha os cotovelos altos e controle a volta.",
+"de": "Ellbogen hoch, Rückweg kontrollieren.",
+"it": "Gomiti alti e controlla il ritorno."
+},
+"Oiseau haltères": {
+"en": "Dumbbell reverse fly",
+"es": "Pájaro con mancuernas",
+"pt": "Crucifixo invertido com halteres",
+"de": "Reverse Flys mit Kurzhanteln",
+"it": "Alzate posteriori con manubri"
+},
+"Arrière d’épaules, haut du dos": {
+"en": "Rear delts, upper back",
+"es": "Deltoides posterior, parte alta de la espalda",
+"pt": "Deltoide posterior, parte alta das costas",
+"de": "Hintere Schulter, oberer Rücken",
+"it": "Deltoidi posteriori, parte alta della schiena"
+},
+"Buste penché, dos plat.": {
+"en": "Lean forward, back flat.",
+"es": "Torso inclinado, espalda recta.",
+"pt": "Tronco inclinado, costas retas.",
+"de": "Oberkörper vorgebeugt, Rücken gerade.",
+"it": "Busto inclinato, schiena piatta."
+},
+"Écartez les bras jusqu’à l’horizontale.": {
+"en": "Raise your arms out to shoulder height.",
+"es": "Abre los brazos hasta la horizontal.",
+"pt": "Abra os braços até a horizontal.",
+"de": "Arme bis zur Waagerechten öffnen.",
+"it": "Apri le braccia fino all’orizzontale."
+},
+"Charge légère, mouvement lent.": {
+"en": "Light weight, slow movement.",
+"es": "Carga ligera, movimiento lento.",
+"pt": "Carga leve, movimento lento.",
+"de": "Leichtes Gewicht, langsame Bewegung.",
+"it": "Carico leggero, movimento lento."
+},
+"Curl marteau": {
+"en": "Hammer curl",
+"es": "Curl martillo",
+"pt": "Rosca martelo",
+"de": "Hammercurls",
+"it": "Curl a martello"
+},
+"Biceps, avant-bras": {
+"en": "Biceps, forearms",
+"es": "Bíceps, antebrazos",
+"pt": "Bíceps, antebraços",
+"de": "Bizeps, Unterarme",
+"it": "Bicipiti, avambracci"
+},
+"Paumes face à face.": {
+"en": "Palms facing each other.",
+"es": "Palmas enfrentadas.",
+"pt": "Palmas voltadas uma para a outra.",
+"de": "Handflächen zueinander.",
+"it": "Palmi rivolti l’uno verso l’altro."
+},
+"Montez sans bouger les coudes.": {
+"en": "Lift without moving your elbows.",
+"es": "Sube sin mover los codos.",
+"pt": "Suba sem mexer os cotovelos.",
+"de": "Ohne die Ellbogen zu bewegen hochführen.",
+"it": "Sali senza muovere i gomiti."
+},
+"Descendez lentement.": {
+"en": "Lower slowly.",
+"es": "Baja despacio.",
+"pt": "Desça devagar.",
+"de": "Langsam absenken.",
+"it": "Scendi lentamente."
+},
+"Extension triceps au-dessus de la tête": {
+"en": "Overhead triceps extension",
+"es": "Extensión de tríceps por encima de la cabeza",
+"pt": "Tríceps francês",
+"de": "Trizepsdrücken über Kopf",
+"it": "Estensioni tricipiti sopra la testa"
+},
+"Haltère tenu à deux mains derrière la tête.": {
+"en": "Dumbbell held with both hands behind your head.",
+"es": "Mancuerna sujeta con las dos manos detrás de la cabeza.",
+"pt": "Halter segurado com as duas mãos atrás da cabeça.",
+"de": "Kurzhantel mit beiden Händen hinter dem Kopf.",
+"it": "Manubrio tenuto con due mani dietro la testa."
+},
+"Coudes pointés vers le haut.": {
+"en": "Elbows pointing up.",
+"es": "Codos apuntando hacia arriba.",
+"pt": "Cotovelos apontados para cima.",
+"de": "Ellbogen zeigen nach oben.",
+"it": "Gomiti rivolti verso l’alto."
+},
+"Tendez les bras sans cambrer.": {
+"en": "Straighten your arms without arching your back.",
+"es": "Extiende los brazos sin arquear la espalda.",
+"pt": "Estenda os braços sem arquear as costas.",
+"de": "Arme strecken, ohne ins Hohlkreuz zu gehen.",
+"it": "Distendi le braccia senza inarcare la schiena."
+},
+"Réglez les poignées à hauteur de poitrine.": {
+"en": "Set the handles at chest height.",
+"es": "Ajusta las asas a la altura del pecho.",
+"pt": "Ajuste as pegadas na altura do peito.",
+"de": "Griffe auf Brusthöhe einstellen.",
+"it": "Regola le maniglie all’altezza del petto."
+},
+"Poussez sans verrouiller les coudes.": {
+"en": "Push without locking your elbows.",
+"es": "Empuja sin bloquear los codos.",
+"pt": "Empurre sem travar os cotovelos.",
+"de": "Drücken, ohne die Ellbogen durchzustrecken.",
+"it": "Spingi senza bloccare i gomiti."
+},
+"Allongé(e) au sol, genoux fléchis.": {
+"en": "Lie on the floor, knees bent.",
+"es": "Tumbado/a en el suelo, rodillas flexionadas.",
+"pt": "Deitado(a) no chão, joelhos flexionados.",
+"de": "Auf dem Boden liegend, Knie gebeugt.",
+"it": "Sdraiato/a a terra, ginocchia piegate."
+},
+"Descendez jusqu’à ce que les coudes touchent le sol.": {
+"en": "Lower until your elbows touch the floor.",
+"es": "Baja hasta que los codos toquen el suelo.",
+"pt": "Desça até os cotovelos tocarem o chão.",
+"de": "Absenken, bis die Ellbogen den Boden berühren.",
+"it": "Scendi finché i gomiti toccano terra."
+},
+"Poussez en expirant.": {
+"en": "Push as you breathe out.",
+"es": "Empuja al espirar.",
+"pt": "Empurre ao expirar.",
+"de": "Beim Ausatmen drücken.",
+"it": "Spingi espirando."
+},
+"Relevés de jambes allongé(e)": {
+"en": "Lying leg raises",
+"es": "Elevaciones de piernas tumbado/a",
+"pt": "Elevação de pernas deitado(a)",
+"de": "Beinheben im Liegen",
+"it": "Sollevamento gambe da sdraiato/a"
+},
+"Bas du dos plaqué au sol.": {
+"en": "Lower back pressed into the floor.",
+"es": "Zona lumbar pegada al suelo.",
+"pt": "Lombar colada no chão.",
+"de": "Unterer Rücken am Boden.",
+"it": "Zona lombare a terra."
+},
+"Montez les jambes en contrôlant.": {
+"en": "Raise your legs with control.",
+"es": "Sube las piernas con control.",
+"pt": "Suba as pernas com controle.",
+"de": "Beine kontrolliert anheben.",
+"it": "Solleva le gambe con controllo."
+},
+"Redescendez sans toucher le sol.": {
+"en": "Lower without touching the floor.",
+"es": "Baja sin tocar el suelo.",
+"pt": "Desça sem encostar no chão.",
+"de": "Absenken, ohne den Boden zu berühren.",
+"it": "Scendi senza toccare terra."
+},
+"Dead bug": {
+"en": "Dead bug",
+"es": "Dead bug",
+"pt": "Dead bug",
+"de": "Dead Bug",
+"it": "Dead bug"
+},
+"Abdominaux profonds": {
+"en": "Deep core",
+"es": "Abdominales profundos",
+"pt": "Abdômen profundo",
+"de": "Tiefe Bauchmuskeln",
+"it": "Addominali profondi"
+},
+"Dos plaqué au sol, bras vers le plafond.": {
+"en": "Back flat on the floor, arms towards the ceiling.",
+"es": "Espalda pegada al suelo, brazos hacia el techo.",
+"pt": "Costas coladas no chão, braços para o teto.",
+"de": "Rücken am Boden, Arme zur Decke.",
+"it": "Schiena a terra, braccia verso il soffitto."
+},
+"Allongez bras et jambe opposés.": {
+"en": "Extend opposite arm and leg.",
+"es": "Estira brazo y pierna opuestos.",
+"pt": "Estenda braço e perna opostos.",
+"de": "Gegenüberliegenden Arm und Bein strecken.",
+"it": "Allunga braccio e gamba opposti."
+},
+"Expirez à chaque extension.": {
+"en": "Breathe out on each extension.",
+"es": "Espira en cada extensión.",
+"pt": "Expire a cada extensão.",
+"de": "Bei jeder Streckung ausatmen.",
+"it": "Espira a ogni estensione."
+},
+"Bird dog": {
+"en": "Bird dog",
+"es": "Bird dog",
+"pt": "Bird dog",
+"de": "Bird Dog",
+"it": "Bird dog"
+},
+"Gainage, bas du dos": {
+"en": "Core, lower back",
+"es": "Core, zona lumbar",
+"pt": "Core, lombar",
+"de": "Rumpf, unterer Rücken",
+"it": "Core, zona lombare"
+},
+"À quatre pattes, dos plat.": {
+"en": "On all fours, back flat.",
+"es": "A cuatro patas, espalda recta.",
+"pt": "De quatro apoios, costas retas.",
+"de": "Im Vierfüßlerstand, Rücken gerade.",
+"it": "A quattro zampe, schiena piatta."
+},
+"Tendez bras et jambe opposés.": {
+"en": "Extend opposite arm and leg.",
+"es": "Estira brazo y pierna opuestos.",
+"pt": "Estenda braço e perna opostos.",
+"de": "Gegenüberliegenden Arm und Bein strecken.",
+"it": "Distendi braccio e gamba opposti."
+},
+"Tenez 2 secondes sans tourner le bassin.": {
+"en": "Hold 2 seconds without rotating your hips.",
+"es": "Aguanta 2 segundos sin girar la pelvis.",
+"pt": "Segure 2 segundos sem girar o quadril.",
+"de": "2 Sekunden halten, ohne das Becken zu drehen.",
+"it": "Tieni 2 secondi senza ruotare il bacino."
+},
+"Montées sur banc ou marche": {
+"en": "Step-ups on a bench or step",
+"es": "Subidas a banco o escalón",
+"pt": "Subida no banco ou degrau",
+"de": "Step-ups auf Bank oder Stufe",
+"it": "Step-up su panca o gradino"
+},
+"Posez tout le pied sur la marche.": {
+"en": "Place your whole foot on the step.",
+"es": "Apoya todo el pie en el escalón.",
+"pt": "Apoie o pé inteiro no degrau.",
+"de": "Den ganzen Fuß auf die Stufe setzen.",
+"it": "Appoggia tutto il piede sul gradino."
+},
+"Montez en poussant sur la jambe d’appui.": {
+"en": "Step up by pushing through the front leg.",
+"es": "Sube empujando con la pierna de apoyo.",
+"pt": "Suba empurrando com a perna de apoio.",
+"de": "Über das Standbein hochdrücken.",
+"it": "Sali spingendo sulla gamba d’appoggio."
+},
+"Marche du fermier": {
+"en": "Farmer’s walk",
+"es": "Paseo del granjero",
+"pt": "Caminhada do fazendeiro",
+"de": "Farmer’s Walk",
+"it": "Camminata del contadino"
+},
+"Prise, gainage, épaules": {
+"en": "Grip, core, shoulders",
+"es": "Agarre, core, hombros",
+"pt": "Pegada, core, ombros",
+"de": "Griffkraft, Rumpf, Schultern",
+"it": "Presa, core, spalle"
+},
+"Une charge lourde dans chaque main.": {
+"en": "A heavy weight in each hand.",
+"es": "Una carga pesada en cada mano.",
+"pt": "Uma carga pesada em cada mão.",
+"de": "Ein schweres Gewicht in jeder Hand.",
+"it": "Un carico pesante in ogni mano."
+},
+"Épaules basses, buste droit.": {
+"en": "Shoulders down, torso upright.",
+"es": "Hombros bajos, torso recto.",
+"pt": "Ombros baixos, tronco reto.",
+"de": "Schultern tief, Oberkörper aufrecht.",
+"it": "Spalle basse, busto dritto."
+},
+"Marchez à petits pas réguliers.": {
+"en": "Walk with short, steady steps.",
+"es": "Camina con pasos cortos y regulares.",
+"pt": "Caminhe com passos curtos e regulares.",
+"de": "Mit kleinen, gleichmäßigen Schritten gehen.",
+"it": "Cammina a piccoli passi regolari."
+},
+"Chaise contre le mur": {
+"en": "Wall sit",
+"es": "Sentadilla isométrica en pared",
+"pt": "Cadeirinha na parede",
+"de": "Wandsitzen",
+"it": "Sedia al muro"
+},
+"Dos plaqué au mur, genoux à 90°.": {
+"en": "Back against the wall, knees at 90°.",
+"es": "Espalda contra la pared, rodillas a 90°.",
+"pt": "Costas na parede, joelhos a 90°.",
+"de": "Rücken an der Wand, Knie im 90°-Winkel.",
+"it": "Schiena al muro, ginocchia a 90°."
+},
+"Poids du corps sur les talons.": {
+"en": "Body weight on your heels.",
+"es": "Peso del cuerpo en los talones.",
+"pt": "Peso do corpo nos calcanhares.",
+"de": "Gewicht auf den Fersen.",
+"it": "Peso del corpo sui talloni."
+},
+"Marche rapide": {
+"en": "Brisk walking",
+"es": "Caminata rápida",
+"pt": "Caminhada rápida",
+"de": "Zügiges Gehen",
+"it": "Camminata veloce"
+},
+"Un rythme où vous pouvez parler mais pas chanter.": {
+"en": "A pace where you can talk but not sing.",
+"es": "Un ritmo en el que puedes hablar pero no cantar.",
+"pt": "Um ritmo em que você consegue falar, mas não cantar.",
+"de": "Ein Tempo, bei dem du sprechen, aber nicht singen kannst.",
+"it": "Un ritmo in cui puoi parlare ma non cantare."
+},
+"Balancez les bras.": {
+"en": "Swing your arms.",
+"es": "Balancea los brazos.",
+"pt": "Balance os braços.",
+"de": "Arme mitschwingen.",
+"it": "Muovi le braccia."
+},
+"Augmentez la durée progressivement.": {
+"en": "Gradually increase the duration.",
+"es": "Aumenta la duración poco a poco.",
+"pt": "Aumente a duração aos poucos.",
+"de": "Dauer schrittweise steigern.",
+"it": "Aumenta gradualmente la durata."
+},
+"Chat-vache": {
+"en": "Cat-cow",
+"es": "Gato-vaca",
+"pt": "Gato-vaca",
+"de": "Katze-Kuh",
+"it": "Gatto-mucca"
+},
+"Mobilité du dos": {
+"en": "Back mobility",
+"es": "Movilidad de la espalda",
+"pt": "Mobilidade da coluna",
+"de": "Rückenmobilität",
+"it": "Mobilità della schiena"
+},
+"À quatre pattes.": {
+"en": "On all fours.",
+"es": "A cuatro patas.",
+"pt": "De quatro apoios.",
+"de": "Im Vierfüßlerstand.",
+"it": "A quattro zampe."
+},
+"Arrondissez puis creusez doucement le dos.": {
+"en": "Gently round then arch your back.",
+"es": "Redondea y luego arquea suavemente la espalda.",
+"pt": "Arredonde e depois arqueie suavemente as costas.",
+"de": "Rücken sanft runden und dann durchhängen lassen.",
+"it": "Inarca e poi incava dolcemente la schiena."
+},
+"Suivez le rythme de votre respiration.": {
+"en": "Follow the rhythm of your breathing.",
+"es": "Sigue el ritmo de tu respiración.",
+"pt": "Siga o ritmo da sua respiração.",
+"de": "Folge dem Rhythmus deines Atems.",
+"it": "Segui il ritmo del respiro."
+},
+"Ouverture de hanches (fente basse)": {
+"en": "Hip opener (low lunge)",
+"es": "Apertura de cadera (zancada baja)",
+"pt": "Abertura de quadril (avanço baixo)",
+"de": "Hüftöffner (tiefer Ausfallschritt)",
+"it": "Apertura delle anche (affondo basso)"
+},
+"Mobilité des hanches": {
+"en": "Hip mobility",
+"es": "Movilidad de cadera",
+"pt": "Mobilidade do quadril",
+"de": "Hüftmobilität",
+"it": "Mobilità delle anche"
+},
+"Genou arrière au sol, sur un coussin.": {
+"en": "Back knee on the floor, on a cushion.",
+"es": "Rodilla trasera en el suelo, sobre un cojín.",
+"pt": "Joelho de trás no chão, sobre uma almofada.",
+"de": "Hinteres Knie auf einem Kissen am Boden.",
+"it": "Ginocchio posteriore a terra, su un cuscino."
+},
+"Avancez doucement le bassin.": {
+"en": "Gently move your hips forward.",
+"es": "Adelanta suavemente la pelvis.",
+"pt": "Avance o quadril suavemente.",
+"de": "Becken sanft nach vorne schieben.",
+"it": "Porta dolcemente il bacino in avanti."
+},
+"Tenez sans douleur.": {
+"en": "Hold without pain.",
+"es": "Mantén sin dolor.",
+"pt": "Segure sem dor.",
+"de": "Ohne Schmerz halten.",
+"it": "Mantieni senza dolore."
+},
+"Squat goblet": {
+"en": "Goblet squat",
+"es": "Sentadilla goblet",
+"pt": "Agachamento goblet",
+"de": "Goblet Squat",
+"it": "Goblet squat"
+},
+"Haltère tenu contre la poitrine.": {
+"en": "Dumbbell held against your chest.",
+"es": "Mancuerna sujeta contra el pecho.",
+"pt": "Halter segurado junto ao peito.",
+"de": "Kurzhantel vor der Brust halten.",
+"it": "Manubrio tenuto contro il petto."
+},
+"Descendez entre les genoux, dos droit.": {
+"en": "Sit down between your knees, back straight.",
+"es": "Baja entre las rodillas, espalda recta.",
+"pt": "Desça entre os joelhos, costas retas.",
+"de": "Zwischen die Knie absenken, Rücken gerade.",
+"it": "Scendi tra le ginocchia, schiena dritta."
+},
+"Remontez en poussant dans les talons.": {
+"en": "Stand up by pushing through your heels.",
+"es": "Sube empujando con los talones.",
+"pt": "Suba empurrando pelos calcanhares.",
+"de": "Über die Fersen hochdrücken.",
+"it": "Risali spingendo sui talloni."
+},
+"Corde à sauter ou jumping jacks": {
+"en": "Skipping rope or jumping jacks",
+"es": "Comba o jumping jacks",
+"pt": "Pular corda ou polichinelos",
+"de": "Seilspringen oder Hampelmänner",
+"it": "Corda o jumping jack"
+},
+"Restez sur l’avant du pied.": {
+"en": "Stay on the balls of your feet.",
+"es": "Mantente sobre la parte delantera del pie.",
+"pt": "Fique na ponta dos pés.",
+"de": "Auf den Fußballen bleiben.",
+"it": "Resta sull’avampiede."
+},
+"Faites des pauses si besoin.": {
+"en": "Take breaks if needed.",
+"es": "Haz pausas si lo necesitas.",
+"pt": "Faça pausas se precisar.",
+"de": "Bei Bedarf Pausen machen.",
+"it": "Fai pause se serve."
+},
+"Les variations hormonales peuvent rendre l’humeur plus fragile, et le stress pousse souvent vers le sucré.": {
+"en": "Hormonal changes can make your mood more fragile, and stress often pushes towards sweet food.",
+"es": "Los cambios hormonales pueden hacer el ánimo más frágil, y el estrés suele empujar hacia lo dulce.",
+"pt": "As variações hormonais podem deixar o humor mais frágil, e o estresse costuma levar ao doce.",
+"de": "Hormonelle Schwankungen können die Stimmung empfindlicher machen, und Stress lockt oft zu Süßem.",
+"it": "Le variazioni ormonali possono rendere l’umore più fragile e lo stress spinge spesso verso il dolce."
+},
+"Notez votre humeur dans le journal aujourd’hui et prévoyez une collation pour l’après-midi.": {
+"en": "Note your mood in the log today and plan an afternoon snack.",
+"es": "Anota tu ánimo en el diario hoy y prevé un tentempié para la tarde.",
+"pt": "Anote seu humor no diário hoje e planeje um lanche para a tarde.",
+"de": "Trage heute deine Stimmung ins Tagebuch ein und plane einen Nachmittagssnack.",
+"it": "Annota oggi il tuo umore nel diario e prevedi uno spuntino pomeridiano."
+},
+"Repérez les moments où vous grignotez sans faim : fatigue, ennui, tension.": {
+"en": "Notice when you snack without hunger: tiredness, boredom, tension.",
+"es": "Detecta cuándo picas sin hambre: cansancio, aburrimiento, tensión.",
+"pt": "Perceba quando você belisca sem fome: cansaço, tédio, tensão.",
+"de": "Achte darauf, wann du ohne Hunger naschst: Müdigkeit, Langeweile, Anspannung.",
+"it": "Nota quando sgranocchi senza fame: stanchezza, noia, tensione."
+},
+"Une pause de 3 respirations lentes avant d’ouvrir le placard aide à choisir plutôt que subir.": {
+"en": "A pause of 3 slow breaths before opening the cupboard helps you choose rather than give in.",
+"es": "Una pausa de 3 respiraciones lentas antes de abrir el armario ayuda a elegir en lugar de ceder.",
+"pt": "Uma pausa de 3 respirações lentas antes de abrir o armário ajuda a escolher em vez de ceder.",
+"de": "3 langsame Atemzüge, bevor du den Schrank öffnest, helfen dir zu wählen statt nachzugeben.",
+"it": "Una pausa di 3 respiri lenti prima di aprire la dispensa aiuta a scegliere invece di subire."
+},
+"Si la tristesse, l’anxiété ou l’irritabilité durent, parlez-en à votre médecin : un accompagnement existe.": {
+"en": "If sadness, anxiety or irritability persist, talk to your doctor: support is available.",
+"es": "Si la tristeza, la ansiedad o la irritabilidad persisten, habla con tu médico: existe apoyo.",
+"pt": "Se a tristeza, a ansiedade ou a irritabilidade persistirem, fale com seu médico: existe acompanhamento.",
+"de": "Wenn Traurigkeit, Angst oder Reizbarkeit anhalten, sprich mit deiner Ärztin/deinem Arzt: Es gibt Unterstützung.",
+"it": "Se tristezza, ansia o irritabilità durano, parlane con il tuo medico: un supporto esiste."
+},
+"La marche active est simple, gratuite et utile pour le cœur, l’humeur, le sommeil et les os.": {
+"en": "Brisk walking is simple, free and good for your heart, mood, sleep and bones.",
+"es": "Caminar a buen ritmo es sencillo, gratis y útil para el corazón, el ánimo, el sueño y los huesos.",
+"pt": "A caminhada ativa é simples, gratuita e útil para o coração, o humor, o sono e os ossos.",
+"de": "Zügiges Gehen ist einfach, kostenlos und gut für Herz, Stimmung, Schlaf und Knochen.",
+"it": "La camminata veloce è semplice, gratuita e utile per cuore, umore, sonno e ossa."
+},
+"Programmez une marche de 30 minutes dans votre journée.": {
+"en": "Schedule a 30-minute walk in your day.",
+"es": "Programa una caminata de 30 minutos en tu día.",
+"pt": "Programe uma caminhada de 30 minutos no seu dia.",
+"de": "Plane einen 30-minütigen Spaziergang in deinen Tag ein.",
+"it": "Programma una camminata di 30 minuti nella tua giornata."
+},
+"Visez 30 minutes la plupart des jours, à un rythme où vous pouvez parler mais pas chanter.": {
+"en": "Aim for 30 minutes most days, at a pace where you can talk but not sing.",
+"es": "Apunta a 30 minutos la mayoría de los días, a un ritmo en el que puedas hablar pero no cantar.",
+"pt": "Busque 30 minutos na maioria dos dias, num ritmo em que dá para falar, mas não cantar.",
+"de": "Ziel: an den meisten Tagen 30 Minuten, in einem Tempo, bei dem du sprechen, aber nicht singen kannst.",
+"it": "Punta a 30 minuti quasi tutti i giorni, a un ritmo in cui puoi parlare ma non cantare."
+},
+"Ajoutez des côtes ou des escaliers pour plus d’effet.": {
+"en": "Add hills or stairs for more effect.",
+"es": "Añade cuestas o escaleras para más efecto.",
+"pt": "Inclua subidas ou escadas para mais efeito.",
+"de": "Für mehr Wirkung Steigungen oder Treppen einbauen.",
+"it": "Aggiungi salite o scale per più effetto."
+},
+"Associez la marche à 2 séances de renforcement par semaine.": {
+"en": "Combine walking with 2 strength sessions a week.",
+"es": "Combina la caminata con 2 sesiones de fuerza por semana.",
+"pt": "Combine a caminhada com 2 treinos de força por semana.",
+"de": "Kombiniere das Gehen mit 2 Krafteinheiten pro Woche.",
+"it": "Abbina la camminata a 2 sedute di rinforzo a settimana."
+},
+"Plus de 10 programmes salle et maison, agenda de la semaine, bibliothèque d’exercices et suivi des charges.": {
+"en": "10+ gym and home programs, weekly schedule, exercise library and weight tracking.",
+"es": "Más de 10 programas en gimnasio y en casa, agenda semanal, biblioteca de ejercicios y seguimiento de cargas.",
+"pt": "Mais de 10 programas na academia e em casa, agenda da semana, biblioteca de exercícios e registro de cargas.",
+"de": "Über 10 Programme für Studio und Zuhause, Wochenplan, Übungsbibliothek und Gewichtsprotokoll.",
+"it": "Oltre 10 programmi in palestra e a casa, agenda settimanale, libreria di esercizi e registro dei carichi."
+},
+"Plan de repas 7 jours, recettes de chef, liste de courses et « Que manger ensuite ? ».": {
+"en": "7-day meal plan, chef recipes, shopping list and “What should I eat next?”.",
+"es": "Plan de comidas de 7 días, recetas de chef, lista de la compra y «¿Qué como ahora?».",
+"pt": "Plano de refeições de 7 dias, receitas de chef, lista de compras e “O que comer agora?”.",
+"de": "7-Tage-Essensplan, Rezepte vom Koch, Einkaufsliste und „Was esse ich als Nächstes?“.",
+"it": "Piano pasti di 7 giorni, ricette dello chef, lista della spesa e «Cosa mangio adesso?»."
+},
+"Ajoutez l’espace Ménopause 40+": {
+"en": "Add the Menopause 40+ space",
+"es": "Añade el espacio Menopausia 40+",
+"pt": "Adicione o espaço Menopausa 40+",
+"de": "Füge den Wechseljahre-40+-Bereich hinzu",
+"it": "Aggiungi lo spazio Menopausa 40+"
+},
+"Journal des symptômes, alimentation adaptée, séances force et équilibre, programme guidé de 8 semaines.": {
+"en": "Symptom log, tailored eating, strength and balance sessions, guided 8-week program.",
+"es": "Diario de síntomas, alimentación adaptada, sesiones de fuerza y equilibrio, programa guiado de 8 semanas.",
+"pt": "Diário de sintomas, alimentação adaptada, treinos de força e equilíbrio, programa guiado de 8 semanas.",
+"de": "Symptomtagebuch, angepasste Ernährung, Kraft- und Gleichgewichtseinheiten, begleitetes 8-Wochen-Programm.",
+"it": "Diario dei sintomi, alimentazione adatta, sedute di forza ed equilibrio, programma guidato di 8 settimane."
+},
+"À préciser": {
+"en": "To be confirmed",
+"es": "Por precisar",
+"pt": "A definir",
+"de": "Noch offen",
+"it": "Da precisare"
+},
+"Avant la ménopause": {
+"en": "Before menopause",
+"es": "Antes de la menopausia",
+"pt": "Antes da menopausa",
+"de": "Vor den Wechseljahren",
+"it": "Prima della menopausa"
+},
+"Repos": {
+"en": "Rest",
+"es": "Descanso",
+"pt": "Descanso",
+"de": "Pause",
+"it": "Riposo"
+},
+"Recommandé pour vous": {
+"en": "Recommended for you",
+"es": "Recomendado para ti",
+"pt": "Recomendado para você",
+"de": "Für dich empfohlen",
+"it": "Consigliato per te"
+},
+"Économisez {n} % par rapport aux 3 formules séparées": {
+"en": "Save {n}% compared with the 3 separate plans",
+"es": "Ahorra un {n} % respecto a los 3 planes por separado",
+"pt": "Economize {n}% em relação aos 3 planos separados",
+"de": "Spare {n} % gegenüber den 3 einzelnen Paketen",
+"it": "Risparmia il {n}% rispetto ai 3 piani separati"
+},
+"Journal rempli ✓": {
+"en": "Log filled in ✓",
+"es": "Diario completado ✓",
+"pt": "Diário preenchido ✓",
+"de": "Tagebuch ausgefüllt ✓",
+"it": "Diario compilato ✓"
+},
+"{n} idées": {
+"en": "{n} ideas",
+"es": "{n} ideas",
+"pt": "{n} ideias",
+"de": "{n} Ideen",
+"it": "{n} idee"
+},
+"Rappels activés": {
+"en": "Reminders on",
+"es": "Recordatorios activados",
+"pt": "Lembretes ativados",
+"de": "Erinnerungen aktiv",
+"it": "Promemoria attivi"
+},
+"Rappels enregistrés ✓": {
+"en": "Reminders saved ✓",
+"es": "Recordatorios guardados ✓",
+"pt": "Lembretes salvos ✓",
+"de": "Erinnerungen gespeichert ✓",
+"it": "Promemoria salvati ✓"
+},
+"Un verre d’eau ? Il vous reste {n} ml pour aujourd’hui.": {
+"en": "A glass of water? You have {n} ml left for today.",
+"es": "¿Un vaso de agua? Te quedan {n} ml para hoy.",
+"pt": "Um copo de água? Faltam {n} ml para hoje.",
+"de": "Ein Glas Wasser? Dir fehlen heute noch {n} ml.",
+"it": "Un bicchiere d’acqua? Ti mancano {n} ml per oggi."
+},
+"C’est l’heure de votre {meal}. Scannez-le en une photo.": {
+"en": "Time for your {meal}. Scan it in one photo.",
+"es": "Es la hora de tu {meal}. Escanéalo con una foto.",
+"pt": "Hora do seu {meal}. Escaneie com uma foto.",
+"de": "Zeit für dein {meal}. Scanne es mit einem Foto.",
+"it": "È l’ora del tuo {meal}. Scansionalo con una foto."
+},
+"Séance du jour : {name}. On y va ?": {
+"en": "Today’s workout: {name}. Ready?",
+"es": "Sesión de hoy: {name}. ¿Vamos?",
+"pt": "Treino de hoje: {name}. Bora?",
+"de": "Heutige Einheit: {name}. Los geht’s?",
+"it": "Seduta di oggi: {name}. Si parte?"
+},
+"C’est le jour de la pesée. Notez votre poids pour suivre la tendance.": {
+"en": "It’s weigh-in day. Log your weight to follow the trend.",
+"es": "Es día de pesaje. Anota tu peso para seguir la tendencia.",
+"pt": "É dia de pesagem. Anote seu peso para acompanhar a tendência.",
+"de": "Heute ist Wiegetag. Trage dein Gewicht ein, um den Trend zu sehen.",
+"it": "È il giorno della pesata. Annota il peso per seguire l’andamento."
+},
+"Jour de repos": {
+"en": "Rest day",
+"es": "Día de descanso",
+"pt": "Dia de descanso",
+"de": "Ruhetag",
+"it": "Giorno di riposo"
+},
+"Récupération, marche ou mobilité": {
+"en": "Recovery, walking or mobility",
+"es": "Recuperación, caminata o movilidad",
+"pt": "Recuperação, caminhada ou mobilidade",
+"de": "Erholung, Gehen oder Mobilität",
+"it": "Recupero, camminata o mobilità"
+},
+"Faire quand même : {name}": {
+"en": "Do it anyway: {name}",
+"es": "Hacerla igualmente: {name}",
+"pt": "Fazer mesmo assim: {name}",
+"de": "Trotzdem machen: {name}",
+"it": "Falla comunque: {name}"
+},
+"Aucun programme pour ce filtre.": {
+"en": "No programs for this filter.",
+"es": "Ningún programa para este filtro.",
+"pt": "Nenhum programa para este filtro.",
+"de": "Keine Programme für diesen Filter.",
+"it": "Nessun programma per questo filtro."
+},
+"Dernière charge : {n} kg": {
+"en": "Last weight: {n} kg",
+"es": "Última carga: {n} kg",
+"pt": "Última carga: {n} kg",
+"de": "Letztes Gewicht: {n} kg",
+"it": "Ultimo carico: {n} kg"
+},
+"Dans les programmes": {
+"en": "In programs",
+"es": "En los programas",
+"pt": "Nos programas",
+"de": "In den Programmen",
+"it": "Nei programmi"
+},
+"Collez votre programme pour l’importer.": {
+"en": "Paste your program to import it.",
+"es": "Pega tu programa para importarlo.",
+"pt": "Cole seu programa para importá-lo.",
+"de": "Füge dein Programm ein, um es zu importieren.",
+"it": "Incolla il tuo programma per importarlo."
+},
+"Nous n’avons pas reconnu d’exercices. Écrivez par exemple « Squat 4x10 ».": {
+"en": "We didn’t recognise any exercises. Write for example “Squat 4x10”.",
+"es": "No hemos reconocido ejercicios. Escribe por ejemplo «Sentadilla 4x10».",
+"pt": "Não reconhecemos exercícios. Escreva por exemplo “Agachamento 4x10”.",
+"de": "Wir haben keine Übungen erkannt. Schreibe zum Beispiel „Kniebeuge 4x10“.",
+"it": "Non abbiamo riconosciuto esercizi. Scrivi per esempio «Squat 4x10»."
+},
+"Importé depuis votre programme": {
+"en": "Imported from your program",
+"es": "Importado de tu programa",
+"pt": "Importado do seu programa",
+"de": "Aus deinem Programm importiert",
+"it": "Importato dal tuo programma"
+},
+"Programme importé ✓": {
+"en": "Program imported ✓",
+"es": "Programa importado ✓",
+"pt": "Programa importado ✓",
+"de": "Programm importiert ✓",
+"it": "Programma importato ✓"
+},
+"L’import du plan alimentaire nécessite l’assistant. Réessayez dans un instant.": {
+"en": "Importing a meal plan needs the assistant. Try again in a moment.",
+"es": "Importar el plan de comidas requiere el asistente. Vuelve a intentarlo en un momento.",
+"pt": "A importação do plano alimentar precisa do assistente. Tente novamente em instantes.",
+"de": "Für den Import des Ernährungsplans wird der Assistent benötigt. Versuche es gleich noch einmal.",
+"it": "L’importazione del piano alimentare richiede l’assistente. Riprova tra poco."
+},
+"Plan alimentaire importé ✓": {
+"en": "Meal plan imported ✓",
+"es": "Plan de comidas importado ✓",
+"pt": "Plano alimentar importado ✓",
+"de": "Ernährungsplan importiert ✓",
+"it": "Piano alimentare importato ✓"
+},
+"Remplissez le journal quelques jours : vos tendances apparaîtront ici.": {
+"en": "Fill in the log for a few days: your trends will appear here.",
+"es": "Rellena el diario unos días: aquí aparecerán tus tendencias.",
+"pt": "Preencha o diário por alguns dias: suas tendências aparecerão aqui.",
+"de": "Fülle das Tagebuch ein paar Tage aus: Hier erscheinen deine Trends.",
+"it": "Compila il diario per qualche giorno: qui appariranno le tue tendenze."
+},
+"Vos symptômes sont stables cette semaine. Continuez à noter : la tendance compte plus qu’un jour isolé.": {
+"en": "Your symptoms are stable this week. Keep logging: the trend matters more than a single day.",
+"es": "Tus síntomas están estables esta semana. Sigue anotando: la tendencia cuenta más que un día aislado.",
+"pt": "Seus sintomas estão estáveis esta semana. Continue anotando: a tendência conta mais que um dia isolado.",
+"de": "Deine Symptome sind diese Woche stabil. Trage weiter ein: Der Trend zählt mehr als ein einzelner Tag.",
+"it": "I tuoi sintomi sono stabili questa settimana. Continua ad annotare: conta più la tendenza che il singolo giorno."
+},
+"Passer au Kit complet": {
+"en": "Upgrade to the Complete kit",
+"es": "Pasar al Kit completo",
+"pt": "Mudar para o Kit completo",
+"de": "Zum Komplett-Paket wechseln",
+"it": "Passa al Kit completo"
+},
+"Journal du jour complet ✓": {
+"en": "Today’s log complete ✓",
+"es": "Diario de hoy completo ✓",
+"pt": "Diário de hoje completo ✓",
+"de": "Heutiges Tagebuch vollständig ✓",
+"it": "Diario di oggi completo ✓"
+},
+"Action validée ✓": {
+"en": "Action done ✓",
+"es": "Acción hecha ✓",
+"pt": "Ação feita ✓",
+"de": "Erledigt ✓",
+"it": "Azione fatta ✓"
+},
+"Gardez au moins un jour d’entraînement.": {
+"en": "Keep at least one training day.",
+"es": "Mantén al menos un día de entrenamiento.",
+"pt": "Mantenha pelo menos um dia de treino.",
+"de": "Behalte mindestens einen Trainingstag.",
+"it": "Mantieni almeno un giorno di allenamento."
+},
+"Choisissez au moins un jour.": {
+"en": "Choose at least one day.",
+"es": "Elige al menos un día.",
+"pt": "Escolha pelo menos um dia.",
+"de": "Wähle mindestens einen Tag.",
+"it": "Scegli almeno un giorno."
+},
+"Choisissez au moins une zone à travailler.": {
+"en": "Choose at least one area to train.",
+"es": "Elige al menos una zona para trabajar.",
+"pt": "Escolha pelo menos uma região para treinar.",
+"de": "Wähle mindestens eine Zone zum Trainieren.",
+"it": "Scegli almeno una zona da allenare."
+},
+"Votre programme est prêt ✓": {
+"en": "Your program is ready ✓",
+"es": "Tu programa está listo ✓",
+"pt": "Seu programa está pronto ✓",
+"de": "Dein Programm ist fertig ✓",
+"it": "Il tuo programma è pronto ✓"
+},
+"Objectif d’hydratation atteint 💧": {
+"en": "Hydration goal reached 💧",
+"es": "Objetivo de hidratación alcanzado 💧",
+"pt": "Meta de hidratação atingida 💧",
+"de": "Trinkziel erreicht 💧",
+"it": "Obiettivo di idratazione raggiunto 💧"
+},
+"Date": {
+"en": "Date",
+"es": "Fecha",
+"pt": "Data",
+"de": "Datum",
+"it": "Data"
+},
+"Échelle : 0 = aucun, 1 = léger, 2 = moyen, 3 = fort": {
+"en": "Scale: 0 = none, 1 = mild, 2 = moderate, 3 = strong",
+"es": "Escala: 0 = nada, 1 = leve, 2 = moderado, 3 = fuerte",
+"pt": "Escala: 0 = nenhum, 1 = leve, 2 = moderado, 3 = forte",
+"de": "Skala: 0 = keine, 1 = leicht, 2 = mittel, 3 = stark",
+"it": "Scala: 0 = nessuno, 1 = lieve, 2 = medio, 3 = forte"
+},
+"Pas d’alternative pour cet exercice.": {
+"en": "No alternative for this exercise.",
+"es": "No hay alternativa para este ejercicio.",
+"pt": "Não há alternativa para este exercício.",
+"de": "Keine Alternative für diese Übung.",
+"it": "Nessuna alternativa per questo esercizio."
+},
+"Remplacé par : {name}": {
+"en": "Replaced with: {name}",
+"es": "Sustituido por: {name}",
+"pt": "Substituído por: {name}",
+"de": "Ersetzt durch: {name}",
+"it": "Sostituito con: {name}"
+},
+"{s} : en hausse par rapport à la semaine dernière.": {
+"en": "{s}: up compared with last week.",
+"es": "{s}: al alza respecto a la semana pasada.",
+"pt": "{s}: em alta em relação à semana passada.",
+"de": "{s}: mehr als letzte Woche.",
+"it": "{s}: in aumento rispetto alla settimana scorsa."
+},
+"Découvrir la formule Ménopause": {
+"en": "Discover the Menopause plan",
+"es": "Descubrir el plan Menopausia",
+"pt": "Conhecer o plano Menopausa",
+"de": "Wechseljahre-Paket entdecken",
+"it": "Scopri il piano Menopausa"
+},
+"kcal au-dessus": {
+"en": "kcal over",
+"es": "kcal de más",
+"pt": "kcal acima",
+"de": "kcal zu viel",
+"it": "kcal in eccesso"
+},
+"{n} j": {
+"en": "{n} d",
+"es": "{n} d",
+"pt": "{n} d",
+"de": "{n} T.",
+"it": "{n} g"
+},
+"À": {
+"en": "To",
+"es": "A",
+"pt": "Até",
+"de": "Bis",
+"it": "Alle"
 }
 };
