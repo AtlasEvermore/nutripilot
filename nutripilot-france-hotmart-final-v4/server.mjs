@@ -1,4 +1,6 @@
 import http from 'node:http';
+import { AsyncLocalStorage } from 'node:async_hooks';
+const requestLang = new AsyncLocalStorage();
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -47,6 +49,7 @@ const REVOKED_EVENTS = new Set(['PURCHASE_REFUNDED', 'PURCHASE_CHARGEBACK', 'PUR
 const STATIC_FILES = new Set([
   '/index.html',
   '/app.js',
+  '/i18n.js',
   '/styles.css',
   '/sw.js',
   '/manifest.webmanifest',
@@ -501,8 +504,18 @@ async function fetchJson(url, options = {}, timeoutMs = 25_000) {
   }
 }
 
+const LANG_NAMES = { fr: 'français', en: 'English', es: 'español', pt: 'português', de: 'Deutsch', it: 'italiano' };
+function langFromRequest(req) {
+  const code = String(req.headers['x-np-lang'] || '').slice(0, 2).toLowerCase();
+  return LANG_NAMES[code] ? code : 'fr';
+}
+
 async function callAI(input, max = 1600) {
   if (!OPENAI_API_KEY || !OPENAI_MODEL) throw new Error('IA non configurée');
+  const langCode = requestLang.getStore();
+  if (langCode && langCode !== 'fr' && LANG_NAMES[langCode]) {
+    input = `${input}\nIMPORTANT : rédige tous les textes destinés à l'utilisateur (titres, noms d'aliments et de plats, conseils, étapes, réponses) en ${LANG_NAMES[langCode]}. Les clés JSON restent identiques.`;
+  }
   const { response, data } = await fetchJson('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
@@ -611,7 +624,15 @@ async function support(body) {
     .filter((m) => m.text);
   if (!history.length || history[history.length - 1].role !== 'user') throw publicError('Message vide.');
   if (!OPENAI_API_KEY || !OPENAI_MODEL) {
-    return { answer: `Notre assistant est momentanément indisponible. Écrivez-nous à ${SUPPORT_EMAIL} : nous vous répondons rapidement.` };
+    const offline = {
+      fr: `Notre assistant est momentanément indisponible. Écrivez-nous à ${SUPPORT_EMAIL} : nous vous répondons rapidement.`,
+      en: `Our assistant is temporarily unavailable. Write to us at ${SUPPORT_EMAIL} and we’ll reply quickly.`,
+      es: `Nuestro asistente no está disponible en este momento. Escríbenos a ${SUPPORT_EMAIL} y te responderemos enseguida.`,
+      pt: `Nosso assistente está indisponível no momento. Escreva para ${SUPPORT_EMAIL} e responderemos rapidinho.`,
+      de: `Unser Assistent ist gerade nicht verfügbar. Schreib uns an ${SUPPORT_EMAIL}, wir antworten schnell.`,
+      it: `Il nostro assistente non è disponibile al momento. Scrivici a ${SUPPORT_EMAIL}: ti risponderemo presto.`,
+    };
+    return { answer: offline[lang] };
   }
   const input = `Tu es l'assistant du support client de NutriPilot. Réponds en ${SUPPORT_LANGS[lang]}, de façon chaleureuse, claire et courte (4 phrases maximum).
 Base de connaissances (seule source fiable) :
@@ -641,7 +662,7 @@ async function coach(body) {
     return { answer: 'Je peux vous aider à transformer votre objectif du jour en choix concrets. Utilisez « Que manger ensuite ? », votre plan 7 jours ou le scanner pour partir de données réelles.' };
   }
 
-  const input = `Tu es le coach nutritionnel de NutriPilot. Réponds en français, de façon concrète, bienveillante et courte. Tu aides à la perte de poids progressive et à la régularité, sans diagnostic, prescription médicale, culpabilisation ni restriction extrême.
+  const input = `Tu es le coach nutritionnel de NutriPilot. Réponds en français (sauf consigne de langue ci-dessous), de façon concrète, bienveillante et courte. Tu aides à la perte de poids progressive et à la régularité, sans diagnostic, prescription médicale, culpabilisation ni restriction extrême.
 Contexte utilisateur: ${context}
 Question: ${safeText(body.message, 1200)}
 Si la question concerne grossesse, trouble alimentaire, maladie, traitement, symptômes ou situation médicale, recommande un professionnel de santé approprié.
@@ -1176,6 +1197,7 @@ async function dataDirectoryWritable() {
 }
 
 const server = http.createServer(async (req, res) => {
+  requestLang.enterWith(langFromRequest(req));
   try {
     const url = new URL(req.url, APP_URL);
 
