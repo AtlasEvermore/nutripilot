@@ -34,3 +34,7 @@ Les trois checkouts Hotmart sont déjà intégrés. Copiez `.env.example` vers `
 
 ## Important
 Une photo seule ne pèse pas un aliment. NutriPilot présente donc des estimations, une fourchette et permet la correction des portions. Avant mise en production, finalisez identité légale, CGV/CGU, politique de confidentialité, cookies/analytics et fiscalité applicables.
+
+## Translations
+
+`i18n.js` is the master dictionary (key = French text, one entry per language). After editing it, run `npm run i18n` to regenerate `i18n/<code>.js`; the app only downloads the active language. Supported: fr, en, es, pt, de, it, nl, pl, tr, ja, ko, zh, ar (right-to-left), id.

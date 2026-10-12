@@ -1,4 +1,3 @@
-import { DICT } from './i18n.js';
 import { WORLD_RECIPES, CUISINES, INGREDIENTS, ingredientAisle } from './food.js';
 import { EXTRA_EXERCISES, EQUIPMENT, EQUIP_OF, moveSvg } from './exercises.js';
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -659,7 +658,25 @@ function deepMerge(target, source) {
   return target;
 }
 
-const LOCALES = { fr: 'fr-FR', en: 'en-GB', es: 'es-ES', pt: 'pt-BR', de: 'de-DE', it: 'it-IT' };
+// Translations are split per language (i18n/<code>.js) so a phone only downloads its own language.
+let DICT = {};
+let DICT_EN = {};
+let dictLang = 'fr';
+const CORE_LANGS = ['en', 'es', 'pt', 'de', 'it'];
+async function loadDict(code) {
+  if (!code || code === 'fr') { DICT = {}; DICT_EN = {}; dictLang = 'fr'; return; }
+  if (dictLang === code) return;
+  try {
+    const [own, en] = await Promise.all([
+      import(`./i18n/${code}.js`),
+      code !== 'en' && !CORE_LANGS.includes(code) ? import('./i18n/en.js') : Promise.resolve({ default: {} }),
+    ]);
+    DICT = own.default || {};
+    DICT_EN = en.default || {};
+    dictLang = code;
+  } catch { /* offline before the language was cached: the app stays usable in French */ }
+}
+const LOCALES = { fr: 'fr-FR', en: 'en-GB', es: 'es-ES', pt: 'pt-BR', de: 'de-DE', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL', tr: 'tr-TR', ja: 'ja-JP', ko: 'ko-KR', zh: 'zh-CN', ar: 'ar-u-nu-latn', id: 'id-ID' };
 function locale() {
   return LOCALES[state?.lang] || 'fr-FR';
 }
@@ -669,10 +686,14 @@ function L(fr, vars, record = true) {
   const code = state?.lang || 'fr';
   let out = fr;
   if (code !== 'fr' && fr) {
-    const hit = DICT[fr]?.[code];
-    if (hit) out = hit; else if (record) missingKeys.add(fr);
+    // Lines not translated yet fall back to English (newer languages), then French.
+    const own = dictLang === code ? DICT[fr] : '';
+    const hit = own || DICT_EN[fr];
+    if (hit) out = hit;
+    if (!own && record) missingKeys.add(fr);
   }
   if (vars) out = String(out).replace(/\{(\w+)\}/g, (match, key) => (vars[key] ?? match));
+  if (code === 'ar' && out) out = String(out).replace(/→/g, '←');
   return out;
 }
 window.__npMissing = () => [...missingKeys];
@@ -968,6 +989,7 @@ async function init() {
   if (state.lastOpen && state.lastOpen !== today) awayDays = Math.round((new Date(`${today}T12:00:00`) - new Date(`${state.lastOpen}T12:00:00`)) / 86400000);
   state.lastOpen = today;
   saveState(false);
+  await loadDict(lang());
   render();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   startReminderLoop();
@@ -1102,6 +1124,9 @@ const TRACKS = [
 const LANGS = [
   ['fr', 'Français', '🇫🇷'], ['en', 'English', '🇬🇧'], ['es', 'Español', '🇪🇸'],
   ['pt', 'Português', '🇧🇷'], ['de', 'Deutsch', '🇩🇪'], ['it', 'Italiano', '🇮🇹'],
+  ['nl', 'Nederlands', '🇳🇱'], ['pl', 'Polski', '🇵🇱'], ['tr', 'Türkçe', '🇹🇷'],
+  ['ja', '日本語', '🇯🇵'], ['ko', '한국어', '🇰🇷'], ['zh', '中文', '🇨🇳'],
+  ['ar', 'العربية', '🇸🇦'], ['id', 'Bahasa Indonesia', '🇮🇩'],
 ];
 const I18N = {
   fr: {
@@ -1187,6 +1212,118 @@ const I18N = {
     tracks: [['Perdere peso', 'Dimagrire senza diete estreme'], ['Menopausa e 40+', 'Una pancia più piatta dopo i 40'], ['Aumentare i muscoli', 'Programma palestra + nutrizione sportiva'], ['Mangiare meglio', 'Più energia, senza complicazioni']],
     features: ['Scanner dei pasti con una foto', 'Piano pasti di 7 giorni', 'Ricette dello chef per dimagrire', 'Allenamenti in palestra e a casa', 'Guide sulla menopausa', 'Coach quotidiano', 'Monitoraggio di peso e misure', 'Lista della spesa automatica', 'Modalità ristorante e frigo', 'Nutrizionisti e coach (presto)'],
     exploreTiles: [['recipes', 'Ricette'], ['training', 'Allenamenti'], ['guides', 'Guide'], ['menopause', 'Menopausa 40+']],
+  },
+  nl: {
+    langTitle: 'Kies je taal', langCta: 'Doorgaan',
+    basicsTitle: 'Laten we kennismaken', basicsSub: 'Een paar gegevens om NutriPilot persoonlijk te maken. Je kunt ze altijd wijzigen.',
+    name: 'Voornaam', age: 'Leeftijd', weight: 'Geschat gewicht', height: 'Lengte', later: 'Ik antwoord later', basicsCta: 'Doorgaan',
+    namePh: 'Je voornaam', needName: 'Vul je voornaam in.', needAge: 'Vul een leeftijd tussen 18 en 90 in.',
+    saving: 'Je voorkeuren worden opgeslagen…', savingSub: 'We maken je ruimte klaar: voeding, training en coach.',
+    hello: 'Hallo', hubSub: 'Wat wil je vandaag doen?', hubQuiz: 'Mijn programma maken', hubQuizSub: 'Kies je doel: 2 minuten vragen, een plan op maat.',
+    hubExplore: 'NutriPilot verkennen', hubTour: 'De app ontdekken', hubTourSub: 'Alle functies in 1 minuut',
+    hubSupport: 'Hulp & support', hubSupportSub: 'Veelgestelde vragen en assistent',
+    myProgram: 'Jouw programma', seePlan: 'Mijn plan bekijken', unlock: 'Ontgrendelen', explore: 'Verkenmodus', exploreSub: 'Ontgrendel je abonnement om alles te gebruiken.',
+    tracks: [['Afvallen', 'Slanker zonder extreem dieet'], ['Menopauze & 40+', 'Een plattere buik na je 40e'], ['Spieren opbouwen', 'Sportschoolprogramma + sportvoeding'], ['Beter eten', 'Meer energie, zonder gedoe']],
+    features: ['Maaltijdscanner met één foto', 'Maaltijdplan voor 7 dagen', 'Lichte chef-recepten', 'Trainingen in de sportschool & thuis', 'Menopauzegidsen', 'Dagelijkse coach', 'Gewicht en maten bijhouden', 'Automatische boodschappenlijst', 'Restaurant- en koelkastmodus', 'Diëtisten & coaches (binnenkort)'],
+    exploreTiles: [['recipes', 'Recepten'], ['training', 'Trainingen'], ['guides', 'Gidsen'], ['menopause', 'Menopauze 40+']],
+  },
+  pl: {
+    langTitle: 'Wybierz język', langCta: 'Dalej',
+    basicsTitle: 'Poznajmy się', basicsSub: 'Kilka informacji, by spersonalizować NutriPilot. Możesz je zmienić w każdej chwili.',
+    name: 'Imię', age: 'Wiek', weight: 'Przybliżona waga', height: 'Wzrost', later: 'Odpowiem później', basicsCta: 'Dalej',
+    namePh: 'Twoje imię', needName: 'Podaj swoje imię.', needAge: 'Podaj wiek od 18 do 90 lat.',
+    saving: 'Zapisujemy twoje preferencje…', savingSub: 'Przygotowujemy twoją przestrzeń: żywienie, trening i coach.',
+    hello: 'Cześć', hubSub: 'Co chcesz dziś zrobić?', hubQuiz: 'Stwórz mój program', hubQuizSub: 'Wybierz cel: 2 minuty pytań, plan stworzony dla ciebie.',
+    hubExplore: 'Odkryj NutriPilot', hubTour: 'Poznaj aplikację', hubTourSub: 'Wszystkie funkcje w 1 minutę',
+    hubSupport: 'Pomoc i wsparcie', hubSupportSub: 'Najczęstsze pytania i asystent',
+    myProgram: 'Twój program', seePlan: 'Zobacz mój plan', unlock: 'Odblokuj', explore: 'Tryb podglądu', exploreSub: 'Odblokuj plan, aby korzystać ze wszystkiego.',
+    tracks: [['Schudnąć', 'Bez skrajnych diet'], ['Menopauza i 40+', 'Płaski brzuch po 40.'], ['Zbudować mięśnie', 'Program na siłownię + żywienie sportowe'], ['Jeść lepiej', 'Więcej energii, bez kombinowania']],
+    features: ['Skaner posiłków z jednego zdjęcia', 'Plan posiłków na 7 dni', 'Lekkie przepisy szefa kuchni', 'Treningi na siłowni i w domu', 'Poradniki o menopauzie', 'Codzienny coach', 'Śledzenie wagi i wymiarów', 'Automatyczna lista zakupów', 'Tryb restauracji i lodówki', 'Dietetycy i trenerzy (wkrótce)'],
+    exploreTiles: [['recipes', 'Przepisy'], ['training', 'Treningi'], ['guides', 'Poradniki'], ['menopause', 'Menopauza 40+']],
+  },
+  tr: {
+    langTitle: 'Dilini seç', langCta: 'Devam et',
+    basicsTitle: 'Seni tanıyalım', basicsSub: 'NutriPilot’u kişiselleştirmek için birkaç bilgi. İstediğin zaman değiştirebilirsin.',
+    name: 'Ad', age: 'Yaş', weight: 'Yaklaşık kilo', height: 'Boy', later: 'Sonra yanıtlayacağım', basicsCta: 'Devam et',
+    namePh: 'Adın', needName: 'Lütfen adını gir.', needAge: 'Lütfen 18 ile 90 arasında bir yaş gir.',
+    saving: 'Tercihlerin kaydediliyor…', savingSub: 'Alanını hazırlıyoruz: beslenme, antrenman ve koç.',
+    hello: 'Merhaba', hubSub: 'Bugün ne yapmak istersin?', hubQuiz: 'Programımı oluştur', hubQuizSub: 'Hedefini seç: 2 dakikalık sorular, sana özel bir plan.',
+    hubExplore: 'NutriPilot’u keşfet', hubTour: 'Uygulamayı tanı', hubTourSub: 'Tüm özellikler 1 dakikada',
+    hubSupport: 'Yardım ve destek', hubSupportSub: 'Sık sorulan sorular ve asistan',
+    myProgram: 'Programın', seePlan: 'Planımı gör', unlock: 'Kilidi aç', explore: 'Keşif modu', exploreSub: 'Her şeyi kullanmak için planının kilidini aç.',
+    tracks: [['Kilo vermek', 'Aşırı diyet olmadan incel'], ['Menopoz ve 40+', '40 yaşından sonra daha düz bir karın'], ['Kas yapmak', 'Spor salonu programı + sporcu beslenmesi'], ['Daha iyi beslenmek', 'Daha fazla enerji, zahmetsiz']],
+    features: ['Tek fotoğrafla yemek tarayıcı', '7 günlük yemek planı', 'Hafif şef tarifleri', 'Spor salonu ve ev antrenmanları', 'Menopoz rehberleri', 'Günlük koç', 'Kilo ve ölçü takibi', 'Otomatik alışveriş listesi', 'Restoran ve buzdolabı modu', 'Diyetisyenler ve koçlar (yakında)'],
+    exploreTiles: [['recipes', 'Tarifler'], ['training', 'Antrenmanlar'], ['guides', 'Rehberler'], ['menopause', 'Menopoz 40+']],
+  },
+  ja: {
+    langTitle: '言語を選択', langCta: '続ける',
+    basicsTitle: 'まずは教えてください', basicsSub: 'NutriPilotをあなた向けにするための情報です。いつでも変更できます。',
+    name: '名前', age: '年齢', weight: 'だいたいの体重', height: '身長', later: 'あとで答える', basicsCta: '続ける',
+    namePh: 'お名前', needName: 'お名前を入力してください。', needAge: '18〜90歳の年齢を入力してください。',
+    saving: '設定を保存しています…', savingSub: 'あなたのスペースを準備中：栄養、トレーニング、コーチ。',
+    hello: 'こんにちは', hubSub: '今日は何をしますか？', hubQuiz: 'プログラムを作成', hubQuizSub: '目標を選ぶだけ。2分の質問で、あなた専用のプランを。',
+    hubExplore: 'NutriPilotを見てみる', hubTour: 'アプリを知る', hubTourSub: '全機能を1分で',
+    hubSupport: 'ヘルプ＆サポート', hubSupportSub: 'よくある質問とアシスタント',
+    myProgram: 'あなたのプログラム', seePlan: 'プランを見る', unlock: 'ロック解除', explore: 'お試しモード', exploreSub: 'プランを解除するとすべて使えます。',
+    tracks: [['体重を落とす', '極端な食事制限なしで'], ['更年期＆40代以上', '40歳からのおなか周りケア'], ['筋肉をつける', 'ジムプログラム＋スポーツ栄養'], ['食生活を整える', '無理なく、もっと元気に']],
+    features: ['写真1枚で食事スキャン', '7日間の献立', 'シェフ考案のヘルシーレシピ', 'ジム＆自宅トレーニング', '更年期ガイド', '毎日のコーチ', '体重とサイズの記録', '自動買い物リスト', '外食モードと冷蔵庫モード', '管理栄養士＆コーチ（近日公開）'],
+    exploreTiles: [['recipes', 'レシピ'], ['training', 'トレーニング'], ['guides', 'ガイド'], ['menopause', '更年期 40+']],
+  },
+  ko: {
+    langTitle: '언어를 선택하세요', langCta: '계속',
+    basicsTitle: '먼저 알려 주세요', basicsSub: 'NutriPilot을 맞춤화하기 위한 몇 가지 정보입니다. 언제든 바꿀 수 있어요.',
+    name: '이름', age: '나이', weight: '대략적인 체중', height: '키', later: '나중에 답할게요', basicsCta: '계속',
+    namePh: '이름', needName: '이름을 입력해 주세요.', needAge: '18세에서 90세 사이의 나이를 입력해 주세요.',
+    saving: '설정을 저장하는 중…', savingSub: '나만의 공간을 준비하고 있어요: 영양, 운동, 코치.',
+    hello: '안녕하세요', hubSub: '오늘은 무엇을 할까요?', hubQuiz: '내 프로그램 만들기', hubQuizSub: '목표를 고르세요. 2분 질문으로 나만의 플랜을.',
+    hubExplore: 'NutriPilot 둘러보기', hubTour: '앱 알아보기', hubTourSub: '모든 기능을 1분 만에',
+    hubSupport: '도움말 & 지원', hubSupportSub: '자주 묻는 질문과 어시스턴트',
+    myProgram: '나의 프로그램', seePlan: '내 플랜 보기', unlock: '잠금 해제', explore: '둘러보기 모드', exploreSub: '플랜을 잠금 해제하면 모든 기능을 쓸 수 있어요.',
+    tracks: [['체중 감량', '극단적인 다이어트 없이'], ['갱년기 & 40+', '40세 이후 납작한 배'], ['근육 키우기', '헬스장 프로그램 + 스포츠 영양'], ['더 잘 먹기', '부담 없이 더 많은 에너지']],
+    features: ['사진 한 장으로 식사 스캔', '7일 식단', '셰프의 가벼운 레시피', '헬스장 & 홈 트레이닝', '갱년기 가이드', '매일 코치', '체중과 치수 기록', '자동 장보기 목록', '외식 모드와 냉장고 모드', '영양사 & 코치(곧 제공)'],
+    exploreTiles: [['recipes', '레시피'], ['training', '운동'], ['guides', '가이드'], ['menopause', '갱년기 40+']],
+  },
+  zh: {
+    langTitle: '选择语言', langCta: '继续',
+    basicsTitle: '先认识一下你', basicsSub: '提供一些信息，让 NutriPilot 更懂你。随时可以修改。',
+    name: '名字', age: '年龄', weight: '大致体重', height: '身高', later: '稍后再填', basicsCta: '继续',
+    namePh: '你的名字', needName: '请输入你的名字。', needAge: '请输入 18 到 90 岁之间的年龄。',
+    saving: '正在保存你的偏好…', savingSub: '正在准备你的空间：营养、训练和教练。',
+    hello: '你好', hubSub: '今天想做什么？', hubQuiz: '创建我的计划', hubQuizSub: '选择目标：2 分钟答题，生成专属计划。',
+    hubExplore: '探索 NutriPilot', hubTour: '了解应用', hubTourSub: '1 分钟看完全部功能',
+    hubSupport: '帮助与支持', hubSupportSub: '常见问题和助手',
+    myProgram: '你的计划', seePlan: '查看我的计划', unlock: '解锁', explore: '体验模式', exploreSub: '解锁方案即可使用全部功能。',
+    tracks: [['减重', '不靠极端节食'], ['更年期与 40+', '40 岁后的平坦小腹'], ['增肌', '健身房计划 + 运动营养'], ['吃得更好', '更有活力，轻松无负担']],
+    features: ['拍照即可扫描餐食', '7 天膳食计划', '大厨轻食食谱', '健身房与居家训练', '更年期指南', '每日教练', '体重与围度记录', '自动购物清单', '餐厅模式和冰箱模式', '营养师与教练（即将推出）'],
+    exploreTiles: [['recipes', '食谱'], ['training', '训练'], ['guides', '指南'], ['menopause', '更年期 40+']],
+  },
+  ar: {
+    langTitle: 'اختر لغتك', langCta: 'متابعة',
+    basicsTitle: 'لنتعرّف عليك', basicsSub: 'بعض المعلومات لتخصيص NutriPilot. يمكنك تغييرها في أي وقت.',
+    name: 'الاسم', age: 'العمر', weight: 'الوزن التقريبي', height: 'الطول', later: 'سأجيب لاحقًا', basicsCta: 'متابعة',
+    namePh: 'اسمك', needName: 'يرجى إدخال اسمك.', needAge: 'يرجى إدخال عمر بين 18 و90 عامًا.',
+    saving: 'جارٍ حفظ تفضيلاتك…', savingSub: 'نجهّز مساحتك: التغذية والتمرين والمدرب.',
+    hello: 'مرحبًا', hubSub: 'ماذا تريد أن تفعل اليوم؟', hubQuiz: 'أنشئ برنامجي', hubQuizSub: 'اختر هدفك: أسئلة لمدة دقيقتين وخطة مصممة لك.',
+    hubExplore: 'استكشف NutriPilot', hubTour: 'تعرّف على التطبيق', hubTourSub: 'كل الميزات في دقيقة واحدة',
+    hubSupport: 'المساعدة والدعم', hubSupportSub: 'الأسئلة الشائعة والمساعد',
+    myProgram: 'برنامجك', seePlan: 'عرض خطتي', unlock: 'فتح', explore: 'وضع الاستكشاف', exploreSub: 'افتح خطتك لاستخدام كل شيء.',
+    tracks: [['خسارة الوزن', 'دون حمية قاسية'], ['سن اليأس و40+', 'بطن أكثر تسطحًا بعد الأربعين'], ['بناء العضلات', 'برنامج النادي + تغذية رياضية'], ['أكل أفضل', 'طاقة أكبر دون تعقيد']],
+    features: ['ماسح الوجبات بصورة واحدة', 'خطة وجبات لـ 7 أيام', 'وصفات خفيفة من الطهاة', 'تمارين في النادي والمنزل', 'أدلة سن اليأس', 'مدرب يومي', 'تتبع الوزن والقياسات', 'قائمة تسوق تلقائية', 'وضع المطعم ووضع الثلاجة', 'أخصائيو تغذية ومدربون (قريبًا)'],
+    exploreTiles: [['recipes', 'الوصفات'], ['training', 'التمارين'], ['guides', 'الأدلة'], ['menopause', 'سن اليأس 40+']],
+  },
+  id: {
+    langTitle: 'Pilih bahasamu', langCta: 'Lanjut',
+    basicsTitle: 'Kenalan dulu, yuk', basicsSub: 'Beberapa info untuk mempersonalisasi NutriPilot. Bisa diubah kapan saja.',
+    name: 'Nama depan', age: 'Usia', weight: 'Perkiraan berat', height: 'Tinggi', later: 'Saya jawab nanti', basicsCta: 'Lanjut',
+    namePh: 'Nama depanmu', needName: 'Masukkan nama depanmu.', needAge: 'Masukkan usia antara 18 dan 90.',
+    saving: 'Menyimpan preferensimu…', savingSub: 'Kami menyiapkan ruangmu: nutrisi, latihan, dan pelatih.',
+    hello: 'Halo', hubSub: 'Mau melakukan apa hari ini?', hubQuiz: 'Buat programku', hubQuizSub: 'Pilih tujuanmu: 2 menit pertanyaan, rencana khusus untukmu.',
+    hubExplore: 'Jelajahi NutriPilot', hubTour: 'Kenali aplikasinya', hubTourSub: 'Semua fitur dalam 1 menit',
+    hubSupport: 'Bantuan & dukungan', hubSupportSub: 'Pertanyaan umum dan asisten',
+    myProgram: 'Programmu', seePlan: 'Lihat rencanaku', unlock: 'Buka', explore: 'Mode jelajah', exploreSub: 'Buka paketmu untuk memakai semuanya.',
+    tracks: [['Menurunkan berat', 'Tanpa diet ekstrem'], ['Menopause & 40+', 'Perut lebih rata setelah 40'], ['Membentuk otot', 'Program gym + nutrisi olahraga'], ['Makan lebih baik', 'Lebih berenergi, tanpa ribet']],
+    features: ['Pindai makanan dengan satu foto', 'Rencana makan 7 hari', 'Resep ringan dari koki', 'Latihan di gym & rumah', 'Panduan menopause', 'Pelatih harian', 'Pelacakan berat dan ukuran tubuh', 'Daftar belanja otomatis', 'Mode restoran dan kulkas', 'Ahli gizi & pelatih (segera)'],
+    exploreTiles: [['recipes', 'Resep'], ['training', 'Latihan'], ['guides', 'Panduan'], ['menopause', 'Menopause 40+']],
   },
 };
 function lang() {
@@ -1479,6 +1616,7 @@ const ICONS = {
   fork: '<path d="M7 3.5v7a2 2 0 0 0 4 0v-7M9 10.5v10M16.5 20.5V3.5c-2 1-3 3.6-3 6.5v3h3"/>',
 };
 function icon(name, cls = '') {
+  if (name === 'chevron') cls += ' flip-rtl';
   return `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 }
 
@@ -4508,6 +4646,7 @@ function render() {
     window.__npLastRoute = route;
   }
   document.documentElement.lang = lang();
+  document.documentElement.dir = lang() === 'ar' ? 'rtl' : 'ltr';
   bind();
   if (route === 'analyzing' && !analyzingTimer) startAnalyzing();
   if ((route === 'app' && state.premium) || route === 'progress') runCountUps();
@@ -4554,6 +4693,8 @@ function bind() {
       return render();
     }
     if (button.dataset.langOk) {
+      button.disabled = true;
+      await loadDict(button.dataset.langOk);
       state.lang = button.dataset.langOk;
       pendingLang = '';
       saveState();

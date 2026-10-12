@@ -4,6 +4,7 @@ const requestLang = new AsyncLocalStorage();
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -51,7 +52,7 @@ const REVOKED_EVENTS = new Set(['PURCHASE_REFUNDED', 'PURCHASE_CHARGEBACK', 'PUR
 const STATIC_FILES = new Set([
   '/index.html',
   '/app.js',
-  '/i18n.js',
+  ...['en', 'es', 'pt', 'de', 'it', 'nl', 'pl', 'tr', 'ja', 'ko', 'zh', 'ar', 'id'].map((code) => `/i18n/${code}.js`),
   '/food.js',
   '/exercises.js',
   '/styles.css',
@@ -83,6 +84,18 @@ function securityHeaders(type = 'application/json; charset=utf-8') {
     'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
     'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; media-src 'self' blob: data:; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://pay.hotmart.com",
   };
+}
+
+const staticCache = new Map();
+async function staticEntry(filePath, stat) {
+  const key = `${filePath}:${stat.mtimeMs}:${stat.size}`;
+  const hit = staticCache.get(filePath);
+  if (hit?.key === key) return hit;
+  const buf = await fs.readFile(filePath);
+  const compressible = /\.(js|css|html|json|svg|webmanifest)$/.test(filePath) && buf.length > 1024;
+  const entry = { key, buf, etag: `"${crypto.createHash('sha1').update(buf).digest('base64url').slice(0, 20)}"`, gzip: compressible ? zlib.gzipSync(buf, { level: 9 }) : null };
+  staticCache.set(filePath, entry);
+  return entry;
 }
 
 function send(res, status, body, type) {
@@ -525,7 +538,7 @@ async function fetchJson(url, options = {}, timeoutMs = 25_000) {
   }
 }
 
-const LANG_NAMES = { fr: 'français', en: 'English', es: 'español', pt: 'português', de: 'Deutsch', it: 'italiano' };
+const LANG_NAMES = { fr: 'français', en: 'English', es: 'español', pt: 'português', de: 'Deutsch', it: 'italiano', nl: 'Nederlands', pl: 'polski', tr: 'Türkçe', ja: '日本語', ko: '한국어', zh: '简体中文', ar: 'العربية', id: 'Bahasa Indonesia' };
 function langFromRequest(req) {
   const code = String(req.headers['x-np-lang'] || '').slice(0, 2).toLowerCase();
   return LANG_NAMES[code] ? code : 'fr';
@@ -633,7 +646,7 @@ Retourne UNIQUEMENT JSON: {"options":[{"name":"...","kcal":450,"protein":30,"car
   return { source: 'ai', options: (raw.options || []).slice(0, 3).map(normalizeOption) };
 }
 
-const SUPPORT_LANGS = { fr: 'français', en: 'English', es: 'español', pt: 'português', de: 'Deutsch', it: 'italiano' };
+const SUPPORT_LANGS = LANG_NAMES;
 const SUPPORT_KNOWLEDGE = `NutriPilot est une application de nutrition, d'entraînement et de coaching pour mincir, gérer la ménopause, prendre du muscle ou mieux manger.
 Fonctions disponibles : scanner de repas (photo, texte/voix, code-barres, étiquette, saisie manuelle), objectif calorique et macros personnalisés, plan de repas 7 jours, recettes avec grammes et calories, liste de courses, « Que manger ensuite ? », mode frigo, mode restaurant, coach IA, suivi du poids et des mensurations, bilan hebdomadaire, guides (dont ménopause), programmes d'entraînement salle et maison avec suivi des charges.
 Formules : Kit complet (nutrition + entraînement + Académie), Nutrition, Entraînement ; en mensuel ou annuel. Les prix exacts sont affichés sur l'écran des formules. Académie : cours courts (fondamentaux de la perte de poids, musculation, ménopause, premiers pas), la première leçon de chaque cours est gratuite.
@@ -660,8 +673,16 @@ async function support(body) {
       pt: `Nosso assistente está indisponível no momento. Escreva para ${SUPPORT_EMAIL} e responderemos rapidinho.`,
       de: `Unser Assistent ist gerade nicht verfügbar. Schreib uns an ${SUPPORT_EMAIL}, wir antworten schnell.`,
       it: `Il nostro assistente non è disponibile al momento. Scrivici a ${SUPPORT_EMAIL}: ti risponderemo presto.`,
+      nl: `Onze assistent is tijdelijk niet beschikbaar. Mail ons op ${SUPPORT_EMAIL}, we antwoorden snel.`,
+      pl: `Nasz asystent jest chwilowo niedostępny. Napisz do nas na ${SUPPORT_EMAIL}, szybko odpowiemy.`,
+      tr: `Asistanımız şu anda kullanılamıyor. ${SUPPORT_EMAIL} adresine yaz, hızlıca yanıt verelim.`,
+      ja: `アシスタントは現在ご利用いただけません。${SUPPORT_EMAIL} までご連絡ください。すぐにお返事します。`,
+      ko: `지금은 어시스턴트를 이용할 수 없습니다. ${SUPPORT_EMAIL} 로 메일 주시면 빠르게 답변드릴게요.`,
+      zh: `助手暂时无法使用。请发邮件至 ${SUPPORT_EMAIL}，我们会尽快回复。`,
+      ar: `المساعد غير متاح مؤقتًا. راسلنا على ${SUPPORT_EMAIL} وسنرد عليك بسرعة.`,
+      id: `Asisten kami sedang tidak tersedia. Kirim email ke ${SUPPORT_EMAIL}, kami akan segera membalas.`,
     };
-    return { answer: offline[lang] };
+    return { answer: offline[lang] || offline.en };
   }
   const input = `Tu es l'assistant du support client de NutriPilot. Réponds en ${SUPPORT_LANGS[lang]}, de façon chaleureuse, claire et courte (4 phrases maximum).
 Base de connaissances (seule source fiable) :
@@ -1477,8 +1498,18 @@ const server = http.createServer(async (req, res) => {
       let filePath = resolved;
       const stat = await fs.stat(filePath);
       if (!stat.isFile()) return send(res, 404, 'Not found', 'text/plain; charset=utf-8');
-      const buf = await fs.readFile(filePath);
-      return send(res, 200, buf, TYPES[path.extname(filePath)] || 'application/octet-stream');
+      const type = TYPES[path.extname(filePath)] || 'application/octet-stream';
+      const entry = await staticEntry(filePath, stat);
+      const headers = { ...securityHeaders(type), ETag: entry.etag, Vary: 'Accept-Encoding' };
+      // Text assets revalidate on every load (cheap 304) instead of being downloaded again.
+      if (/javascript|css|json|text\/html|manifest/.test(type)) headers['Cache-Control'] = 'no-cache';
+      if (req.headers['if-none-match'] === entry.etag) { res.writeHead(304, headers); return res.end(); }
+      if (entry.gzip && /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''))) {
+        res.writeHead(200, { ...headers, 'Content-Encoding': 'gzip' });
+        return res.end(entry.gzip);
+      }
+      res.writeHead(200, headers);
+      return res.end(entry.buf);
     } catch {
       return send(res, 404, 'Not found', 'text/plain; charset=utf-8');
     }

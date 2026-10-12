@@ -6,10 +6,11 @@
   "scripts": {
     "start": "node server.mjs",
     "dev": "NODE_ENV=development node server.mjs",
-    "check": "node --check server.mjs && node --check app.js"
+    "check": "node --check server.mjs && node --check app.js && node scripts/build-i18n.mjs > /dev/null",
+    "i18n": "node scripts/build-i18n.mjs"
   },
   "engines": {
     "node": ">=20"
   },
-  "description": "NutriPilot France — closed Premium PWA with Hotmart entitlement, AI meal scanner, adaptive weight-loss planning, recipes, grocery list, coach and progress analytics"
+  "description": "NutriPilot France \u2014 closed Premium PWA with Hotmart entitlement, AI meal scanner, adaptive weight-loss planning, recipes, grocery list, coach and progress analytics"
 }
