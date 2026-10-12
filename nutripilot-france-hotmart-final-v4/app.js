@@ -443,10 +443,18 @@ function recipeList() {
   const q = foldText(recipeQuery);
   return ALL_RECIPES.filter((r) => (recipeCuisine === 'all' || r.cuisine === recipeCuisine)
     && (recipeType === 'all' || r.type === recipeType)
-    && (recipeFilter === 'all' || (recipeFilter === 'quick' && r.prepMin <= 15) || (recipeFilter === 'protein' && r.protein >= 30) || (recipeFilter === 'veg' && !r.meat && !r.fish) || (recipeFilter === 'fav' && favs.has(r.id)) || (recipeFilter === 'fit' && recipeAllowed(r)))
+    && (recipeFilter === 'all' || (recipeFilter === 'quick' && r.prepMin <= 15) || (recipeFilter === 'protein' && r.protein >= 30) || (recipeFilter === 'veg' && !r.meat && !r.fish) || (recipeFilter === 'fav' && favs.has(r.id)) || (recipeFilter === 'budget' && !r.fish && (r.ingredients || []).length <= 6) || (recipeFilter === 'fit' && recipeAllowed(r)))
     && (!q || foldText(L(r.name, null, false)).includes(q) || foldText(r.name).includes(q) || r.ingredients.some(([n]) => foldText(L(n, null, false)).includes(q))));
 }
 
+function recipeCardHtml(r) {
+  const favs = new Set(state.recipeFavorites || []);
+  return `<article class="recipe-card r-${r.type}" data-recipe-id="${esc(r.id)}" role="button" tabindex="0">
+    <div class="recipe-card-top"><span class="rc-flag">${CUISINE_FLAG[r.cuisine] || '🍽️'}</span><span class="pill">${esc(L(r.category))}</span><button class="heart ${favs.has(r.id) ? 'active' : ''}" data-fav-recipe="${esc(r.id)}" aria-label="${L('Favori')}">${favs.has(r.id) ? '♥' : '♡'}</button></div>
+    <h3>${esc(L(r.name))}</h3>
+    <div class="recipe-stats"><span><b>${fmt(r.kcal)}</b> kcal</span><span><b>${fmt(r.protein)}</b> g ${L('prot.')}</span><span>${icon('timer')} ${esc(L(r.prep))}</span></div>
+  </article>`;
+}
 function recipeGridHtml() {
   const favs = new Set(state.recipeFavorites || []);
   const list = recipeList();
@@ -457,13 +465,26 @@ function recipeGridHtml() {
   </article>`).join('') || `<div class="empty">${L('Aucune recette dans ce filtre.')}</div>`;
 }
 
+let recipeView = 'explore';
+function recipeTabs() {
+  const tabs = [['explore', 'Explorer'], ['fav', 'Favoris'], ['made', 'Déjà préparées'], ['create', 'Créer avec l’IA']];
+  return `<div class="tab-scroll mod-tabs">${tabs.map(([k, label]) => `<button class="${recipeView === k ? 'active' : ''}" data-recipe-view="${k}">${L(label)}</button>`).join('')}</div>`;
+}
 function recipesScreen() {
   const types = [['all', 'Tout'], ['b', 'Petit-déjeuner'], ['m', 'Repas'], ['s', 'Collation']];
-  const filters = [['all', 'Toutes'], ['fit', 'Adaptées à mon profil'], ['quick', 'Rapides'], ['protein', 'Protéinées'], ['veg', 'Végétariennes'], ['fav', 'Favoris']];
+  const filters = [['all', 'Toutes'], ['fit', 'Adaptées à mon profil'], ['quick', 'Rapides'], ['protein', 'Protéinées'], ['veg', 'Végétariennes'], ['budget', 'Économiques']];
+  if (recipeView !== 'explore') {
+    const t = totals(); const p = state.profile;
+    const list = recipeView === 'fav' ? ALL_RECIPES.filter((r) => state.recipeFavorites.includes(r.id)) : recipeView === 'made' ? (state.recipesMade || []).map((x) => ALL_RECIPES.find((r) => r.id === x.id)).filter(Boolean) : [];
+    const body = recipeView === 'create'
+      ? `<p class="screen-sub">${L('Indiquez ce que vous avez sous la main : NutriPilot invente des recettes adaptées à votre objectif et à vos calories restantes.')}</p>${plannerPanel('fridge', Math.max(180, p.dailyKcal - t.kcal), Math.max(0, Math.round(p.protein - t.protein)))}`
+      : list.length ? `<div class="recipe-grid">${list.map((r) => recipeCardHtml(r)).join('')}</div>` : `<div class="empty">${L(recipeView === 'fav' ? 'Touchez ♡ sur une recette pour la retrouver ici.' : 'Les recettes que vous ajoutez à votre journal apparaîtront ici.')}</div>`;
+    return `<div class="mobile-app">${appHeader('Recettes')}<div class="screen">${recipeTabs()}${body}</div>${bottom('recipes')}</div>`;
+  }
   return `<div class="mobile-app">
-    ${appHeader('Nutrition')}
+    ${appHeader('Recettes')}
     <div class="screen">
-      ${programTabs('recipes')}
+      ${recipeTabs()}
       <div class="recipes-hero"><b>${L('{n} recettes du monde entier', { n: ALL_RECIPES.length })}</b><span>${L('Grammes, calories et macros calculés pour chaque portion.')}</span></div>
       <label class="search-box">${icon('search')}<input id="recipe-search" type="search" value="${esc(recipeQuery)}" placeholder="${L('Rechercher un plat ou un ingrédient')}"></label>
       <div class="cuisine-row scroll"><button class="cuisine-chip ${recipeCuisine === 'all' ? 'on' : ''}" data-recipe-cuisine="all"><span>🌍</span>${L('Toutes')}</button>${CUISINES.map(([k, name, flag]) => `<button class="cuisine-chip ${recipeCuisine === k ? 'on' : ''}" data-recipe-cuisine="${k}"><span>${flag}</span>${L(name)}</button>`).join('')}</div>
@@ -471,7 +492,7 @@ function recipesScreen() {
       <div class="chip-row">${filters.map(([k, label]) => `<button class="mini-choice ${recipeFilter === k ? 'selected' : ''}" data-recipe-filter="${k}">${L(label)}</button>`).join('')}</div>
       <div id="recipe-grid" class="recipe-grid">${recipeGridHtml()}</div>
     </div>
-    ${bottom('program')}
+    ${bottom('recipes')}
   </div>`;
 }
 
@@ -480,8 +501,9 @@ function recipeSheet(recipe) {
   const fromLib = ALL_RECIPES.some((x) => x.id === recipe.id);
   return `<div class="sheet-head"><div><span class="tag">${CUISINE_FLAG[recipe.cuisine] || ''} ${esc(L(recipe.category || 'RECETTE'))}</span><h2>${esc(L(recipe.name))}</h2></div><button class="icon-btn" data-close>×</button></div>
     <div class="recipe-hero-stats"><div><b>${fmt(recipe.kcal)}</b><span>kcal</span></div><div><b>${fmt(recipe.protein)}</b><span>${L('prot.')}</span></div><div><b>${fmt(recipe.carbs)}</b><span>${L('gluc.')}</span></div><div><b>${fmt(recipe.fat)}</b><span>${L('lip.')}</span></div><div><b>${esc(L(recipe.prep))}</b><span>${L('temps')}</span></div></div>
-    <div class="section-label"><h3>${L('Ingrédients')}</h3><span class="fine">${L('1 portion')}</span></div>
-    <div class="ingredient-table">${recipe.ingredients.map((item) => `<div><span>${esc(L(item[0]))}</span><b>${fmt(item[1])} g</b></div>`).join('')}</div>
+    <div class="section-label"><h3>${L('Ingrédients')}</h3><div class="stepper sm"><button data-servings="-1" aria-label="−">${icon('minus')}</button><b>${modal?.servings || 1}</b><button data-servings="1" aria-label="+">${icon('plus')}</button></div></div>
+    <p class="fine serv-note">${L('Quantités pour {n} personne(s). Valeurs nutritionnelles par portion.', { n: modal?.servings || 1 })}</p>
+    <div class="ingredient-table">${recipe.ingredients.map((item) => `<div><span>${esc(L(item[0]))}</span><b>${fmt(item[1] * (modal?.servings || 1))} g</b></div>`).join('')}</div>
     <div class="section-label"><h3>${L('Préparation')}</h3></div>
     <ol class="steps-list">${recipe.steps.map((step) => `<li>${esc(L(step))}</li>`).join('')}</ol>
     <div class="modal-actions three">
@@ -504,6 +526,7 @@ function addCuratedRecipe(id, view = null) {
     icon: '⌁',
     source: 'recipe',
   });
+  state.recipesMade = [{ id: recipe.id, day: todayKey() }, ...(state.recipesMade || []).filter((x) => x.id !== recipe.id)].slice(0, 60);
   saveState();
   toast('Recette ajoutée au journal ✓');
   modal = null;
@@ -569,10 +592,10 @@ const defaultState = {
   profile: {
     name: '',
     sex: 'female',
-    age: 32,
-    height: 165,
-    weight: 70,
-    target: 62,
+    age: '',
+    height: '',
+    weight: '',
+    target: '',
     activity: 1.375,
     goal: 'lose',
     speed: 0.35,
@@ -616,6 +639,12 @@ const defaultState = {
   menoTasks: {},
   menoStart: '',
   menoFactors: {},
+  scanHistory: [],
+  supplements: [],
+  sleepLog: {},
+  hungerLog: [],
+  routineDone: {},
+  recipesMade: [],
   journeyStart: '',
   journeyHidden: false,
   welcomeBackSeen: '',
@@ -637,10 +666,22 @@ let modal = null;
 let syncTimer = null;
 let pendingPlanSwap = null;
 
+// Older versions pre-filled 70 kg → 62 kg for everyone: never show those as the person's numbers.
+function migrateState(s) {
+  const p = s.profile || {};
+  if (!s.onboarding && !p.goalSet) {
+    if (!s.basicsFilled?.weight && Number(p.weight) === 70) p.weight = '';
+    if (!s.basicsFilled?.target) p.target = '';
+    if (!s.basicsFilled?.age && [32, 35].includes(Number(p.age))) p.age = '';
+    if (!s.basicsFilled?.height && Number(p.height) === 165) p.height = '';
+    if (!s.basicsFilled?.weight) s.weights = [];
+  }
+  return s;
+}
 function loadState() {
   try {
     const raw = localStorage.getItem('nutripilot_v7') || localStorage.getItem('nutripilot_v3') || '{}';
-    return deepMerge(clone(defaultState), JSON.parse(raw));
+    return migrateState(deepMerge(clone(defaultState), JSON.parse(raw)));
   } catch {
     return clone(defaultState);
   }
@@ -878,7 +919,7 @@ function lastWeight() {
 }
 
 function startWeight() {
-  return Number(state.weights[0]?.value || state.profile.weight || 0);
+  return Number(state.profile?.goalStart?.weight || state.weights[0]?.value || state.profile.weight || 0);
 }
 
 function progressPercent() {
@@ -916,7 +957,7 @@ function mealTypeFromHour() {
   return 'Dîner';
 }
 
-const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang', 'menopause', 'plans'];
+const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang', 'menopause', 'plans', 'goal', 'profile', 'modules', 'scanner', 'nutrients', 'supplements', 'sleep', 'diary', 'targets'];
 function guardRoute() {
   if (!routeAllowed()) route = 'app';
   if (!state.premium) {
@@ -935,7 +976,7 @@ function guardRoute() {
 }
 
 function routeAllowed() {
-  return ['app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support', 'menopause', 'plans'].includes(route);
+  return ['app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support', 'menopause', 'plans', 'goal', 'profile', 'modules', 'scanner', 'nutrients', 'supplements', 'sleep', 'diary', 'targets'].includes(route);
 }
 
 async function init() {
@@ -962,7 +1003,10 @@ async function init() {
         try {
           const remoteResponse = await apiFetch('/api/user/state');
           const remote = await remoteResponse.json();
-          if (remoteResponse.ok && remote.state) {
+          // Keep edits made on this phone that were not synced yet (offline, closed too fast…).
+          const localNewer = state.updatedAt && remote.state?.updatedAt && String(state.updatedAt) > String(remote.state.updatedAt);
+          if (localNewer) setTimeout(syncRemote, 500);
+          if (remoteResponse.ok && remote.state && !localNewer) {
             const keep = {
               accessToken: state.accessToken,
               premium: true,
@@ -1358,10 +1402,10 @@ function basicsScreen() {
       <div class="welcome-copy"><h1>${esc(t('basicsTitle'))}</h1><p>${esc(t('basicsSub'))}</p></div>
       <div class="basics-form">
         <label class="field"><span>${esc(t('name'))}</span><input id="b-name" type="text" autocomplete="given-name" placeholder="${esc(t('namePh'))}" value="${esc(d.name || '')}"></label>
-        <label class="field"><span>${esc(t('age'))}</span><div class="unit-input"><input id="b-age" type="number" inputmode="numeric" min="18" max="90" value="${esc(d.age || '')}"><i>${({ fr: 'ans', en: 'yrs', es: 'años', pt: 'anos', de: 'J.', it: 'anni' })[lang()]}</i></div></label>
+        <label class="field"><span>${esc(t('age'))}</span><div class="unit-input"><input id="b-age" type="number" inputmode="numeric" min="18" max="90" value="${esc(state.basicsFilled?.age ? d.age || '' : '')}"><i>${({ fr: 'ans', en: 'yrs', es: 'años', pt: 'anos', de: 'J.', it: 'anni', nl: 'jr', pl: 'lat', tr: 'yaş', ja: '歳', ko: '세', zh: '岁', ar: 'سنة', id: 'thn' })[lang()]}</i></div></label>
         <div class="basics-optional" id="b-optional">
-          <label class="field"><span>${esc(t('weight'))}</span><div class="unit-input"><input id="b-weight" type="number" inputmode="decimal" min="35" max="250" step="0.1" value="${esc(d.weight || '')}"><i>kg</i></div></label>
-          <label class="field"><span>${esc(t('height'))}</span><div class="unit-input"><input id="b-height" type="number" inputmode="numeric" min="130" max="220" value="${esc(d.height || '')}"><i>cm</i></div></label>
+          <label class="field"><span>${esc(t('weight'))}</span><div class="unit-input"><input id="b-weight" type="number" inputmode="decimal" min="35" max="250" step="0.1" value="${esc(state.basicsFilled?.weight ? d.weight || '' : '')}"><i>kg</i></div></label>
+          <label class="field"><span>${esc(t('height'))}</span><div class="unit-input"><input id="b-height" type="number" inputmode="numeric" min="130" max="220" value="${esc(state.basicsFilled?.height ? d.height || '' : '')}"><i>cm</i></div></label>
         </div>
         <label class="later-toggle"><input type="checkbox" id="b-later"> ${esc(t('later'))}</label>
       </div>
@@ -1576,7 +1620,7 @@ function calculatePlan(data = onboardingState.data) {
   const carbs = Math.max(80, Math.round((kcal - protein * 4 - fat * 9) / 4));
   const fiber = Math.max(25, Math.round(kcal / 1000 * 14));
 
-  return { ...p, bmr: Math.round(bmr), tdee: Math.round(tdee), bmi: +bmi.toFixed(1), dailyKcal: kcal, protein, carbs, fat, fiber, warning };
+  return applyManualTargets({ ...p, bmr: Math.round(bmr), tdee: Math.round(tdee), bmi: +bmi.toFixed(1), dailyKcal: kcal, protein, carbs, fat, fiber, warning });
 }
 
 const ICONS = {
@@ -1612,6 +1656,12 @@ const ICONS = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
   chevron: '<path d="m9 6 6 6-6 6"/>',
+  grid: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
+  leaf: '<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19 13 11"/>',
+  pill: '<rect x="3.5" y="8.5" width="17" height="7" rx="3.5" transform="rotate(-35 12 12)"/><path d="m9.5 8.5 5 7"/>',
+  moon: '<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/>',
+  heart: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
+  wave: '<path d="M3 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>',
   sparkle: '<path d="M12 3.5 13.8 10l6.7 2-6.7 2L12 20.5 10.2 14 3.5 12l6.7-2z"/>',
   fork: '<path d="M7 3.5v7a2 2 0 0 0 4 0v-7M9 10.5v10M16.5 20.5V3.5c-2 1-3 3.6-3 6.5v3h3"/>',
 };
@@ -1710,48 +1760,139 @@ const PROGRAM_FEATURES = [
 // Store builds (App Store / Google Play): the native shell exposes
 // window.NutriPilotNative (RevenueCat) and handles the free trial.
 // Web: only plans with a Hotmart `offer` can be bought (legacy).
+// ---- v13: modules --------------------------------------------------------------
+// Each area of NutriPilot is a separate module with its own space, colour and subscription
+// (3-day free trial in the iPhone and Android apps). The Complete kit unlocks every module.
+// Today, Progress, Profile and Settings are free for everyone.
+const MODULES = [
+  { id: 'nutrition', name: 'Nutrition', sub: 'Plan alimentaire, journal et objectifs', icon: 'fork', route: 'program', tone: 'm-nut',
+    features: ['Plan de repas 7 jours personnalisé', 'Journal alimentaire du jour et de la semaine', 'Objectifs ajustables : calories, protéines, glucides, lipides', 'Liste de courses automatique', '« Que manger ensuite ? », restaurant et voyages', 'Cours nutrition'] },
+  { id: 'recipes', name: 'Recettes', sub: 'Cuisine du monde, portions et idées avec l’IA', icon: 'book', route: 'recipes', tone: 'm-rec',
+    features: ['Recettes de {n} pays avec grammes et calories', 'Filtres par objectif, temps, ingrédient et régime', 'Portions ajustées au nombre de personnes', 'Favoris et recettes déjà préparées', 'Recettes créées par l’IA avec ce que vous avez'] },
+  { id: 'scanner', name: 'Scanner', sub: 'Photo, code-barres, étiquette', icon: 'scan', route: 'scanner', tone: 'm-scan',
+    features: ['Scanner de repas par photo', 'Code-barres et étiquettes nutritionnelles', 'Allergènes et additifs déclarés mis en évidence', 'Comparaison de produits', 'Historique des scans et ajout au journal'] },
+  { id: 'training', name: 'Entraînement', sub: 'Salle, maison et extérieur', icon: 'dumbbell', route: 'training', tone: 'm-train',
+    features: ['Programmes débutant à confirmé', 'Grille d’entraînement sur mesure', 'Plus de 100 exercices animés', 'Cardio, HIIT et faible impact', 'Chronomètre de repos, charges et progression', 'Historique et statistiques'] },
+  { id: 'menopause', name: 'Ménopause 40+', sub: 'Symptômes, alimentation, force et sommeil', icon: 'flower', route: 'menopause', tone: 'm-meno',
+    features: ['Journal des symptômes et facteurs', 'Graphiques d’évolution', 'Programme guidé de 8 semaines', 'Séances force, os et équilibre', 'Rapport pour votre médecin'] },
+  { id: 'nutrients', name: 'Vitamines & nutriments', sub: 'Rôles, sources et repères', icon: 'leaf', route: 'nutrients', tone: 'm-vit',
+    features: ['Guide des vitamines et minéraux', 'Aliments les plus riches pour chaque nutriment', 'Lacunes possibles dans votre journal', 'Repères et précautions'] },
+  { id: 'supplements', name: 'Compléments', sub: 'Étiquettes, doublons et précautions', icon: 'pill', route: 'supplements', tone: 'm-sup',
+    features: ['Scanner d’étiquette de complément', 'Mes compléments et doses déclarées', 'Alerte en cas d’ingrédient en double', 'Fiches : niveau de preuve et précautions'] },
+  { id: 'sleep', name: 'Sommeil & stress', sub: 'Sommeil, respiration, envies de manger', icon: 'moon', route: 'sleep', tone: 'm-sleep',
+    features: ['Journal du sommeil', 'Respirations et relaxations guidées à voix haute', 'Faim physique ou envie : le journal', 'Bouton SOS et retour à la routine'] },
+  { id: 'coach', name: 'Coach IA', sub: 'Nutrition, entraînement et recettes', icon: 'coach', route: 'coach', tone: 'm-coach',
+    features: ['Réponses adaptées à votre profil et à votre journée', 'Coach nutrition et coach entraînement', 'Explique chaque suggestion', 'Limites claires sur les questions médicales'] },
+];
+const MODULE_ROUTES = {
+  program: 'nutrition', diary: 'nutrition', targets: 'nutrition', shopping: 'nutrition', planner: 'nutrition', guides: 'nutrition', insights: 'nutrition',
+  recipes: 'recipes', scanner: 'scanner', training: 'training', menopause: 'menopause',
+  nutrients: 'nutrients', supplements: 'supplements', sleep: 'sleep', coach: 'coach',
+};
+const moduleById = (id) => MODULES.find((m) => m.id === id);
+const moduleForRoute = (r = route) => moduleById(MODULE_ROUTES[r]);
+
+const MODULE_PRICES = {
+  complete: [44.99, 189.99], nutrition: [14.99, 79.99], recipes: [9.99, 59.99], scanner: [9.99, 59.99], training: [19.99, 99.99],
+  menopause: [24.99, 119.99], nutrients: [6.99, 39.99], supplements: [6.99, 39.99], sleep: [9.99, 59.99], coach: [9.99, 59.99],
+};
 const DEFAULT_PLANS = [
-  {
-    tier: 'complete', label: 'Kit complet', sub: 'Nutrition + Entraînement + Ménopause + Académie', badge: 'Meilleure offre',
-    features: ['Tout le programme Nutrition : plan de repas, recettes, courses', 'Tous les programmes d’entraînement, la grille et les exercices animés', 'L’espace Ménopause 40+ complet', 'Tous les cours et le coach au quotidien', 'Scanner de repas illimité'],
-    monthly: { price: 44.99, storeId: 'np_complete_monthly' }, annual: { price: 189.99, storeId: 'np_complete_annual' },
-  },
-  {
-    tier: 'menopause', label: 'Ménopause 40+', sub: 'Le programme pensé pour les femmes en (pré)ménopause',
-    features: ['Journal des symptômes et tendances', 'Alimentation adaptée : plan de repas, recettes, courses', 'Séances force, os et équilibre', 'Programme guidé de 8 semaines et cours', 'Scanner de repas illimité'],
-    monthly: { price: 29.99, storeId: 'np_menopause_monthly' }, annual: { price: 119.99, storeId: 'np_menopause_annual' },
-  },
-  {
-    tier: 'nutrition', label: 'Nutrition', sub: 'Mincir et mieux manger',
-    features: ['Plan de repas 7 jours personnalisé', 'Recettes du monde entier avec grammes et calories', 'Liste de courses automatique', '« Que manger ensuite ? », mode frigo et restaurant', 'Cours nutrition et coach au quotidien', 'Scanner de repas illimité'],
-    monthly: { price: 24.99, storeId: 'np_nutrition_monthly' }, annual: { price: 99.99, storeId: 'np_nutrition_annual' },
-  },
-  {
-    tier: 'training', label: 'Entraînement', sub: 'Salle ou maison, selon votre objectif',
-    features: ['Plus de 10 programmes : haut du corps, bas du corps, force, maison…', 'Grille d’entraînement à monter vous-même', 'Plus de 100 exercices avec démonstration animée', 'Agenda, chronomètre de repos et suivi des charges', 'Cours de technique et de musculation', 'Scanner de repas illimité'],
-    monthly: { price: 19.99, storeId: 'np_training_monthly' }, annual: { price: 79.99, storeId: 'np_training_annual' },
-  },
+  { tier: 'complete', label: 'Kit complet', sub: 'Tous les modules NutriPilot', badge: 'Meilleure offre', modules: MODULES.map((m) => m.id),
+    features: ['Les 9 modules, sans limite', 'Nutrition, recettes, scanner et entraînement', 'Ménopause 40+, vitamines, compléments et sommeil', 'Coach IA dans chaque module'],
+    monthly: { price: MODULE_PRICES.complete[0], storeId: 'np_complete_monthly' }, annual: { price: MODULE_PRICES.complete[1], storeId: 'np_complete_annual' } },
+  ...MODULES.map((m) => ({ tier: m.id, label: m.name, sub: m.sub, modules: [m.id], features: m.features,
+    monthly: { price: MODULE_PRICES[m.id][0], storeId: `np_${m.id}_monthly` }, annual: { price: MODULE_PRICES[m.id][1], storeId: `np_${m.id}_annual` } })),
 ];
 let selectedTier = '';
 let selectedPeriod = 'annual';
 
-function planTier(planId = state.subscriptionPlan) {
-  const id = String(planId || '');
-  if (id.includes('menopause')) return 'menopause';
-  if (id.includes('nutrition')) return 'nutrition';
-  if (id.includes('training')) return 'training';
-  return 'complete'; // complete plans and legacy Hotmart customers keep full access
+// Owned modules come from the subscription ids, e.g. "training_monthly,recipes_annual".
+// Legacy single plans keep what they used to include; unknown ids (older customers) keep full access.
+const LEGACY_PLAN_MODULES = { nutrition: ['nutrition', 'recipes', 'scanner'], training: ['training', 'scanner'], menopause: ['menopause', 'nutrition', 'recipes', 'scanner'] };
+function ownedModules() {
+  if (!state.premium) return [];
+  const ids = String(state.subscriptionPlan || '').split(',').map((x) => x.trim()).filter(Boolean);
+  const all = MODULES.map((m) => m.id);
+  if (!ids.length) return all;
+  const set = new Set();
+  for (const id of ids) {
+    const tier = id.replace(/_(monthly|annual|yearly|trial)$/, '');
+    if (tier === 'complete' || !(moduleById(tier) || LEGACY_PLAN_MODULES[tier])) { all.forEach((x) => set.add(x)); continue; }
+    const legacy = !/(recipes|scanner|nutrients|supplements|sleep|coach)/.test(String(state.subscriptionPlan)) && LEGACY_PLAN_MODULES[tier];
+    (legacy || [tier]).forEach((x) => set.add(x));
+  }
+  if (set.size) set.add('coach'); // the coach answers inside every paid module
+  return [...set];
 }
-// What each plan unlocks. The scanner and the coach are part of every paid plan.
-const PLAN_ACCESS = {
-  complete: ['scanner', 'coach', 'nutrition', 'training', 'menopause'],
-  menopause: ['scanner', 'coach', 'nutrition', 'menopause'],
-  nutrition: ['scanner', 'coach', 'nutrition'],
-  training: ['scanner', 'coach', 'training'],
-};
+function planTier(planId = state.subscriptionPlan) {
+  const owned = ownedModules();
+  if (!state.premium || owned.length >= MODULES.length) return 'complete';
+  const id = String(planId || '');
+  const first = id.split(',')[0].replace(/_(monthly|annual|yearly|trial)$/, '');
+  return moduleById(first) ? first : 'complete';
+}
+function hasModule(id) { return ownedModules().includes(id); }
+function planLabel() {
+  const owned = ownedModules().filter((x) => x !== 'coach');
+  if (owned.length >= MODULES.length - 1) return L('Kit complet');
+  return owned.map((x) => L(moduleById(x)?.name || x)).join(' + ') || L('Découverte');
+}
 function hasFeature(feature) {
   if (!state.premium) return false;
-  return (PLAN_ACCESS[planTier()] || PLAN_ACCESS.complete).includes(feature);
+  if (feature === 'coach') return ownedModules().length > 0;
+  return hasModule(feature);
+}
+function moduleStatus(id) {
+  if (hasModule(id)) return 'owned';
+  return state.premium ? 'add' : 'preview';
+}
+function moduleBadge(id) {
+  const s = moduleStatus(id);
+  if (s === 'owned') return `<span class="mod-badge owned">${icon('check')}${L('Activé')}</span>`;
+  const trial = Billing.trialDays();
+  return `<span class="mod-badge">${trial ? L('{n} jours gratuits', { n: trial }) : L('Découvrir')}</span>`;
+}
+// Coloured strip at the top of every module page: identity, status and a clear next step.
+function moduleBar(id) {
+  const m = moduleById(id);
+  if (!m) return '';
+  const owned = hasModule(id);
+  return `<div class="mod-bar ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><span class="mod-name"><b>${L(m.name)}</b><small>${owned ? L('Module activé') : L('Aperçu du module')}</small></span>${owned ? `<button class="mod-all" data-go="modules">${L('Modules')}</button>` : `<button class="mod-cta" data-module-buy="${m.id}">${Billing.trialDays() ? L('Essai gratuit') : L('Débloquer')}</button>`}</div>`;
+}
+function modulesScreen() {
+  const owned = ownedModules();
+  const plans = Billing.plans();
+  const kit = plans.find((x) => x.tier === 'complete');
+  return `<div class="mobile-app">
+    ${appHeader('Modules')}
+    <div class="screen">
+      <p class="screen-sub">${L('Chaque module est un espace complet. Activez seulement ce dont vous avez besoin, ou tout avec le Kit complet.')}</p>
+      <div class="mod-grid">${MODULES.map((m) => `<button class="mod-card ${m.tone} ${owned.includes(m.id) ? 'owned' : ''}" data-go="${m.route}">
+        <span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b><small>${L(m.sub)}</small>${moduleBadge(m.id)}</button>`).join('')}</div>
+      ${owned.length < MODULES.length && kit ? `<button class="kit-card" data-module-buy="complete"><span><small>${L('Kit complet')}</small><b>${L('Les 9 modules pour {price} / mois', { price: euro(kit.annual.price / 12) })}</b><em>${L('Économisez {n} % par rapport aux modules séparés', { n: comboSaving(plans, 'annual') })}</em></span>${icon('chevron')}</button>` : ''}
+      <div class="section-label"><h3>${L('Inclus pour tous')}</h3></div>
+      <div class="free-row"><button data-go="app">${icon('home')}<span>${L('Aujourd’hui')}</span></button><button data-go="progress">${icon('progress')}<span>${L('Progrès')}</span></button><button data-open-goal>${icon('scale')}<span>${L('Objectif')}</span></button><button data-open-profile>${icon('user')}<span>${L('Profil')}</span></button></div>
+    </div>
+    ${bottom('modules')}
+  </div>`;
+}
+// Shown inside a module the person does not have yet (paid users adding a module).
+function moduleLockedScreen(id) {
+  const m = moduleById(id) || MODULES[0];
+  const plan = Billing.plans().find((x) => x.tier === m.id);
+  const trial = Billing.trialDays();
+  return `<div class="mobile-app">
+    ${appHeader(m.name)}
+    <div class="screen">
+      <section class="mod-hero ${m.tone}"><span class="mod-ico big">${icon(m.icon)}</span><h1>${L(m.name)}</h1><p>${L(m.sub)}</p>
+        <ul>${m.features.map((f) => `<li>${icon('check')}<span>${L(f, { n: CUISINES.length })}</span></li>`).join('')}</ul>
+        ${plan ? `<div class="mod-price"><b>${euro(plan.annual.price / 12)}</b><small>${L('/ mois, facturé {price} par an', { price: euro(plan.annual.price) })}</small></div>` : ''}
+        <button class="btn btn-lime btn-wide btn-xl" data-module-buy="${m.id}">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Activer ce module')}</button>
+        <button class="link-btn" data-module-buy="complete">${L('Ou tous les modules avec le Kit complet')}</button>
+      </section>
+    </div>
+    ${bottom('modules')}
+  </div>`;
 }
 
 const Billing = {
@@ -1802,7 +1943,7 @@ function euro(value) {
 
 function comboSaving(plans, period) {
   const complete = plans.find((x) => x.tier === 'complete');
-  const separate = plans.filter((x) => ['nutrition', 'training', 'menopause'].includes(x.tier)).reduce((sum, x) => sum + x[period].price, 0);
+  const separate = plans.filter((x) => x.tier !== 'complete').reduce((sum, x) => sum + x[period].price, 0);
   return complete && separate ? Math.round((1 - complete[period].price / separate) * 100) : 0;
 }
 
@@ -1827,7 +1968,7 @@ async function joinWaitlist() {
 }
 
 function defaultTier() {
-  return state.profile?.track === 'menopause' ? 'menopause' : 'complete';
+  return moduleById(selectedTier) ? selectedTier : state.profile?.track === 'menopause' ? 'menopause' : 'complete';
 }
 
 function paywall() {
@@ -1855,7 +1996,7 @@ function paywall() {
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
       </div>
       <div class="plan-list" role="radiogroup">
-        ${plans.map((x) => {
+        ${(() => { const first = [plan, ...(plan.tier !== 'complete' ? [plans.find((x) => x.tier === 'complete')] : [])].filter(Boolean); const rest = plans.filter((x) => !first.includes(x)); return [first, rest]; })().map((group, gi) => `${gi ? `<details class="more-plans"><summary>${L('Autres modules')} (${group.length})</summary>` : ''}${group.map((x) => {
           const o = x[selectedPeriod];
           const perMonth = selectedPeriod === 'annual' ? o.price / 12 : o.price;
           const saving = selectedPeriod === 'annual' ? Math.round((1 - o.price / (x.monthly.price * 12)) * 100) : 0;
@@ -1863,11 +2004,11 @@ function paywall() {
             ${x.tier === 'menopause' && state.profile?.track === 'menopause' ? `<span class="plan-badge reco">${esc(L('Recommandé pour vous'))}</span>` : x.badge ? `<span class="plan-badge">${esc(L(x.badge))}</span>` : ''}
             <span class="plan-radio"></span>
             <span class="plan-main"><b>${esc(L(x.label))}</b><small>${esc(L(x.sub))}</small>
-              <span class="plan-feats">${x.features.map((f) => `<i>✓ ${esc(L(f))}</i>`).join('')}</span></span>
+              <span class="plan-feats">${x.features.map((f) => `<i>✓ ${esc(L(f, { n: CUISINES.length }))}</i>`).join('')}</span></span>
             <span class="plan-per"><b>${euro(perMonth)}</b><small>${L('/ mois')}</small>${saving > 0 ? `<em>−${saving} %</em>` : ''}</span>
-            ${x.tier === 'complete' ? `<span class="plan-combo">${L('Économisez {n} % par rapport aux 3 formules séparées', { n: comboSaving(plans, selectedPeriod) })}</span>` : ''}
+            ${x.tier === 'complete' ? `<span class="plan-combo">${L('Économisez {n} % par rapport aux modules séparés', { n: comboSaving(plans, selectedPeriod) })}</span>` : ''}
           </button>`;
-        }).join('')}
+        }).join('')}${gi ? '</details>' : ''}`).join('')}
       </div>
       ${trial ? `<div class="trial-timeline">
         <div><span class="tl-dot on">${icon('lock')}</span><p><b>${L('Aujourd’hui')}</b>${L('Accès complet à votre formule. Aucun paiement maintenant.')}</p></div>
@@ -1926,28 +2067,28 @@ function appHeader(title) {
 function drawerHtml() {
   const p = state.profile || {};
   const initials = (p.name || 'NP').trim().split(/\s+/).map((x) => x[0]).join('').slice(0, 2).toUpperCase();
-  const tierLabel = state.premium ? L(({ complete: 'Kit complet', nutrition: 'Nutrition', training: 'Entraînement', menopause: 'Ménopause 40+' })[planTier()]) : t('explore');
+  const tierLabel = state.premium ? planLabel() : t('explore');
   const item = (r, ico, label, extra = '') => `<button class="drawer-item ${route === r ? 'active' : ''}" ${r === 'add' ? 'data-open-add' : r === 'reminders' ? 'data-reminders' : `data-go="${r}"`} ${extra}>${icon(ico)}<span>${L(label)}</span></button>`;
   return `<div class="drawer-wrap">
     <aside class="drawer" role="dialog" aria-label="${L('Menu')}">
       <div class="drawer-head">
-        <span class="avatar">${esc(initials)}</span>
+        <button class="avatar" data-go="profile" aria-label="${L('Mon profil')}">${esc(initials)}</button>
         <div><b>${esc(p.name || 'NutriPilot')}</b><small>${esc(tierLabel)}</small></div>
         <button class="icon-btn" data-drawer-close aria-label="${L('Fermer')}">${icon('close')}</button>
       </div>
-      <div class="drawer-stats"><div>${icon('flame')}<b>${streak()}</b><small>${L('jours de suite')}</small></div><div>${icon('scale')}<b>${fmt(lastWeight(), 1)}</b><small>kg</small></div><div>${icon('drop')}<b>${fmt(waterToday() / 1000, 1)}</b><small>L</small></div></div>
+      <div class="drawer-stats"><div>${icon('flame')}<b>${streak()}</b><small>${L('jours de suite')}</small></div><div>${icon('scale')}<b>${weightKnown() ? fmt(lastWeight(), 1) : '—'}</b><small>kg</small></div><div>${icon('drop')}<b>${fmt(waterToday() / 1000, 1)}</b><small>L</small></div></div>
       <nav class="drawer-nav">
-        <small>${L('Mon programme')}</small>
+        <small>${L('Essentiel')}</small>
         ${item('app', 'home', 'Aujourd’hui')}
-        ${item('program', 'fork', 'Nutrition')}
-        ${item('training', 'dumbbell', 'Entraînement')}
-        ${item('menopause', 'flower', 'Ménopause 40+')}
-        ${item('guides', 'book', 'Cours nutrition')}
         ${item('progress', 'progress', 'Progrès')}
+        ${item('goal', 'scale', 'Mon objectif de poids')}
+        ${item('profile', 'user', 'Mon profil')}
+        <small>${L('Modules')}</small>
+        ${MODULES.map((m) => `<button class="drawer-item ${moduleForRoute()?.id === m.id ? 'active' : ''}" data-go="${m.route}">${icon(m.icon)}<span>${L(m.name)}</span>${state.premium && !hasModule(m.id) ? `<em class="dr-lock">${icon('lock')}</em>` : ''}</button>`).join('')}
+        ${item('modules', 'grid', 'Tous les modules')}
         <small>${L('Outils')}</small>
         ${item('add', 'scan', 'Scanner un repas')}
         ${item('planner', 'sparkle', 'Que manger ensuite ?')}
-        ${item('coach', 'coach', 'Coach')}
         ${item('reminders', 'bell', 'Rappels')}
         <small>${L('Aide')}</small>
         ${item('support', 'help', 'Aide & support')}
@@ -1999,11 +2140,13 @@ function menoFocus() {
 function bottom(active) {
   const tabs = [
     ['app', 'home', 'Aujourd’hui'],
-    ['program', 'program', 'Nutrition'],
+    ['modules', 'grid', 'Modules'],
     ['add', 'scan', 'Scanner'],
-    menoFocus() ? ['menopause', 'flower', 'Ménopause'] : ['training', 'dumbbell', 'Sport'],
-    state.premium ? ['progress', 'progress', 'Progrès'] : ['plans', 'star', 'Formules'],
+    state.premium ? ['coach', 'coach', 'Coach'] : ['plans', 'star', 'Formules'],
+    ['progress', 'progress', 'Progrès'],
   ];
+  const mod = MODULE_ROUTES[active];
+  if (mod && !['coach'].includes(active)) active = 'modules';
   return `<nav class="bottom-nav">${tabs.map(([r, ico, label]) => `<button class="nav-btn ${r === active ? 'active' : ''} ${r === 'add' ? 'center' : ''}" ${r === 'add' ? 'data-open-add' : `data-go="${r}"`} aria-label="${L(label)}"><span>${icon(ico)}</span>${L(label)}</button>`).join('')}</nav>`;
 }
 
@@ -2197,7 +2340,7 @@ function dashboard() {
   const sideCard = meno
     ? `<button class="mini-card meno-mini" data-go="menopause">${icon('flower')}<b>${L('Ménopause')}</b><small>${state.menoLog?.[todayKey()] ? L('Journal rempli ✓') : L('Noter mes symptômes')}</small></button>`
     : hasFeature('training')
-      ? `<button class="mini-card train-mini" data-go="training">${icon('dumbbell')}<b>${esc(L(session?.name || 'Repos'))}</b><small>${L('{n}/{total} cette semaine', { n: weekWorkouts(), total: trainingDays().length })}</small></button>`
+      ? `<button class="mini-card train-mini" data-go="training">${icon('dumbbell')}<b>${esc(L(hasTrainingPlan() ? session?.name || 'Repos' : 'Mon entraînement'))}</b><small>${hasTrainingPlan() ? L('{n}/{total} cette semaine', { n: weekWorkouts(), total: trainingDays().length }) : L('Choisir comment m’entraîner')}</small></button>`
       : `<button class="mini-card" data-go="recipes">${icon('fork')}<b>${L('Recettes')}</b><small>${L('{n} idées', { n: ALL_RECIPES.length })}</small></button>`;
 
   return `<div class="mobile-app today ${animate ? 'animate' : ''}">
@@ -2236,7 +2379,7 @@ function dashboard() {
           </div>
         </section>
         <div class="duo-col">
-          <button class="mini-card" data-go="progress">${icon('scale')}<b>${fmt(current, 1)} kg</b><small>${L('{w} kg jusqu’à l’objectif', { w: fmt(Math.abs(current - target), 1) })}</small><span class="mini-bar"><i style="width:${progress}%"></i></span></button>
+          ${goalSet() ? `<button class="mini-card" data-open-goal>${icon('scale')}<b>${fmt(current, 1)} <span class="mc-arrow flip-rtl">→</span> ${fmt(target, 1)} kg</b><small>${goalKind(current, target) === 'maintain' ? L('Objectif atteint : on stabilise') : L('{w} kg jusqu’à l’objectif', { w: fmt(Math.abs(current - target), 1) })}</small><span class="mini-bar"><i style="width:${progress}%"></i></span></button>` : `<button class="mini-card goal-cta" data-open-goal>${icon('scale')}<b>${L('Mon objectif')}</b><small>${L('Choisir mon poids de départ et mon poids cible')}</small></button>`}
           ${sideCard}
         </div>
       </div>
@@ -2346,6 +2489,11 @@ function achievements() {
 }
 
 function progressScreen() {
+  if (!weightKnown()) {
+    return `<div class="mobile-app">${appHeader('Progrès')}<div class="screen">
+      <section class="gp-empty">${icon('scale')}<h2>${L('Commençons par votre objectif')}</h2><p>${L('Indiquez votre poids actuel et le poids que vous voulez atteindre : NutriPilot calcule le chemin, la date estimée et vos repères du jour.')}</p><button class="btn btn-lime btn-wide btn-xl" data-open-goal>${L('Définir mon objectif')}</button></section>
+    </div>${bottom('progress')}</div>`;
+  }
   if (!state.weights.length) state.weights = [{ day: todayKey(), value: Number(state.profile.weight) }];
   const p = state.profile;
   const cutoff = progressRange ? addDays(-progressRange) : '0000';
@@ -2380,7 +2528,8 @@ function progressScreen() {
     <div class="screen">
       <section class="prog-hero">
         <div class="ph-main"><small>${L('Poids actuel')}</small><b><span data-count="${end}">${fmt(end, 1)}</span> kg</b><span class="ph-delta ${change <= 0 ? 'down' : 'up'}">${change <= 0 ? '↓' : '↑'} ${fmt(Math.abs(change), 1)} kg ${L('depuis le début')}</span></div>
-        <div class="ph-goal"><div class="ph-track"><i style="width:${pct}%"></i><span style="left:${pct}%"></span></div><div class="ph-ends"><span>${fmt(start, 1)} kg</span><span>${Math.round(pct)} %</span><span>${fmt(target, 1)} kg</span></div></div>
+        <div class="ph-goal"><div class="ph-track"><i style="width:${pct}%"></i><span style="left:${pct}%"></span></div><div class="ph-ends"><span>${L('Départ')} ${fmt(start, 1)} kg</span><span>${Math.round(pct)} %</span><span>${L('Objectif')} ${fmt(target, 1)} kg</span></div></div>
+        <button class="ph-edit" data-open-goal>${icon('scale')}<span>${goalSet() ? L('Modifier mon objectif') : L('Définir mon objectif')}</span></button>
         <div class="ph-stats"><div><small>${L('Restant')}</small><b>${fmt(Math.abs(toGo), 1)} kg</b></div><div><small>${L('Rythme')}</small><b>${rate ? `${rate > 0 ? '+' : ''}${fmt(rate, 2)} kg/${L('sem.')}` : '—'}</b></div><div><small>${L('Arrivée estimée')}</small><b>${eta ? esc(dateFr(eta)) : '—'}</b></div></div>
       </section>
 
@@ -2564,6 +2713,10 @@ function hubScreen() {
       </section>
       ${hasPlan ? `<button class="today-card hub-plan" data-go="plan"><small>${esc(t('myProgram'))}</small><b>${fmt(p.dailyKcal)} kcal · ${p.protein} g prot.</b>${proj ? `<span>${kgFmt(p.weight)} → ${kgFmt(p.target)} kg · ${esc(dateFr(proj.end))}</span>` : ''}<em>${esc(t('seePlan'))} →</em></button>` : ''}
 
+      <div class="hub-me">
+        <button data-open-profile>${icon('user')}<span><small>${L('Mon profil')}</small><b>${esc(p.name || L('Compléter'))}${p.track ? ` · ${esc(L((PF_TRACKS.find((x) => x[0] === p.track) || [])[1] || ''))}` : ''}</b></span>${icon('chevron')}</button>
+        <button data-open-goal>${icon('scale')}<span><small>${L('Objectif de poids')}</small><b>${goalSet() ? `${fmt(lastWeight(), 1)} → ${fmt(p.target, 1)} kg` : L('Définir mon objectif')}</b></span>${icon('chevron')}</button>
+      </div>
       <div class="section-label"><h3>${L('Nos formules')}</h3><button class="link-btn" data-go="plans">${L('Comparer →')}</button></div>
       <div class="plan-strip">${plans.map((x) => { const look = PLAN_LOOK[x.tier] || PLAN_LOOK.complete; return `<button class="plan-mini ${look.cls}" data-choose-plan="${esc(x.tier)}"><span class="pc-ico">${icon(look.icon)}</span><b>${esc(L(x.label))}</b><small>${L(look.tagline)}</small><em>${L('dès {p} / mois', { p: euro(x.annual.price / 12) })}</em></button>`; }).join('')}</div>
 
@@ -2713,8 +2866,8 @@ function program() {
     <div class="screen">
       ${programTabs('program')}
 
-      <div class="today-card program-card">
-        <div class="today-top"><div><small>${L('Poids actuel → objectif')}</small><h2>${fmt(lastWeight(), 1)} kg → ${fmt(p.target, 1)} kg</h2></div><span class="pill dark-pill">${weeks ? `≈ ${weeks} sem.` : 'Flexible'}</span></div>
+      <div class="today-card nut-goal-card">
+        <div class="today-top"><div><small>${L('Poids actuel → objectif')}</small><h2>${goalSet() ? `${fmt(lastWeight(), 1)} kg → ${fmt(p.target, 1)} kg` : L('Définir mon objectif')}</h2></div><button class="pill dark-pill" data-open-goal>${goalSet() ? (weeks ? L('≈ {n} semaines', { n: weeks }) : L('Modifier')) : L('Définir')}</button></div>
         <div class="macro-row-4 program-macros"><div><small>${L('Calories')}</small><b>${fmt(p.dailyKcal)}</b></div><div><small>${L('Protéines')}</small><b>${p.protein} g</b></div><div><small>${L('Fibres')}</small><b>${p.fiber} g</b></div><div><small>${L('Repas')}</small><b>${p.mealsPerDay}/j</b></div></div>
         ${Math.abs(Number(lastWeight()) - Number(p.weight || lastWeight())) >= 1.5 ? `<div class="recalibrate-box"><span>${L('Votre poids a évolué depuis le dernier calcul.')}</span><button class="link-btn" data-recalibrate>${L('Actualiser mes repères →')}</button></div>` : ''}
       </div>
@@ -2974,8 +3127,8 @@ function lessonAccess(guide) {
 }
 
 function programTabs(active) {
-  const tabs = [['program', 'Mon plan'], ['recipes', 'Recettes'], ['shopping', 'Courses'], ['guides', 'Leçons']];
-  return `<div class="segmented" role="tablist">${tabs.map(([r, label]) => `<button role="tab" aria-selected="${r === active}" class="${r === active ? 'active' : ''}" data-go="${r}">${L(label)}</button>`).join('')}</div>`;
+  const tabs = [['program', 'Plan 7 jours'], ['diary', 'Journal'], ['targets', 'Objectifs'], ['shopping', 'Courses'], ['planner', 'Hors maison'], ['guides', 'Leçons']];
+  return `<div class="tab-scroll mod-tabs" role="tablist">${tabs.map(([r, label]) => `<button role="tab" aria-selected="${r === active}" class="${r === active ? 'active' : ''}" data-go="${r}">${L(label)}</button>`).join('')}</div>`;
 }
 
 function guidesScreen() {
@@ -3131,10 +3284,36 @@ const COACH_STYLES = [
   { id: 'gentle', name: 'Douceur & mobilité', desc: 'Renforcement en douceur, gainage, équilibre et mobilité.', reps: '10–12', sets: 2, rest: 45 },
 ];
 
-const TRAIN_FOCUS = [['all', 'Tous'], ['fat', 'Perdre du gras'], ['muscle', 'Prendre du muscle'], ['upper', 'Haut du corps'], ['lower', 'Bas du corps'], ['glutes', 'Fessiers'], ['strength', 'Force'], ['home', 'À la maison'], ['fitness', 'Remise en forme']];
+const TRAIN_FOCUS = [['all', 'Tous'], ['cardio', 'Cardio & HIIT'], ['fat', 'Perdre du gras'], ['muscle', 'Prendre du muscle'], ['upper', 'Haut du corps'], ['lower', 'Bas du corps'], ['glutes', 'Fessiers'], ['strength', 'Force'], ['home', 'À la maison'], ['fitness', 'Remise en forme']];
 
+WORKOUT_PROGRAMS.push(
+  { id: 'hiit-15', name: 'HIIT 15 minutes', level: 'Intermédiaire', place: 'home', days: 3, style: 'fatloss', cardio: true, desc: 'Intervalles courts et intenses, sans matériel. 40 secondes d’effort, 20 secondes de récupération.',
+    sessions: [
+      { id: 'A', name: 'HIIT A', focus: 'Cardio · Jambes · Gainage', ex: [['jumping', 3, '40 s', 20], ['mountain', 3, '40 s', 20], ['jump-squat', 3, '30 s', 30], ['plank', 3, '40 s', 20]] },
+      { id: 'B', name: 'HIIT B', focus: 'Cardio · Haut du corps', ex: [['burpees', 3, '30 s', 30], ['pushup', 3, '30 s', 30], ['mountain', 3, '40 s', 20], ['bicycle', 3, '40 s', 20]] },
+      { id: 'C', name: 'HIIT C', focus: 'Cardio · Fessiers', ex: [['jump-squat', 3, '30 s', 30], ['reverse-lunge', 3, '40 s', 20], ['glute-bridge', 3, '40 s', 20], ['jumping', 3, '40 s', 20]] },
+    ] },
+  { id: 'low-impact-3', name: 'Faible impact · maison', level: 'Débutant', place: 'home', days: 3, style: 'gentle', cardio: true, desc: 'Sans saut, doux pour les articulations : idéal pour reprendre, en cas de surpoids ou de douleurs.',
+    sessions: [
+      { id: 'A', name: 'Doux A', focus: 'Jambes · Cardio léger', ex: [['brisk-walk', 1, '10 min', 60], ['step-up', 3, '10 / jambe', 60], ['wall-sit', 3, '30 s', 45], ['glute-bridge', 3, '12', 45]] },
+      { id: 'B', name: 'Doux B', focus: 'Haut du corps · Gainage', ex: [['incline-pushup', 3, '10', 60], ['band-row', 3, '12', 60], ['side-plank', 2, '20 s', 30], ['brisk-walk', 1, '10 min', 60]] },
+      { id: 'C', name: 'Doux C', focus: 'Corps entier', ex: [['bw-squat', 3, '12', 60], ['step-up', 3, '10 / jambe', 60], ['superman', 3, '10', 45], ['brisk-walk', 1, '15 min', 60]] },
+    ] },
+  { id: 'outdoor-3', name: 'Extérieur · parc', level: 'Débutant', place: 'outdoor', days: 3, style: 'athletic', cardio: true, desc: 'Marche rapide, escaliers et exercices au poids du corps, dehors.',
+    sessions: [
+      { id: 'A', name: 'Parc A', focus: 'Cardio · Jambes', ex: [['brisk-walk', 1, '15 min', 60], ['stairs', 4, '1 min', 60], ['step-up', 3, '12 / jambe', 60], ['bw-squat', 3, '15', 45]] },
+      { id: 'B', name: 'Parc B', focus: 'Haut du corps · Cardio', ex: [['brisk-walk', 1, '10 min', 60], ['incline-pushup', 3, '12', 60], ['bench-dips', 3, '10', 60], ['jumping', 3, '40 s', 30]] },
+      { id: 'C', name: 'Parc C', focus: 'Endurance', ex: [['brisk-walk', 1, '30 min', 0], ['plank', 3, '30 s', 30]] },
+    ] },
+  { id: 'cardio-gym-3', name: 'Cardio · salle', level: 'Débutant', place: 'gym', days: 3, style: 'athletic', cardio: true, desc: 'Machines cardio variées pour progresser en endurance sans s’ennuyer.',
+    sessions: [
+      { id: 'A', name: 'Cardio A', focus: 'Endurance', ex: [['treadmill', 1, '20 min', 60], ['bike', 1, '15 min', 60], ['plank', 3, '30 s', 30]] },
+      { id: 'B', name: 'Cardio B', focus: 'Intervalles', ex: [['rower', 6, '1 min', 60], ['elliptical', 1, '15 min', 60], ['side-plank', 2, '20 s', 30]] },
+      { id: 'C', name: 'Cardio C', focus: 'Endurance', ex: [['elliptical', 1, '20 min', 60], ['stairs', 1, '10 min', 60]] },
+    ] },
+);
 WORKOUT_PROGRAMS.forEach((p) => {
-  p.focus = ({ 'gym-full-3': ['fitness', 'fat', 'muscle'], 'gym-upper-lower-4': ['muscle', 'upper', 'lower'], 'gym-glutes-3': ['glutes', 'lower'], 'home-full-3': ['home', 'fitness', 'fat'] })[p.id] || [];
+  p.focus = p.cardio ? ['cardio', 'fat', 'fitness', ...(p.place === 'home' ? ['home'] : [])] : p.focus || ({ 'gym-full-3': ['fitness', 'fat', 'muscle'], 'gym-upper-lower-4': ['muscle', 'upper', 'lower'], 'gym-glutes-3': ['glutes', 'lower'], 'home-full-3': ['home', 'fitness', 'fat'] })[p.id] || [];
   p.style = ({ 'gym-full-3': 'athletic', 'gym-upper-lower-4': 'hypertrophy', 'gym-glutes-3': 'glutes', 'home-full-3': 'fatloss' })[p.id] || 'athletic';
 });
 WORKOUT_PROGRAMS.push(
@@ -3258,7 +3437,7 @@ function sessionForWeekday(weekday, program = currentProgram()) {
   if (idx < 0) return null;
   return program.sessions[idx % program.sessions.length];
 }
-function todaySession() { return sessionForWeekday(new Date().getDay()); }
+function todaySession() { return hasTrainingPlan() ? sessionForWeekday(new Date().getDay()) : null; }
 function weekStartKey() {
   const d = new Date();
   const diff = (d.getDay() + 6) % 7;
@@ -3318,12 +3497,58 @@ function weekStrip() {
   }).join('')}</div>`;
 }
 
+function hasTrainingPlan() { return Boolean(state.workoutProgram && findProgram(state.workoutProgram)); }
+function trainingStart() {
+  const reco = findProgram(recommendedProgramId()) || WORKOUT_PROGRAMS[0];
+  const opt = (attr, ico, title, sub) => `<button class="ts-opt" ${attr}>${icon(ico)}<span><b>${L(title)}</b><small>${L(sub)}</small></span>${icon('chevron')}</button>`;
+  return `<section class="ts-hero"><h2>${L('Comment voulez-vous vous entraîner ?')}</h2><p>${L('Choisissez votre façon de faire. Aucun programme n’est créé sans votre accord.')}</p></section>
+    <div class="ts-reco"><small>${L('Proposé d’après vos réponses')}</small><h3>${esc(L(reco.name))}</h3><p>${esc(L(reco.desc || ''))}</p>
+      <div class="pc-top"><span class="pill">${esc(L(reco.level))}</span><span class="pill">${L('{n} j / sem.', { n: reco.days || reco.sessions.length })}</span><span class="pill">${L(reco.place === 'home' ? 'Maison' : reco.place === 'outdoor' ? 'Extérieur' : 'Salle')}</span></div>
+      <div class="ts-sessions">${reco.sessions.map((x) => `<button data-session="${esc(x.id)}" data-program="${esc(reco.id)}"><b>${esc(L(x.name))}</b><small>${esc(L(x.focus))}</small></button>`).join('')}</div>
+      <button class="btn btn-lime btn-wide" data-workout-program="${esc(reco.id)}">${L('Commencer ce programme')}</button></div>
+    <div class="section-label"><h3>${L('Ou choisissez une autre façon')}</h3></div>
+    <div class="ts-list">
+      ${opt('data-train-tab="programs"', 'list', 'Choisir un programme prêt', 'Salle, maison, force, fessiers… filtrés par objectif')}
+      ${opt('data-train-create="grid"', 'calendar', 'Construire ma grille', 'Je choisis mes jours et mes exercices un par un')}
+      ${opt('data-train-create="auto"', 'sparkle', 'Programme sur mesure', 'Je donne mes préférences, NutriPilot crée les séances')}
+      ${opt('data-train-create="import"', 'book', 'Importer le programme de mon coach', 'Je colle mon programme, il devient mon agenda')}
+      ${opt('data-train-tab="cardio"', 'heart', 'Cardio, HIIT et extérieur', 'Séances courtes, faible impact ou en plein air')}
+    </div>`;
+}
+function trainingCardio() {
+  const list = WORKOUT_PROGRAMS.filter((x) => x.cardio);
+  const current = hasTrainingPlan() ? currentProgram() : {};
+  return `<p class="screen-sub">${L('Améliorez votre souffle et votre cœur : choisissez un format qui vous convient.')}</p>
+    <div class="program-list">${list.map((x) => programCard(x, current)).join('')}</div>
+    <div class="insight"><strong>${L('Repère')}</strong>${L('L’OMS recommande 150 à 300 minutes d’activité modérée par semaine, ou 75 à 150 minutes d’activité intense, plus 2 séances de renforcement.')}</div>`;
+}
+function trainingHistory() {
+  const log = (state.workoutLog || []).slice().sort((a, b) => String(b.day).localeCompare(String(a.day)));
+  const last30 = log.filter((w) => w.day >= addDays(-30));
+  const weeks = Array.from({ length: 8 }, (_, i) => { const from = addDays(-(7 * (8 - i)) + 1); const to = addDays(-(7 * (7 - i))); return log.filter((w) => w.day >= from && w.day <= to).length; });
+  const volume = (w) => Object.entries(w.loads || {}).reduce((sum, [id, kg]) => { const ex = (findProgram(w.programId)?.sessions.find((x) => x.id === w.sessionId)?.ex || []).find((e) => e[0] === id); const reps = parseInt(String(ex?.[2] || '10'), 10) || 10; return sum + Number(kg || 0) * Number(ex?.[1] || 3) * reps; }, 0);
+  const prs = personalRecords();
+  return `<div class="stat-grid">
+      <div class="stat"><small>${L('Séances')}</small><b>${last30.length}</b><em>${L('30 derniers jours')}</em></div>
+      <div class="stat"><small>${L('Série')}</small><b>${weekWorkouts()}/${trainingDays().length}</b><em>${L('cette semaine')}</em></div>
+      <div class="stat"><small>${L('Volume estimé')}</small><b>${fmt(last30.reduce((s, w) => s + volume(w), 0) / 1000, 1)} t</b><em>${L('30 derniers jours')}</em></div>
+      <div class="stat"><small>${L('Records')}</small><b>${prs.length}</b><em>${L('exercices suivis')}</em></div>
+    </div>
+    <div class="section-label"><h3>${L('Séances par semaine')}</h3></div>
+    <div class="chart-card">${barChart(weeks.map((v, i) => ({ label: `S${i + 1}`, value: v, today: i === 7 })), Math.max(1, trainingDays().length), '', 'train')}</div>
+    ${prs.length ? `<div class="section-label"><h3>${L('Records personnels')}</h3></div><div class="pr-list">${prs.slice(0, 8).map(([id, r]) => `<button class="pr" data-exercise="${esc(id)}">${EXERCISES[id] ? exAnim(id, 'xs') : ''}<span><b>${esc(L(exName(id)))}</b><small>${esc(dateLabel(r.day))}</small></span><em>${fmt(r.kg, 1)} kg</em></button>`).join('')}</div>` : ''}
+    <div class="section-label"><h3>${L('Séances terminées')}</h3></div>
+    ${log.length ? `<div class="nutrition-detail">${log.slice(0, 20).map((w) => { const pr = findProgram(w.programId); const se = pr?.sessions.find((x) => x.id === w.sessionId); return `<div><span>${esc(dateLabel(w.day))} · ${esc(L(se?.name || pr?.name || 'Séance'))}</span><b>${Object.keys(w.loads || {}).length ? L('{n} charges', { n: Object.keys(w.loads).length }) : '✓'}</b></div>`; }).join('')}</div>` : `<div class="empty">${L('Terminez votre première séance : elle apparaîtra ici avec vos charges.')}</div>`}`;
+}
 function trainingScreen() {
+  const planned = hasTrainingPlan();
   const program = currentProgram();
-  const today = todaySession();
-  const tabs = [['mine', 'Ma semaine'], ['programs', 'Programmes'], ['create', 'Créer'], ['library', 'Exercices'], ['lessons', 'Leçons']];
+  const today = planned ? todaySession() : null;
+  const tabs = [['mine', planned ? 'Ma semaine' : 'Commencer'], ['programs', 'Programmes'], ['create', 'Créer'], ['cardio', 'Cardio & HIIT'], ['library', 'Exercices'], ['history', 'Historique'], ['lessons', 'Leçons']];
   let body = '';
-  if (trainTab === 'mine') body = trainingMine(program);
+  if (trainTab === 'mine') body = planned ? trainingMine(program) : trainingStart();
+  else if (trainTab === 'cardio') body = trainingCardio();
+  else if (trainTab === 'history') body = trainingHistory();
   else if (trainTab === 'programs') body = trainingPrograms(program);
   else if (trainTab === 'create') body = trainingCreate();
   else if (trainTab === 'lessons') body = trainingLessons();
@@ -3331,11 +3556,11 @@ function trainingScreen() {
   return `<div class="mobile-app">
     ${appHeader('Entraînement')}
     <div class="screen">
-      <section class="train-hero">
+      ${planned ? `<section class="train-hero">
         <div class="train-hero-top"><div><small>${L('Aujourd’hui')}</small><h2>${today ? esc(L(today.name)) : L('Jour de repos')}</h2><span>${today ? esc(L(today.focus)) : L('Récupération, marche ou mobilité')}</span></div><span class="train-count"><b>${weekWorkouts()}</b>/${trainingDays().length}</span></div>
         ${weekStrip()}
         ${today ? `<button class="btn btn-lime btn-wide" data-session="${esc(today.id)}" data-program="${esc(program.id)}">${L('Commencer la séance')}</button>` : `<button class="btn btn-ghost-dark btn-wide" data-session="${esc(nextSession(program).id)}" data-program="${esc(program.id)}">${L('Faire quand même : {name}', { name: esc(L(nextSession(program).name)) })}</button>`}
-      </section>
+      </section>` : ''}
       <div class="tab-scroll">${tabs.map(([k, label]) => `<button class="${trainTab === k ? 'active' : ''}" data-train-tab="${k}">${L(label)}</button>`).join('')}</div>
       ${body}
     </div>
@@ -3362,7 +3587,7 @@ function trainingMine(program) {
 function programCard(x, current) {
   const style = COACH_STYLES.find((c) => c.id === x.style);
   return `<article class="program-card ${x.id === current.id ? 'current' : ''}">
-    <div class="pc-top"><span class="pill">${esc(L(x.level))}</span><span class="pill">${L('{n} j / sem.', { n: x.days || x.sessions.length })}</span><span class="pill">${L(x.place === 'home' ? 'Maison' : 'Salle')}</span></div>
+    <div class="pc-top"><span class="pill">${esc(L(x.level))}</span><span class="pill">${L('{n} j / sem.', { n: x.days || x.sessions.length })}</span><span class="pill">${L(x.place === 'home' ? 'Maison' : x.place === 'outdoor' ? 'Extérieur' : 'Salle')}</span></div>
     <h3>${esc(L(x.name))}</h3>
     ${style ? `<small class="pc-style">${L('Style {name}', { name: esc(L(style.name)) })}</small>` : ''}
     <p>${esc(L(x.desc || ''))}</p>
@@ -4080,9 +4305,9 @@ function planner() {
   const proteinLeft = Math.max(0, Math.round(p.protein - t.protein));
   const fiberLeft = Math.max(0, Math.round(p.fiber - t.fiber));
   return `<div class="mobile-app">
-    ${appHeader('Prochain repas')}
+    ${appHeader('Nutrition')}
     <div class="screen">
-      <span class="tag">${L('DÉCISION INTELLIGENTE')}</span>
+      ${programTabs('planner')}
       <h1 class="screen-title">${L('Que manger ensuite ?')}</h1>
       <p class="screen-sub">${L('Votre journée réelle devient le point de départ. Gardez vos envies et adaptez le reste.')}</p>
       <div class="compose-card"><small>${L('Budget restant estimé')}</small><div class="compose-number">${fmt(left)} kcal</div><div class="compose-meta">${L('≈ {p} g protéines · {f} g fibres restantes', { p: proteinLeft, f: fiberLeft })}</div></div>
@@ -4096,7 +4321,7 @@ function planner() {
 
       <div id="planner-panel">${plannerPanel('next', left, proteinLeft)}</div>
     </div>
-    ${bottom('')}
+    ${bottom('planner')}
   </div>`;
 }
 
@@ -4180,18 +4405,628 @@ function chartPoints(values) {
 }
 
 
+// ---- v13: weight goal planner & profile editor ------------------------------
+let goalDraft = null;
+let goalReturn = 'progress';
+let profileDraft = null;
+const round1 = (x) => Math.round(Number(x) * 10) / 10;
+function weightKnown() {
+  const p = state.profile || {};
+  return Boolean((state.onboarding && !p.estimated) || state.basicsFilled?.weight || p.goalSet || (state.weights || []).length);
+}
+function goalSet() {
+  const p = state.profile || {};
+  return Boolean(p.goalSet || (state.onboarding && !p.estimated && Number(p.target)));
+}
+function goalKind(weight, target) {
+  const diff = Number(target) - Number(weight);
+  return Math.abs(diff) < 0.5 ? 'maintain' : diff < 0 ? 'lose' : 'gain';
+}
+function healthyRange(heightCm) {
+  const h = Number(heightCm) / 100;
+  return h > 1.2 ? [round1(18.5 * h * h), round1(24.9 * h * h)] : null;
+}
+function goalWeeks(weight, target, speed) {
+  const delta = Math.abs(Number(target) - Number(weight));
+  const kind = goalKind(weight, target);
+  if (kind === 'maintain') return 0;
+  return Math.max(1, Math.round(delta / (kind === 'lose' ? Number(speed || 0.35) : 0.25)));
+}
+function initGoalDraft() {
+  const p = state.profile || {};
+  const w = weightKnown() ? round1(lastWeight() || p.weight) : '';
+  goalDraft = { weight: w || '', target: goalSet() ? round1(p.target) : (w ? round1(w - 5) : ''), speed: Number(p.speed) || 0.35, height: (state.basicsFilled?.height || state.onboarding) ? Number(p.height) || '' : '' };
+}
+function openGoal(from) {
+  goalReturn = from || route;
+  initGoalDraft();
+  nav('goal');
+}
+function goalScreen() {
+  if (!goalDraft) initGoalDraft();
+  const d = goalDraft;
+  const ready = Number(d.weight) >= 35 && Number(d.target) >= 35;
+  const kind = ready ? goalKind(d.weight, d.target) : 'maintain';
+  const diff = ready ? round1(d.target - d.weight) : 0;
+  const range = healthyRange(d.height);
+  const h = Number(d.height) / 100;
+  const targetBmi = h ? Number(d.target) / (h * h) : 0;
+  const tooLow = kind === 'lose' && targetBmi && targetBmi < 18.5;
+  const plan = ready ? calculatePlan({ ...state.profile, weight: Number(d.weight), target: Number(d.target), goal: kind, speed: d.speed, height: Number(d.height) || state.profile.height || 165 }) : null;
+  const weeks = ready ? goalWeeks(d.weight, d.target, d.speed) : 0;
+  const eta = weeks ? new Date(Date.now() + weeks * 604800000) : null;
+  const stepper = (key, label, cls = '') => `<div class="gp-col ${cls}"><small>${L(label)}</small>
+      <div class="gp-num"><button class="gp-step" data-goal-step="${key}:-0.5" aria-label="−0,5 kg">${icon('minus')}</button>
+      <label><input id="goal-${key}" type="number" inputmode="decimal" step="0.1" min="35" max="250" value="${d[key] === '' ? '' : d[key]}" placeholder="—" aria-label="${L(label)}"><span>kg</span></label>
+      <button class="gp-step" data-goal-step="${key}:0.5" aria-label="+0,5 kg">${icon('plus')}</button></div></div>`;
+  const quick = ready ? [[-3, '−3 kg'], [-5, '−5 kg'], [-10, '−10 kg'], [0, L('Maintenir')], [3, '+3 kg']] : [];
+  const paces = [[0.25, 'Tranquille', 'Très facile à tenir'], [0.35, 'Régulier', 'Recommandé'], [0.5, 'Soutenu', 'Plus exigeant']];
+  return `<div class="mobile-app">
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-goal-back aria-label="${L('Retour')}">←</button><h2>${L('Mon objectif de poids')}</h2><span></span></div></div>
+    <div class="screen gp">
+      <p class="screen-sub">${L('Choisissez votre poids actuel et le poids que vous voulez atteindre. Tout votre plan s’adapte immédiatement.')}</p>
+      <section class="gp-card">
+        <div class="gp-pair">
+          ${stepper('weight', 'Aujourd’hui')}
+          <div class="gp-mid"><span class="gp-arrow flip-rtl">→</span><b id="goal-diff" class="gp-diff ${kind}">${ready ? (diff > 0 ? '+' : diff < 0 ? '−' : '') + fmt(Math.abs(diff), 1) + ' kg' : '—'}</b></div>
+          ${stepper('target', 'Mon objectif', 'target')}
+        </div>
+        ${ready ? `<input class="gp-range" id="goal-range" type="range" min="${Math.max(35, Math.floor(d.weight - 40))}" max="${Math.min(250, Math.ceil(d.weight + 25))}" step="0.5" value="${d.target}" aria-label="${L('Mon objectif')}">` : ''}
+        <div class="gp-quick">${quick.map(([n, label]) => `<button class="mini-choice ${round1(d.target - d.weight) === n ? 'selected' : ''}" data-goal-quick="${n}">${label}</button>`).join('')}</div>
+        ${range ? `<p class="gp-hint">${icon('sparkle')}<span>${L('Repère santé pour {h} cm : {a} à {b} kg (IMC 18,5 à 24,9). C’est une indication générale, pas une obligation.', { h: fmt(d.height), a: fmt(range[0], 1), b: fmt(range[1], 1) })}</span></p>` : `<label class="gp-height">${L('Votre taille')} <input id="goal-height" type="number" inputmode="numeric" min="130" max="220" placeholder="cm"></label>`}
+      </section>
+      ${tooLow ? `<div class="warn">${L('Cet objectif correspond à un IMC inférieur à 18,5. NutriPilot ne propose pas de perte de poids en dessous de ce repère : choisissez un objectif plus haut ou parlez-en à un professionnel.')}</div>` : ''}
+      ${kind === 'lose' && !tooLow ? `<div class="section-label"><h3>${L('Votre rythme')}</h3></div>
+        <div class="gp-paces">${paces.map(([v, name, sub]) => { const w = goalWeeks(d.weight, d.target, v); return `<button class="gp-pace ${Number(d.speed) === v ? 'on' : ''}" data-goal-speed="${v}"><b>${L(name)}</b><small>≈ ${fmt(v, 2)} kg / ${L('sem.')}</small><em>${L(sub)}</em><span>${esc(new Date(Date.now() + w * 604800000).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' }))}</span></button>`; }).join('')}</div>` : ''}
+      ${plan && !tooLow ? `<section class="gp-result">
+        <div><small>${L('Calories par jour')}</small><b>${fmt(plan.dailyKcal)}</b><em>kcal</em></div>
+        <div><small>${L('Protéines')}</small><b>${plan.protein}</b><em>g</em></div>
+        <div><small>${kind === 'maintain' ? L('Objectif') : L('Arrivée estimée')}</small><b class="gp-date">${kind === 'maintain' ? L('Stabiliser') : eta ? esc(dateFr(eta)) : '—'}</b><em>${weeks ? L('≈ {n} semaines', { n: weeks }) : ''}</em></div>
+      </section>
+      <p class="fine center-fine">${L('Estimation : le corps ne suit pas une ligne droite. NutriPilot ajuste votre plan selon vos pesées réelles.')}</p>` : ''}
+      <button class="btn btn-primary btn-wide btn-xl" data-goal-save ${!ready || tooLow ? 'disabled' : ''}>${L('Enregistrer mon objectif')}</button>
+    </div>
+  </div>`;
+}
+function saveGoal() {
+  const d = goalDraft;
+  if (!d) return;
+  const weight = round1(d.weight); const target = round1(d.target);
+  if (!(weight >= 35 && weight <= 250 && target >= 35 && target <= 250)) return toast(L('Valeur attendue entre {min} et {max}.', { min: 35, max: 250 }));
+  const goal = goalKind(weight, target);
+  const prev = state.profile || {};
+  const next = calculatePlan({ ...prev, weight, target: goal === 'maintain' ? weight : target, goal, speed: d.speed, height: Number(d.height) || prev.height });
+  state.profile = { ...next, estimated: prev.estimated && !state.onboarding ? true : false, goalSet: true, goalStart: { weight, day: todayKey() } };
+  state.basicsFilled = { ...(state.basicsFilled || {}), weight: true, target: true, ...(d.height ? { height: true } : {}) };
+  const today = todayKey();
+  state.weights = (state.weights || []).filter((x) => x.day !== today);
+  state.weights.push({ day: today, value: weight });
+  saveState();
+  track('GoalSaved', { source: goal });
+  goalDraft = null;
+  toast(L('Objectif enregistré ✓'));
+  return nav(goalReturn && goalReturn !== 'goal' ? goalReturn : 'progress');
+}
+
+// Profile & focus editor: every answer of the questionnaire can be changed here.
+const PF_TRACKS = [['lose', 'Perdre du poids', 'Mincir sans régime extrême', 'flame'], ['menopause', 'Ménopause & 40+', 'Hormones, sommeil, ventre', 'flower'], ['muscle', 'Prendre du muscle', 'Force et silhouette', 'dumbbell'], ['eat', 'Manger mieux', 'Énergie et santé au quotidien', 'fork']];
+function openProfile() {
+  profileDraft = clone(state.profile || {});
+  if (!state.basicsFilled?.age && state.profile?.estimated) profileDraft.age = '';
+  if (!weightKnown()) profileDraft.weight = '';
+  nav('profile');
+}
+function pfChips(key, opts, numeric = false) {
+  const cur = profileDraft[key];
+  return `<div class="pf-chips">${opts.map(([v, label, sub]) => `<button class="pf-chip ${String(cur) === String(v) ? 'on' : ''}" data-pf="${key}" data-pf-value="${esc(String(v))}" ${numeric ? 'data-pf-num' : ''}><b>${L(label)}</b>${sub ? `<small>${L(sub)}</small>` : ''}</button>`).join('')}</div>`;
+}
+function profileScreen() {
+  if (!profileDraft) profileDraft = clone(state.profile || {});
+  const d = profileDraft;
+  const base = LANG_CUISINE[lang()] || 'fr';
+  const home = CUISINES.find((c) => c[0] === base);
+  const section = (title, body, sub = '') => `<section class="pf-sec"><h3>${L(title)}</h3>${sub ? `<p class="fine">${L(sub)}</p>` : ''}${body}</section>`;
+  return `<div class="mobile-app">
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="${state.premium ? 'settings' : 'app'}" aria-label="${L('Retour')}">←</button><h2>${L('Mon profil')}</h2><span></span></div></div>
+    <div class="screen pf">
+      <p class="screen-sub">${L('Modifiez n’importe quelle réponse : votre plan, vos recettes et vos séances sont recalculés dès que vous enregistrez.')}</p>
+      <button class="pf-goal" data-open-goal>${icon('scale')}<span><small>${L('Objectif de poids')}</small><b>${goalSet() ? `${fmt(lastWeight(), 1)} → ${fmt(state.profile.target, 1)} kg` : L('Définir mon objectif')}</b></span>${icon('chevron')}</button>
+      ${section('Vous', `<div class="pf-grid">
+        <label class="pf-field wide"><span>${L('Prénom')}</span><input id="pf-name" type="text" autocomplete="given-name" maxlength="40" value="${esc(d.name || '')}" placeholder="${L('Votre prénom')}"></label>
+        <label class="pf-field"><span>${L('Âge')}</span><input id="pf-age" type="number" inputmode="numeric" min="18" max="90" value="${esc(d.age || '')}"></label>
+        <label class="pf-field"><span>${L('Taille')} (cm)</span><input id="pf-height" type="number" inputmode="numeric" min="130" max="220" value="${esc(d.height || '')}"></label>
+      </div>
+      ${pfChips('sex', [['female', 'Une femme'], ['male', 'Un homme'], ['other', 'Je préfère ne pas répondre']])}`)}
+      ${section('Mon focus', `<div class="pf-tracks">${PF_TRACKS.map(([v, label, sub, ico]) => `<button class="pf-track ${d.track === v ? 'on' : ''}" data-pf="track" data-pf-value="${v}">${icon(ico)}<b>${L(label)}</b><small>${L(sub)}</small></button>`).join('')}</div>
+        ${d.track === 'menopause' ? pfChips('menopause', [['peri', 'Préménopause'], ['post', 'Ménopause'], ['unsure', 'À préciser']]) : ''}`, 'Ce qui guide vos conseils, vos recettes et vos séances.')}
+      ${section('Activité au quotidien', pfChips('activity', [[1.2, 'Plutôt assise', 'Bureau, voiture, peu de sport'], [1.375, 'Un peu active', '1 à 3 séances ou longues marches'], [1.55, 'Active', '3 à 5 séances par semaine'], [1.725, 'Très active', 'Sport ou métier physique au quotidien']], true))}
+      ${section('Alimentation', `${pfChips('diet', [['balanced', 'De tout'], ['mediterranean', 'Méditerranéen'], ['high-protein', 'Riche en protéines'], ['pescatarian', 'Pescétarien'], ['vegetarian', 'Végétarien']])}
+        <label class="pf-field wide"><span>${L('Aliments à éviter')}</span><input id="pf-allergies" type="text" maxlength="120" value="${esc(d.allergies && d.allergies !== 'Aucun' ? d.allergies : '')}" placeholder="${L('Ex. arachides, lactose, champignons…')}"></label>
+        <h4>${L('Repas par jour')}</h4>${pfChips('mealsPerDay', [[2, '2 repas'], [3, '3 repas'], [4, '3 repas + 1 collation']], true)}
+        <h4>${L('Temps pour cuisiner')}</h4>${pfChips('cooking', [['<15 min', 'Moins de 15 min'], ['15-30 min', '15 à 30 min'], ['30-45 min', '30 à 45 min']])}
+        <h4>${L('Cuisine préférée')}</h4>${pfChips('cuisine', [['home', `${home?.[2] || ''} ${L(home?.[1] || 'Française')}`], ['med', 'Méditerranéenne'], ['world', 'Cuisine du monde'], ['simple', 'Très simple']])}
+        <h4>${L('Budget courses')}</h4>${pfChips('budget', [['economy', 'Économique'], ['standard', 'Standard'], ['flexible', 'Flexible']])}`)}
+      ${section('Entraînement', `${pfChips('trainPlace', [['gym', 'En salle de sport'], ['home', 'À la maison'], ['none', 'Pas pour l’instant']])}
+        ${d.trainPlace && d.trainPlace !== 'none' ? `<h4>${L('Niveau')}</h4>${pfChips('trainLevel', [['beginner', 'Débutant(e)'], ['intermediate', 'Intermédiaire'], ['advanced', 'Confirmé(e)']])}<h4>${L('Séances par semaine')}</h4>${pfChips('trainDays', [[2, '2 séances'], [3, '3 séances'], [4, '4 séances ou plus']], true)}` : ''}`)}
+      <div class="pf-save"><button class="btn btn-primary btn-wide btn-xl" data-pf-save>${L('Enregistrer mon profil')}</button></div>
+    </div>
+  </div>`;
+}
+function readProfileInputs() {
+  const v = (id) => document.getElementById(id)?.value;
+  if (v('pf-name') !== undefined) profileDraft.name = String(v('pf-name')).trim().slice(0, 40);
+  if (v('pf-age') !== undefined) profileDraft.age = v('pf-age') === '' ? '' : Number(v('pf-age'));
+  if (v('pf-height') !== undefined) profileDraft.height = v('pf-height') === '' ? '' : Number(v('pf-height'));
+  if (v('pf-allergies') !== undefined) profileDraft.allergies = String(v('pf-allergies')).trim() || 'Aucun';
+}
+function saveProfile() {
+  readProfileInputs();
+  const d = profileDraft;
+  if (!d.name) return toast(t('needName'));
+  if (!(Number(d.age) >= 18 && Number(d.age) <= 90)) return toast(t('needAge'));
+  if (d.height !== '' && !(Number(d.height) >= 130 && Number(d.height) <= 220)) return toast(L('Valeur attendue entre {min} et {max}.', { min: 130, max: 220 }));
+  if (d.track === 'menopause') d.sex = 'female';
+  const prev = state.profile || {};
+  const weight = Number(prev.weight) || 70;
+  const target = goalSet() ? Number(prev.target) : weight;
+  const goal = goalKind(weight, target);
+  const changedTrack = d.track !== prev.track;
+  state.profile = { ...calculatePlan({ ...prev, ...d, weight, target, goal, height: Number(d.height) || prev.height || 165 }), estimated: Boolean(prev.estimated && !state.onboarding), goalSet: prev.goalSet, goalStart: prev.goalStart };
+  state.basicsFilled = { ...(state.basicsFilled || {}), name: true, age: true, ...(d.height ? { height: true } : {}) };
+  if (changedTrack || d.trainPlace !== prev.trainPlace || d.trainLevel !== prev.trainLevel || d.trainDays !== prev.trainDays) { state.workoutProgram = state.workoutProgram && changedTrack ? '' : state.workoutProgram; }
+  if (Array.isArray(state.profile.cuisines) && d.cuisine !== prev.cuisine) state.profile.cuisines = [];
+  saveState();
+  track('ProfileSaved', { source: d.track || '' });
+  profileDraft = null;
+  toast(L('Profil mis à jour ✓'));
+  return nav('app');
+}
+
+// ---- v13: Scanner module ---------------------------------------------------------
+let scanCompare = [];
+function pushScan(data, mode) {
+  if (!data?.total) return;
+  const per100 = data.source === 'openfoodfacts' ? data.foods?.[0] : null;
+  state.scanHistory = [{ id: `${Date.now()}`, at: new Date().toISOString(), mode, title: data.title || '', source: data.source || '', total: clone(data.total), per100: per100 ? { kcal: per100.kcal, protein: per100.protein, carbs: per100.carbs, sugar: per100.sugar, fat: per100.fat, satFat: per100.satFat, fiber: per100.fiber, salt: per100.salt } : null, product: data.product || null, image: data.image || '' }, ...(state.scanHistory || [])].slice(0, 60);
+  saveState(false);
+}
+function allergenChips(product) {
+  if (!product) return '';
+  const a = product.allergens || [];
+  const tr = product.traces || [];
+  const add = product.additives || [];
+  return `<div class="scan-facts">
+    ${a.length ? `<div class="sf-row warn-row"><b>${L('Allergènes déclarés')}</b><span>${a.map((x) => `<i>${esc(x.replace(/-/g, ' '))}</i>`).join('')}</span></div>` : `<div class="sf-row"><b>${L('Allergènes déclarés')}</b><span>${L('Aucun indiqué')}</span></div>`}
+    ${tr.length ? `<div class="sf-row"><b>${L('Traces possibles')}</b><span>${tr.map((x) => `<i>${esc(x.replace(/-/g, ' '))}</i>`).join('')}</span></div>` : ''}
+    <div class="sf-row"><b>${L('Additifs')}</b><span>${add.length ? add.map((x) => `<i>${esc(x)}</i>`).join('') : L('Aucun indiqué')}</span></div>
+    ${product.nutriscore ? `<div class="sf-row"><b>Nutri-Score</b><span class="ns ns-${product.nutriscore}">${product.nutriscore.toUpperCase()}</span></div>` : ''}
+    ${product.ingredients ? `<details class="sf-ing"><summary>${L('Liste des ingrédients')}</summary><p>${esc(product.ingredients)}</p></details>` : ''}
+    <p class="fine">${L('Informations déclarées par le fabricant (Open Food Facts). Vérifiez toujours l’emballage en cas d’allergie.')}</p>
+  </div>`;
+}
+function compareTable(a, b) {
+  const rows = [['kcal', 'Calories', 'kcal', -1], ['protein', 'Protéines', 'g', 1], ['fiber', 'Fibres', 'g', 1], ['sugar', 'Sucres', 'g', -1], ['satFat', 'Graisses saturées', 'g', -1], ['salt', 'Sel', 'g', -1]];
+  const cell = (x, y, dir) => { if (x == null) return '<td>—</td>'; const better = y != null && (dir > 0 ? x > y : x < y); return `<td class="${better ? 'better' : ''}">${fmt(x, 1)}</td>`; };
+  return `<table class="cmp-table"><thead><tr><th>${L('Pour 100 g')}</th><th>${esc(a.title)}</th><th>${esc(b.title)}</th></tr></thead><tbody>${rows.map(([k, label, unit, dir]) => `<tr><th>${L(label)} <small>${unit}</small></th>${cell(a.per100[k], b.per100[k], dir)}${cell(b.per100[k], a.per100[k], dir)}</tr>`).join('')}</tbody></table>
+    <p class="fine">${L('En vert : la valeur la plus intéressante pour chaque ligne. Comparez aussi le prix, le goût et la portion réellement consommée.')}</p>`;
+}
+function scannerScreen() {
+  const hist = state.scanHistory || [];
+  const comparable = hist.filter((x) => x.per100);
+  const picked = scanCompare.map((id) => hist.find((x) => x.id === id)).filter(Boolean);
+  const tiles = [['photo', 'camera', 'Photo du repas', 'Calories et macros estimées en quelques secondes'], ['barcode', 'list', 'Code-barres', 'Produits emballés, allergènes et additifs'], ['label', 'book', 'Étiquette', 'Lecture du tableau nutritionnel'], ['text', 'coach', 'Texte ou voix', 'Décrivez ce que vous avez mangé'], ['manual', 'search', 'Recherche', 'Si la photo ou le code ne marche pas']];
+  return `<div class="mobile-app">
+    ${appHeader('Scanner')}
+    <div class="screen">
+      <div class="scan-tiles">${tiles.map(([k, ico, title, sub], i) => `<button class="scan-tile ${i === 0 ? 'main' : ''}" data-add-tab="${k}">${icon(ico)}<b>${L(title)}</b><small>${L(sub)}</small></button>`).join('')}</div>
+      <div class="section-label"><h3>${L('Comparer deux produits')}</h3><span class="fine">${picked.length}/2</span></div>
+      ${picked.length === 2 ? compareTable(picked[0], picked[1]) : `<p class="fine">${comparable.length ? L('Touchez deux produits scannés par code-barres ci-dessous pour les comparer.') : L('Scannez au moins deux produits par code-barres pour les comparer.')}</p>`}
+      <div class="section-label"><h3>${L('Historique des scans')}</h3>${hist.length ? `<button class="link-btn" data-scan-clear>${L('Effacer')}</button>` : ''}</div>
+      ${hist.length ? `<div class="scan-hist">${hist.slice(0, 30).map((x) => `<div class="sh-row ${scanCompare.includes(x.id) ? 'picked' : ''}">
+        <button class="sh-main" data-scan-open="${esc(x.id)}">${x.image ? `<img src="${esc(x.image)}" alt="" loading="lazy">` : `<span class="sh-ico">${icon(x.mode === 'barcode' ? 'list' : x.mode === 'label' ? 'book' : 'camera')}</span>`}<span><b>${esc(x.title)}</b><small>${esc(new Date(x.at).toLocaleDateString(locale(), { day: 'numeric', month: 'short' }))} · ${fmt(x.total.kcal)} kcal${x.product?.allergens?.length ? ` · ⚠ ${x.product.allergens.length}` : ''}</small></span></button>
+        ${x.per100 ? `<button class="sh-cmp" data-scan-compare="${esc(x.id)}" aria-pressed="${scanCompare.includes(x.id)}">${scanCompare.includes(x.id) ? icon('check') : L('Comparer')}</button>` : ''}
+      </div>`).join('')}</div>` : `<div class="empty">${L('Vos scans apparaîtront ici, avec leurs allergènes et leurs valeurs.')}</div>`}
+    </div>
+    ${bottom('scanner')}
+  </div>`;
+}
+function scanSheet(item) {
+  return `<div class="sheet-head"><div><h2>${esc(item.title)}</h2><p class="fine">${esc(new Date(item.at).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short' }))}</p></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">×</button></div>
+    <div class="result-total compact-total"><div><small>${item.per100 ? L('Pour 100 g') : L('Estimation centrale')}</small><strong>${fmt(item.total.kcal)}</strong> kcal</div>
+    <div class="result-macros"><span><b>${fmt(item.total.protein, 1)}</b>${L('prot.')}</span><span><b>${fmt(item.total.carbs, 1)}</b>${L('gluc.')}</span><span><b>${fmt(item.total.fat, 1)}</b>${L('lip.')}</span><span><b>${fmt(item.total.fiber, 1)}</b>${L('fibres')}</span></div></div>
+    ${allergenChips(item.product)}
+    <button class="btn btn-lime btn-wide" data-scan-log="${esc(item.id)}">${L('Ajouter au journal →')}</button>`;
+}
+
+// ---- v13: Vitamins & nutrients module ------------------------------------------------
+// Reference values: EU nutrient reference values (NRV) for adults; upper levels from EFSA.
+const NUTRIENTS = [
+  ['protein', 'Protéines', 'macro', '', 'g', 'Construisent et réparent les muscles, la peau et les tissus ; elles rassasient.', ['Poulet (150 g) · 46 g', 'Lentilles cuites (200 g) · 18 g', 'Skyr (150 g) · 16 g', 'Œufs (2) · 13 g', 'Tofu (100 g) · 13 g', 'Saumon (120 g) · 25 g'], 'Votre objectif personnel est calculé dans votre plan.', ''],
+  ['fiber', 'Fibres', 'macro', 25, 'g', 'Nourrissent le microbiote, ralentissent la digestion et aident au transit et à la satiété.', ['Lentilles cuites (200 g) · 16 g', 'Framboises (125 g) · 8 g', 'Pain complet (2 tranches) · 5 g', 'Flocons d’avoine (40 g) · 4 g', 'Brocoli (150 g) · 4 g', 'Pomme (1) · 4 g'], 'Augmentez progressivement et buvez suffisamment.', ''],
+  ['omega3', 'Oméga-3', 'macro', '', 'g', 'Acides gras utiles au cœur, au cerveau et à la vision.', ['Saumon (120 g) · 2,5 g', 'Sardines (100 g) · 1,5 g', 'Maquereau (100 g) · 2,5 g', 'Noix (30 g) · 2,7 g (ALA)', 'Graines de chia (15 g) · 2,5 g (ALA)', 'Graines de lin moulues (10 g) · 2,3 g (ALA)'], 'Deux portions de poisson par semaine dont un poisson gras sont souvent recommandées.', ''],
+  ['vitA', 'Vitamine A', 'vit', 800, 'µg', 'Vision, peau et défenses immunitaires.', ['Patate douce (150 g)', 'Carotte (100 g)', 'Épinards (100 g)', 'Courge (150 g)', 'Œufs', 'Foie (à limiter)'], 'Les formes végétales (bêta-carotène) ne posent pas de risque d’excès.', 'Limite de sécurité EFSA : 3 000 µg par jour (vitamine A préformée).'],
+  ['vitC', 'Vitamine C', 'vit', 80, 'mg', 'Défenses, cicatrisation et absorption du fer végétal.', ['Poivron rouge (100 g) · 140 mg', 'Kiwi (1) · 70 mg', 'Orange (1) · 70 mg', 'Brocoli (150 g) · 90 mg', 'Fraises (150 g) · 90 mg', 'Chou (100 g) · 40 mg'], 'Fragile à la chaleur : profitez de fruits et légumes crus.', ''],
+  ['vitD', 'Vitamine D', 'vit', 5, 'µg', 'Os, muscles et immunité ; produite par la peau au soleil.', ['Saumon (120 g) · 10 µg', 'Sardines (100 g) · 5 µg', 'Œufs (2) · 2 µg', 'Boissons et yaourts enrichis', 'Champignons exposés aux UV', 'Thon (100 g) · 4 µg'], 'Les besoins varient selon le soleil, la peau et l’âge : le dosage sanguin se décide avec un médecin.', 'Limite de sécurité EFSA : 100 µg par jour.'],
+  ['vitE', 'Vitamine E', 'vit', 12, 'mg', 'Antioxydant qui protège les cellules.', ['Amandes (30 g) · 8 mg', 'Graines de tournesol (20 g) · 7 mg', 'Huile de colza (1 c. à s.) · 2 mg', 'Avocat (1/2) · 2 mg', 'Épinards (100 g) · 2 mg', 'Noisettes (30 g) · 4 mg'], '', 'Limite de sécurité EFSA : 300 mg par jour.'],
+  ['vitK', 'Vitamine K', 'vit', 75, 'µg', 'Coagulation et santé des os.', ['Chou kale (50 g)', 'Épinards (100 g)', 'Brocoli (150 g)', 'Persil', 'Choux de Bruxelles', 'Natto'], 'Si vous prenez un anticoagulant, gardez des apports réguliers et parlez-en à votre médecin.', ''],
+  ['b9', 'Vitamine B9 (folates)', 'vit', 200, 'µg', 'Renouvellement des cellules ; essentielle avant et pendant la grossesse.', ['Lentilles cuites (200 g)', 'Épinards (100 g)', 'Pois chiches (200 g)', 'Asperges', 'Avocat', 'Brocoli'], '', 'Limite de sécurité EFSA : 1 000 µg par jour d’acide folique ajouté.'],
+  ['b12', 'Vitamine B12', 'vit', 2.5, 'µg', 'Nerfs et globules rouges ; présente seulement dans les produits animaux.', ['Sardines (100 g) · 9 µg', 'Saumon (120 g) · 4 µg', 'Bœuf (120 g) · 2,5 µg', 'Œufs (2) · 1 µg', 'Yaourt (150 g) · 0,6 µg', 'Aliments enrichis'], 'En alimentation végétalienne, un complément est nécessaire : demandez conseil à un professionnel.', ''],
+  ['calcium', 'Calcium', 'min', 800, 'mg', 'Os et dents, contraction musculaire.', ['Yaourt (150 g) · 200 mg', 'Emmental (30 g) · 300 mg', 'Lait (250 ml) · 300 mg', 'Boisson végétale enrichie (250 ml) · 300 mg', 'Sardines avec arêtes (100 g) · 380 mg', 'Tofu au calcium (100 g) · 350 mg'], 'Surtout important après 50 ans et à la ménopause.', 'Limite de sécurité EFSA : 2 500 mg par jour.'],
+  ['iron', 'Fer', 'min', 14, 'mg', 'Transport de l’oxygène ; un manque fatigue.', ['Lentilles cuites (200 g) · 6 mg', 'Bœuf (120 g) · 3 mg', 'Pois chiches (200 g) · 4 mg', 'Épinards cuits (150 g) · 4 mg', 'Moules (100 g) · 4 mg', 'Tofu (100 g) · 3 mg'], 'Associez les sources végétales à de la vitamine C ; le thé et le café au repas réduisent l’absorption.', 'Ne prenez pas de fer sans avis médical : l’excès est toxique (niveau sûr EFSA : 40 mg par jour).'],
+  ['magnesium', 'Magnésium', 'min', 375, 'mg', 'Muscles, nerfs, énergie et sommeil.', ['Graines de courge (30 g) · 160 mg', 'Amandes (30 g) · 80 mg', 'Chocolat noir 70 % (20 g) · 45 mg', 'Haricots noirs (200 g) · 120 mg', 'Épinards (100 g) · 80 mg', 'Riz complet (150 g) · 65 mg'], '', 'Limite de sécurité EFSA : 250 mg par jour sous forme de complément.'],
+  ['zinc', 'Zinc', 'min', 10, 'mg', 'Immunité, cicatrisation, peau et cheveux.', ['Huîtres (6) · 30 mg', 'Bœuf (120 g) · 6 mg', 'Graines de courge (30 g) · 2 mg', 'Lentilles (200 g) · 2,5 mg', 'Fromage (30 g) · 1 mg', 'Noix de cajou (30 g) · 1,6 mg'], '', 'Limite de sécurité EFSA : 25 mg par jour.'],
+  ['potassium', 'Potassium', 'min', 2000, 'mg', 'Tension artérielle, cœur et muscles.', ['Pomme de terre (200 g) · 800 mg', 'Banane (1) · 420 mg', 'Haricots blancs (200 g) · 700 mg', 'Épinards (100 g) · 550 mg', 'Avocat (1/2) · 490 mg', 'Yaourt (150 g) · 250 mg'], 'En cas de maladie rénale, suivez les conseils de votre médecin.', ''],
+  ['iodine', 'Iode', 'min', 150, 'µg', 'Hormones thyroïdiennes.', ['Cabillaud (150 g) · 150 µg', 'Sel iodé (1 g) · 20 µg', 'Lait (250 ml) · 50 µg', 'Yaourt (150 g) · 40 µg', 'Œufs (2) · 50 µg', 'Algues (très variable)'], '', 'Limite de sécurité EFSA : 600 µg par jour ; prudence avec les algues.'],
+  ['selenium', 'Sélénium', 'min', 55, 'µg', 'Antioxydant, thyroïde.', ['Noix du Brésil (1) · 50–90 µg', 'Thon (100 g) · 80 µg', 'Sardines (100 g) · 45 µg', 'Œufs (2) · 30 µg', 'Poulet (150 g) · 30 µg', 'Lentilles (200 g) · 6 µg'], '', 'Limite de sécurité EFSA : 255 µg par jour : une ou deux noix du Brésil suffisent.'],
+];
+const SUPP_UL = { vitA: [3000, 'µg'], vitD: [100, 'µg'], vitE: [300, 'mg'], b6: [12, 'mg'], b9: [1000, 'µg'], calcium: [2500, 'mg'], magnesium: [250, 'mg'], zinc: [25, 'mg'], iodine: [600, 'µg'], selenium: [255, 'µg'], iron: [40, 'mg'], caffeine: [400, 'mg'] };
+// Food groups found in logged meals (estimation from names, several languages).
+const FOOD_GROUPS = [
+  ['dairy', 'Laitages', /(yaourt|yogh?urt|iogurte|joghurt|skyr|lait|milk|leche|leite|milch|latte|fromage|cheese|queso|queijo|käse|formaggio|kwark|quark|ricotta|feta|mozzarella|kefir|melk|kaas|süt|peynir|ヨーグルト|チーズ|우유|치즈|요거트|奶|酪|حليب|زبادي|جبن|susu|keju)/i, ['calcium', 'b12', 'iodine']],
+  ['fish', 'Poissons', /(poisson|fish|pescado|peixe|fisch|pesce|saumon|salmon|salmão|lachs|salmone|thon|tuna|atún|atum|thunfisch|tonno|sardin|maquereau|mackerel|cabillaud|cod|bacalhau|merlu|crevette|prawn|shrimp|gamba|camarão|garnele|moules|mussel|vis|zalm|balık|somon|魚|鮭|サーモン|생선|연어|鱼|三文鱼|سمك|سلمون|ikan|udang)/i, ['omega3', 'vitD', 'iodine', 'selenium']],
+  ['meatEggs', 'Viandes & œufs', /(poulet|chicken|pollo|frango|hähnchen|huhn|bœuf|boeuf|beef|ternera|carne|rind|manzo|dinde|turkey|pavo|peru|pute|tacchino|porc|pork|cerdo|porco|schwein|maiale|œuf|oeuf|egg|huevo|ovo|\bei\b|uovo|kip|tavuk|yumurta|et\b|鶏|卵|牛|닭|달걀|계란|소고기|鸡|蛋|牛肉|دجاج|بيض|لحم|ayam|telur|daging)/i, ['b12', 'iron', 'zinc', 'protein']],
+  ['legumes', 'Légumineuses', /(lentille|lentil|lenteja|lentilha|linse|lenticch|pois chiche|chickpea|garbanzo|grão|kichererbse|cece|haricot|bean|frijol|judía|feijão|bohne|fagiol|tofu|edamame|soja|soy|hummus|houmous|dal\b|mercimek|nohut|fasulye|豆|콩|두부|بقول|عدس|حمص|kacang|tempe|tahu)/i, ['fiber', 'iron', 'b9', 'magnesium']],
+  ['veg', 'Légumes', /(légume|legume|vegetable|verdura|hortaliça|gemüse|verdur|salade|salad|ensalada|salada|salat|insalat|brocoli|broccoli|épinard|spinach|espinaca|espinafre|spinat|spinaci|carotte|carrot|zanahoria|cenoura|karotte|carot|courgette|zucchini|tomate|tomato|pomodor|poivron|pepper|pimiento|pimentão|paprika|chou|cabbage|kale|aubergine|eggplant|groente|sebze|野菜|채소|蔬菜|خضار|sayur)/i, ['vitC', 'b9', 'vitK', 'potassium', 'fiber']],
+  ['fruit', 'Fruits', /(fruit|fruta|frucht|obst|frutta|pomme|apple|manzana|maçã|apfel|mela|banane|banana|orange|naranja|laranja|kiwi|fraise|strawberr|fresa|morango|erdbeer|fragol|baie|berr|mango|mangue|papaya|poire|pear|pera|birne|raisin|grape|uva|traube|fruit|meyve|elma|果物|과일|水果|فاكهة|buah)/i, ['vitC', 'potassium', 'fiber']],
+  ['wholegrain', 'Céréales complètes', /(complet|whole|integral|vollkorn|avoine|oat|avena|aveia|hafer|quinoa|riz brun|brown rice|arroz integral|sarrasin|buckwheat|seigle|rye|centeno|centeio|roggen|segale|boulgour|bulgur|volkoren|tam buğday|yulaf|玄米|オートミール|현미|귀리|糙米|燕麦|شوفان|أسمر|gandum)/i, ['fiber', 'magnesium', 'iron']],
+  ['nuts', 'Fruits à coque & graines', /(noix|nut|nuez|noz|nuss|noce|amande|almond|almendra|amêndoa|mandel|mandorl|noisette|hazelnut|graine|seed|semilla|semente|samen|semi|chia|lin|flax|courge|pumpkin|sésame|sesame|cacahu|peanut|pistach|ceviz|badem|fındık|ナッツ|견과|坚果|مكسرات|kacang)/i, ['vitE', 'magnesium', 'omega3']],
+];
+let nutrientTab = 'guide';
+let nutrientOpen = '';
+function nutrientName(key) { const n = NUTRIENTS.find((x) => x[0] === key); return n ? L(n[1]) : key; }
+function foodGroupDays(days = 7) {
+  const out = Object.fromEntries(FOOD_GROUPS.map(([k]) => [k, new Set()]));
+  const from = addDays(-(days - 1));
+  const logged = new Set();
+  for (const m of state.meals || []) {
+    if (m.day < from) continue;
+    logged.add(m.day);
+    const text = [m.title, ...(m.foods || []).map((f) => f.name)].join(' ');
+    for (const [k, , re] of FOOD_GROUPS) if (re.test(text)) out[k].add(m.day);
+  }
+  return { logged: logged.size, groups: out };
+}
+function nutrientsScreen() {
+  const tabs = [['guide', 'Guide'], ['sources', 'Meilleures sources'], ['gaps', 'Mon journal']];
+  let body = '';
+  if (nutrientTab === 'guide') {
+    const sec = (type, title) => `<div class="section-label"><h3>${L(title)}</h3></div><div class="nut-list">${NUTRIENTS.filter((n) => n[2] === type).map((n) => `<button class="nut-card ${nutrientOpen === n[0] ? 'open' : ''}" data-nutrient="${n[0]}"><span class="nut-head"><b>${L(n[1])}</b>${n[3] ? `<small>${L('Repère adulte : {v} {u} / jour', { v: fmt(n[3], n[3] < 10 ? 1 : 0), u: n[4] })}</small>` : ''}</span><span class="nut-role">${L(n[5])}</span>${nutrientOpen === n[0] ? `<span class="nut-more"><em>${L('Où le trouver')}</em>${n[6].map((x) => `<i>${esc(L(x))}</i>`).join('')}${n[7] ? `<em>${L('Bon à savoir')}</em><i>${L(n[7])}</i>` : ''}${n[8] ? `<em>${L('Sécurité')}</em><i class="nut-ul">${L(n[8])}</i>` : ''}</span>` : ''}</button>`).join('')}</div>`;
+    body = `${sec('macro', 'Macronutriments utiles')}${sec('vit', 'Vitamines')}${sec('min', 'Minéraux')}
+      <p class="fine center-fine">${L('Repères adultes : valeurs nutritionnelles de référence de l’Union européenne. Les besoins varient selon l’âge, la grossesse et la santé.')}</p>`;
+  } else if (nutrientTab === 'sources') {
+    const pick = nutrientOpen && NUTRIENTS.find((n) => n[0] === nutrientOpen) ? nutrientOpen : 'calcium';
+    const n = NUTRIENTS.find((x) => x[0] === pick);
+    body = `<p class="screen-sub">${L('Choisissez un nutriment pour voir les aliments qui en apportent le plus, par portion courante.')}</p>
+      <div class="chip-row wrap">${NUTRIENTS.map((x) => `<button class="mini-choice ${x[0] === pick ? 'selected' : ''}" data-nutrient-src="${x[0]}">${L(x[1])}</button>`).join('')}</div>
+      <div class="src-card"><h3>${L(n[1])}</h3><p class="fine">${L(n[5])}</p><ol>${n[6].map((x) => `<li>${esc(L(x))}</li>`).join('')}</ol>${n[7] ? `<p class="fine">${L(n[7])}</p>` : ''}</div>`;
+  } else {
+    const { logged, groups } = foodGroupDays(7);
+    const missing = FOOD_GROUPS.filter(([k]) => groups[k].size <= 1);
+    body = logged < 3
+      ? `<div class="empty">${L('Notez vos repas au moins 3 jours cette semaine : NutriPilot repérera les groupes d’aliments peu présents.')}<br><br><button class="btn btn-lime" data-open-add>${L('Ajouter un repas')}</button></div>`
+      : `<p class="screen-sub">${L('Sur vos {n} jours notés cette semaine, voici la présence de chaque groupe d’aliments.', { n: logged })}</p>
+        <div class="fg-list">${FOOD_GROUPS.map(([k, label, , nut]) => { const d = groups[k].size; return `<div class="fg-row ${d <= 1 ? 'low' : ''}"><span><b>${L(label)}</b><small>${nut.map(nutrientName).join(' · ')}</small></span><span class="fg-bar"><i style="width:${Math.min(100, d / Math.max(1, logged) * 100)}%"></i></span><em>${L('{d}/{n} j', { d, n: logged })}</em></div>`; }).join('')}</div>
+        ${missing.length ? `<div class="insight"><strong>${L('À ajouter plus souvent')}</strong>${missing.map(([, label, , nut]) => esc(L('{g} : pour {n}.', { g: L(label), n: nut.map(nutrientName).join(', ') }))).join('<br>')}</div>` : `<div class="insight"><strong>${L('Belle variété cette semaine')}</strong>${L('Tous les grands groupes d’aliments sont présents dans votre journal.')}</div>`}
+        <p class="fine">${L('Estimation à partir des noms de vos repas : ce n’est pas une analyse de laboratoire ni un diagnostic de carence. En cas de fatigue ou de doute, parlez-en à un professionnel de santé.')}</p>`;
+  }
+  return `<div class="mobile-app">
+    ${appHeader('Vitamines & nutriments')}
+    <div class="screen">
+      <div class="tab-scroll mod-tabs">${tabs.map(([k, label]) => `<button class="${nutrientTab === k ? 'active' : ''}" data-nutrient-tab="${k}">${L(label)}</button>`).join('')}</div>
+      ${body}
+    </div>
+    ${bottom('nutrients')}
+  </div>`;
+}
+
+// ---- v13: Supplements module ----------------------------------------------------------
+const SUPP_INFO = [
+  ['creatine', 'Créatine', 'Solide', 'Améliore la force et la performance sur les efforts courts et intenses, surtout avec un entraînement de musculation.', 'Bien étudiée chez l’adulte en bonne santé. Demandez un avis médical en cas de maladie rénale.'],
+  ['protein', 'Protéine en poudre (whey, végétale)', 'Solide', 'Pratique pour atteindre son objectif de protéines ; n’apporte rien de plus que des aliments riches en protéines.', 'Vérifiez les allergènes (lait, soja) et la teneur en sucre.'],
+  ['vitD', 'Vitamine D', 'Modérée', 'Utile en cas d’apport faible ou de peu d’exposition au soleil, notamment l’hiver et après 50 ans.', 'Ne dépassez pas 100 µg par jour sans avis médical. Le dosage sanguin se décide avec un médecin.'],
+  ['omega3', 'Oméga-3 (huile de poisson)', 'Modérée', 'Peut aider à atteindre les apports si l’on mange peu de poisson gras ; les effets sur le cœur sont discutés.', 'Prudence avec les anticoagulants et avant une opération : parlez-en à votre médecin.'],
+  ['magnesium', 'Magnésium', 'Limitée', 'Utile si l’alimentation en apporte peu ; les effets sur le sommeil et les crampes sont peu démontrés.', 'Au-delà de 250 mg par jour en complément : troubles digestifs possibles. Prudence en cas de maladie rénale.'],
+  ['iron', 'Fer', 'Solide si carence', 'Corrige une carence confirmée par une prise de sang.', 'À ne prendre que sur avis médical : l’excès de fer est toxique. Tenir hors de portée des enfants.'],
+  ['b12', 'Vitamine B12', 'Solide', 'Indispensable en alimentation végétalienne et souvent utile après 50 ans.', 'Bien tolérée. Les besoins exacts se discutent avec un professionnel.'],
+  ['collagen', 'Collagène', 'Limitée', 'Quelques études sur la peau et les articulations, de qualité variable.', 'C’est une protéine incomplète : elle ne remplace pas les autres sources de protéines.'],
+  ['melatonin', 'Mélatonine', 'Modérée', 'Aide à décaler l’endormissement (décalage horaire, horaires tardifs).', 'Statut différent selon les pays ; à éviter avec certains médicaments. Demandez conseil à un pharmacien.'],
+  ['caffeine', 'Caféine', 'Solide', 'Améliore la vigilance et la performance d’endurance.', 'Jusqu’à 400 mg par jour pour un adulte selon l’EFSA, 200 mg maximum en une prise. Évitez-la l’après-midi si vous dormez mal.'],
+  ['multi', 'Multivitamines', 'Limitée', 'Peu utiles si l’alimentation est variée ; peuvent aider en cas de régime très restreint.', 'Additionnez les doses avec vos autres compléments pour éviter les doublons.'],
+  ['probiotics', 'Probiotiques', 'Limitée', 'Effets qui dépendent de la souche et de la situation (par exemple après des antibiotiques).', 'Demandez conseil en cas de système immunitaire fragile.'],
+];
+let suppTab = 'mine';
+let suppImage = '';
+let suppDraft = null;
+function suppTotals() {
+  const totals = {};
+  for (const s of state.supplements || []) {
+    if (s.paused) continue;
+    const perDay = Number(s.perDay || 1);
+    for (const ing of s.ingredients || []) {
+      if (!ing.key || ing.key === 'other' || ing.amount == null) continue;
+      let amount = Number(ing.amount) * perDay;
+      let unit = ing.unit;
+      if (unit === 'UI' && ing.key === 'vitD') { amount = amount / 40; unit = 'µg'; }
+      if (unit === 'g') { amount *= 1000; unit = 'mg'; }
+      if (unit === 'mg' && SUPP_UL[ing.key]?.[1] === 'µg') { amount *= 1000; unit = 'µg'; }
+      const t = totals[ing.key] ||= { amount: 0, unit, products: [] };
+      t.amount += amount; t.products.push(s.name);
+    }
+  }
+  return totals;
+}
+function suppAlerts() {
+  const totals = suppTotals();
+  const out = [];
+  for (const [key, t] of Object.entries(totals)) {
+    const names = [...new Set(t.products)];
+    if (names.length > 1) out.push(['dup', L('{n} se trouve dans plusieurs produits : {p}.', { n: nutrientName(key), p: names.join(', ') })]);
+    const ul = SUPP_UL[key];
+    if (ul && t.unit === ul[1] && t.amount > ul[0]) out.push(['ul', L('{n} : environ {a} {u} par jour avec vos compléments, au-dessus du repère de sécurité ({l} {u}). Parlez-en à un professionnel avant de continuer.', { n: nutrientName(key), a: fmt(t.amount, 0), u: ul[1], l: fmt(ul[0]) })]);
+  }
+  return out;
+}
+function suppForm(d) {
+  return `<div class="supp-form">
+    <label class="pf-field wide"><span>${L('Nom du produit')}</span><input id="sp-name" maxlength="100" value="${esc(d.name || '')}"></label>
+    <div class="pf-grid"><label class="pf-field"><span>${L('Marque')}</span><input id="sp-brand" maxlength="80" value="${esc(d.brand || '')}"></label><label class="pf-field"><span>${L('Prises par jour')}</span><input id="sp-perday" type="number" min="0.5" max="6" step="0.5" value="${esc(d.perDay || 1)}"></label></div>
+    <h4>${L('Ingrédients déclarés (par prise)')}</h4>
+    <div class="sp-ings">${(d.ingredients || []).map((x, i) => `<div class="sp-ing"><span><b>${esc(x.name)}</b><small>${x.amount != null ? `${fmt(x.amount, 2)} ${esc(x.unit)}` : L('quantité non lue')}</small></span><button class="icon-btn" data-sp-ing-del="${i}" aria-label="${L('Retirer')}">${icon('close')}</button></div>`).join('') || `<p class="fine">${L('Aucun ingrédient pour l’instant.')}</p>`}</div>
+    <div class="sp-add"><input id="sp-ing-name" placeholder="${L('Ex. Vitamine D3')}"><input id="sp-ing-amount" type="number" step="any" placeholder="25"><select id="sp-ing-unit">${['mg', 'µg', 'g', 'UI'].map((u) => `<option>${u}</option>`).join('')}</select><select id="sp-ing-key">${[...NUTRIENTS.filter((n) => n[2] !== 'macro' || n[0] === 'omega3'), ['b6', 'Vitamine B6'], ['caffeine', 'Caféine'], ['creatine', 'Créatine'], ['other', 'Autre']].map((n) => `<option value="${n[0]}">${L(n[1])}</option>`).join('')}</select><button class="btn btn-ghost" data-sp-ing-add>${icon('plus')}</button></div>
+    ${d.warnings?.length ? `<div class="warn"><b>${L('Mentions de l’étiquette')}</b><br>${d.warnings.map(esc).join('<br>')}</div>` : ''}
+    <div class="modal-actions"><button class="btn btn-ghost" data-sp-cancel>${L('Annuler')}</button><button class="btn btn-primary" data-sp-save>${L('Enregistrer')}</button></div>
+  </div>`;
+}
+function supplementsScreen() {
+  const tabs = [['mine', 'Mes compléments'], ['scan', 'Scanner une étiquette'], ['alerts', 'Alertes'], ['info', 'Fiches']];
+  const list = state.supplements || [];
+  let body = '';
+  if (suppDraft) body = suppForm(suppDraft);
+  else if (suppTab === 'mine') {
+    body = `${list.length ? `<div class="supp-list">${list.map((s, i) => `<div class="supp-card ${s.paused ? 'paused' : ''}"><span class="supp-ico">${icon('pill')}</span><span><b>${esc(s.name)}</b><small>${esc(s.brand || '')}${s.brand ? ' · ' : ''}${L('{n} par jour', { n: fmt(s.perDay || 1, 1) })} · ${L('{n} ingrédients', { n: (s.ingredients || []).length })}</small></span><span class="supp-actions"><button class="link-btn" data-sp-edit="${i}">${L('Modifier')}</button><button class="link-btn" data-sp-pause="${i}">${s.paused ? L('Reprendre') : L('Pause')}</button></span></div>`).join('')}</div>` : `<div class="empty">${L('Ajoutez vos compléments pour repérer les doublons et les doses élevées.')}</div>`}
+      <div class="settings-two"><button class="btn btn-lime" data-supp-tab="scan">${icon('camera')}<span>${L('Scanner l’étiquette')}</span></button><button class="btn btn-ghost" data-sp-new>${icon('plus')}<span>${L('Saisir à la main')}</span></button></div>`;
+  } else if (suppTab === 'scan') {
+    body = `<label class="upload"><input id="supp-image" type="file" accept="image/*" capture="environment"><div class="camera-ico">📷</div><h3>${L('Photographier l’étiquette')}</h3><p class="fine">${L('Cadrez la liste des ingrédients et le tableau des quantités.')}</p></label>
+      <div class="field"><label>${L('Ou collez le texte de l’étiquette')}</label><textarea class="textarea compact" id="supp-text" placeholder="${L('Ex. Vitamine D3 25 µg, Magnésium 100 mg…')}"></textarea></div>
+      <button class="btn btn-primary btn-wide" data-supp-read>${L('Lire l’étiquette')}</button>
+      <p class="fine">${L('NutriPilot recopie ce qui est déclaré sur l’étiquette. Vérifiez chaque ligne avant d’enregistrer.')}</p>`;
+  } else if (suppTab === 'alerts') {
+    const alerts = suppAlerts();
+    const totals = suppTotals();
+    body = `${alerts.length ? `<div class="alert-list">${alerts.map(([k, txt]) => `<div class="alert-row ${k}">${icon(k === 'ul' ? 'bell' : 'swap')}<span>${esc(txt)}</span></div>`).join('')}</div>` : `<div class="insight"><strong>${L('Aucune alerte')}</strong>${list.length ? L('Pas de doublon ni de dose au-dessus des repères de sécurité dans vos compléments enregistrés.') : L('Ajoutez vos compléments pour activer les alertes.')}</div>`}
+      ${Object.keys(totals).length ? `<div class="section-label"><h3>${L('Total par jour avec vos compléments')}</h3></div><div class="nutrition-detail">${Object.entries(totals).map(([k, t]) => `<div><span>${esc(nutrientName(k))}</span><b>${fmt(t.amount, t.amount < 10 ? 1 : 0)} ${esc(t.unit)}</b></div>`).join('')}</div>` : ''}
+      <p class="fine">${L('Les alertes se basent sur les quantités déclarées et les limites de sécurité européennes (EFSA). Elles ne remplacent pas l’avis d’un médecin ou d’un pharmacien, surtout si vous prenez des médicaments, êtes enceinte ou allaitez.')}</p>`;
+  } else {
+    body = `<div class="supp-info">${SUPP_INFO.map(([k, name, ev, use, caution]) => `<details class="si-card"><summary><b>${L(name)}</b><span class="ev ev-${ev === 'Solide' || ev === 'Solide si carence' ? 'hi' : ev === 'Modérée' ? 'mid' : 'lo'}">${L('Preuves : {e}', { e: L(ev) })}</span></summary><p>${L(use)}</p><p class="si-caution">${icon('bell')}<span>${L(caution)}</span></p></details>`).join('')}</div>
+      <p class="fine center-fine">${L('Fiches d’information générale. NutriPilot ne recommande aucun complément ni aucune dose.')}</p>`;
+  }
+  return `<div class="mobile-app">
+    ${appHeader('Compléments')}
+    <div class="screen">
+      ${suppDraft ? '' : `<div class="tab-scroll mod-tabs">${tabs.map(([k, label]) => `<button class="${suppTab === k ? 'active' : ''}" data-supp-tab="${k}">${L(label)}</button>`).join('')}</div>`}
+      ${body}
+    </div>
+    ${bottom('supplements')}
+  </div>`;
+}
+function readSuppForm() {
+  if (!suppDraft) return;
+  const v = (id) => document.getElementById(id)?.value;
+  if (v('sp-name') !== undefined) suppDraft.name = String(v('sp-name')).trim().slice(0, 100);
+  if (v('sp-brand') !== undefined) suppDraft.brand = String(v('sp-brand')).trim().slice(0, 80);
+  if (v('sp-perday') !== undefined) suppDraft.perDay = clamp(Number(v('sp-perday')) || 1, 0.5, 6);
+}
+
+// ---- v13: Sleep, stress & eating behaviour ---------------------------------------------
+let sleepTab = 'sleep';
+let relaxRun = null;
+const BREATHS = [
+  ['coherence', 'Cohérence 5-5', 'Inspirez 5 s, expirez 5 s. Calme le rythme du cœur.', [['in', 5], ['out', 5]]],
+  ['478', 'Respiration 4-7-8', 'Pour s’endormir : inspirez 4 s, retenez 7 s, expirez 8 s.', [['in', 4], ['hold', 7], ['out', 8]]],
+  ['box', 'Respiration carrée', 'Inspirez, retenez, expirez, retenez : 4 s chacun.', [['in', 4], ['hold', 4], ['out', 4], ['hold', 4]]],
+];
+const RELAX = [
+  ['scan', 'Détente du corps', 3, ['Installez-vous confortablement et fermez les yeux si vous le souhaitez.', 'Respirez lentement par le nez.', 'Relâchez votre front, vos sourcils et votre mâchoire.', 'Laissez vos épaules descendre, loin des oreilles.', 'Sentez vos bras devenir lourds et détendus.', 'Votre ventre se soulève à l’inspiration et redescend à l’expiration.', 'Relâchez le bas du dos et les hanches.', 'Vos jambes et vos pieds deviennent lourds.', 'Observez votre corps entier, détendu, sans rien changer.', 'Prenez encore trois respirations lentes.', 'Quand vous êtes prête ou prêt, ouvrez doucement les yeux.']],
+  ['night', 'Préparer le sommeil', 5, ['Éteignez les écrans et baissez la lumière.', 'Allongez-vous et posez une main sur votre ventre.', 'Inspirez en comptant jusqu’à quatre.', 'Expirez lentement en comptant jusqu’à six.', 'Pensez à trois choses simples qui se sont bien passées aujourd’hui.', 'Si une pensée revient, notez-la mentalement pour demain, puis revenez au souffle.', 'Imaginez un endroit calme où vous vous sentez en sécurité.', 'Remarquez les sons, la température, la lumière douce de cet endroit.', 'Laissez votre respiration devenir de plus en plus lente.', 'Il n’y a rien d’autre à faire maintenant que vous reposer.']],
+  ['reset', 'Pause anti-stress', 2, ['Posez les deux pieds au sol.', 'Nommez cinq choses que vous voyez autour de vous.', 'Quatre choses que vous pouvez toucher.', 'Trois sons que vous entendez.', 'Inspirez profondément, puis soufflez longuement par la bouche.', 'Encore une fois, plus lentement.', 'Demandez-vous : de quoi ai-je besoin, là, maintenant ?', 'Choisissez une petite action pour les dix prochaines minutes.']],
+];
+const ROUTINE = [['screens', 'Écrans éteints 30 minutes avant le coucher'], ['light', 'Lumière douce le soir'], ['cool', 'Chambre fraîche et aérée'], ['caffeine', 'Pas de caféine après 14 h'], ['dinner', 'Dîner léger au moins 2 h avant le coucher'], ['breath', '3 minutes de respiration'], ['same', 'Coucher à heure régulière']];
+const EMOTIONS = [['stress', 'Stress'], ['bored', 'Ennui'], ['tired', 'Fatigue'], ['sad', 'Tristesse'], ['happy', 'Joie / fête'], ['social', 'Entourage'], ['habit', 'Habitude']];
+function sleepDuration(e) {
+  if (!e?.bed || !e?.wake) return 0;
+  const [bh, bm] = e.bed.split(':').map(Number); const [wh, wm] = e.wake.split(':').map(Number);
+  let mins = (wh * 60 + wm) - (bh * 60 + bm); if (mins <= 0) mins += 1440;
+  return mins / 60;
+}
+function speak(text) {
+  try {
+    if (!('speechSynthesis' in window) || state.relaxVoice === false) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = LOCALES[lang()]?.replace('-u-nu-latn', '') || 'fr-FR';
+    u.rate = 0.88; u.pitch = 1;
+    speechSynthesis.speak(u);
+  } catch { /* voice is optional */ }
+}
+function stopRelax() {
+  if (relaxRun?.timer) clearTimeout(relaxRun.timer);
+  relaxRun = null;
+  try { speechSynthesis.cancel(); } catch { /* ignore */ }
+}
+function runBreath(id) {
+  stopRelax();
+  const b = BREATHS.find((x) => x[0] === id);
+  relaxRun = { kind: 'breath', id, step: 0, cycles: 0 };
+  const words = { in: 'Inspirez', out: 'Expirez', hold: 'Retenez' };
+  const tick = () => {
+    if (!relaxRun || relaxRun.id !== id) return;
+    const [phase, secs] = b[3][relaxRun.step % b[3].length];
+    const el = document.getElementById('breath-live');
+    if (!el) return stopRelax();
+    el.className = `breath-live ${phase}`;
+    el.style.setProperty('--d', `${secs}s`);
+    el.querySelector('b').textContent = L(words[phase]);
+    el.querySelector('small').textContent = `${secs} s`;
+    speak(L(words[phase]));
+    relaxRun.step += 1;
+    if (relaxRun.step % b[3].length === 0) relaxRun.cycles += 1;
+    if (relaxRun.cycles >= 8) { el.querySelector('b').textContent = L('Bravo'); speak(L('Bravo')); relaxRun = null; return; }
+    relaxRun.timer = setTimeout(tick, secs * 1000);
+  };
+  setTimeout(tick, 60);
+}
+function runRelax(id) {
+  stopRelax();
+  const r = RELAX.find((x) => x[0] === id);
+  relaxRun = { kind: 'relax', id, step: 0 };
+  const per = Math.max(9000, r[2] * 60000 / r[3].length);
+  const tick = () => {
+    if (!relaxRun || relaxRun.id !== id) return;
+    const el = document.getElementById('relax-live');
+    if (!el) return stopRelax();
+    const line = r[3][relaxRun.step];
+    if (!line) { el.innerHTML = `<b>${L('Terminé')}</b>`; relaxRun = null; return; }
+    el.innerHTML = `<small>${relaxRun.step + 1}/${r[3].length}</small><b>${esc(L(line))}</b>`;
+    speak(L(line));
+    relaxRun.step += 1;
+    relaxRun.timer = setTimeout(tick, per);
+  };
+  setTimeout(tick, 60);
+}
+function sleepScreen() {
+  const tabs = [['sleep', 'Sommeil'], ['relax', 'Respirer & se détendre'], ['hunger', 'Faim ou envie ?'], ['routine', 'Rituel du soir'], ['restart', 'Reprendre la routine']];
+  const today = todayKey();
+  let body = '';
+  if (sleepTab === 'sleep') {
+    const e = state.sleepLog?.[today] || {};
+    const days = Array.from({ length: 14 }, (_, i) => addDays(-(13 - i)));
+    const vals = days.map((d) => ({ d, h: sleepDuration(state.sleepLog?.[d]), q: state.sleepLog?.[d]?.quality || 0 }));
+    const logged = vals.filter((v) => v.h);
+    const avg = logged.length ? logged.reduce((s, v) => s + v.h, 0) / logged.length : 0;
+    body = `<section class="sl-card"><h3>${L('Ma nuit dernière')}</h3>
+      <div class="pf-grid"><label class="pf-field"><span>${L('Couché(e) à')}</span><input id="sl-bed" type="time" value="${esc(e.bed || '23:00')}"></label><label class="pf-field"><span>${L('Levé(e) à')}</span><input id="sl-wake" type="time" value="${esc(e.wake || '07:00')}"></label></div>
+      <h4>${L('Qualité ressentie')}</h4><div class="q-row">${[1, 2, 3, 4, 5].map((q) => `<button class="${Number(e.quality) === q ? 'on' : ''}" data-sl-q="${q}">${['😫', '😕', '😐', '🙂', '😴'][q - 1]}</button>`).join('')}</div>
+      <h4>${L('Réveils dans la nuit')}</h4><div class="pf-chips">${[[0, 'Aucun'], [1, '1'], [2, '2'], [3, '3 ou plus']].map(([v, l]) => `<button class="pf-chip ${Number(e.wakeups) === v && e.wakeups !== undefined ? 'on' : ''}" data-sl-w="${v}"><b>${L(l)}</b></button>`).join('')}</div>
+      <button class="btn btn-primary btn-wide" data-sl-save>${L('Enregistrer ma nuit')}</button></section>
+      <div class="section-label"><h3>${L('14 dernières nuits')}</h3><span class="fine">${avg ? L('Moyenne {h}', { h: `${fmt(avg, 1)} h` }) : ''}</span></div>
+      <div class="chart-card sl-chart">${vals.map((v) => `<div class="slc"><i style="height:${Math.min(100, v.h / 10 * 100)}%" class="${v.h && v.h < 6 ? 'short' : ''}"></i><span>${new Date(`${v.d}T12:00:00`).toLocaleDateString(locale(), { weekday: 'narrow' })}</span></div>`).join('')}</div>
+      <div class="insight"><strong>${L('Repère')}</strong>${L('La plupart des adultes ont besoin de 7 à 9 heures. La régularité des horaires compte autant que la durée.')}</div>
+      <p class="fine">${L('Si vous ronflez fort, vous réveillez en suffoquant ou restez épuisé(e) malgré des nuits complètes, parlez-en à un médecin.')}</p>`;
+  } else if (sleepTab === 'relax') {
+    const running = relaxRun;
+    body = `<div class="section-label"><h3>${L('Respirations guidées')}</h3><label class="voice-toggle"><input type="checkbox" id="relax-voice" ${state.relaxVoice === false ? '' : 'checked'}> ${L('Voix')}</label></div>
+      <div id="breath-live" class="breath-live"><b>${L('Choisissez une respiration')}</b><small></small></div>
+      <div class="br-list">${BREATHS.map(([id, name, sub]) => `<button class="br-card ${running?.id === id ? 'on' : ''}" data-breath="${id}"><b>${L(name)}</b><small>${L(sub)}</small></button>`).join('')}</div>
+      <div class="section-label"><h3>${L('Relaxations guidées')}</h3></div>
+      <div id="relax-live" class="relax-live"><b>${L('Une voix vous guide pas à pas, dans votre langue.')}</b></div>
+      <div class="br-list">${RELAX.map(([id, name, min]) => `<button class="br-card" data-relax="${id}"><b>${L(name)}</b><small>${L('{n} min', { n: min })}</small></button>`).join('')}</div>
+      <button class="btn btn-ghost btn-wide" data-relax-stop>${L('Arrêter')}</button>`;
+  } else if (sleepTab === 'hunger') {
+    const log = (state.hungerLog || []).slice(0, 12);
+    const week = (state.hungerLog || []).filter((x) => x.day >= addDays(-6) && x.kind === 'craving');
+    const byEmotion = EMOTIONS.map(([k, label]) => [label, week.filter((x) => x.emotion === k).length]).filter(([, n]) => n).sort((a, b) => b[1] - a[1]);
+    body = `<section class="sl-card"><h3>${L('Là, maintenant, c’est plutôt…')}</h3>
+      <div class="hk-row"><button class="hk ${state.hungerDraft?.kind === 'physical' ? 'on' : ''}" data-hk="physical"><b>${L('De la faim')}</b><small>${L('Elle monte doucement, le ventre gargouille, n’importe quel aliment conviendrait.')}</small></button><button class="hk ${state.hungerDraft?.kind === 'craving' ? 'on' : ''}" data-hk="craving"><b>${L('Une envie')}</b><small>${L('Soudaine, pour un aliment précis, souvent liée à une émotion.')}</small></button></div>
+      ${state.hungerDraft?.kind === 'craving' ? `<h4>${L('Qu’est-ce qui se passe ?')}</h4><div class="pf-chips">${EMOTIONS.map(([k, l]) => `<button class="pf-chip ${state.hungerDraft.emotion === k ? 'on' : ''}" data-hk-em="${k}"><b>${L(l)}</b></button>`).join('')}</div>` : ''}
+      <h4>${L('Intensité')}</h4><div class="q-row">${[1, 2, 3, 4, 5].map((q) => `<button class="${Number(state.hungerDraft?.level) === q ? 'on' : ''}" data-hk-lv="${q}">${q}</button>`).join('')}</div>
+      <div class="settings-two"><button class="btn btn-ghost" data-sos>${icon('sparkle')}<span>${L('SOS')}</span></button><button class="btn btn-primary" data-hk-save>${L('Noter')}</button></div></section>
+      ${byEmotion.length ? `<div class="insight"><strong>${L('Vos envies cette semaine')}</strong>${byEmotion.map(([l, n]) => `${esc(L(l))} : ${n}`).join(' · ')}</div>` : ''}
+      ${log.length ? `<div class="section-label"><h3>${L('Derniers moments notés')}</h3></div><div class="nutrition-detail">${log.map((x) => `<div><span>${esc(new Date(x.at).toLocaleString(locale(), { weekday: 'short', hour: '2-digit', minute: '2-digit' }))} · ${x.kind === 'physical' ? L('De la faim') : L('Une envie')}${x.emotion ? ` · ${esc(L((EMOTIONS.find((e) => e[0] === x.emotion) || [])[1] || ''))}` : ''}</span><b>${x.level || ''}/5</b></div>`).join('')}</div>` : ''}
+      <p class="fine">${L('Aucune envie n’est un échec. Noter aide à comprendre ce qui se passe, sans se juger.')}</p>`;
+  } else if (sleepTab === 'routine') {
+    const done = state.routineDone?.[today] || {};
+    const n = Object.values(done).filter(Boolean).length;
+    body = `<p class="screen-sub">${L('Cochez ce que vous faites ce soir. De petites habitudes régulières aident à mieux dormir.')}</p>
+      <div class="task-list rt-list">${ROUTINE.map(([k, label]) => `<button class="task ${done[k] ? 'done' : ''}" data-rt="${k}"><span>${done[k] ? icon('check') : ''}</span>${L(label)}</button>`).join('')}</div>
+      <p class="fine center-fine">${L('{n} sur {t} ce soir', { n, t: ROUTINE.length })}</p>`;
+  } else {
+    body = `<section class="sl-card"><h3>${L('Reprendre, sans tout recommencer')}</h3>
+      <ol class="restart-list"><li>${L('Pas de rattrapage : on ne compense pas les jours passés en mangeant moins.')}</li><li>${L('Choisissez une seule action pour aujourd’hui : noter un repas, boire de l’eau ou marcher 10 minutes.')}</li><li>${L('Préparez le prochain repas, pas toute la semaine.')}</li><li>${L('Revenez à vos horaires de sommeil habituels dès ce soir.')}</li><li>${L('Regardez la tendance sur plusieurs semaines, pas un seul jour.')}</li></ol>
+      <div class="settings-two"><button class="btn btn-lime" data-open-add>${icon('scan')}<span>${L('Noter un repas')}</span></button><button class="btn btn-ghost" data-go="planner">${icon('sparkle')}<span>${L('Que manger ensuite ?')}</span></button></div></section>`;
+  }
+  return `<div class="mobile-app">
+    ${appHeader('Sommeil & stress')}
+    <div class="screen">
+      <div class="tab-scroll mod-tabs">${tabs.map(([k, label]) => `<button class="${sleepTab === k ? 'active' : ''}" data-sleep-tab="${k}">${L(label)}</button>`).join('')}</div>
+      ${body}
+    </div>
+    ${bottom('sleep')}
+  </div>`;
+}
+
+// ---- v13: Nutrition journal and adjustable targets ------------------------------------------
+let diaryDay = '';
+let diaryView = 'day';
+function diaryScreen() {
+  const day = diaryDay || todayKey();
+  const p = state.profile;
+  const t = totals(day);
+  const meals = state.meals.filter((m) => m.day === day);
+  const types = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Collation'];
+  const bar = (label, v, goal, unit) => `<div class="dj-bar"><span>${L(label)}</span><b>${fmt(v)} <small>/ ${fmt(goal)} ${unit}</small></b><i><em style="width:${clamp(v / Math.max(1, goal) * 100, 0, 100)}%"></em></i></div>`;
+  const week = Array.from({ length: 7 }, (_, i) => addDays(-(6 - i))).map((d) => ({ d, ...totals(d), n: state.meals.filter((m) => m.day === d).length }));
+  const wk = week.filter((x) => x.n);
+  const avg = (k) => wk.length ? wk.reduce((s, x) => s + x[k], 0) / wk.length : 0;
+  return `<div class="mobile-app">
+    ${appHeader('Nutrition')}
+    <div class="screen">
+      ${programTabs('diary')}
+      <div class="segmented"><button class="${diaryView === 'day' ? 'active' : ''}" data-diary-view="day">${L('Jour')}</button><button class="${diaryView === 'week' ? 'active' : ''}" data-diary-view="week">${L('Semaine')}</button></div>
+      ${diaryView === 'day' ? `
+      <div class="dj-nav"><button class="icon-btn" data-diary-shift="-1" aria-label="${L('Jour précédent')}"><span class="flip-rtl">←</span></button><b>${esc(day === todayKey() ? L('Aujourd’hui') : new Date(`${day}T12:00:00`).toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' }))}</b><button class="icon-btn" data-diary-shift="1" ${day >= todayKey() ? 'disabled' : ''} aria-label="${L('Jour suivant')}"><span class="flip-rtl">→</span></button></div>
+      <section class="dj-card">${bar('Calories', t.kcal, p.dailyKcal, 'kcal')}${bar('Protéines', t.protein, p.protein, 'g')}${bar('Glucides', t.carbs, p.carbs, 'g')}${bar('Lipides', t.fat, p.fat, 'g')}${bar('Fibres', t.fiber, p.fiber, 'g')}${bar('Eau', Number(state.water?.[day] || 0), waterGoal(), 'ml')}</section>
+      ${types.map((type) => { const list = meals.filter((m) => (m.type || '') === type); return `<div class="section-label"><h3>${L(type)}</h3><span class="fine">${fmt(list.reduce((s, m) => s + Number(m.total?.kcal || 0), 0))} kcal</span></div>${list.length ? mealsHtml(list) : `<button class="dj-add" data-open-add>${icon('plus')}<span>${L('Ajouter')}</span></button>`}`; }).join('')}
+      ` : `
+      <section class="dj-card"><div class="dj-week">${week.map((x) => `<div class="${x.d === todayKey() ? 'today' : ''}"><span>${new Date(`${x.d}T12:00:00`).toLocaleDateString(locale(), { weekday: 'short' })}</span><i style="height:${clamp(x.kcal / Math.max(1, p.dailyKcal) * 100, 2, 130)}%" class="${x.kcal > p.dailyKcal * 1.1 ? 'over' : ''}"></i><b>${x.n ? fmt(x.kcal) : '—'}</b></div>`).join('')}</div></section>
+      <div class="stat-grid"><div class="stat"><small>${L('Calories moy.')}</small><b>${wk.length ? fmt(avg('kcal')) : '—'}</b><em>${L('objectif {n}', { n: fmt(p.dailyKcal) })}</em></div><div class="stat"><small>${L('Protéines moy.')}</small><b>${wk.length ? `${fmt(avg('protein'))} g` : '—'}</b><em>${L('objectif {n} g', { n: p.protein })}</em></div><div class="stat"><small>${L('Fibres moy.')}</small><b>${wk.length ? `${fmt(avg('fiber'))} g` : '—'}</b><em>${L('objectif {n} g', { n: p.fiber })}</em></div><div class="stat"><small>${L('Jours notés')}</small><b>${wk.length}/7</b><em>${L('cette semaine')}</em></div></div>
+      <p class="fine">${L('La moyenne de la semaine compte plus qu’une journée isolée.')}</p>`}
+    </div>
+    ${bottom('diary')}
+  </div>`;
+}
+function targetsScreen() {
+  const p = state.profile;
+  const auto = calculatePlan({ ...p, manualTargets: null });
+  const field = (key, label, unit, v, a) => `<label class="tg-row"><span><b>${L(label)}</b><small>${L('Calcul automatique : {v} {u}', { v: fmt(a), u: unit })}</small></span><span class="tg-in"><input id="tg-${key}" type="number" inputmode="numeric" value="${Math.round(v)}"><em>${unit}</em></span></label>`;
+  return `<div class="mobile-app">
+    ${appHeader('Nutrition')}
+    <div class="screen">
+      ${programTabs('targets')}
+      <p class="screen-sub">${L('Vos objectifs sont calculés selon votre profil. Vous pouvez les ajuster, par exemple sur les conseils d’un(e) diététicien(ne).')}</p>
+      <section class="dj-card">
+        ${field('kcal', 'Calories', 'kcal', p.dailyKcal, auto.dailyKcal)}
+        ${field('protein', 'Protéines', 'g', p.protein, auto.protein)}
+        ${field('carbs', 'Glucides', 'g', p.carbs, auto.carbs)}
+        ${field('fat', 'Lipides', 'g', p.fat, auto.fat)}
+        ${field('fiber', 'Fibres', 'g', p.fiber, auto.fiber)}
+        ${field('water', 'Eau', 'ml', waterGoal(), 2000)}
+      </section>
+      ${p.manualTargets ? `<p class="fine">${L('Objectifs personnalisés actifs.')}</p>` : ''}
+      <div class="settings-two"><button class="btn btn-ghost" data-tg-auto>${L('Revenir au calcul')}</button><button class="btn btn-primary" data-tg-save>${L('Enregistrer')}</button></div>
+      <p class="fine">${L('NutriPilot ne descend pas sous 1 200 kcal par jour pour une femme et 1 500 kcal pour un homme.')}</p>
+    </div>
+    ${bottom('targets')}
+  </div>`;
+}
+function applyManualTargets(profile) {
+  const m = profile?.manualTargets;
+  if (!m) return profile;
+  return { ...profile, dailyKcal: m.kcal ?? profile.dailyKcal, protein: m.protein ?? profile.protein, carbs: m.carbs ?? profile.carbs, fat: m.fat ?? profile.fat, fiber: m.fiber ?? profile.fiber };
+}
+
 function settings() {
   return `<div class="mobile-app">
     <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="app">←</button><h2>${L('Réglages')}</h2><span></span></div></div>
     <div class="screen">
       ${state.premium ? '' : `<button class="explore-banner" data-go="paywall">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button>`}
-      <button class="btn btn-ghost btn-wide" data-go="lang">🌐 Langue · ${esc(LANGS.find((x) => x[0] === lang())?.[1] || 'Français')}</button>
-      <div class="success warn" ${state.premium ? '' : 'hidden'}><b>${L('NutriPilot Premium actif ✓')}</b><br>${esc(state.premiumEmail || 'Accès activé')} ${state.subscriptionPlan ? `· formule ${esc(state.subscriptionPlan)}` : ''}</div>
+      <button class="btn btn-ghost btn-wide" data-go="lang">${icon('globe')} ${L('Langue')} · ${esc(LANGS.find((x) => x[0] === lang())?.[1] || 'Français')}</button>
+      <div class="success warn" ${state.premium ? '' : 'hidden'}><b>${L('NutriPilot Premium actif ✓')}</b><br>${esc(state.premiumEmail || L('Accès activé'))}</div>
       <div class="kpi settings-goal"><small>${L('Votre objectif quotidien')}</small><b>${fmt(state.profile.dailyKcal)} kcal</b><div class="fine">P ${state.profile.protein} g · G ${state.profile.carbs} g · L ${state.profile.fat} g · Fibres ${state.profile.fiber} g</div></div>
-      <button class="btn btn-primary btn-wide" data-start>${L('🎯 Recalculer mon programme')}</button>
+      <div class="settings-two"><button class="btn btn-primary" data-open-profile>${icon('user')}<span>${L('Mon profil')}</span></button><button class="btn btn-lime" data-open-goal>${icon('scale')}<span>${L('Mon objectif')}</span></button></div>
+      <button class="btn btn-ghost btn-wide" data-start>${L('Refaire le questionnaire complet')}</button>
       <div class="section-label"><h3>${L('Abonnement')}</h3></div>
       ${config.manageSubscriptionUrl ? `<a class="btn btn-ghost btn-wide" href="${esc(config.manageSubscriptionUrl)}" target="_blank" rel="noopener">${L('Gérer mon abonnement')}</a>` : ''}
-      <div class="fine center-fine">${L('Formule actuelle : {plan}', { plan: esc(L(({ complete: 'Kit complet', nutrition: 'Nutrition', training: 'Entraînement', menopause: 'Ménopause 40+' })[planTier()])) })}</div>
+      <div class="fine center-fine">${L('Formule actuelle : {plan}', { plan: esc(planLabel()) })}</div>
       <button class="btn ${planTier() !== 'complete' ? 'btn-lime' : 'btn-ghost'} btn-wide" data-go="plans">${L('Voir les formules')}</button>
       <div class="section-label"><h3>${L('Données & appareil')}</h3></div>
       <button class="btn btn-ghost btn-wide" data-export>${L('Exporter mes données (.json)')}</button>
@@ -4235,7 +5070,7 @@ function renderModal() {
   if (!modal) return;
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : addSheet()}</div>`;
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
@@ -4269,6 +5104,9 @@ const localFood = [
 
 function addTab(tab) {
   if (tab === 'recent') return recentTab();
+  if (state.premium && !hasModule('scanner') && ['photo', 'barcode', 'label'].includes(tab)) {
+    return `<div class="mod-upsell m-scan">${icon('scan')}<b>${L('Disponible avec le module Scanner')}</b><p>${L('Photo du repas, code-barres, étiquette, allergènes et comparaison de produits.')}</p><button class="btn btn-lime" data-module-buy="scanner">${Billing.trialDays() ? L('Commencer mes {n} jours gratuits', { n: Billing.trialDays() }) : L('Activer ce module')}</button></div>`;
+  }
   if (tab === 'photo' || tab === 'label') return `<label class="upload"><input id="meal-image" type="file" accept="image/*" capture="environment"><div class="camera-ico">${tab === 'label' ? '▤' : '📸'}</div><h3>${L(tab === 'label' ? 'Photographier l’étiquette' : 'Photographier mon repas')}</h3><p>${L(tab === 'label' ? 'Cadrez les valeurs nutritionnelles et la portion.' : 'Une photo donne une estimation. Vous pourrez corriger chaque quantité avant de l’enregistrer.')}</p><span class="btn btn-primary">${L('Choisir une photo')}</span></label>`;
   if (tab === 'text') return `<div class="field"><label>${L('Décrivez votre repas')}</label><textarea class="textarea" id="meal-text" placeholder="${L('Ex. 150 g de poulet, 120 g de riz, courgettes et 1 c. à café d’huile d’olive')}"></textarea></div><div class="inline-actions"><button class="voice-btn" data-voice>${L('🎙 Dicter')}</button><button class="btn btn-primary" data-analyze-text>${L('Analyser →')}</button></div>`;
   if (tab === 'barcode') return `<div class="day-card"><h3>${L('Produit emballé')}</h3><p class="screen-sub">${L('Entrez les 8 à 14 chiffres du code-barres. Les données disponibles proviennent d’Open Food Facts et restent à vérifier sur l’emballage.')}</p><div class="field"><label>${L('Code-barres')}</label><input id="barcode" inputmode="numeric" placeholder="${L('Ex. 3017620422003')}"></div><button class="btn btn-primary btn-wide" data-barcode>${L('Rechercher →')}</button></div>`;
@@ -4297,6 +5135,7 @@ function resultSheet(result) {
     <div id="food-edits">${(result.foods || []).map(foodEdit).join('')}</div>
     ${result.assumptions?.length ? `<div class="warn"><b>${L('Hypothèses de l’analyse')}</b><br>${result.assumptions.map((a) => esc(L(a))).join('<br>')}</div>` : ''}
     ${result.note ? `<div class="fine note-line">${esc(L(result.note))}</div>` : ''}
+    ${result.product ? allergenChips(result.product) : ''}
     <div class="modal-actions"><button class="btn btn-ghost" data-save-favorite>${L('♡ Favori')}</button><button class="btn btn-lime" data-save-result>${L('Ajouter au journal →')}</button></div>`;
 }
 
@@ -4372,6 +5211,7 @@ async function analyze(body) {
     if (!response.ok) throw new Error(data.error);
     modal.loading = false;
     modal.result = data;
+    pushScan(data, body.mode || (body.image ? 'photo' : 'text'));
     renderModal();
     track('MealAnalyzed', { source: data.source || 'unknown' });
   } catch (error) {
@@ -4601,6 +5441,7 @@ function ensureProfileDefaults() {
 
 function render() {
   document.querySelector('.modal-wrap')?.remove();
+  if (route !== 'sleep' && relaxRun) stopRelax();
   guardRoute();
   ensureProfileDefaults();
 
@@ -4615,9 +5456,16 @@ function render() {
   else if (route === 'onboarding') html = onboarding();
   else if (route === 'analyzing') html = analyzing();
   else if (route === 'paywall' || route === 'upgrade') html = paywall();
-  else if (route === 'training') html = !state.premium || hasFeature('training') ? trainingScreen() : lockedScreen('training');
-  else if (route === 'menopause') html = !state.premium || hasFeature('menopause') ? menopauseScreen() : lockedScreen('menopause');
-  else if (['program', 'recipes', 'shopping', 'planner'].includes(route) && state.premium && !hasFeature('nutrition')) html = lockedScreen('nutrition');
+  else if (state.premium && moduleForRoute() && !hasModule(moduleForRoute().id)) html = moduleLockedScreen(moduleForRoute().id);
+  else if (route === 'modules') html = modulesScreen();
+  else if (route === 'training') html = trainingScreen();
+  else if (route === 'menopause') html = menopauseScreen();
+  else if (route === 'scanner') html = scannerScreen();
+  else if (route === 'nutrients') html = nutrientsScreen();
+  else if (route === 'supplements') html = supplementsScreen();
+  else if (route === 'sleep') html = sleepScreen();
+  else if (route === 'diary') html = diaryScreen();
+  else if (route === 'targets') html = targetsScreen();
   else if (route === 'shopping') html = shoppingScreen();
   else if (route === 'guides') html = guidesScreen();
   else if (route === 'plan') html = planScreen();
@@ -4629,6 +5477,8 @@ function render() {
   else if (route === 'insights') html = insights();
   else if (route === 'progress') html = progressScreen();
   else if (route === 'plans') html = plansScreen();
+  else if (route === 'goal') html = goalScreen();
+  else if (route === 'profile') html = profileScreen();
   else if (route === 'settings') html = settings();
   else if (route === 'legal') html = legal();
   else html = access();
@@ -4637,7 +5487,9 @@ function render() {
     console.warn('[NutriPilot] render', err);
     html = `<main class="screen app-screen"><section class="error-state"><div class="error-ico">${icon('sparkle')}</div><h1>${L('Cet écran n’a pas pu s’afficher')}</h1><p>${L('Vos données sont intactes. Revenez à l’accueil ou réessayez.')}</p><div class="error-actions"><button class="btn" data-retry-render>${L('Réessayer')}</button><button class="btn btn-ghost" data-go="app">${L('Accueil')}</button></div></section></main>`;
   }
-  const noFab = state.premium || ['lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
+  const modHere = moduleForRoute();
+  if (modHere && html.includes('</header>')) html = html.replace(/<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, `</header>${moduleBar(modHere.id)}`);
+  const noFab = state.premium || ['goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
   a11yPass(app);
   if (window.__npLastRoute !== route) {
@@ -4665,8 +5517,28 @@ function a11yPass(root) {
 }
 
 function bind() {
+  app.onchange = (event) => {
+    const el = event.target;
+    if (el.matches('[data-shop]')) {
+      state.shoppingChecked[el.dataset.shop] = el.checked;
+      saveState();
+    }
+    if (route === 'goal' && ['goal-weight', 'goal-target', 'goal-range', 'goal-height'].includes(el.id)) {
+      const key = el.id === 'goal-range' ? 'target' : el.id.slice(5);
+      const v = Number(String(el.value).replace(',', '.'));
+      if (v) goalDraft[key] = key === 'height' ? Math.round(clamp(v, 130, 220)) : round1(clamp(v, 35, 250));
+      if (key === 'weight' && v && !Number(goalDraft.target)) goalDraft.target = goalDraft.weight;
+      const y = scrollY; render(); scrollTo(0, y);
+    }
+  };
   app.oninput = (event) => {
     const el = event.target;
+    if (el.id === 'goal-range' && goalDraft) {
+      goalDraft.target = Number(el.value);
+      const t = $('#goal-target'); if (t) t.value = goalDraft.target;
+      const diff = round1(goalDraft.target - goalDraft.weight);
+      const out = $('#goal-diff'); if (out) out.textContent = `${diff > 0 ? '+' : diff < 0 ? '−' : ''}${fmt(Math.abs(diff), 1)} kg`;
+    }
     if (el.id === 'lib-search') { libQuery = el.value; const grid = $('#lib-grid'); if (grid) grid.innerHTML = libraryList(libGroup, libEquip, libQuery).map((id) => exCardHtml(id)).join('') || `<div class="empty">${L('Aucun exercice pour ce filtre.')}</div>`; }
     if (el.id === 'recipe-search') { recipeQuery = el.value; const grid = $('#recipe-grid'); if (grid) grid.innerHTML = recipeGridHtml(); }
     if (el.id === 'grid-name') gridDraft().name = el.value;
@@ -4680,6 +5552,7 @@ function bind() {
 
     if (!state.premium && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
       track('PaywallFromFeature', { feature: PREMIUM_ACTIONS.find((key) => button.dataset[key] !== undefined) });
+      selectedTier = moduleForRoute()?.id || (button.dataset.openAdd !== undefined || button.dataset.addTab ? 'scanner' : 'complete');
       return nav('paywall');
     }
     if (button.dataset.drawer !== undefined) return openDrawer();
@@ -4719,6 +5592,117 @@ function bind() {
     }
 
     if (button.dataset.retryRender !== undefined) return render();
+    if (button.dataset.recipeView) { recipeView = button.dataset.recipeView; return render(); }
+    // Scanner module
+    if (button.dataset.scanOpen) { const item = (state.scanHistory || []).find((x) => x.id === button.dataset.scanOpen); if (item) { modal = { type: 'scan', item }; renderModal(); } return; }
+    if (button.dataset.scanCompare) { const id = button.dataset.scanCompare; scanCompare = scanCompare.includes(id) ? scanCompare.filter((x) => x !== id) : [...scanCompare, id].slice(-2); return render(); }
+    if (button.dataset.scanClear !== undefined) { if (!confirmSoft(button)) return; state.scanHistory = []; scanCompare = []; saveState(false); return render(); }
+    // Vitamins & nutrients
+    if (button.dataset.nutrientTab) { nutrientTab = button.dataset.nutrientTab; return render(); }
+    if (button.dataset.nutrient) { nutrientOpen = nutrientOpen === button.dataset.nutrient ? '' : button.dataset.nutrient; const y = scrollY; render(); scrollTo(0, y); return; }
+    if (button.dataset.nutrientSrc) { nutrientOpen = button.dataset.nutrientSrc; return render(); }
+    // Supplements
+    if (button.dataset.suppTab) { suppTab = button.dataset.suppTab; suppDraft = null; return render(); }
+    if (button.dataset.spNew !== undefined) { if (!state.premium) return nav('paywall'); suppDraft = { name: '', brand: '', perDay: 1, ingredients: [], warnings: [] }; return render(); }
+    if (button.dataset.spEdit !== undefined) { suppDraft = { ...clone(state.supplements[Number(button.dataset.spEdit)]), index: Number(button.dataset.spEdit) }; return render(); }
+    if (button.dataset.spPause !== undefined) { const x = state.supplements[Number(button.dataset.spPause)]; if (x) { x.paused = !x.paused; saveState(); } return render(); }
+    if (button.dataset.spCancel !== undefined) { suppDraft = null; return render(); }
+    if (button.dataset.spIngDel !== undefined) { readSuppForm(); suppDraft.ingredients.splice(Number(button.dataset.spIngDel), 1); return render(); }
+    if (button.dataset.spIngAdd !== undefined) {
+      readSuppForm();
+      const name = $('#sp-ing-name')?.value.trim();
+      if (!name) return toast('Indiquez le nom de l’ingrédient.');
+      const amount = $('#sp-ing-amount')?.value;
+      suppDraft.ingredients.push({ name: name.slice(0, 80), amount: amount === '' ? null : Number(amount), unit: $('#sp-ing-unit')?.value || 'mg', key: $('#sp-ing-key')?.value || 'other' });
+      return render();
+    }
+    if (button.dataset.spSave !== undefined) {
+      readSuppForm();
+      if (!suppDraft.name) return toast('Indiquez le nom du produit.');
+      const { index, ...item } = suppDraft;
+      state.supplements = state.supplements || [];
+      if (index !== undefined) state.supplements[index] = item; else state.supplements.unshift(item);
+      saveState(); suppDraft = null; suppTab = 'mine';
+      const alerts = suppAlerts();
+      toast(alerts.length ? L('{n} alerte(s) à consulter', { n: alerts.length }) : 'Complément enregistré ✓');
+      return render();
+    }
+    if (button.dataset.suppRead !== undefined) {
+      if (!state.premium) return nav('paywall');
+      const text = $('#supp-text')?.value.trim() || '';
+      if (!text && !suppImage) return toast('Ajoutez une photo ou le texte de l’étiquette.');
+      button.disabled = true; button.textContent = L('Lecture en cours…');
+      try {
+        const response = await apiFetch('/api/supplement', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, image: suppImage || '' }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        suppImage = '';
+        suppDraft = { name: data.name, brand: data.brand, perDay: 1, ingredients: data.ingredients || [], warnings: data.warnings || [] };
+        return render();
+      } catch (error) { toast(error.message || 'Réessayez dans un instant.'); button.disabled = false; button.textContent = L('Lire l’étiquette'); }
+      return;
+    }
+    // Sleep & stress
+    if (button.dataset.sleepTab) { sleepTab = button.dataset.sleepTab; return render(); }
+    if (button.dataset.slQ) { const d = todayKey(); state.sleepLog = state.sleepLog || {}; state.sleepLog[d] = { ...(state.sleepLog[d] || {}), bed: $('#sl-bed')?.value, wake: $('#sl-wake')?.value, quality: Number(button.dataset.slQ) }; saveState(false); return render(); }
+    if (button.dataset.slW !== undefined) { const d = todayKey(); state.sleepLog = state.sleepLog || {}; state.sleepLog[d] = { ...(state.sleepLog[d] || {}), bed: $('#sl-bed')?.value, wake: $('#sl-wake')?.value, wakeups: Number(button.dataset.slW) }; saveState(false); return render(); }
+    if (button.dataset.slSave !== undefined) {
+      const d = todayKey(); state.sleepLog = state.sleepLog || {};
+      state.sleepLog[d] = { ...(state.sleepLog[d] || {}), bed: $('#sl-bed')?.value || '23:00', wake: $('#sl-wake')?.value || '07:00' };
+      saveState(); toast(L('Nuit enregistrée : {h}', { h: `${fmt(sleepDuration(state.sleepLog[d]), 1)} h` })); return render();
+    }
+    if (button.dataset.breath) { runBreath(button.dataset.breath); return; }
+    if (button.dataset.relax) { runRelax(button.dataset.relax); return; }
+    if (button.dataset.relaxStop !== undefined) { stopRelax(); return render(); }
+    if (button.dataset.hk) { state.hungerDraft = { ...(state.hungerDraft || {}), kind: button.dataset.hk }; if (button.dataset.hk === 'physical') delete state.hungerDraft.emotion; return render(); }
+    if (button.dataset.hkEm) { state.hungerDraft = { ...(state.hungerDraft || {}), emotion: button.dataset.hkEm }; return render(); }
+    if (button.dataset.hkLv) { state.hungerDraft = { ...(state.hungerDraft || {}), level: Number(button.dataset.hkLv) }; return render(); }
+    if (button.dataset.hkSave !== undefined) {
+      const h = state.hungerDraft || {};
+      if (!h.kind) return toast('Choisissez faim ou envie.');
+      state.hungerLog = [{ at: new Date().toISOString(), day: todayKey(), kind: h.kind, emotion: h.emotion || '', level: h.level || 0 }, ...(state.hungerLog || [])].slice(0, 200);
+      state.hungerDraft = null; saveState();
+      toast(h.kind === 'physical' ? 'Noté. Une collation qui cale peut aider ✓' : 'Noté. Une minute de respiration peut aider ✓');
+      return render();
+    }
+    if (button.dataset.rt) { const d = todayKey(); state.routineDone = state.routineDone || {}; state.routineDone[d] = { ...(state.routineDone[d] || {}), [button.dataset.rt]: !state.routineDone[d]?.[button.dataset.rt] }; saveState(false); return render(); }
+    // Nutrition journal & targets
+    if (button.dataset.diaryView) { diaryView = button.dataset.diaryView; return render(); }
+    if (button.dataset.diaryShift) { const base = new Date(`${diaryDay || todayKey()}T12:00:00`); base.setDate(base.getDate() + Number(button.dataset.diaryShift)); const k = todayKey(base); diaryDay = k > todayKey() ? todayKey() : k; return render(); }
+    if (button.dataset.tgSave !== undefined) {
+      const v = (k) => Number($(`#tg-${k}`)?.value || 0);
+      const floor = state.profile.sex === 'male' ? 1500 : 1200;
+      const kcal = Math.round(clamp(v('kcal'), floor, 5000));
+      if (v('kcal') < floor) toast(L('Minimum {n} kcal pour rester en sécurité.', { n: floor }));
+      state.profile.manualTargets = { kcal, protein: Math.round(clamp(v('protein'), 30, 300)), carbs: Math.round(clamp(v('carbs'), 30, 700)), fat: Math.round(clamp(v('fat'), 20, 250)), fiber: Math.round(clamp(v('fiber'), 10, 80)) };
+      state.profile = applyManualTargets(state.profile);
+      state.waterGoal = Math.round(clamp(v('water'), 1000, 5000));
+      saveState(); toast('Objectifs enregistrés ✓'); return render();
+    }
+    if (button.dataset.tgAuto !== undefined) { state.profile = calculatePlan({ ...state.profile, manualTargets: null }); delete state.profile.manualTargets; saveState(); toast('Calcul automatique rétabli ✓'); return render(); }
+
+    if (button.dataset.moduleBuy) { selectedTier = button.dataset.moduleBuy; track('PlanChosen', { plan: selectedTier }); return nav(state.premium ? 'upgrade' : 'paywall'); }
+    if (button.dataset.openGoal !== undefined) return openGoal(route === 'goal' ? 'progress' : route);
+    if (button.dataset.openProfile !== undefined) return openProfile();
+    if (button.dataset.goalBack !== undefined) { goalDraft = null; return nav(goalReturn && goalReturn !== 'goal' ? goalReturn : 'progress'); }
+    if (button.dataset.goalStep) {
+      const [key, delta] = button.dataset.goalStep.split(':');
+      const base = Number(goalDraft[key]) || Number(goalDraft.weight) || 70;
+      goalDraft[key] = round1(clamp(base + Number(delta), 35, 250));
+      if (key === 'weight' && !Number(goalDraft.target)) goalDraft.target = goalDraft.weight;
+      return render();
+    }
+    if (button.dataset.goalQuick !== undefined) { goalDraft.target = round1(clamp(Number(goalDraft.weight) + Number(button.dataset.goalQuick), 35, 250)); return render(); }
+    if (button.dataset.goalSpeed) { goalDraft.speed = Number(button.dataset.goalSpeed); return render(); }
+    if (button.dataset.goalSave !== undefined) return saveGoal();
+    if (button.dataset.pf) {
+      readProfileInputs();
+      const raw = button.dataset.pfValue;
+      profileDraft[button.dataset.pf] = button.dataset.pfNum !== undefined ? Number(raw) : raw;
+      const y = scrollY; render(); scrollTo(0, y);
+      return;
+    }
+    if (button.dataset.pfSave !== undefined) return saveProfile();
     if (button.dataset.go) {
       pendingPlanSwap = null;
       return nav(button.dataset.go);
@@ -4778,7 +5762,11 @@ function bind() {
       state.profile = { ...calculatePlan(), estimated: false };
       if (state.profile.warning && Number(state.profile.age) < 18) return toast('Cette version est réservée aux adultes.');
       state.onboarding = true;
-      if (!state.weights.length) state.weights = [{ day: todayKey(), value: Number(state.profile.weight) }];
+      state.profile.goalSet = true;
+      state.profile.goalStart = { weight: Number(state.profile.weight), day: todayKey() };
+      state.basicsFilled = { ...(state.basicsFilled || {}), name: true, age: true, weight: true, height: true, target: true };
+      state.weights = (state.weights || []).filter((x) => x.day !== todayKey());
+      state.weights.push({ day: todayKey(), value: Number(state.profile.weight) });
       saveState();
       if (!state.premium) {
         track('ViewPaywall');
@@ -4852,6 +5840,7 @@ function bind() {
     }
     if (button.dataset.libEquip) { libEquip = button.dataset.libEquip; return render(); }
     if (button.dataset.createMode) { createMode = button.dataset.createMode; return render(); }
+    if (button.dataset.trainCreate) { trainTab = 'create'; createMode = button.dataset.trainCreate; return render(); }
     if (button.dataset.gridDay) {
       const g = gridDraft(); const wd = Number(button.dataset.gridDay);
       const idx = g.days.findIndex((d) => d.wd === wd);
@@ -5142,13 +6131,15 @@ function bind() {
     }
   };
 
-  app.onchange = (event) => {
-    if (event.target.matches('[data-shop]')) {
-      state.shoppingChecked[event.target.dataset.shop] = event.target.checked;
-      saveState();
-    }
-  };
 
+  const suppFile = $('#supp-image');
+  if (suppFile) suppFile.onchange = async () => {
+    const f = suppFile.files?.[0];
+    if (!f) return;
+    try { suppImage = await fileToData(f, 1600, 0.85); toast('Photo prête : touchez « Lire l’étiquette »'); } catch { toast('Image illisible.'); }
+  };
+  const voice = $('#relax-voice');
+  if (voice) voice.onchange = () => { state.relaxVoice = voice.checked; saveState(false); if (!voice.checked) try { speechSynthesis.cancel(); } catch {} };
   const coachInput = $('#coach-input');
   if (coachInput) coachInput.onkeydown = (event) => { if (event.key === 'Enter') $('[data-coach-send]')?.click(); };
 }
@@ -5166,6 +6157,15 @@ function bindModal(root) {
       return;
     }
     if (button.dataset.guide) { root.remove(); return openLesson(button.dataset.guide); }
+    if (button.dataset.moduleBuy) { modal = null; root.remove(); selectedTier = button.dataset.moduleBuy; return nav(state.premium ? 'upgrade' : 'paywall'); }
+    if (button.dataset.servings) { modal.servings = clamp((modal.servings || 1) + Number(button.dataset.servings), 1, 12); return renderModal(); }
+    if (button.dataset.scanLog) {
+      const item = (state.scanHistory || []).find((x) => x.id === button.dataset.scanLog);
+      if (!item) return;
+      const base = item.per100 ? { name: item.title, grams: 100, ...item.per100 } : { name: item.title, grams: 100, ...item.total };
+      modal = { type: 'add', tab: 'photo', loading: false, mealType: mealTypeFromHour(), result: { title: item.title, foods: [base], total: clone(item.total), confidence: 0.9, source: item.source || 'scan', product: item.product } };
+      return renderModal();
+    }
     if (button.dataset.recipeId && modal?.type === 'sos') { const recipe = ALL_RECIPES.find((r) => r.id === button.dataset.recipeId); if (recipe) { modal = { type: 'recipe', recipe }; renderModal(); } return; }
     if (button.dataset.sosWater !== undefined) { const k = todayKey(); state.water[k] = Number(state.water[k] || 0) + 250; saveState(); modal = null; root.remove(); render(); return toast('+250 ml ✓'); }
     if (button.dataset.copyYesterday !== undefined) {
@@ -5251,6 +6251,7 @@ function bindModal(root) {
         if (!response.ok) throw new Error(data.error);
         modal.loading = false;
         modal.result = data;
+        pushScan(data, 'barcode');
         renderModal();
       } catch (error) {
         modal.loading = false;

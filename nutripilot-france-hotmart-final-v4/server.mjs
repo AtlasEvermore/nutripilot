@@ -579,6 +579,39 @@ async function callAI(input, max = 1600, timeoutMs = 45_000) {
   }
 }
 
+// Reads a supplement label (photo or typed text). Educational only: never advises a dose.
+const SUPP_KEYS = ['vitA', 'vitD', 'vitE', 'vitK', 'vitC', 'b1', 'b2', 'b3', 'b6', 'b9', 'b12', 'calcium', 'magnesium', 'iron', 'zinc', 'selenium', 'iodine', 'potassium', 'omega3', 'caffeine', 'creatine', 'protein', 'collagen', 'melatonin', 'other'];
+async function supplementLabel({ text = '', image = '' }) {
+  const imageValue = String(image || '');
+  if (imageValue && !/^data:image\/(?:jpeg|png|webp);base64,/i.test(imageValue)) throw publicError('Format d’image non pris en charge.');
+  if (imageValue.length > 10_500_000) throw publicError('Image trop volumineuse.', 413);
+  if (!text && !imageValue) throw publicError('Ajoutez une photo ou le texte de l’étiquette.');
+  if (!OPENAI_API_KEY || !OPENAI_MODEL) throw publicError('La lecture automatique est momentanément indisponible. Saisissez les ingrédients à la main.', 503);
+  const prompt = `Tu lis l'étiquette d'un complément alimentaire pour l'application NutriPilot. Recopie uniquement ce qui est déclaré sur l'étiquette, sans inventer.
+Retourne UNIQUEMENT un JSON valide :
+{"name":"...","brand":"...","serving":"1 gélule","ingredients":[{"name":"Vitamine D3","amount":25,"unit":"µg","key":"vitD"}],"warnings":["mentions d'avertissement déclarées sur l'étiquette"],"allergens":["..."]}
+"key" doit être l'une de ces valeurs : ${SUPP_KEYS.join(', ')}. Utilise "other" si aucun ne correspond. "amount" est la quantité par portion déclarée, ou null si illisible.
+Ne donne aucun conseil de dose ni de diagnostic.
+Texte saisi : ${safeText(text || '(aucun)', 2000)}`;
+  const content = [{ type: 'input_text', text: prompt }];
+  if (imageValue) content.push({ type: 'input_image', image_url: imageValue, detail: 'high' });
+  const raw = await callAI([{ role: 'user', content }], 1600);
+  const units = new Set(['mg', 'µg', 'mcg', 'g', 'UI', 'IU', '%']);
+  return {
+    name: safeText(raw.name || 'Complément', 100),
+    brand: safeText(raw.brand || '', 80),
+    serving: safeText(raw.serving || '', 60),
+    ingredients: (Array.isArray(raw.ingredients) ? raw.ingredients : []).slice(0, 40).map((x) => ({
+      name: safeText(x?.name || '', 80),
+      amount: x?.amount == null || x.amount === '' ? null : +finiteNumber(x.amount, 0, 0, 1_000_000).toFixed(3),
+      unit: units.has(String(x?.unit)) ? (x.unit === 'mcg' ? 'µg' : x.unit === 'IU' ? 'UI' : x.unit) : '',
+      key: SUPP_KEYS.includes(x?.key) ? x.key : 'other',
+    })).filter((x) => x.name),
+    warnings: (Array.isArray(raw.warnings) ? raw.warnings : []).slice(0, 6).map((x) => safeText(x, 240)),
+    allergens: (Array.isArray(raw.allergens) ? raw.allergens : []).slice(0, 10).map((x) => safeText(x, 40)),
+  };
+}
+
 async function aiAnalyze({ text = '', image = '', mode = 'meal' }) {
   const imageValue = String(image || '');
   if (imageValue && !/^data:image\/(?:jpeg|png|webp);base64,/i.test(imageValue)) {
@@ -1026,7 +1059,7 @@ Retourne UNIQUEMENT JSON: {"headline":"...","wins":["..."],"focus":["..."],"next
 async function barcode(code) {
   if (!/^\d{8,14}$/.test(code)) throw publicError('Code-barres invalide');
   const { response, data } = await fetchJson(
-    `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name,brands,nutriments,serving_size,image_front_small_url`,
+    `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name,brands,nutriments,serving_size,image_front_small_url,allergens_tags,traces_tags,additives_tags,ingredients_text,nutriscore_grade,nova_group`,
     { headers: { 'User-Agent': 'NutriPilot/7.0 (support@atlasevermore.com)' } },
     12_000
   );
@@ -1055,6 +1088,16 @@ async function barcode(code) {
       source: 'openfoodfacts',
     }),
     image: safeText(data.product.image_front_small_url || '', 500),
+    product: {
+      code,
+      brand: safeText(data.product.brands || '', 80),
+      allergens: (data.product.allergens_tags || []).slice(0, 14).map((x) => safeText(String(x).replace(/^[a-z]{2}:/, ''), 40)),
+      traces: (data.product.traces_tags || []).slice(0, 10).map((x) => safeText(String(x).replace(/^[a-z]{2}:/, ''), 40)),
+      additives: (data.product.additives_tags || []).slice(0, 20).map((x) => safeText(String(x).replace(/^[a-z]{2}:/, '').toUpperCase(), 20)),
+      ingredients: safeText(data.product.ingredients_text || '', 700),
+      nutriscore: /^[a-e]$/.test(String(data.product.nutriscore_grade || '')) ? data.product.nutriscore_grade : '',
+      nova: [1, 2, 3, 4].includes(Number(data.product.nova_group)) ? Number(data.product.nova_group) : 0,
+    },
   };
 }
 
@@ -1456,11 +1499,12 @@ const server = http.createServer(async (req, res) => {
       const identity = await requirePremium(req, res);
       if (!identity) return;
 
-      if (['/api/analyze', '/api/compose', '/api/coach', '/api/barcode', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan'].includes(url.pathname)) {
+      if (['/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/barcode', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan'].includes(url.pathname)) {
         if (!aiRateOk(req, identity.email)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
       }
 
       if (url.pathname === '/api/analyze' && req.method === 'POST') return send(res, 200, await aiAnalyze(await readJson(req)));
+      if (url.pathname === '/api/supplement' && req.method === 'POST') return send(res, 200, await supplementLabel(await readJson(req)));
       if (url.pathname === '/api/compose' && req.method === 'POST') return send(res, 200, await compose(await readJson(req)));
       if (url.pathname === '/api/coach' && req.method === 'POST') return send(res, 200, await coach(await readJson(req)));
       if (url.pathname === '/api/barcode' && req.method === 'GET') return send(res, 200, await barcode(url.searchParams.get('code') || ''));
