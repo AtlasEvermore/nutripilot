@@ -608,7 +608,8 @@ Retourne UNIQUEMENT JSON: {"options":[{"name":"...","kcal":450,"protein":30,"car
 const SUPPORT_LANGS = { fr: 'français', en: 'English', es: 'español', pt: 'português', de: 'Deutsch', it: 'italiano' };
 const SUPPORT_KNOWLEDGE = `NutriPilot est une application de nutrition, d'entraînement et de coaching pour mincir, gérer la ménopause, prendre du muscle ou mieux manger.
 Fonctions disponibles : scanner de repas (photo, texte/voix, code-barres, étiquette, saisie manuelle), objectif calorique et macros personnalisés, plan de repas 7 jours, recettes avec grammes et calories, liste de courses, « Que manger ensuite ? », mode frigo, mode restaurant, coach IA, suivi du poids et des mensurations, bilan hebdomadaire, guides (dont ménopause), programmes d'entraînement salle et maison avec suivi des charges.
-Formules : Complète (nutrition + entraînement), Nutrition, Entraînement ; en mensuel ou annuel. Les prix exacts sont affichés sur l'écran des formules.
+Formules : Kit complet (nutrition + entraînement + Académie), Nutrition, Entraînement ; en mensuel ou annuel. Les prix exacts sont affichés sur l'écran des formules. Académie : cours courts (fondamentaux de la perte de poids, musculation, ménopause, premiers pas), la première leçon de chaque cours est gratuite.
+Lancement : les abonnements ouvrent avec la sortie des applications iPhone et Android ; en attendant, on peut s'inscrire sur la liste d'attente depuis l'écran des formules. Les clients existants gardent leur accès.
 Essai gratuit de 3 jours dans les applications iPhone et Android : aucun paiement pendant l'essai, abonnement ensuite sauf annulation au moins 24 h avant la fin.
 Annulation iPhone : Réglages > votre nom > Abonnements. Annulation Android : Play Store > profil > Paiements et abonnements > Abonnements. Supprimer l'application n'annule pas l'abonnement.
 Remboursements des achats App Store / Google Play : ils sont gérés par Apple ou Google (reportaproblem.apple.com ou la page d'aide Google Play).
@@ -1294,6 +1295,38 @@ const server = http.createServer(async (req, res) => {
         status: entry?.status || 'missing',
         cancelAtPeriodEnd: Boolean(entry?.cancelAtPeriodEnd),
       });
+    }
+
+    if (url.pathname === '/api/admin/waitlist' && req.method === 'GET') {
+      const key = process.env.ADMIN_KEY || '';
+      const given = String(req.headers['x-admin-key'] || url.searchParams.get('key') || '');
+      if (!key || key.length < 16 || !safeTokenEqual(given, key)) return send(res, 404, { error: 'API introuvable' });
+      let list = {};
+      try { list = JSON.parse(await fs.readFile(path.join(DATA_DIR, 'waitlist.json'), 'utf8')); } catch {}
+      return send(res, 200, { count: Object.keys(list).length, list });
+    }
+
+    if (url.pathname === '/api/waitlist' && req.method === 'POST') {
+      if (!rateLimit(`waitlist:${clientIp(req)}`, 8, 60 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez plus tard.' });
+      const body = await readJson(req);
+      const email = safeEmail(body.email);
+      if (!email) return send(res, 400, { error: 'E-mail invalide' });
+      await ensureData();
+      const file = path.join(DATA_DIR, 'waitlist.json');
+      let list = {};
+      try { list = JSON.parse(await fs.readFile(file, 'utf8')); } catch {}
+      const utms = body.utms && typeof body.utms === 'object' ? Object.fromEntries(Object.entries(body.utms).slice(0, 8).map(([k, v]) => [safeText(k, 40), safeText(v, 120)])) : {};
+      list[email] = {
+        ...(list[email] || {}),
+        lang: safeText(body.lang || 'fr', 5),
+        plan: safeText(body.plan || '', 40),
+        track: safeText(body.track || '', 20),
+        utms,
+        createdAt: list[email]?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await atomicWriteJson(file, list);
+      return send(res, 200, { ok: true });
     }
 
     if (url.pathname === '/api/support' && req.method === 'POST') {

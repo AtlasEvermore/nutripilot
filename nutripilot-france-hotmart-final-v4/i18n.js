@@ -2100,13 +2100,6 @@ export const DICT = {
 "de": "Ernährung + Training",
 "it": "Nutrizione + Allenamento"
 },
-"Nutrition : scanner, plan de repas, recettes, courses, guides et coach. Entraînement : programmes salle et maison avec suivi des charges. Complète : tout NutriPilot, au meilleur prix.": {
-"en": "Nutrition: scanner, meal plan, recipes, shopping list, guides and coach. Training: gym and home programmes with load tracking. Complete: all of NutriPilot at the best price.",
-"es": "Nutrición: escáner, plan de comidas, recetas, lista de la compra, guías y coach. Entrenamiento: programas en gimnasio y en casa con registro de cargas. Completo: todo NutriPilot al mejor precio.",
-"pt": "Nutrição: scanner, plano alimentar, receitas, lista de compras, guias e coach. Treino: programas na academia e em casa com registro de cargas. Completo: todo o NutriPilot pelo melhor preço.",
-"de": "Ernährung: Scanner, Ernährungsplan, Rezepte, Einkaufsliste, Ratgeber und Coach. Training: Programme fürs Gym und Zuhause mit Gewichtsprotokoll. Komplett: ganz NutriPilot zum besten Preis.",
-"it": "Nutrizione: scanner, piano pasti, ricette, lista della spesa, guide e coach. Allenamento: programmi in palestra e a casa con registro dei carichi. Completo: tutto NutriPilot al miglior prezzo."
-},
 "Objectif du jour : scanner 2 repas.": {
 "en": "Today’s goal: scan 2 meals.",
 "es": "Objetivo del día: escanear 2 comidas.",
@@ -6768,5 +6761,642 @@ export const DICT = {
 "pt": "Foto, texto, código de barras, receita ou favorito: use o que for mais rápido.",
 "de": "Foto, Text, Barcode, Rezept oder Favorit: Nimm, was am schnellsten geht.",
 "it": "Foto, testo, codice a barre, ricetta o preferito: usa il modo più rapido."
+},
+"1 ou 2 séries légères du premier exercice avant les séries de travail.": {
+"en": "1 or 2 light sets of the first exercise before your working sets.",
+"es": "1 o 2 series ligeras del primer ejercicio antes de las series efectivas.",
+"pt": "1 ou 2 séries leves do primeiro exercício antes das séries de trabalho.",
+"de": "1 bis 2 leichte Sätze der ersten Übung vor den Arbeitssätzen.",
+"it": "1 o 2 serie leggere del primo esercizio prima delle serie allenanti."
+},
+"3 à 5 minutes de cardio léger : vélo, rameur, marche rapide ou corde à sauter.": {
+"en": "3 to 5 minutes of light cardio: bike, rower, brisk walk or skipping rope.",
+"es": "3 a 5 minutos de cardio suave: bici, remo, caminar rápido o comba.",
+"pt": "3 a 5 minutos de cardio leve: bicicleta, remo, caminhada rápida ou pular corda.",
+"de": "3 bis 5 Minuten leichtes Cardio: Rad, Rudergerät, zügiges Gehen oder Seilspringen.",
+"it": "3-5 minuti di cardio leggero: bici, vogatore, camminata veloce o corda."
+},
+"5 leçons courtes pour progresser sans se blesser": {
+"en": "5 short lessons to progress without injury",
+"es": "5 lecciones cortas para progresar sin lesionarte",
+"pt": "5 aulas curtas para evoluir sem se machucar",
+"de": "5 kurze Lektionen, um ohne Verletzungen Fortschritte zu machen",
+"it": "5 lezioni brevi per progredire senza infortuni"
+},
+"ACADÉMIE NUTRIPILOT": {
+"en": "NUTRIPILOT ACADEMY",
+"es": "ACADEMIA NUTRIPILOT",
+"pt": "ACADEMIA NUTRIPILOT",
+"de": "NUTRIPILOT-AKADEMIE",
+"it": "ACCADEMIA NUTRIPILOT"
+},
+"Ajoutez du mouvement au quotidien (marche, escaliers) avant de réduire encore les calories.": {
+"en": "Add more everyday movement (walking, stairs) before cutting calories further.",
+"es": "Añade movimiento diario (caminar, escaleras) antes de reducir aún más las calorías.",
+"pt": "Inclua mais movimento no dia a dia (caminhada, escadas) antes de cortar ainda mais calorias.",
+"de": "Bau mehr Alltagsbewegung ein (Gehen, Treppen), bevor du die Kalorien weiter senkst.",
+"it": "Aggiungi movimento quotidiano (camminare, scale) prima di ridurre ancora le calorie."
+},
+"Ajoutez une portion de légumes à votre déjeuner ou à votre dîner aujourd’hui.": {
+"en": "Add a portion of vegetables to your lunch or dinner today.",
+"es": "Añade una ración de verduras a tu comida o tu cena de hoy.",
+"pt": "Inclua uma porção de legumes no almoço ou no jantar de hoje.",
+"de": "Füge heute deinem Mittag- oder Abendessen eine Portion Gemüse hinzu.",
+"it": "Aggiungi una porzione di verdure al pranzo o alla cena di oggi."
+},
+"Ajoutez une portion de protéines à votre prochain repas et scannez-le.": {
+"en": "Add a portion of protein to your next meal and scan it.",
+"es": "Añade una ración de proteína a tu próxima comida y escanéala.",
+"pt": "Inclua uma porção de proteína na próxima refeição e escaneie.",
+"de": "Füge deiner nächsten Mahlzeit eine Portion Eiweiß hinzu und scanne sie.",
+"it": "Aggiungi una porzione di proteine al prossimo pasto e scansionalo."
+},
+"Attendez 2 à 3 semaines de tendance stable avant de conclure à un vrai plateau.": {
+"en": "Wait for 2 to 3 weeks of a flat trend before concluding it’s a real plateau.",
+"es": "Espera 2 o 3 semanas de tendencia estable antes de concluir que es un estancamiento real.",
+"pt": "Espere 2 a 3 semanas de tendência estável antes de concluir que é um platô de verdade.",
+"de": "Warte 2 bis 3 Wochen stabilen Trend ab, bevor du von einem echten Plateau sprichst.",
+"it": "Aspetta 2-3 settimane di tendenza stabile prima di parlare di vero stallo."
+},
+"Bien s’échauffer en 7 minutes": {
+"en": "A proper warm-up in 7 minutes",
+"es": "Calentar bien en 7 minutos",
+"pt": "Aquecer bem em 7 minutos",
+"de": "Richtig aufwärmen in 7 Minuten",
+"it": "Riscaldarsi bene in 7 minuti"
+},
+"Bientôt sur iPhone et Android": {
+"en": "Coming soon on iPhone and Android",
+"es": "Muy pronto en iPhone y Android",
+"pt": "Em breve no iPhone e no Android",
+"de": "Bald auf iPhone und Android",
+"it": "Presto su iPhone e Android"
+},
+"Choisir la bonne charge": {
+"en": "Choosing the right weight",
+"es": "Elegir el peso adecuado",
+"pt": "Escolher a carga certa",
+"de": "Das richtige Gewicht wählen",
+"it": "Scegliere il carico giusto"
+},
+"Commencez léger la première semaine pour apprendre les mouvements.": {
+"en": "Start light in the first week to learn the movements.",
+"es": "Empieza ligero la primera semana para aprender los movimientos.",
+"pt": "Comece leve na primeira semana para aprender os movimentos.",
+"de": "Starte in der ersten Woche leicht, um die Bewegungen zu lernen.",
+"it": "Inizia leggero la prima settimana per imparare i movimenti."
+},
+"Comment on progresse : la surcharge progressive": {
+"en": "How you progress: progressive overload",
+"es": "Cómo se progresa: la sobrecarga progresiva",
+"pt": "Como evoluir: a sobrecarga progressiva",
+"de": "So machst du Fortschritte: progressive Überlastung",
+"it": "Come si progredisce: il sovraccarico progressivo"
+},
+"Comparez calories, protéines, sucres et sel entre deux produits similaires.": {
+"en": "Compare calories, protein, sugar and salt between two similar products.",
+"es": "Compara calorías, proteínas, azúcares y sal entre dos productos similares.",
+"pt": "Compare calorias, proteínas, açúcares e sal entre dois produtos parecidos.",
+"de": "Vergleiche Kalorien, Eiweiß, Zucker und Salz zweier ähnlicher Produkte.",
+"it": "Confronta calorie, proteine, zuccheri e sale tra due prodotti simili."
+},
+"Comprendre ce qui fait vraiment bouger la balance, sans régime extrême.": {
+"en": "Understand what really moves the scale, without extreme dieting.",
+"es": "Entiende lo que de verdad mueve la báscula, sin dietas extremas.",
+"pt": "Entenda o que realmente faz a balança mudar, sem dieta radical.",
+"de": "Verstehe, was die Waage wirklich bewegt – ohne extreme Diät.",
+"it": "Capisci cosa fa davvero muovere la bilancia, senza diete estreme."
+},
+"Contrôlez la descente de chaque répétition, sans à-coups.": {
+"en": "Control the lowering phase of each rep, without jerking.",
+"es": "Controla la bajada de cada repetición, sin tirones.",
+"pt": "Controle a descida de cada repetição, sem trancos.",
+"de": "Kontrolliere bei jeder Wiederholung das Absenken, ohne Schwung.",
+"it": "Controlla la discesa di ogni ripetizione, senza strappi."
+},
+"Cours : Musculation, bien débuter": {
+"en": "Course: Strength training, getting started",
+"es": "Curso: Musculación, empezar bien",
+"pt": "Curso: Musculação, comece bem",
+"de": "Kurs: Krafttraining, gut starten",
+"it": "Corso: Muscolazione, iniziare bene"
+},
+"Cours musculation": {
+"en": "Strength training course",
+"es": "Curso de musculación",
+"pt": "Curso de musculação",
+"de": "Krafttraining-Kurs",
+"it": "Corso di muscolazione"
+},
+"Cours nutrition et guides ménopause": {
+"en": "Nutrition course and menopause guides",
+"es": "Curso de nutrición y guías de menopausia",
+"pt": "Curso de nutrição e guias de menopausa",
+"de": "Ernährungskurs und Wechseljahre-Ratgeber",
+"it": "Corso di nutrizione e guide sulla menopausa"
+},
+"C’est noté ! Nous vous préviendrons au lancement ✓": {
+"en": "Done! We’ll let you know at launch ✓",
+"es": "¡Anotado! Te avisaremos en el lanzamiento ✓",
+"pt": "Anotado! Avisaremos você no lançamento ✓",
+"de": "Notiert! Wir melden uns zum Start ✓",
+"it": "Fatto! Ti avviseremo al lancio ✓"
+},
+"Des protéines réparties dans la journée soutiennent la récupération.": {
+"en": "Protein spread across the day supports recovery.",
+"es": "Repartir la proteína a lo largo del día favorece la recuperación.",
+"pt": "Proteína distribuída ao longo do dia ajuda na recuperação.",
+"de": "Über den Tag verteiltes Eiweiß unterstützt die Regeneration.",
+"it": "Proteine distribuite nella giornata favoriscono il recupero."
+},
+"Faites cet échauffement avant votre prochaine séance.": {
+"en": "Do this warm-up before your next session.",
+"es": "Haz este calentamiento antes de tu próxima sesión.",
+"pt": "Faça este aquecimento antes do próximo treino.",
+"de": "Mach dieses Aufwärmen vor deiner nächsten Einheit.",
+"it": "Fai questo riscaldamento prima della prossima sessione."
+},
+"Fibres et volume : manger plus, pour moins de calories": {
+"en": "Fibre and volume: eat more for fewer calories",
+"es": "Fibra y volumen: comer más con menos calorías",
+"pt": "Fibras e volume: comer mais com menos calorias",
+"de": "Ballaststoffe und Volumen: mehr essen, weniger Kalorien",
+"it": "Fibre e volume: mangiare di più con meno calorie"
+},
+"Filmez une série avec votre téléphone pour vérifier votre technique.": {
+"en": "Film a set on your phone to check your technique.",
+"es": "Grábate una serie con el móvil para revisar tu técnica.",
+"pt": "Filme uma série com o celular para conferir sua técnica.",
+"de": "Filme einen Satz mit dem Handy, um deine Technik zu prüfen.",
+"it": "Filma una serie con il telefono per controllare la tecnica."
+},
+"Formule choisie : {plan} · {price} / {period}. Un seul e-mail au lancement, désinscription en un clic.": {
+"en": "Chosen plan: {plan} · {price} / {period}. One email at launch, unsubscribe in one click.",
+"es": "Plan elegido: {plan} · {price} / {period}. Un solo e-mail en el lanzamiento, baja con un clic.",
+"pt": "Plano escolhido: {plan} · {price} / {period}. Um único e-mail no lançamento, descadastro em um clique.",
+"de": "Gewähltes Abo: {plan} · {price} / {period}. Nur eine E-Mail zum Start, Abmeldung mit einem Klick.",
+"it": "Piano scelto: {plan} · {price} / {period}. Una sola e-mail al lancio, disiscrizione in un clic."
+},
+"Gardez au moins un jour de repos entre deux séances qui travaillent les mêmes muscles.": {
+"en": "Keep at least one rest day between two sessions that train the same muscles.",
+"es": "Deja al menos un día de descanso entre dos sesiones que trabajen los mismos músculos.",
+"pt": "Deixe pelo menos um dia de descanso entre dois treinos que trabalham os mesmos músculos.",
+"de": "Plane mindestens einen Ruhetag zwischen zwei Einheiten für dieselben Muskeln ein.",
+"it": "Lascia almeno un giorno di riposo tra due sessioni sugli stessi muscoli."
+},
+"Gardez le dos neutre sur les squats, soulevés de terre et rowings.": {
+"en": "Keep a neutral back on squats, deadlifts and rows.",
+"es": "Mantén la espalda neutra en sentadillas, pesos muertos y remos.",
+"pt": "Mantenha a coluna neutra em agachamentos, levantamentos terra e remadas.",
+"de": "Halte den Rücken bei Kniebeugen, Kreuzheben und Rudern neutral.",
+"it": "Mantieni la schiena neutra in squat, stacchi e rematori."
+},
+"Kit complet": {
+"en": "Complete kit",
+"es": "Kit completo",
+"pt": "Kit completo",
+"de": "Komplett-Paket",
+"it": "Kit completo"
+},
+"La bonne charge est celle qui vous laisse 1 à 2 répétitions « en réserve » à la fin de la série, avec une technique propre.": {
+"en": "The right weight leaves you 1 to 2 reps “in reserve” at the end of the set, with clean technique.",
+"es": "El peso adecuado es el que te deja 1 o 2 repeticiones «en reserva» al final de la serie, con buena técnica.",
+"pt": "A carga certa é a que deixa 1 ou 2 repetições “de reserva” no fim da série, com boa técnica.",
+"de": "Das richtige Gewicht lässt dir am Satzende 1 bis 2 Wiederholungen „in Reserve“ – bei sauberer Technik.",
+"it": "Il carico giusto ti lascia 1-2 ripetizioni «di riserva» a fine serie, con una tecnica pulita."
+},
+"La plupart des blessures viennent d’une charge trop lourde ou d’un mouvement mal maîtrisé.": {
+"en": "Most injuries come from a weight that’s too heavy or a poorly controlled movement.",
+"es": "La mayoría de las lesiones vienen de un peso excesivo o de un movimiento mal controlado.",
+"pt": "A maioria das lesões vem de carga pesada demais ou de um movimento mal controlado.",
+"de": "Die meisten Verletzungen entstehen durch zu viel Gewicht oder unkontrollierte Bewegungen.",
+"it": "La maggior parte degli infortuni deriva da un carico eccessivo o da un movimento mal controllato."
+},
+"La régularité sur plusieurs semaines compte plus qu’une séance parfaite.": {
+"en": "Consistency over several weeks matters more than one perfect session.",
+"es": "La constancia durante varias semanas cuenta más que una sesión perfecta.",
+"pt": "A constância ao longo de semanas vale mais que um treino perfeito.",
+"de": "Regelmäßigkeit über Wochen zählt mehr als eine perfekte Einheit.",
+"it": "La costanza per più settimane conta più di una sessione perfetta."
+},
+"La technique avant la charge": {
+"en": "Technique before weight",
+"es": "La técnica antes que el peso",
+"pt": "Técnica antes da carga",
+"de": "Technik vor Gewicht",
+"it": "La tecnica prima del carico"
+},
+"Le déficit calorique, simplement": {
+"en": "The calorie deficit, made simple",
+"es": "El déficit calórico, de forma sencilla",
+"pt": "O déficit calórico, de forma simples",
+"de": "Das Kaloriendefizit, einfach erklärt",
+"it": "Il deficit calorico, in modo semplice"
+},
+"Le muscle progresse quand on lui demande un peu plus, petit à petit : une répétition de plus, un peu plus de charge ou une meilleure exécution.": {
+"en": "Muscle grows when you ask it for a little more, step by step: one more rep, a bit more weight or better form.",
+"es": "El músculo progresa cuando le pides un poco más, poco a poco: una repetición más, algo más de peso o una mejor ejecución.",
+"pt": "O músculo evolui quando você pede um pouco mais, aos poucos: uma repetição a mais, um pouco mais de carga ou uma execução melhor.",
+"de": "Muskeln wachsen, wenn du schrittweise etwas mehr forderst: eine Wiederholung mehr, etwas mehr Gewicht oder bessere Ausführung.",
+"it": "Il muscolo progredisce quando gli chiedi un po’ di più, gradualmente: una ripetizione in più, un po’ più di carico o un’esecuzione migliore."
+},
+"Le muscle se construit pendant la récupération, pas pendant la séance.": {
+"en": "Muscle is built during recovery, not during the session.",
+"es": "El músculo se construye durante la recuperación, no durante la sesión.",
+"pt": "O músculo é construído na recuperação, não durante o treino.",
+"de": "Muskeln entstehen in der Erholung, nicht während des Trainings.",
+"it": "Il muscolo si costruisce durante il recupero, non durante la sessione."
+},
+"Le sommeil compte autant que l’entraînement pour progresser.": {
+"en": "Sleep matters as much as training for progress.",
+"es": "El sueño cuenta tanto como el entrenamiento para progresar.",
+"pt": "O sono importa tanto quanto o treino para evoluir.",
+"de": "Schlaf ist für Fortschritte genauso wichtig wie Training.",
+"it": "Il sonno conta quanto l’allenamento per progredire."
+},
+"Les abonnements ouvrent avec le lancement des applications. Laissez votre e-mail : vous serez prévenu(e) en premier, avec l’essai gratuit de 3 jours.": {
+"en": "Subscriptions open when the apps launch. Leave your email: you’ll be the first to know, with the 3-day free trial.",
+"es": "Las suscripciones se abren con el lanzamiento de las apps. Déjanos tu e-mail: serás de los primeros en saberlo, con la prueba gratuita de 3 días.",
+"pt": "As assinaturas abrem com o lançamento dos apps. Deixe seu e-mail: você será avisado(a) primeiro, com o teste grátis de 3 dias.",
+"de": "Die Abos starten mit dem Launch der Apps. Hinterlasse deine E-Mail: Du erfährst es als Erste/r – mit 3 Tagen gratis.",
+"it": "Gli abbonamenti aprono con il lancio delle app. Lascia la tua e-mail: sarai tra i primi a saperlo, con la prova gratuita di 3 giorni."
+},
+"Les fibres ralentissent la digestion et aident à rester rassasié(e).": {
+"en": "Fibre slows digestion and helps you stay full.",
+"es": "La fibra ralentiza la digestión y ayuda a mantener la saciedad.",
+"pt": "As fibras desaceleram a digestão e ajudam a manter a saciedade.",
+"de": "Ballaststoffe verlangsamen die Verdauung und halten länger satt.",
+"it": "Le fibre rallentano la digestione e aiutano a restare sazi."
+},
+"Les fondamentaux de la perte de poids": {
+"en": "Weight-loss fundamentals",
+"es": "Los fundamentos para perder peso",
+"pt": "Os fundamentos do emagrecimento",
+"de": "Die Grundlagen des Abnehmens",
+"it": "Le basi del dimagrimento"
+},
+"Les légumes, les fruits et les céréales complètes apportent du volume et des fibres pour peu de calories.": {
+"en": "Vegetables, fruit and whole grains bring volume and fibre for few calories.",
+"es": "Verduras, frutas y cereales integrales aportan volumen y fibra con pocas calorías.",
+"pt": "Legumes, frutas e cereais integrais trazem volume e fibras com poucas calorias.",
+"de": "Gemüse, Obst und Vollkorn bringen Volumen und Ballaststoffe bei wenig Kalorien.",
+"it": "Verdure, frutta e cereali integrali danno volume e fibre con poche calorie."
+},
+"Les protéines calent plus longtemps que la plupart des aliments et aident à garder vos muscles pendant la perte de poids.": {
+"en": "Protein keeps you full longer than most foods and helps you keep your muscle while losing weight.",
+"es": "Las proteínas sacian más que la mayoría de los alimentos y ayudan a conservar el músculo al perder peso.",
+"pt": "As proteínas dão saciedade por mais tempo que a maioria dos alimentos e ajudam a preservar os músculos no emagrecimento.",
+"de": "Eiweiß sättigt länger als die meisten Lebensmittel und hilft, beim Abnehmen Muskeln zu erhalten.",
+"it": "Le proteine saziano più a lungo della maggior parte degli alimenti e aiutano a mantenere i muscoli mentre dimagrisci."
+},
+"Les protéines, votre alliée satiété": {
+"en": "Protein, your ally for feeling full",
+"es": "Las proteínas, tu aliada para saciarte",
+"pt": "Proteínas, sua aliada da saciedade",
+"de": "Eiweiß, dein Verbündeter gegen Hunger",
+"it": "Le proteine, alleate della sazietà"
+},
+"Les règles simples pour progresser en salle ou à la maison, sans se blesser.": {
+"en": "Simple rules to progress at the gym or at home, without injury.",
+"es": "Reglas sencillas para progresar en el gimnasio o en casa, sin lesionarte.",
+"pt": "Regras simples para evoluir na academia ou em casa, sem se machucar.",
+"de": "Einfache Regeln für Fortschritte im Gym oder zu Hause – ohne Verletzungen.",
+"it": "Regole semplici per progredire in palestra o a casa, senza infortuni."
+},
+"Leçon gratuite": {
+"en": "Free lesson",
+"es": "Lección gratuita",
+"pt": "Aula grátis",
+"de": "Gratis-Lektion",
+"it": "Lezione gratuita"
+},
+"Leçon suivante : {title} →": {
+"en": "Next lesson: {title} →",
+"es": "Siguiente lección: {title} →",
+"pt": "Próxima aula: {title} →",
+"de": "Nächste Lektion: {title} →",
+"it": "Lezione successiva: {title} →"
+},
+"Leçon {n}/{total}": {
+"en": "Lesson {n}/{total}",
+"es": "Lección {n}/{total}",
+"pt": "Aula {n}/{total}",
+"de": "Lektion {n}/{total}",
+"it": "Lezione {n}/{total}"
+},
+"Lire une étiquette en 30 secondes": {
+"en": "Read a label in 30 seconds",
+"es": "Leer una etiqueta en 30 segundos",
+"pt": "Ler um rótulo em 30 segundos",
+"de": "Ein Etikett in 30 Sekunden lesen",
+"it": "Leggere un’etichetta in 30 secondi"
+},
+"L’étiquette dit tout, à condition de regarder les bonnes lignes.": {
+"en": "The label tells you everything, as long as you look at the right lines.",
+"es": "La etiqueta lo dice todo, si miras las líneas correctas.",
+"pt": "O rótulo diz tudo, desde que você olhe as linhas certas.",
+"de": "Das Etikett verrät alles – wenn du auf die richtigen Zeilen schaust.",
+"it": "L’etichetta dice tutto, se guardi le righe giuste."
+},
+"Me prévenir": {
+"en": "Notify me",
+"es": "Avisarme",
+"pt": "Me avise",
+"de": "Benachrichtige mich",
+"it": "Avvisami"
+},
+"Meilleure offre": {
+"en": "Best value",
+"es": "Mejor oferta",
+"pt": "Melhor oferta",
+"de": "Bestes Angebot",
+"it": "Offerta migliore"
+},
+"Mettez à jour votre poids dans Progrès, puis utilisez « Actualiser mes repères » si votre poids a changé.": {
+"en": "Update your weight in Progress, then use “Update my targets” if your weight has changed.",
+"es": "Actualiza tu peso en Progreso y luego usa «Actualizar mis referencias» si tu peso ha cambiado.",
+"pt": "Atualize seu peso em Progresso e use “Atualizar minhas metas” se ele mudou.",
+"de": "Aktualisiere dein Gewicht unter Fortschritt und nutze dann „Meine Zielwerte aktualisieren“, falls es sich geändert hat.",
+"it": "Aggiorna il peso in Progressi, poi usa «Aggiorna i miei riferimenti» se è cambiato."
+},
+"Musculation : bien débuter": {
+"en": "Strength training: getting started",
+"es": "Musculación: empezar bien",
+"pt": "Musculação: comece bem",
+"de": "Krafttraining: gut starten",
+"it": "Muscolazione: iniziare bene"
+},
+"Notez vos charges à chaque séance : NutriPilot vous les rappelle la fois suivante.": {
+"en": "Log your weights every session: NutriPilot reminds you of them next time.",
+"es": "Anota tus cargas en cada sesión: NutriPilot te las recuerda la próxima vez.",
+"pt": "Registre suas cargas em cada treino: o NutriPilot lembra você na próxima vez.",
+"de": "Notiere bei jeder Einheit deine Gewichte: NutriPilot erinnert dich beim nächsten Mal daran.",
+"it": "Annota i carichi a ogni sessione: NutriPilot te li ricorda la volta dopo."
+},
+"Nutrition + Entraînement + Académie": {
+"en": "Nutrition + Training + Academy",
+"es": "Nutrición + Entrenamiento + Academia",
+"pt": "Nutrição + Treino + Academia",
+"de": "Ernährung + Training + Akademie",
+"it": "Nutrizione + Allenamento + Accademia"
+},
+"On perd du poids quand on dépense un peu plus d’énergie que ce que l’on mange, de façon régulière. Le secret n’est pas de manger le moins possible, mais un peu moins, longtemps.": {
+"en": "You lose weight when you regularly use a little more energy than you eat. The secret isn’t eating as little as possible, but a little less, for a long time.",
+"es": "Se pierde peso cuando, de forma regular, se gasta algo más de energía de la que se come. El secreto no es comer lo menos posible, sino un poco menos durante mucho tiempo.",
+"pt": "Emagrecemos quando gastamos, de forma regular, um pouco mais de energia do que comemos. O segredo não é comer o mínimo possível, mas um pouco menos, por bastante tempo.",
+"de": "Du nimmst ab, wenn du regelmäßig etwas mehr Energie verbrauchst, als du isst. Das Geheimnis ist nicht, so wenig wie möglich zu essen, sondern etwas weniger – über lange Zeit.",
+"it": "Si dimagrisce quando si consuma regolarmente un po’ più energia di quella che si mangia. Il segreto non è mangiare il meno possibile, ma un po’ meno, a lungo."
+},
+"Ouvrez une séance et lisez les conseils d’exécution de chaque exercice.": {
+"en": "Open a session and read the technique tips for each exercise.",
+"es": "Abre una sesión y lee los consejos de técnica de cada ejercicio.",
+"pt": "Abra um treino e leia as dicas de execução de cada exercício.",
+"de": "Öffne eine Einheit und lies die Technik-Tipps zu jeder Übung.",
+"it": "Apri una sessione e leggi i consigli di esecuzione di ogni esercizio."
+},
+"Pendant votre prochaine séance, enregistrez la charge de chaque exercice.": {
+"en": "In your next session, log the weight for each exercise.",
+"es": "En tu próxima sesión, anota la carga de cada ejercicio.",
+"pt": "No próximo treino, registre a carga de cada exercício.",
+"de": "Trag in deiner nächsten Einheit das Gewicht jeder Übung ein.",
+"it": "Nella prossima sessione, registra il carico di ogni esercizio."
+},
+"Plateau : quand la balance ne bouge plus": {
+"en": "Plateau: when the scale stops moving",
+"es": "Estancamiento: cuando la báscula no se mueve",
+"pt": "Platô: quando a balança não se mexe",
+"de": "Plateau: Wenn die Waage stillsteht",
+"it": "Stallo: quando la bilancia non si muove"
+},
+"Quand vous atteignez le haut de la fourchette de répétitions sur toutes les séries, augmentez légèrement la charge.": {
+"en": "When you reach the top of the rep range on every set, increase the weight slightly.",
+"es": "Cuando llegues al máximo del rango de repeticiones en todas las series, sube ligeramente el peso.",
+"pt": "Quando atingir o topo da faixa de repetições em todas as séries, aumente levemente a carga.",
+"de": "Wenn du bei allen Sätzen das obere Ende des Wiederholungsbereichs schaffst, erhöhe das Gewicht leicht.",
+"it": "Quando raggiungi il massimo delle ripetizioni in tutte le serie, aumenta leggermente il carico."
+},
+"Quelques mouvements articulaires : épaules, hanches, chevilles.": {
+"en": "A few joint mobility moves: shoulders, hips, ankles.",
+"es": "Algunos movimientos articulares: hombros, caderas, tobillos.",
+"pt": "Alguns movimentos articulares: ombros, quadril, tornozelos.",
+"de": "Ein paar Mobilitätsübungen: Schultern, Hüften, Sprunggelenke.",
+"it": "Qualche movimento articolare: spalle, anche, caviglie."
+},
+"Regardez d’abord la portion réelle que vous allez manger, pas seulement les valeurs pour 100 g.": {
+"en": "First look at the actual portion you’ll eat, not just the values per 100 g.",
+"es": "Mira primero la ración real que vas a comer, no solo los valores por 100 g.",
+"pt": "Olhe primeiro a porção real que você vai comer, não só os valores por 100 g.",
+"de": "Schau zuerst auf die Portion, die du wirklich isst – nicht nur auf die Werte pro 100 g.",
+"it": "Guarda prima la porzione reale che mangerai, non solo i valori per 100 g."
+},
+"Regardez votre moyenne des 7 derniers jours dans Progrès plutôt que le chiffre d’une seule journée.": {
+"en": "Look at your 7-day average in Progress rather than a single day’s number.",
+"es": "Mira tu media de los últimos 7 días en Progreso en lugar del dato de un solo día.",
+"pt": "Veja sua média dos últimos 7 dias em Progresso em vez do número de um único dia.",
+"de": "Schau unter Fortschritt auf deinen 7-Tage-Durchschnitt statt auf die Zahl eines einzelnen Tages.",
+"it": "Guarda la media degli ultimi 7 giorni in Progressi invece del dato di un solo giorno."
+},
+"Remplir la moitié de l’assiette de légumes permet de manger à sa faim tout en réduisant les calories.": {
+"en": "Filling half your plate with vegetables lets you eat your fill while cutting calories.",
+"es": "Llenar la mitad del plato de verduras permite comer hasta saciarse reduciendo calorías.",
+"pt": "Encher metade do prato com legumes permite comer até ficar satisfeito(a) reduzindo calorias.",
+"de": "Wenn der halbe Teller aus Gemüse besteht, wirst du satt und sparst Kalorien.",
+"it": "Riempire metà piatto di verdure permette di mangiare a sazietà riducendo le calorie."
+},
+"Récupération, sommeil et alimentation": {
+"en": "Recovery, sleep and nutrition",
+"es": "Recuperación, sueño y alimentación",
+"pt": "Recuperação, sono e alimentação",
+"de": "Regeneration, Schlaf und Ernährung",
+"it": "Recupero, sonno e alimentazione"
+},
+"Scannez le code-barres d’un produit de votre placard et comparez-le avec une alternative.": {
+"en": "Scan the barcode of a product in your cupboard and compare it with an alternative.",
+"es": "Escanea el código de barras de un producto de tu despensa y compáralo con una alternativa.",
+"pt": "Escaneie o código de barras de um produto da despensa e compare com uma alternativa.",
+"de": "Scanne den Barcode eines Produkts aus deinem Vorrat und vergleiche es mit einer Alternative.",
+"it": "Scansiona il codice a barre di un prodotto della dispensa e confrontalo con un’alternativa."
+},
+"Si la technique se dégrade, la charge est trop lourde.": {
+"en": "If your technique breaks down, the weight is too heavy.",
+"es": "Si la técnica empeora, el peso es demasiado alto.",
+"pt": "Se a técnica piora, a carga está pesada demais.",
+"de": "Wenn die Technik nachlässt, ist das Gewicht zu schwer.",
+"it": "Se la tecnica peggiora, il carico è troppo pesante."
+},
+"Si vous pourriez faire 5 répétitions de plus, augmentez la charge.": {
+"en": "If you could do 5 more reps, increase the weight.",
+"es": "Si podrías hacer 5 repeticiones más, sube el peso.",
+"pt": "Se você conseguiria fazer mais 5 repetições, aumente a carga.",
+"de": "Wenn du noch 5 Wiederholungen mehr schaffen würdest, erhöhe das Gewicht.",
+"it": "Se potresti fare altre 5 ripetizioni, aumenta il carico."
+},
+"Toute l’Académie : cours et guides": {
+"en": "The whole Academy: courses and guides",
+"es": "Toda la Academia: cursos y guías",
+"pt": "Toda a Academia: cursos e guias",
+"de": "Die ganze Akademie: Kurse und Ratgeber",
+"it": "Tutta l’Accademia: corsi e guide"
+},
+"Un bon échauffement prépare les articulations et améliore la qualité des premières séries.": {
+"en": "A good warm-up prepares your joints and improves your first sets.",
+"es": "Un buen calentamiento prepara las articulaciones y mejora las primeras series.",
+"pt": "Um bom aquecimento prepara as articulações e melhora as primeiras séries.",
+"de": "Gutes Aufwärmen bereitet die Gelenke vor und verbessert die ersten Sätze.",
+"it": "Un buon riscaldamento prepara le articolazioni e migliora le prime serie."
+},
+"Un déficit modéré se tient sur la durée, protège vos muscles et votre énergie, et limite l’effet yo-yo.": {
+"en": "A moderate deficit is sustainable, protects your muscles and energy, and limits the yo-yo effect.",
+"es": "Un déficit moderado se mantiene en el tiempo, protege tus músculos y tu energía, y limita el efecto rebote.",
+"pt": "Um déficit moderado se sustenta no tempo, protege seus músculos e sua energia e limita o efeito sanfona.",
+"de": "Ein moderates Defizit ist durchhaltbar, schützt Muskeln und Energie und bremst den Jo-Jo-Effekt.",
+"it": "Un deficit moderato si mantiene nel tempo, protegge muscoli ed energia e limita l’effetto yo-yo."
+},
+"Un petit-déjeuner protéiné réduit souvent les fringales de fin de matinée.": {
+"en": "A high-protein breakfast often reduces late-morning cravings.",
+"es": "Un desayuno proteico suele reducir los antojos de media mañana.",
+"pt": "Um café da manhã rico em proteína costuma reduzir a fome no fim da manhã.",
+"de": "Ein eiweißreiches Frühstück reduziert oft den Heißhunger am späten Vormittag.",
+"it": "Una colazione proteica riduce spesso la fame di fine mattinata."
+},
+"Un plateau de quelques jours est normal : l’eau, le sel, le sommeil ou le cycle font varier le poids.": {
+"en": "A plateau of a few days is normal: water, salt, sleep or your cycle make your weight fluctuate.",
+"es": "Un estancamiento de unos días es normal: el agua, la sal, el sueño o el ciclo hacen variar el peso.",
+"pt": "Um platô de alguns dias é normal: água, sal, sono ou ciclo menstrual fazem o peso variar.",
+"de": "Ein paar Tage Stillstand sind normal: Wasser, Salz, Schlaf oder Zyklus lassen das Gewicht schwanken.",
+"it": "Uno stallo di qualche giorno è normale: acqua, sale, sonno o ciclo fanno variare il peso."
+},
+"Une douleur vive ou articulaire est un signal d’arrêt : demandez un avis professionnel si elle persiste.": {
+"en": "Sharp or joint pain is a signal to stop: seek professional advice if it persists.",
+"es": "Un dolor agudo o articular es una señal para parar: consulta a un profesional si persiste.",
+"pt": "Dor aguda ou nas articulações é sinal para parar: procure um profissional se persistir.",
+"de": "Stechender oder Gelenkschmerz ist ein Stoppsignal: Hol dir fachlichen Rat, wenn er anhält.",
+"it": "Un dolore acuto o articolare è un segnale di stop: chiedi un parere professionale se persiste."
+},
+"Une journée au-dessus ne compte pas : c’est la moyenne de la semaine qui fait le résultat.": {
+"en": "One day over doesn’t count: it’s the weekly average that drives results.",
+"es": "Un día por encima no cuenta: es la media semanal la que da resultados.",
+"pt": "Um dia acima não conta: é a média da semana que traz o resultado.",
+"de": "Ein Tag darüber zählt nicht: Der Wochendurchschnitt macht das Ergebnis.",
+"it": "Un giorno sopra non conta: è la media settimanale a fare il risultato."
+},
+"Une liste d’ingrédients courte et compréhensible est souvent bon signe.": {
+"en": "A short, understandable ingredient list is often a good sign.",
+"es": "Una lista de ingredientes corta y comprensible suele ser buena señal.",
+"pt": "Uma lista de ingredientes curta e compreensível costuma ser bom sinal.",
+"de": "Eine kurze, verständliche Zutatenliste ist oft ein gutes Zeichen.",
+"it": "Una lista di ingredienti breve e comprensibile è spesso un buon segno."
+},
+"Une soupe ou une salade en entrée diminue souvent la quantité mangée ensuite.": {
+"en": "A soup or salad as a starter often reduces how much you eat afterwards.",
+"es": "Una sopa o una ensalada de entrante suele reducir lo que se come después.",
+"pt": "Uma sopa ou salada de entrada costuma reduzir o quanto se come depois.",
+"de": "Eine Suppe oder ein Salat als Vorspeise verringert oft die Menge danach.",
+"it": "Una zuppa o un’insalata come antipasto riduce spesso la quantità mangiata dopo."
+},
+"Visez une source de protéines à chaque repas : œufs, poisson, volaille, viande maigre, laitages, légumineuses, tofu.": {
+"en": "Aim for a protein source at every meal: eggs, fish, poultry, lean meat, dairy, legumes, tofu.",
+"es": "Busca una fuente de proteína en cada comida: huevos, pescado, aves, carne magra, lácteos, legumbres, tofu.",
+"pt": "Tenha uma fonte de proteína em cada refeição: ovos, peixe, frango, carne magra, laticínios, leguminosas, tofu.",
+"de": "Setze bei jeder Mahlzeit auf eine Eiweißquelle: Eier, Fisch, Geflügel, mageres Fleisch, Milchprodukte, Hülsenfrüchte, Tofu.",
+"it": "Punta a una fonte di proteine a ogni pasto: uova, pesce, pollame, carne magra, latticini, legumi, tofu."
+},
+"Votre objectif de protéines est indiqué chaque jour sur l’écran Aujourd’hui.": {
+"en": "Your protein target is shown every day on the Today screen.",
+"es": "Tu objetivo de proteínas aparece cada día en la pantalla Hoy.",
+"pt": "Sua meta de proteínas aparece todo dia na tela Hoje.",
+"de": "Dein Eiweißziel wird jeden Tag auf dem Heute-Bildschirm angezeigt.",
+"it": "Il tuo obiettivo di proteine è indicato ogni giorno nella schermata Oggi."
+},
+"Votre repère calorique NutriPilot est une estimation de départ : il s’ajuste avec votre poids réel.": {
+"en": "Your NutriPilot calorie target is a starting estimate: it adjusts to your real weight.",
+"es": "Tu referencia calórica de NutriPilot es una estimación inicial: se ajusta con tu peso real.",
+"pt": "Sua meta calórica do NutriPilot é uma estimativa inicial: ela se ajusta ao seu peso real.",
+"de": "Dein NutriPilot-Kalorienziel ist eine Startschätzung: Es passt sich deinem echten Gewicht an.",
+"it": "Il tuo riferimento calorico NutriPilot è una stima iniziale: si adatta al tuo peso reale."
+},
+"Vous êtes sur la liste : {email}": {
+"en": "You’re on the list: {email}",
+"es": "Estás en la lista: {email}",
+"pt": "Você está na lista: {email}",
+"de": "Du stehst auf der Liste: {email}",
+"it": "Sei nella lista: {email}"
+},
+"Vérifiez les portions : avec le temps, elles ont tendance à grandir sans qu’on s’en rende compte.": {
+"en": "Check your portions: over time they tend to grow without you noticing.",
+"es": "Revisa las raciones: con el tiempo tienden a crecer sin que te des cuenta.",
+"pt": "Confira as porções: com o tempo, elas tendem a aumentar sem a gente perceber.",
+"de": "Prüfe deine Portionen: Mit der Zeit werden sie unbemerkt größer.",
+"it": "Controlla le porzioni: col tempo tendono a crescere senza che te ne accorga."
+},
+"Vérifiez que votre objectif de protéines est atteint les jours d’entraînement.": {
+"en": "Make sure you hit your protein target on training days.",
+"es": "Comprueba que alcanzas tu objetivo de proteínas los días de entrenamiento.",
+"pt": "Confira se você atinge sua meta de proteínas nos dias de treino.",
+"de": "Achte darauf, an Trainingstagen dein Eiweißziel zu erreichen.",
+"it": "Verifica di raggiungere l’obiettivo di proteine nei giorni di allenamento."
+},
+"{n} cours · {total} leçons courtes": {
+"en": "{n} courses · {total} short lessons",
+"es": "{n} cursos · {total} lecciones cortas",
+"pt": "{n} cursos · {total} aulas curtas",
+"de": "{n} Kurse · {total} kurze Lektionen",
+"it": "{n} corsi · {total} lezioni brevi"
+},
+"{n}/{total} leçons terminées": {
+"en": "{n}/{total} lessons completed",
+"es": "{n}/{total} lecciones completadas",
+"pt": "{n}/{total} aulas concluídas",
+"de": "{n}/{total} Lektionen abgeschlossen",
+"it": "{n}/{total} lezioni completate"
+},
+"Économisez {n} % par rapport à Nutrition + Entraînement séparés": {
+"en": "Save {n} % compared with Nutrition + Training separately",
+"es": "Ahorra un {n} % frente a Nutrición + Entrenamiento por separado",
+"pt": "Economize {n} % em relação a Nutrição + Treino separados",
+"de": "Spare {n} % gegenüber Ernährung + Training einzeln",
+"it": "Risparmia il {n} % rispetto a Nutrizione + Allenamento separati"
+},
+"Académie": {
+"en": "Academy",
+"es": "Academia",
+"pt": "Academia",
+"de": "Akademie",
+"it": "Accademia"
+},
+"Cours": {
+"en": "Course",
+"es": "Curso",
+"pt": "Curso",
+"de": "Kurs",
+"it": "Corso"
+},
+"Réessayez dans un instant.": {
+"en": "Please try again in a moment.",
+"es": "Inténtalo de nuevo en un momento.",
+"pt": "Tente novamente em instantes.",
+"de": "Bitte versuch es gleich noch einmal.",
+"it": "Riprova tra un attimo."
+},
+"Trop de demandes. Réessayez plus tard.": {
+"en": "Too many requests. Please try again later.",
+"es": "Demasiadas solicitudes. Inténtalo más tarde.",
+"pt": "Muitas solicitações. Tente mais tarde.",
+"de": "Zu viele Anfragen. Bitte später erneut versuchen.",
+"it": "Troppe richieste. Riprova più tardi."
+},
+"E-mail invalide": {
+"en": "Invalid email",
+"es": "E-mail no válido",
+"pt": "E-mail inválido",
+"de": "Ungültige E-Mail",
+"it": "E-mail non valida"
+},
+"Nutrition : scanner, plan de repas, recettes, courses, cours nutrition et coach. Entraînement : programmes salle et maison avec suivi des charges et cours musculation. Kit complet : tout NutriPilot, Académie incluse, au meilleur prix.": {
+"en": "Nutrition: scanner, meal plan, recipes, shopping list, nutrition course and coach. Training: gym and home programmes with load tracking and a strength course. Complete kit: all of NutriPilot, Academy included, at the best price.",
+"es": "Nutrición: escáner, plan de comidas, recetas, lista de la compra, curso de nutrición y coach. Entrenamiento: programas en gimnasio y en casa con registro de cargas y curso de musculación. Kit completo: todo NutriPilot, Academia incluida, al mejor precio.",
+"pt": "Nutrição: scanner, plano alimentar, receitas, lista de compras, curso de nutrição e coach. Treino: programas na academia e em casa com registro de cargas e curso de musculação. Kit completo: todo o NutriPilot, Academia incluída, pelo melhor preço.",
+"de": "Ernährung: Scanner, Ernährungsplan, Rezepte, Einkaufsliste, Ernährungskurs und Coach. Training: Programme fürs Gym und Zuhause mit Gewichtsprotokoll und Krafttraining-Kurs. Komplett-Paket: ganz NutriPilot inklusive Akademie zum besten Preis.",
+"it": "Nutrizione: scanner, piano pasti, ricette, lista della spesa, corso di nutrizione e coach. Allenamento: programmi in palestra e a casa con registro dei carichi e corso di muscolazione. Kit completo: tutto NutriPilot, Accademia inclusa, al miglior prezzo."
 }
 };

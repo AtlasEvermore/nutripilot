@@ -253,3 +253,23 @@ input[type=number]{-moz-appearance:textfield}
 .welcome:not(.light) .logo-mark:before{background:var(--ink)}
 .support-fab{width:46px;height:46px;background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:0 10px 26px rgba(10,27,17,.18)}
 .support-fab .ico{width:22px;height:22px}
+
+/* ===== v8.1 · academy, combo, waitlist ===== */
+.academy-hero{display:grid;gap:8px;margin:10px 0 14px}
+.academy-hero small{color:var(--lime);font-weight:950;letter-spacing:.08em;font-size:11px}
+.academy-hero h2{margin:0;font-size:22px;letter-spacing:-.03em}
+.academy-hero span{font-size:12px;color:#c9d8cc}
+.academy-hero .progress{background:rgba(255,255,255,.15)}
+.course-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:14px;margin-bottom:12px;display:grid;gap:10px}
+.course-head{display:flex;justify-content:space-between;gap:10px}
+.course-head h3{margin:8px 0 4px;font-size:18px;letter-spacing:-.02em}
+.course-head p{margin:0;color:var(--muted);font-size:13px;line-height:1.4}
+.course-count{font-weight:950;font-size:13px;color:var(--muted);white-space:nowrap}
+.course-card .guide-card{border-color:#eef1ea}
+.guide-card.locked{opacity:.72}
+.guide-card.locked .guide-check{background:#eef1ea}
+.plan-option{flex-wrap:wrap}
+.plan-combo{flex-basis:100%;margin:6px 0 0 34px;font-size:12px;font-weight:900;color:#2f7a22}
+.waitlist-box{background:var(--paper);display:grid;gap:8px;padding-top:14px}
+.waitlist-box b{font-size:16px}
+.waitlist-box p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}

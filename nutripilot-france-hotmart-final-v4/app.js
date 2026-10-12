@@ -931,7 +931,7 @@ function tourScreen() {
 const FAQ = [
   ['Comment fonctionne l’essai gratuit ?', 'Dans les applications iPhone et Android, vous profitez de 3 jours gratuits avec un accès complet à votre formule. Aucun paiement pendant l’essai. L’abonnement démarre ensuite, sauf si vous annulez au moins 24 h avant la fin. Nous vous envoyons un rappel avant.'],
   ['Comment annuler mon abonnement ?', 'iPhone : Réglages › votre nom › Abonnements › NutriPilot. Android : Play Store › votre profil › Paiements et abonnements › Abonnements. Supprimer l’application n’annule pas l’abonnement.'],
-  ['Quelle différence entre les formules ?', 'Nutrition : scanner, plan de repas, recettes, courses, guides et coach. Entraînement : programmes salle et maison avec suivi des charges. Complète : tout NutriPilot, au meilleur prix.'],
+  ['Quelle différence entre les formules ?', 'Nutrition : scanner, plan de repas, recettes, courses, cours nutrition et coach. Entraînement : programmes salle et maison avec suivi des charges et cours musculation. Kit complet : tout NutriPilot, Académie incluse, au meilleur prix.'],
   ['Le scanner est-il précis ?', 'Une photo ne pèse pas un aliment : NutriPilot affiche des estimations. Vous pouvez corriger chaque quantité avant d’enregistrer. Le code-barres et l’étiquette donnent des valeurs plus précises.'],
   ['Puis-je utiliser NutriPilot avec un problème de santé ?', 'NutriPilot ne remplace pas un médecin ou un diététicien. En cas de grossesse, de maladie, de traitement ou de trouble du comportement alimentaire, demandez d’abord l’avis d’un professionnel. L’application est réservée aux adultes.'],
   ['Comment me faire rembourser ?', 'Les achats faits dans l’App Store ou Google Play sont remboursés par Apple ou Google, selon leurs conditions. Pour toute autre question de paiement, écrivez-nous.'],
@@ -1184,19 +1184,19 @@ const PROGRAM_FEATURES = [
 // Web: only plans with a Hotmart `offer` can be bought (legacy).
 const DEFAULT_PLANS = [
   {
-    tier: 'complete', label: 'Complet', sub: 'Nutrition + Entraînement', badge: 'Le plus choisi',
-    features: ['Tout le programme Nutrition', 'Tous les programmes d’entraînement', 'Coach NutriPilot au quotidien'],
-    monthly: { price: 19.99, storeId: 'np_complete_monthly' }, annual: { price: 79.99, storeId: 'np_complete_annual' },
+    tier: 'complete', label: 'Kit complet', sub: 'Nutrition + Entraînement + Académie', badge: 'Meilleure offre',
+    features: ['Tout le programme Nutrition', 'Tous les programmes d’entraînement', 'Toute l’Académie : cours et guides', 'Coach NutriPilot au quotidien'],
+    monthly: { price: 34.99, storeId: 'np_complete_monthly' }, annual: { price: 149.99, storeId: 'np_complete_annual' },
   },
   {
     tier: 'nutrition', label: 'Nutrition', sub: 'Mincir et mieux manger',
-    features: ['Scanner de repas', 'Plan de repas, recettes et courses', 'Guides (ménopause incluse) et coach'],
-    monthly: { price: 14.99, storeId: 'np_nutrition_monthly' }, annual: { price: 59.99, storeId: 'np_nutrition_annual' },
+    features: ['Scanner de repas', 'Plan de repas, recettes et courses', 'Cours nutrition et guides ménopause', 'Coach NutriPilot au quotidien'],
+    monthly: { price: 24.99, storeId: 'np_nutrition_monthly' }, annual: { price: 99.99, storeId: 'np_nutrition_annual' },
   },
   {
     tier: 'training', label: 'Entraînement', sub: 'Salle ou maison',
-    features: ['Programmes salle et maison', 'Exercices détaillés et suivi des charges', 'Repères caloriques et protéines'],
-    monthly: { price: 12.99, storeId: 'np_training_monthly' }, annual: { price: 49.99, storeId: 'np_training_annual' },
+    features: ['Programmes salle et maison', 'Exercices détaillés et suivi des charges', 'Cours musculation', 'Repères caloriques et protéines'],
+    monthly: { price: 19.99, storeId: 'np_training_monthly' }, annual: { price: 79.99, storeId: 'np_training_annual' },
   },
 ];
 let selectedTier = '';
@@ -1262,6 +1262,32 @@ function euro(value) {
   return new Intl.NumberFormat(locale(), { style: 'currency', currency: 'EUR' }).format(Number(value));
 }
 
+function comboSaving(plans, period) {
+  const complete = plans.find((x) => x.tier === 'complete');
+  const separate = plans.filter((x) => x.tier !== 'complete').reduce((sum, x) => sum + x[period].price, 0);
+  return complete && separate ? Math.round((1 - complete[period].price / separate) * 100) : 0;
+}
+
+function waitlistMode(option) {
+  return !Billing.native() && !option?.offer;
+}
+
+async function joinWaitlist() {
+  const email = $('#waitlist-email')?.value.trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast('Saisissez un e-mail valide.');
+  try {
+    const response = await fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, lang: lang(), plan: `${selectedTier || defaultTier()}_${selectedPeriod}`, track: state.profile?.track || '', utms: state.utms || {} }) });
+    if (!response.ok) throw new Error((await response.json()).error);
+    state.waitlistEmail = email;
+    saveState(false);
+    track('Lead', { plan: `${selectedTier || defaultTier()}_${selectedPeriod}` });
+    toast('C’est noté ! Nous vous préviendrons au lancement ✓');
+    render();
+  } catch (error) {
+    toast(error?.message || 'Réessayez dans un instant.');
+  }
+}
+
 function defaultTier() {
   return 'complete';
 }
@@ -1301,6 +1327,7 @@ function paywall() {
             <span class="plan-main"><b>${esc(L(x.label))}</b><small>${esc(L(x.sub))}</small>
               <span class="plan-feats">${x.features.map((f) => `<i>✓ ${esc(L(f))}</i>`).join('')}</span></span>
             <span class="plan-per"><b>${euro(perMonth)}</b><small>${L('/ mois')}</small>${saving > 0 ? `<em>−${saving} %</em>` : ''}</span>
+            ${x.tier === 'complete' ? `<span class="plan-combo">${L('Économisez {n} % par rapport à Nutrition + Entraînement séparés', { n: comboSaving(plans, selectedPeriod) })}</span>` : ''}
           </button>`;
         }).join('')}
       </div>
@@ -1309,10 +1336,15 @@ function paywall() {
         <div><span class="tl-dot">${icon('bell')}</span><p><b>${L('Jour {n}', { n: Math.max(1, trial - 1) })}</b>${L('Nous vous envoyons un rappel avant la fin de l’essai.')}</p></div>
         <div><span class="tl-dot">${icon('star')}</span><p><b>${L('Jour {n}', { n: trial })}</b>${L('Début de l’abonnement, sauf si vous annulez avant.')}</p></div>
       </div>` : ''}
-      <div class="sticky-cta">
+      ${waitlistMode(option) ? `<div class="sticky-cta waitlist-box">
+        <b>${L('Bientôt sur iPhone et Android')}</b>
+        <p>${L('Les abonnements ouvrent avec le lancement des applications. Laissez votre e-mail : vous serez prévenu(e) en premier, avec l’essai gratuit de 3 jours.')}</p>
+        ${state.waitlistEmail ? `<div class="warn success">✓ ${L('Vous êtes sur la liste : {email}', { email: esc(state.waitlistEmail) })}</div>` : `<div class="chat-input"><input id="waitlist-email" type="email" autocomplete="email" placeholder="${L('vous@exemple.fr')}"><button class="btn btn-lime" data-waitlist>${L('Me prévenir')}</button></div>`}
+        <p class="pw-terms">${L('Formule choisie : {plan} · {price} / {period}. Un seul e-mail au lancement, désinscription en un clic.', { plan: esc(L(plan.label)), price, period: periodLabel })}</p>
+      </div>` : `<div class="sticky-cta">
         <button class="btn btn-lime btn-wide btn-xl" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
         <p class="pw-terms">${terms}</p>
-      </div>
+      </div>`}
       <div class="pw-soon">${icon('coach')}<span><b>${L('Bientôt dans votre abonnement')}</b>${L('Des nutritionnistes et coachs diplômés pour vous accompagner.')}</span></div>
       <div class="pw-links">
         ${Billing.native() ? `<button class="link-btn" data-restore>${L('Restaurer mes achats')}</button>` : `<button class="link-btn" data-go="access">${L('Déjà client ? Se connecter')}</button>`}
@@ -1515,7 +1547,7 @@ function program() {
 // ---- Guides ----------------------------------------------------------------
 const GUIDE_COLLECTIONS = [
   {
-    id: 'menopause',
+    id: 'menopause', tier: 'nutrition', level: 'Cours',
     title: 'Ménopause & minceur',
     sub: 'Comprendre ce qui change après 40 ans et adapter votre assiette.',
     guides: [
@@ -1572,7 +1604,7 @@ const GUIDE_COLLECTIONS = [
     ],
   },
   {
-    id: 'basics',
+    id: 'basics', tier: 'all', level: 'Cours',
     title: 'Bien démarrer',
     sub: 'Les réflexes qui font la différence la première semaine.',
     guides: [
@@ -1608,30 +1640,176 @@ const GUIDE_COLLECTIONS = [
       },
     ],
   },
+  {
+    id: 'weightloss', tier: 'nutrition', level: 'Cours',
+    title: 'Les fondamentaux de la perte de poids',
+    sub: 'Comprendre ce qui fait vraiment bouger la balance, sans régime extrême.',
+    guides: [
+      {
+        id: 'wl-deficit', title: 'Le déficit calorique, simplement', time: '4 min',
+        intro: 'On perd du poids quand on dépense un peu plus d’énergie que ce que l’on mange, de façon régulière. Le secret n’est pas de manger le moins possible, mais un peu moins, longtemps.',
+        points: [
+          'Un déficit modéré se tient sur la durée, protège vos muscles et votre énergie, et limite l’effet yo-yo.',
+          'Votre repère calorique NutriPilot est une estimation de départ : il s’ajuste avec votre poids réel.',
+          'Une journée au-dessus ne compte pas : c’est la moyenne de la semaine qui fait le résultat.',
+        ],
+        action: 'Regardez votre moyenne des 7 derniers jours dans Progrès plutôt que le chiffre d’une seule journée.',
+      },
+      {
+        id: 'wl-protein', title: 'Les protéines, votre alliée satiété', time: '3 min',
+        intro: 'Les protéines calent plus longtemps que la plupart des aliments et aident à garder vos muscles pendant la perte de poids.',
+        points: [
+          'Visez une source de protéines à chaque repas : œufs, poisson, volaille, viande maigre, laitages, légumineuses, tofu.',
+          'Un petit-déjeuner protéiné réduit souvent les fringales de fin de matinée.',
+          'Votre objectif de protéines est indiqué chaque jour sur l’écran Aujourd’hui.',
+        ],
+        action: 'Ajoutez une portion de protéines à votre prochain repas et scannez-le.',
+      },
+      {
+        id: 'wl-volume', title: 'Fibres et volume : manger plus, pour moins de calories', time: '3 min',
+        intro: 'Les légumes, les fruits et les céréales complètes apportent du volume et des fibres pour peu de calories.',
+        points: [
+          'Remplir la moitié de l’assiette de légumes permet de manger à sa faim tout en réduisant les calories.',
+          'Les fibres ralentissent la digestion et aident à rester rassasié(e).',
+          'Une soupe ou une salade en entrée diminue souvent la quantité mangée ensuite.',
+        ],
+        action: 'Ajoutez une portion de légumes à votre déjeuner ou à votre dîner aujourd’hui.',
+      },
+      {
+        id: 'wl-label', title: 'Lire une étiquette en 30 secondes', time: '3 min',
+        intro: 'L’étiquette dit tout, à condition de regarder les bonnes lignes.',
+        points: [
+          'Regardez d’abord la portion réelle que vous allez manger, pas seulement les valeurs pour 100 g.',
+          'Comparez calories, protéines, sucres et sel entre deux produits similaires.',
+          'Une liste d’ingrédients courte et compréhensible est souvent bon signe.',
+        ],
+        action: 'Scannez le code-barres d’un produit de votre placard et comparez-le avec une alternative.',
+      },
+      {
+        id: 'wl-plateau', title: 'Plateau : quand la balance ne bouge plus', time: '4 min',
+        intro: 'Un plateau de quelques jours est normal : l’eau, le sel, le sommeil ou le cycle font varier le poids.',
+        points: [
+          'Attendez 2 à 3 semaines de tendance stable avant de conclure à un vrai plateau.',
+          'Vérifiez les portions : avec le temps, elles ont tendance à grandir sans qu’on s’en rende compte.',
+          'Ajoutez du mouvement au quotidien (marche, escaliers) avant de réduire encore les calories.',
+        ],
+        action: 'Mettez à jour votre poids dans Progrès, puis utilisez « Actualiser mes repères » si votre poids a changé.',
+      },
+    ],
+  },
+  {
+    id: 'strength', tier: 'training', level: 'Cours',
+    title: 'Musculation : bien débuter',
+    sub: 'Les règles simples pour progresser en salle ou à la maison, sans se blesser.',
+    guides: [
+      {
+        id: 'st-progress', title: 'Comment on progresse : la surcharge progressive', time: '3 min',
+        intro: 'Le muscle progresse quand on lui demande un peu plus, petit à petit : une répétition de plus, un peu plus de charge ou une meilleure exécution.',
+        points: [
+          'Notez vos charges à chaque séance : NutriPilot vous les rappelle la fois suivante.',
+          'Quand vous atteignez le haut de la fourchette de répétitions sur toutes les séries, augmentez légèrement la charge.',
+          'La régularité sur plusieurs semaines compte plus qu’une séance parfaite.',
+        ],
+        action: 'Pendant votre prochaine séance, enregistrez la charge de chaque exercice.',
+      },
+      {
+        id: 'st-warmup', title: 'Bien s’échauffer en 7 minutes', time: '2 min',
+        intro: 'Un bon échauffement prépare les articulations et améliore la qualité des premières séries.',
+        points: [
+          '3 à 5 minutes de cardio léger : vélo, rameur, marche rapide ou corde à sauter.',
+          'Quelques mouvements articulaires : épaules, hanches, chevilles.',
+          '1 ou 2 séries légères du premier exercice avant les séries de travail.',
+        ],
+        action: 'Faites cet échauffement avant votre prochaine séance.',
+      },
+      {
+        id: 'st-load', title: 'Choisir la bonne charge', time: '3 min',
+        intro: 'La bonne charge est celle qui vous laisse 1 à 2 répétitions « en réserve » à la fin de la série, avec une technique propre.',
+        points: [
+          'Si la technique se dégrade, la charge est trop lourde.',
+          'Si vous pourriez faire 5 répétitions de plus, augmentez la charge.',
+          'Commencez léger la première semaine pour apprendre les mouvements.',
+        ],
+        action: 'Ouvrez une séance et lisez les conseils d’exécution de chaque exercice.',
+      },
+      {
+        id: 'st-recovery', title: 'Récupération, sommeil et alimentation', time: '3 min',
+        intro: 'Le muscle se construit pendant la récupération, pas pendant la séance.',
+        points: [
+          'Gardez au moins un jour de repos entre deux séances qui travaillent les mêmes muscles.',
+          'Le sommeil compte autant que l’entraînement pour progresser.',
+          'Des protéines réparties dans la journée soutiennent la récupération.',
+        ],
+        action: 'Vérifiez que votre objectif de protéines est atteint les jours d’entraînement.',
+      },
+      {
+        id: 'st-safety', title: 'La technique avant la charge', time: '3 min',
+        intro: 'La plupart des blessures viennent d’une charge trop lourde ou d’un mouvement mal maîtrisé.',
+        points: [
+          'Contrôlez la descente de chaque répétition, sans à-coups.',
+          'Gardez le dos neutre sur les squats, soulevés de terre et rowings.',
+          'Une douleur vive ou articulaire est un signal d’arrêt : demandez un avis professionnel si elle persiste.',
+        ],
+        action: 'Filmez une série avec votre téléphone pour vérifier votre technique.',
+      },
+    ],
+  },
 ];
 
 function allGuides() {
-  return GUIDE_COLLECTIONS.flatMap((c) => c.guides.map((g) => ({ ...g, collection: c.id })));
+  return GUIDE_COLLECTIONS.flatMap((c) => c.guides.map((g, index) => ({ ...g, collection: c.id, index, total: c.guides.length, tier: c.tier })));
+}
+
+function openLesson(id) {
+  const guide = allGuides().find((g) => g.id === id);
+  if (!guide) return;
+  const access = lessonAccess(guide);
+  modal = null;
+  if (access === 'paywall') { track('PaywallFromLesson', { lesson: guide.id }); return nav('paywall'); }
+  if (access === 'upgrade') { selectedTier = 'complete'; return nav('upgrade'); }
+  state.guidesRead = [...new Set([...(state.guidesRead || []), guide.id])];
+  saveState();
+  render();
+  modal = { type: 'guide', guide };
+  return renderModal();
+}
+
+function lessonAccess(guide) {
+  if (!state.premium) return guide.index === 0 ? 'free' : 'paywall';
+  if (guide.tier === 'all' || hasFeature(guide.tier)) return 'open';
+  return 'upgrade';
 }
 
 function programTabs(active) {
-  const tabs = [['program', 'Mon plan'], ['recipes', 'Recettes'], ['shopping', 'Courses'], ['guides', 'Guides']];
+  const tabs = [['program', 'Mon plan'], ['recipes', 'Recettes'], ['shopping', 'Courses'], ['guides', 'Académie']];
   return `<div class="segmented" role="tablist">${tabs.map(([r, label]) => `<button role="tab" aria-selected="${r === active}" class="${r === active ? 'active' : ''}" data-go="${r}">${L(label)}</button>`).join('')}</div>`;
 }
 
 function guidesScreen() {
   const p = state.profile || {};
-  const meno = p.menopause && p.menopause !== 'no';
-  const order = meno ? GUIDE_COLLECTIONS : [...GUIDE_COLLECTIONS].reverse();
   const read = new Set(state.guidesRead || []);
+  const priority = { menopause: p.track === 'menopause' || (p.menopause && p.menopause !== 'no') ? 0 : 3, weightloss: ['lose', 'menopause', 'eat'].includes(p.track) ? 1 : 2, strength: p.track === 'muscle' ? 0 : 2, basics: 1 };
+  const courses = [...GUIDE_COLLECTIONS].sort((a, b) => (priority[a.id] ?? 5) - (priority[b.id] ?? 5));
+  const lessons = allGuides();
+  const done = lessons.filter((g) => read.has(g.id)).length;
   return `<div class="mobile-app">
     ${appHeader('Nutrition')}
     <div class="screen">
       ${programTabs('guides')}
-      ${order.map((c) => `
-        <div class="section-label"><h3>${esc(L(c.title))}</h3><span class="fine">${L('{n}/{total} lus', { n: c.guides.filter((g) => read.has(g.id)).length, total: c.guides.length })}</span></div>
-        <p class="screen-sub guide-sub">${esc(L(c.sub))}</p>
-        <div class="guide-list">${c.guides.map((g) => `<button class="guide-card ${read.has(g.id) ? 'read' : ''}" data-guide="${esc(g.id)}"><span class="guide-check">${read.has(g.id) ? icon('check') : ''}</span><span><b>${esc(L(g.title))}</b><small>${L('{time} de lecture', { time: g.time })}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>`).join('')}
+      <div class="today-card academy-hero"><small>${L('ACADÉMIE NUTRIPILOT')}</small><h2>${L('{n} cours · {total} leçons courtes', { n: GUIDE_COLLECTIONS.length, total: lessons.length })}</h2><div class="progress"><i style="width:${Math.round(done / Math.max(1, lessons.length) * 100)}%"></i></div><span>${L('{n}/{total} leçons terminées', { n: done, total: lessons.length })}</span></div>
+      ${courses.map((c) => {
+        const cDone = c.guides.filter((g) => read.has(g.id)).length;
+        return `
+        <div class="course-card">
+          <div class="course-head"><div><span class="tag">${esc(L(c.level || 'Cours'))}</span><h3>${esc(L(c.title))}</h3><p>${esc(L(c.sub))}</p></div><span class="course-count">${cDone}/${c.guides.length}</span></div>
+          <div class="progress"><i style="width:${Math.round(cDone / c.guides.length * 100)}%"></i></div>
+          <div class="guide-list">${c.guides.map((g, index) => {
+            const access = lessonAccess({ ...g, index, tier: c.tier });
+            const locked = access === 'paywall' || access === 'upgrade';
+            return `<button class="guide-card ${read.has(g.id) ? 'read' : ''} ${locked ? 'locked' : ''}" data-guide="${esc(g.id)}"><span class="guide-check">${read.has(g.id) ? icon('check') : locked ? icon('lock') : index + 1}</span><span><b>${esc(L(g.title))}</b><small>${L('{time} de lecture', { time: g.time })}${access === 'free' ? ` · ${L('Leçon gratuite')}` : ''}</small></span><span class="guide-arrow">→</span></button>`;
+          }).join('')}</div>
+        </div>`;
+      }).join('')}
       <div class="fine center-fine">${L('Contenus d’information générale. Ils ne remplacent pas l’avis d’un médecin.')}</div>
     </div>
     ${bottom('program')}
@@ -1639,11 +1817,14 @@ function guidesScreen() {
 }
 
 function guideSheet(guide) {
-  return `<div class="sheet-head"><div><span class="tag">${L('GUIDE')} · ${esc(guide.time)}</span><h2>${esc(L(guide.title))}</h2></div><button class="icon-btn" data-close>×</button></div>
+  return `<div class="sheet-head"><div><span class="tag">${L('Leçon {n}/{total}', { n: (guide.index ?? 0) + 1, total: guide.total || 1 })} · ${esc(guide.time)}</span><h2>${esc(L(guide.title))}</h2></div><button class="icon-btn" data-close>×</button></div>
     <p class="guide-intro">${esc(L(guide.intro))}</p>
     <ul class="guide-points">${guide.points.map((x) => `<li>${esc(L(x))}</li>`).join('')}</ul>
     <div class="warn success"><b>${L('À faire aujourd’hui')}</b><br>${esc(L(guide.action))}</div>
-    <button class="btn btn-primary btn-wide" data-close>${L('J’ai compris')}</button>`;
+    ${(() => {
+      const next = allGuides().find((g) => g.collection === guide.collection && g.index === guide.index + 1);
+      return next ? `<button class="btn btn-primary btn-wide" data-guide="${esc(next.id)}">${L('Leçon suivante : {title} →', { title: esc(L(next.title)) })}</button>` : `<button class="btn btn-primary btn-wide" data-close>${L('J’ai compris')}</button>`;
+    })()}`;
 }
 
 function shoppingScreen() {
@@ -1779,6 +1960,7 @@ function trainingScreen() {
       </div>
       <div class="section-label"><h3>${L('Séances du programme')}</h3></div>
       <div class="guide-list">${program.sessions.map((s) => `<button class="guide-card" data-session="${esc(s.id)}"><span class="guide-check">${esc(s.id)}</span><span><b>${esc(L(s.name))}</b><small>${esc(L(s.focus))} · ${L('{n} exercices', { n: s.ex.length })}</small></span><span class="guide-arrow">→</span></button>`).join('')}</div>
+      <button class="guide-card hub-link" data-guide="st-progress"><span class="guide-check">${icon('star')}</span><span><b>${L('Cours : Musculation, bien débuter')}</b><small>${L('5 leçons courtes pour progresser sans se blesser')}</small></span><span class="guide-arrow">→</span></button>
       <div class="section-label"><h3>${L('Changer de programme')}</h3></div>
       <div class="program-switch">${WORKOUT_PROGRAMS.map((x) => `<button class="mini-choice ${x.id === program.id ? 'selected' : ''}" data-workout-program="${esc(x.id)}">${esc(L(x.name))}</button>`).join('')}</div>
       <p class="screen-sub">${esc(L(program.desc))}</p>
@@ -2595,15 +2777,8 @@ function bind() {
       return;
     }
     if (button.dataset.restore !== undefined) return Billing.restore();
-    if (button.dataset.guide) {
-      const guide = allGuides().find((g) => g.id === button.dataset.guide);
-      if (!guide) return;
-      state.guidesRead = [...new Set([...(state.guidesRead || []), guide.id])];
-      saveState();
-      render();
-      modal = { type: 'guide', guide };
-      return renderModal();
-    }
+    if (button.dataset.waitlist !== undefined) return joinWaitlist();
+    if (button.dataset.guide) return openLesson(button.dataset.guide);
     if (button.dataset.session) {
       modal = { type: 'session', sessionId: button.dataset.session };
       return renderModal();
@@ -2827,6 +3002,7 @@ function bindModal(root) {
       root.remove();
       return;
     }
+    if (button.dataset.guide) { root.remove(); return openLesson(button.dataset.guide); }
     if (button.dataset.supportSend !== undefined) return sendSupport($('#support-input', root)?.value);
     if (button.dataset.supportQuick) return sendSupport(button.dataset.supportQuick);
     if (button.dataset.finishSession && !state.premium) {
