@@ -1410,6 +1410,9 @@ const server = http.createServer(async (req, res) => {
         supportEmail: SUPPORT_EMAIL,
         manageSubscriptionUrl: process.env.HOTMART_MANAGE_SUBSCRIPTION_URL || 'https://consumer.hotmart.com/',
         salesUrl: process.env.SALES_URL || 'https://atlasevermore.com/#tarifs',
+        appStoreUrl: process.env.APP_STORE_URL || '',
+        playStoreUrl: process.env.PLAY_STORE_URL || '',
+        trialDays: Number(process.env.TRIAL_DAYS || 3),
         locked: true,
         legal: {
           company: process.env.LEGAL_COMPANY_NAME || '',

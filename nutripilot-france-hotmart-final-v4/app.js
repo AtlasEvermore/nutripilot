@@ -741,7 +741,8 @@ function L(fr, vars, record = true) {
     const own = dictLang === code ? DICT[fr] : '';
     const hit = own || DICT_EN[fr];
     if (hit) out = hit;
-    if (!own && record) missingKeys.add(fr);
+    else if (/ \+ | · /.test(fr)) out = fr.split(/( \+ | · )/).map((part) => (/^( \+ | · )$/.test(part) ? part : L(part, null, record))).join('');
+    if (!own && !hit && record && !/ \+ | · /.test(fr)) missingKeys.add(fr);
   }
   if (vars) out = String(out).replace(/\{(\w+)\}/g, (match, key) => (vars[key] ?? match));
   if (code === 'ar' && out) out = String(out).replace(/→/g, '←');
@@ -770,7 +771,7 @@ window.__npCollect = () => {
   WORLD_RECIPES.forEach((r) => { [r.name, r.category, r.difficulty, ...r.steps].forEach(touch); });
   Object.keys(INGREDIENTS).forEach(touch); CUISINES.forEach((c) => touch(c[1]));
   Object.values(EXERCISES).forEach((e) => [e.name, e.muscle, ...(e.cues || [])].forEach(touch)); Object.values(EQUIPMENT).forEach(touch);
-  MEASURES.forEach((m) => touch(m[1])); BUNDLES.forEach((b) => [b.name, b.sub, b.tagline, b.badge].forEach(touch)); TQ.forEach(([, label, opts]) => { touch(label); opts.forEach((o) => touch(o[1])); }); PROGRAM_GROUPS.forEach((g) => touch(g[1])); SUPP_PRESETS.forEach((x) => { touch(x.name); touch(x.serving); x.ings.forEach((i) => touch(i[0])); }); ['Calories', 'Protéines', 'Glucides', 'Lipides', 'Collation'].forEach(touch); DEFAULT_PLANS.forEach((x) => [x.label, x.sub, x.tagline, x.badge].forEach(touch));
+  MEASURES.forEach((m) => touch(m[1])); BUNDLES.forEach((b) => [b.name, b.sub, b.tagline, b.badge].forEach(touch)); TQ.forEach(([, label, opts]) => { touch(label); opts.forEach((o) => touch(o[1])); }); PROGRAM_GROUPS.forEach((g) => touch(g[1])); SUPP_PRESETS.forEach((x) => { touch(x.name); touch(x.serving); x.ings.forEach((i) => touch(i[0])); }); SLEEP_FACTORS.forEach((x) => touch(x[1])); SOUNDS.forEach((x) => touch(x[1])); SLEEP_NIGHTS.forEach(([t, pts, a]) => { touch(t); pts.forEach(touch); touch(a); }); SLEEP_LESSONS.forEach(([t, x]) => { touch(t); touch(x); }); DAY_FOCUS.forEach((f) => touch(f[1])); FREE_MODULES.forEach((m) => touch(m.name)); ['Notez votre nuit chaque matin : en 3 jours, vous verrez vos premières tendances.', 'Vos nuits sont courtes : avancez votre coucher de 15 minutes cette semaine.', 'Journée chargée : 3 minutes de respiration avant le dîner aident à décrocher.', 'Belle régularité : gardez la même heure de lever, même le week-end.', 'Mon planning', 'Séance du jour', 'Débutant', 'Intermédiaire', 'Confirmé', 'Sur mesure'].forEach(touch); ['Calories', 'Protéines', 'Glucides', 'Lipides', 'Collation'].forEach(touch); DEFAULT_PLANS.forEach((x) => [x.label, x.sub, x.tagline, x.badge].forEach(touch));
   badgeList().forEach((b) => touch(b[1])); REPS_CHOICES.forEach(touch);
   ['Enregistrer un repas', 'Atteindre mon objectif d’eau', 'Atteindre 80 % de mes protéines', 'Faire ma séance du jour', 'Remplir mon journal ménopause', 'Faire mon check-in', 'Insuffisance pondérale', 'Corpulence normale', 'Surpoids', 'Obésité', 'Formules', 'Nos formules', 'Cours nutrition', 'Monter ma grille', 'Générateur intelligent', 'Importer', 'Choisissez vos jours et vos exercices, un par un.', 'Vos préférences, NutriPilot construit les séances.', 'Le programme de votre coach ou votre plan alimentaire.', 'Tout matériel', 'À la maison', 'Recettes du monde', 'Exercices animés', 'Espace Ménopause 40+', 'Cours', '{n} recettes', '{n} mouvements', 'Journal, programme, séances', 'Première leçon offerte', 'Repas', 'Tout', 'Adaptées à mon profil', 'Mes ajouts', 'Passer à cette formule', 'Choisir', 'Retour à l’accueil', 'Continuer à explorer', 'Mettre à jour ma grille', 'Enregistrer ma grille', 'Sur mesure', 'Ma grille', 'Séance {n}', 'Votre grille : {n} séances par semaine.', 'Monter', 'Retirer', 'Jour {n}'].forEach(touch);
   TRAIN_FOCUS.forEach((x) => touch(x[1])); EX_GROUPS.forEach(touch); BUILDER_GROUPS.forEach(touch);
@@ -1455,7 +1456,7 @@ function basicsScreen() {
 let savingTimer = null;
 let savingIndex = 0;
 function savingScreen() {
-  const features = t('features');
+  const features = t('features').slice(0, 9); // last item announced a future service
   return `<div class="welcome saving">
     <div class="welcome-inner">
       ${logo()}
@@ -1474,7 +1475,7 @@ function startSaving() {
   savingTimer = setInterval(() => {
     savingIndex += 1;
     if (route !== 'saving') { clearInterval(savingTimer); savingTimer = null; return; }
-    if (savingIndex > t('features').length) {
+    if (savingIndex > t('features').slice(0, 9).length) {
       clearInterval(savingTimer); savingTimer = null;
       state.basicsDone = true;
       saveState(false);
@@ -1497,7 +1498,7 @@ const TOUR = [
   ['program', 'Plan de repas 7 jours', 'Un plan adapté à votre objectif, vos goûts, vos allergies, votre budget et votre temps de cuisine, avec la liste de courses rangée par rayon.', 'program'],
   ['star', 'Que manger ensuite ?', 'Vos calories et protéines restantes deviennent des idées de repas concrètes. Mode frigo : dites ce que vous avez. Mode restaurant : on vous aide à choisir.', 'planner'],
   ['dumbbell', 'Entraînement', 'Programmes en salle (développé couché, squat, presse, hip thrust…) ou à la maison, avec séries, répétitions, repos, conseils d’exécution et suivi des charges.', 'training'],
-  ['coach', 'Coach', 'Posez vos questions à tout moment : il connaît vos repères et votre semaine. Bientôt : des nutritionnistes et coachs diplômés.', 'coach'],
+  ['coach', 'Coach', 'Posez vos questions à tout moment : il connaît vos repères et votre semaine.', 'coach'],
   ['progress', 'Progrès', 'Poids, tendance, mensurations, régularité, badges et bilan hebdomadaire avec 3 priorités pour la semaine suivante.', 'progress'],
   ['bell', 'Guides', 'Ménopause, premiers pas, restaurant, grignotage : des fiches courtes avec une action à faire le jour même.', 'guides'],
 ];
@@ -1810,7 +1811,7 @@ const MODULES = [
     features: ['Plan de repas 7 jours personnalisé', 'Journal alimentaire du jour et de la semaine', 'Objectifs ajustables : calories, protéines, glucides, lipides', 'Liste de courses automatique', '« Que manger ensuite ? », restaurant et voyages', 'Cours nutrition'] },
   { id: 'recipes', name: 'Recettes', sub: 'Cuisine du monde, portions et idées avec l’IA', icon: 'book', route: 'recipes', tone: 'm-rec',
     features: ['Recettes de {n} pays avec grammes et calories', 'Filtres par objectif, temps, ingrédient et régime', 'Portions ajustées au nombre de personnes', 'Favoris et recettes déjà préparées', 'Recettes créées par l’IA avec ce que vous avez'] },
-  { id: 'scanner', name: 'Scanner', sub: 'Photo, code-barres, étiquette', icon: 'scan', route: 'scanner', tone: 'm-scan',
+  { id: 'scanner', name: 'Scanner', sub: 'Photo, code-barres, étiquette', icon: 'scan', route: 'scanner', tone: 'm-scan', free: true,
     features: ['Scanner de repas par photo', 'Code-barres et étiquettes nutritionnelles', 'Allergènes et additifs déclarés mis en évidence', 'Comparaison de produits', 'Historique des scans et ajout au journal'] },
   { id: 'training', name: 'Entraînement', sub: 'Salle, maison et extérieur', icon: 'dumbbell', route: 'training', tone: 'm-train',
     features: ['Programmes débutant à confirmé', 'Grille d’entraînement sur mesure', 'Plus de 100 exercices animés', 'Cardio, HIIT et faible impact', 'Chronomètre de repos, charges et progression', 'Historique et statistiques'] },
@@ -1818,11 +1819,11 @@ const MODULES = [
     features: ['Journal des symptômes et facteurs', 'Graphiques d’évolution', 'Programme guidé de 8 semaines', 'Séances force, os et équilibre', 'Rapport pour votre médecin'] },
   { id: 'nutrients', name: 'Vitamines & nutriments', sub: 'Rôles, sources et repères', icon: 'leaf', route: 'nutrients', tone: 'm-vit',
     features: ['Guide des vitamines et minéraux', 'Aliments les plus riches pour chaque nutriment', 'Lacunes possibles dans votre journal', 'Repères et précautions'] },
-  { id: 'supplements', name: 'Compléments', sub: 'Étiquettes, doublons et précautions', icon: 'pill', route: 'supplements', tone: 'm-sup',
+  { id: 'supplements', name: 'Compléments', sub: 'Étiquettes, doublons et précautions', icon: 'pill', route: 'supplements', tone: 'm-sup', free: true,
     features: ['Scanner d’étiquette de complément', 'Mes compléments et doses déclarées', 'Alerte en cas d’ingrédient en double', 'Fiches : niveau de preuve et précautions'] },
   { id: 'sleep', name: 'Sommeil & stress', sub: 'Sommeil, respiration, envies de manger', icon: 'moon', route: 'sleep', tone: 'm-sleep',
     features: ['Journal du sommeil', 'Respirations et relaxations guidées à voix haute', 'Faim physique ou envie : le journal', 'Bouton SOS et retour à la routine'] },
-  { id: 'coach', name: 'Coach', sub: 'Nutrition, entraînement et recettes', icon: 'coach', route: 'coach', tone: 'm-coach',
+  { id: 'coach', name: 'Coach', sub: 'Nutrition, entraînement et recettes', icon: 'coach', route: 'coach', tone: 'm-coach', free: true,
     features: ['Réponses adaptées à votre profil et à votre journée', 'Coach nutrition et coach entraînement', 'Explique chaque suggestion', 'Limites claires sur les questions médicales'] },
 ];
 const MODULE_ROUTES = {
@@ -1833,27 +1834,32 @@ const MODULE_ROUTES = {
 const moduleById = (id) => MODULES.find((m) => m.id === id);
 const moduleForRoute = (r = route) => moduleById(MODULE_ROUTES[r]);
 
+// Monthly / annual prices (EUR). Scanner, Supplements and the Coach are free with any paid plan.
+// Annual ≈ 50 % off 12 monthly payments. Complete kit: −21 % monthly, −35 % yearly vs. the six modules bought separately.
 const MODULE_PRICES = {
-  complete: [44.99, 189.99], nutrition: [14.99, 79.99], recipes: [9.99, 59.99], scanner: [9.99, 59.99], training: [19.99, 99.99],
-  menopause: [24.99, 119.99], nutrients: [6.99, 39.99], supplements: [6.99, 39.99], sleep: [9.99, 59.99], coach: [9.99, 59.99],
+  complete: [39.99, 199.99],
+  nutrition: [9.99, 59.99], recipes: [4.99, 29.99], training: [14.99, 89.99],
+  menopause: [12.99, 79.99], nutrients: [2.99, 17.99], sleep: [4.99, 29.99],
 };
+const PAID_MODULES = MODULES.filter((m) => !m.free);
+const FREE_MODULES = MODULES.filter((m) => m.free);
 // Themed bundles: each costs clearly less than its modules bought separately.
 const BUNDLES = [
-  { id: 'body', name: 'Corps en forme', sub: 'Entraînement + Nutrition + Scanner', tagline: 'Perdre du gras et prendre du muscle, repas et séances accordés.', icon: 'dumbbell', tone: 'm-train', modules: ['training', 'nutrition', 'scanner'], price: [29.99, 149.99], badge: 'Le plus choisi' },
-  { id: 'women40', name: 'Femme 40+', sub: 'Ménopause + Nutrition + Sommeil + Vitamines', tagline: 'L’accompagnement complet de la (pré)ménopause.', icon: 'flower', tone: 'm-meno', modules: ['menopause', 'nutrition', 'sleep', 'nutrients'], price: [34.99, 169.99], badge: 'Spécial 40+' },
-  { id: 'kitchen', name: 'Cuisine saine', sub: 'Nutrition + Recettes + Scanner', tagline: 'Bien manger chaque jour, sans y passer des heures.', icon: 'fork', tone: 'm-rec', modules: ['nutrition', 'recipes', 'scanner'], price: [24.99, 119.99] },
-  { id: 'performance', name: 'Performance', sub: 'Entraînement + Nutrition + Compléments + Vitamines', tagline: 'S’entraîner fort et récupérer, avec la nutrition qui suit.', icon: 'heart', tone: 'm-sup', modules: ['training', 'nutrition', 'supplements', 'nutrients'], price: [32.99, 159.99] },
-  { id: 'wellness', name: 'Bien-être', sub: 'Sommeil + Vitamines + Compléments', tagline: 'Mieux dormir, moins de stress, compléments sous contrôle.', icon: 'moon', tone: 'm-sleep', modules: ['sleep', 'nutrients', 'supplements'], price: [14.99, 79.99] },
+  { id: 'body', name: 'Corps en forme', sub: 'Entraînement + Nutrition', tagline: 'Perdre du gras et prendre du muscle, repas et séances accordés.', icon: 'dumbbell', tone: 'm-train', modules: ['training', 'nutrition'], price: [19.99, 119.99], badge: 'Le plus choisi' },
+  { id: 'women40', name: 'Femme 40+', sub: 'Ménopause + Nutrition + Sommeil + Vitamines', tagline: 'L’accompagnement complet de la (pré)ménopause.', icon: 'flower', tone: 'm-meno', modules: ['menopause', 'nutrition', 'sleep', 'nutrients'], price: [24.99, 149.99], badge: 'Spécial 40+' },
+  { id: 'kitchen', name: 'Cuisine saine', sub: 'Nutrition + Recettes', tagline: 'Bien manger chaque jour, sans y passer des heures.', icon: 'fork', tone: 'm-rec', modules: ['nutrition', 'recipes'], price: [11.99, 69.99] },
+  { id: 'performance', name: 'Performance', sub: 'Entraînement + Nutrition + Vitamines', tagline: 'S’entraîner fort et récupérer, avec la nutrition qui suit.', icon: 'heart', tone: 'm-sup', modules: ['training', 'nutrition', 'nutrients'], price: [22.99, 129.99] },
+  { id: 'wellness', name: 'Bien-être', sub: 'Sommeil + Vitamines', tagline: 'Mieux dormir, moins de stress, compléments sous contrôle.', icon: 'moon', tone: 'm-sleep', modules: ['sleep', 'nutrients'], price: [6.49, 37.99] },
 ];
 const bundleById = (id) => BUNDLES.find((b) => b.id === id);
 const DEFAULT_PLANS = [
   { tier: 'complete', kind: 'complete', label: 'Kit complet', sub: 'Tous les modules NutriPilot', tagline: 'Tout NutriPilot, sans limite.', icon: 'star', tone: 'm-kit', badge: 'Meilleure offre', modules: MODULES.map((m) => m.id),
-    features: ['Les 9 modules, sans limite', 'Nutrition, recettes, scanner et entraînement', 'Ménopause 40+, vitamines, compléments et sommeil', 'Coach dans chaque module'],
+    features: ['Les 9 modules, sans limite', 'Nutrition, recettes, entraînement et ménopause 40+', 'Vitamines et sommeil & stress', 'Scanner, Compléments et Coach offerts'],
     monthly: { price: MODULE_PRICES.complete[0], storeId: 'np_complete_monthly' }, annual: { price: MODULE_PRICES.complete[1], storeId: 'np_complete_annual' } },
   ...BUNDLES.map((b) => ({ tier: b.id, kind: 'bundle', label: b.name, sub: b.sub, tagline: b.tagline, icon: b.icon, tone: b.tone, badge: b.badge, modules: b.modules,
-    features: [...b.modules.map((id) => moduleById(id).name), 'Coach dans chaque module'],
+    features: [...b.modules.map((id) => moduleById(id).name), 'Scanner, Compléments et Coach offerts'],
     monthly: { price: b.price[0], storeId: `np_${b.id}_monthly` }, annual: { price: b.price[1], storeId: `np_${b.id}_annual` } })),
-  ...MODULES.map((m) => ({ tier: m.id, kind: 'module', label: m.name, sub: m.sub, tagline: m.sub, icon: m.icon, tone: m.tone, modules: [m.id], features: m.features,
+  ...PAID_MODULES.map((m) => ({ tier: m.id, kind: 'module', label: m.name, sub: m.sub, tagline: m.sub, icon: m.icon, tone: m.tone, modules: [m.id], features: [...m.features.slice(0, 3), 'Scanner, Compléments et Coach offerts'],
     monthly: { price: MODULE_PRICES[m.id][0], storeId: `np_${m.id}_monthly` }, annual: { price: MODULE_PRICES[m.id][1], storeId: `np_${m.id}_annual` } })),
 ];
 // Price of buying these modules one by one.
@@ -1869,7 +1875,7 @@ function planSaving(plan, period) {
 function customPlan(parts) {
   const plans = DEFAULT_PLANS;
   const items = parts.map((t) => plans.find((p) => p.tier === t)).filter((p) => p && p.kind !== 'complete');
-  const mods = MODULES.map((m) => m.id).filter((id) => items.some((p) => p.modules.includes(id)));
+  const mods = PAID_MODULES.map((m) => m.id).filter((id) => items.some((p) => p.modules.includes(id)));
   const sum = (k) => Math.round(items.reduce((t, p) => t + p[k].price, 0) * 100) / 100;
   return { tier: 'custom:' + items.map((p) => p.tier).join('+'), kind: 'custom', parts: items.map((p) => p.tier), label: '', sub: 'Ma sélection', icon: 'grid', tone: 'm-kit', modules: mods, features: [],
     monthly: { price: sum('monthly'), storeId: '' }, annual: { price: sum('annual'), storeId: '' } };
@@ -1913,26 +1919,31 @@ function ownedModules() {
     const legacy = !/(recipes|scanner|nutrients|supplements|sleep|coach|body|women40|kitchen|performance|wellness)/.test(String(state.subscriptionPlan)) && LEGACY_PLAN_MODULES[tier];
     (legacy || [tier]).forEach((x) => set.add(x));
   }
-  if (set.size) set.add('coach'); // the coach answers inside every paid module
+  // Scanner, Supplements and the Coach come free with any paid plan.
+  if (set.size) FREE_MODULES.forEach((m) => set.add(m.id));
   return [...set];
 }
 function planTier(planId = state.subscriptionPlan) {
   const owned = ownedModules();
-  if (!state.premium || owned.length >= MODULES.length) return 'complete';
+  if (!state.premium || PAID_MODULES.every((m) => owned.includes(m.id))) return 'complete';
   const id = String(planId || '');
   const first = id.split(',')[0].replace(/_(monthly|annual|yearly|trial)$/, '');
   return moduleById(first) ? first : 'complete';
 }
 function hasModule(id) { return ownedModules().includes(id); }
 function planLabel() {
-  const owned = ownedModules().filter((x) => x !== 'coach');
-  if (owned.length >= MODULES.length - 1) return L('Kit complet');
-  return owned.map((x) => L(moduleById(x)?.name || x)).join(' + ') || L('Découverte');
+  const owned = ownedModules();
+  if (owned.length && PAID_MODULES.every((m) => owned.includes(m.id))) return L('Kit complet');
+  return PAID_MODULES.filter((m) => owned.includes(m.id)).map((m) => L(m.name)).join(' + ') || L('Découverte');
 }
 function hasFeature(feature) {
   if (!state.premium) return false;
   if (feature === 'coach') return ownedModules().length > 0;
   return hasModule(feature);
+}
+// "Free with any plan" strip: Scanner, Supplements and Coach.
+function freeBanner(compact = false) {
+  return `<div class="free-banner ${compact ? 'compact' : ''}"><span class="fb-icons">${FREE_MODULES.map((m) => `<i class="${m.tone}">${icon(m.icon)}</i>`).join('')}</span><span><b>${L('Offerts avec toute formule')}</b><small>${FREE_MODULES.map((m) => L(m.name)).join(' · ')}</small></span></div>`;
 }
 function moduleStatus(id) {
   if (hasModule(id)) return 'owned';
@@ -1941,6 +1952,7 @@ function moduleStatus(id) {
 function moduleBadge(id) {
   const s = moduleStatus(id);
   if (s === 'owned') return `<span class="mod-badge owned">${icon('check')}${L('Activé')}</span>`;
+  if (moduleById(id)?.free) return `<span class="mod-badge free">${icon('star')}${L('Offert')}</span>`;
   const trial = Billing.trialDays();
   return `<span class="mod-badge">${trial ? L('{n} jours gratuits', { n: trial }) : L('Découvrir')}</span>`;
 }
@@ -1949,7 +1961,7 @@ function moduleBar(id) {
   const m = moduleById(id);
   if (!m) return '';
   const owned = hasModule(id);
-  return `<div class="mod-bar ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><span class="mod-name"><b>${L(m.name)}</b><small>${owned ? L('Module activé') : L('Aperçu du module')}</small></span>${owned ? `<button class="mod-all" data-go="modules">${L('Modules')}</button>` : `<button class="mod-cta" data-module-buy="${m.id}">${Billing.trialDays() ? L('Essai gratuit') : L('Débloquer')}</button>`}</div>`;
+  return `<div class="mod-bar ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><span class="mod-name"><b>${L(m.name)}</b><small>${owned ? L('Module activé') : L('Aperçu du module')}</small></span>${owned ? `<button class="mod-all" data-go="modules">${L('Modules')}</button>` : m.free ? `<button class="mod-cta" data-go="plans">${L('Offert avec toute formule')}</button>` : `<button class="mod-cta" data-module-buy="${m.id}">${Billing.trialDays() ? L('Essai gratuit') : L('Débloquer')}</button>`}</div>`;
 }
 function globalSearch(q) {
   q = q.trim().toLowerCase();
@@ -1976,10 +1988,11 @@ function modulesScreen() {
       <label class="search-box">${icon('search')}<input id="global-search" type="search" placeholder="${L('Rechercher une recette, un exercice, un nutriment…')}" autocomplete="off"></label>
       <div id="gs-results"></div>
       <p class="screen-sub">${L('Chaque module est un espace complet. Activez seulement ce dont vous avez besoin, ou tout avec le Kit complet.')}</p>
+      ${owned.length ? '' : freeBanner(true)}
       <div class="mod-grid">${MODULES.map((m) => `<button class="mod-card ${m.tone} ${owned.includes(m.id) ? 'owned' : ''}" data-go="${m.route}">
         <span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b><small>${L(m.sub)}</small>${moduleBadge(m.id)}</button>`).join('')}</div>
       <button class="plans-link" data-go="plans">${icon('star')}<span><b>${L('Nos formules')}</b><small>${L('Modules, combinaisons et Kit complet')}</small></span>${icon('chevron')}</button>
-      ${owned.length < MODULES.length && kit ? `<button class="kit-card" data-module-buy="complete"><span><small>${L('Kit complet')}</small><b>${L('Les 9 modules pour {price} / mois', { price: euro(kit.annual.price / 12) })}</b><em>${L('Économisez {n} % par rapport aux modules séparés', { n: comboSaving(plans, 'annual') })}</em></span>${icon('chevron')}</button>` : ''}
+      ${!PAID_MODULES.every((m) => owned.includes(m.id)) && kit ? `<button class="kit-card" data-module-buy="complete"><span><small>${L('Kit complet')}</small><b>${L('Les 9 modules pour {price} / mois', { price: euro(kit.annual.price / 12) })}</b><em>${L('Économisez {n} % par rapport aux modules séparés', { n: comboSaving(plans, 'annual') })}</em></span>${icon('chevron')}</button>` : ''}
       <div class="section-label"><h3>${L('Inclus pour tous')}</h3></div>
       <div class="free-row"><button data-go="app">${icon('home')}<span>${L('Aujourd’hui')}</span></button><button data-go="progress">${icon('progress')}<span>${L('Progrès')}</span></button><button data-open-goal>${icon('scale')}<span>${L('Objectif')}</span></button><button data-open-profile>${icon('user')}<span>${L('Profil')}</span></button></div>
     </div>
@@ -2009,7 +2022,7 @@ const Billing = {
   native() { return Boolean(window.NutriPilotNative?.purchase); },
   store() { return window.NutriPilotNative?.store || 'App Store / Google Play'; },
   plans() { return (Array.isArray(config.plans) && config.plans.length ? config.plans : DEFAULT_PLANS); },
-  trialDays() { return this.native() ? Number(config.trialDays || 3) : 0; },
+  trialDays() { return Number(config.trialDays || 3); },
   async purchase(plan, period) {
     const option = plan[period];
     const id = `${plan.tier}_${period}`;
@@ -2035,7 +2048,8 @@ const Billing = {
       toast(bought.length > 1 ? L('{n} modules activés ✓', { n: bought.length }) : L('Formule activée ✓'));
       return nav(state.onboarding ? 'app' : 'onboarding');
     }
-    if (!option.offer) return toast('Cette formule sera disponible dans l’application iPhone et Android.');
+    // On the web, subscriptions are taken in the iPhone / Android app.
+    if (!option.offer) { modal = { type: 'store', plan: plan.tier, period }; return renderModal(); }
     const url = new URL(config.checkoutUrl || 'https://pay.hotmart.com/R107884011S');
     url.searchParams.set('off', option.offer);
     for (const [key, value] of Object.entries(state.utms || {})) if (value) url.searchParams.set(key, value);
@@ -2130,6 +2144,7 @@ function paywall() {
         <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>${L('jusqu’à −{n} %', { n: maxSaving })}</span></button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
       </div>
+      ${freeBanner(true)}
       <div class="plan-list" role="radiogroup">
         ${(() => {
           const kit = plans.find((x) => x.tier === 'complete');
@@ -2144,19 +2159,13 @@ function paywall() {
       </div>
       ${trial ? `<div class="trial-timeline">
         <div><span class="tl-dot on">${icon('lock')}</span><p><b>${L('Aujourd’hui')}</b>${L('Accès complet à votre formule. Aucun paiement maintenant.')}</p></div>
-        <div><span class="tl-dot">${icon('bell')}</span><p><b>${L('Jour {n}', { n: Math.max(1, trial - 1) })}</b>${L('Nous vous envoyons un rappel avant la fin de l’essai.')}</p></div>
+        <div><span class="tl-dot">${icon('bell')}</span><p><b>${L('Jour {n}', { n: Math.max(1, trial - 1) })}</b>${L('Annulez quand vous voulez depuis votre compte App Store ou Google Play, sans frais pendant l’essai.')}</p></div>
         <div><span class="tl-dot">${icon('star')}</span><p><b>${L('Jour {n}', { n: trial })}</b>${L('Début de l’abonnement, sauf si vous annulez avant.')}</p></div>
       </div>` : ''}
-      ${waitlistMode(option) ? `<div class="sticky-cta waitlist-box">
-        <b>${L('Bientôt sur iPhone et Android')}</b>
-        <p>${L('Les abonnements ouvrent avec le lancement des applications. Laissez votre e-mail : vous serez prévenu(e) en premier, avec l’essai gratuit de 3 jours.')}</p>
-        ${state.waitlistEmail ? `<div class="warn success">✓ ${L('Vous êtes sur la liste : {email}', { email: esc(state.waitlistEmail) })}</div>` : `<div class="chat-input"><input id="waitlist-email" type="email" autocomplete="email" placeholder="${L('vous@exemple.fr')}"><button class="btn btn-lime" data-waitlist>${L('Me prévenir')}</button></div>`}
-        <p class="pw-terms">${L('Formule choisie : {plan} · {price} / {period}. Un seul e-mail au lancement, désinscription en un clic.', { plan: esc(planName(plan)), price, period: periodLabel })}</p>
-      </div>` : `<div class="sticky-cta">
+      <div class="sticky-cta">
         <button class="btn btn-lime btn-wide btn-xl" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
         <p class="pw-terms">${terms}</p>
-      </div>`}
-      <div class="pw-soon">${icon('coach')}<span><b>${L('Bientôt dans votre abonnement')}</b>${L('Des nutritionnistes et coachs diplômés pour vous accompagner.')}</span></div>
+      </div>
       <div class="pw-links">
         ${Billing.native() ? `<button class="link-btn" data-restore>${L('Restaurer mes achats')}</button>` : `<button class="link-btn" data-go="access">${L('Déjà client ? Se connecter')}</button>`}
         <button class="link-btn" data-support-open>${L('Une question ? Parler au support')}</button>
@@ -2824,7 +2833,7 @@ function choosePlanBtn(x, mine) {
 function plansScreen() {
   const plans = Billing.plans();
   const owned = ownedModules();
-  const ownsAll = state.premium && owned.length >= MODULES.length;
+  const ownsAll = state.premium && PAID_MODULES.every((m) => owned.includes(m.id));
   const kit = plans.find((x) => x.kind === 'complete');
   const bundles = plans.filter((x) => x.kind === 'bundle');
   const mods = plans.filter((x) => x.kind === 'module');
@@ -2848,7 +2857,7 @@ function plansScreen() {
   const body = plansTab === 'modules'
     ? `<div class="pl-list">${mods.map(row).join('')}</div>`
     : plansTab === 'builder'
-      ? `<div class="bd-grid">${MODULES.map((m) => `<button class="bd-mod ${m.tone} ${buildSel.includes(m.id) ? 'on' : ''}" data-build-mod="${m.id}" aria-pressed="${buildSel.includes(m.id)}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.name))}</b><i class="bd-check">${icon('check')}</i></button>`).join('')}</div>
+      ? `<div class="bd-grid">${PAID_MODULES.map((m) => `<button class="bd-mod ${m.tone} ${buildSel.includes(m.id) ? 'on' : ''}" data-build-mod="${m.id}" aria-pressed="${buildSel.includes(m.id)}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.name))}</b><i class="bd-check">${icon('check')}</i></button>`).join('')}</div>
         ${best ? `<div class="bd-best compact"><small>${L('Le moins cher pour votre sélection')}</small><b>${esc(planName(best))}</b>
           <div class="bd-price">${sepTotal - best[selectedPeriod].price > 0.5 ? `<s>${per(sepTotal)}</s>` : ''}<b>${per(best[selectedPeriod].price)}</b><small>${L('/ mois')}</small></div>
           <button class="btn btn-lime btn-wide" data-choose-plan="${esc(best.tier)}">${Billing.trialDays() ? L('Essayer {n} jours gratuits', { n: Billing.trialDays() }) : L('Choisir cette formule')}</button></div>` : `<div class="empty">${L('Choisissez au moins un module.')}</div>`}`
@@ -2858,6 +2867,7 @@ function plansScreen() {
     <div class="screen">
       <p class="pl-sub">${L('Un module, une combinaison ou tout. {n} jours gratuits, sans engagement.', { n: 3 })}</p>
       ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
+      ${freeBanner(true)}
       <div class="period-toggle slim" role="tablist">
         <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>−${Math.round((1 - kit.annual.price / (kit.monthly.price * 12)) * 100)} %</span></button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
@@ -2871,7 +2881,7 @@ function plansScreen() {
       <details class="pl-more"><summary>${L('Comparer les formules')}</summary>
         <div class="cmp2" role="table">
           <div class="cmp2-row head" role="row"><span></span>${[kit, ...bundles].map((x) => `<b class="${x.tone}" title="${esc(L(x.label))}">${icon(x.icon)}</b>`).join('')}</div>
-          ${MODULES.map((m) => `<div class="cmp2-row" role="row"><span>${esc(L(m.name))}</span>${[kit, ...bundles].map((x) => `<i class="${x.modules.includes(m.id) || m.id === 'coach' ? 'yes' : 'no'}">${x.modules.includes(m.id) || m.id === 'coach' ? icon('check') : '–'}</i>`).join('')}</div>`).join('')}
+          ${MODULES.map((m) => `<div class="cmp2-row" role="row"><span>${esc(L(m.name))}${m.free ? ` <i class="free-tag">${L('offert')}</i>` : ''}</span>${[kit, ...bundles].map((x) => `<i class="${x.modules.includes(m.id) || m.free ? 'yes' : 'no'}">${x.modules.includes(m.id) || m.free ? icon('check') : '–'}</i>`).join('')}</div>`).join('')}
           <div class="cmp2-legend">${[kit, ...bundles].map((x) => `<span><b class="${x.tone}">${icon(x.icon)}</b>${esc(L(x.label))}</span>`).join('')}</div>
         </div>
       </details>
@@ -2940,16 +2950,31 @@ function hubScreen() {
 
 function runCountUps() {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-  document.querySelectorAll('.animate [data-count]').forEach((el) => {
+  document.querySelectorAll('[data-count]').forEach((el) => {
     const target = Number(el.dataset.count || 0);
+    if (!target) return;
     const start = performance.now();
     const step = (now) => {
       const k = Math.min(1, (now - start) / 900);
-      el.textContent = fmt(Math.round(target * (1 - Math.pow(1 - k, 3))));
+      const dec = (String(el.dataset.count).split('.')[1] || '').length;
+      el.textContent = fmt(target * (1 - Math.pow(1 - k, 3)), Math.min(1, dec));
       if (k < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
   });
+}
+
+// Small celebration for real achievements (session done, goal saved, programme finished…).
+function celebrate() {
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  const box = document.createElement('div');
+  box.className = 'confetti';
+  box.setAttribute('aria-hidden', 'true');
+  const colors = ['#d7ff6a', '#102419', '#3546a6', '#a2456f', '#b5532f', '#0b6e6e', '#9a6a00'];
+  box.innerHTML = Array.from({ length: 26 }, (_, i) => `<i style="--x:${Math.round((Math.random() - 0.5) * 340)}px;--y:${Math.round(-180 - Math.random() * 260)}px;--r:${Math.round(Math.random() * 720 - 360)}deg;--d:${(0.9 + Math.random() * 0.7).toFixed(2)}s;background:${colors[i % colors.length]}"></i>`).join('');
+  document.body.appendChild(box);
+  try { navigator.vibrate?.(30); } catch { /* optional */ }
+  setTimeout(() => box.remove(), 1800);
 }
 
 // ---- Reminders --------------------------------------------------------------
@@ -3599,7 +3624,7 @@ const MENO_PROGRAMS = [
 ];
 
 function allPrograms() {
-  return [...WORKOUT_PROGRAMS, ...MENO_PROGRAMS, ...(state.customPrograms || [])];
+  return [...WORKOUT_PROGRAMS, ...MENO_PROGRAMS, ...(state.customPrograms || []), ...(state.quickProgram ? [state.quickProgram] : [])];
 }
 function findProgram(id) { return allPrograms().find((x) => x.id === id); }
 
@@ -3765,6 +3790,147 @@ function programMatch(x, q) {
   if (state.profile?.track === 'menopause' && g === 'meno') score += 10;
   return { score: Math.max(5, Math.min(99, Math.round(score))), why };
 }
+// ---- Training v5: the person picks real weekdays and what to train each day ----------------
+const DAY_FOCUS = [
+  ['full', 'Corps entier', ['Jambes', 'Pectoraux', 'Dos', 'Fessiers', 'Épaules', 'Abdos & gainage']],
+  ['upper', 'Haut du corps', ['Pectoraux', 'Dos', 'Épaules', 'Bras', 'Pectoraux', 'Dos']],
+  ['lower', 'Bas du corps', ['Jambes', 'Fessiers', 'Jambes', 'Fessiers', 'Abdos & gainage']],
+  ['legs', 'Jambes', ['Jambes', 'Jambes', 'Fessiers', 'Jambes', 'Jambes']],
+  ['glutes', 'Fessiers', ['Fessiers', 'Fessiers', 'Jambes', 'Fessiers', 'Fessiers']],
+  ['chest', 'Pectoraux', ['Pectoraux', 'Pectoraux', 'Épaules', 'Bras', 'Pectoraux']],
+  ['back', 'Dos', ['Dos', 'Dos', 'Bras', 'Épaules', 'Dos']],
+  ['shoulders', 'Épaules', ['Épaules', 'Épaules', 'Bras', 'Épaules', 'Abdos & gainage']],
+  ['arms', 'Bras', ['Bras', 'Bras', 'Bras', 'Épaules', 'Bras']],
+  ['push', 'Poussée (pecs, épaules, triceps)', ['Pectoraux', 'Épaules', 'Pectoraux', 'Bras', 'Épaules']],
+  ['pull', 'Tirage (dos, biceps)', ['Dos', 'Dos', 'Bras', 'Épaules', 'Dos']],
+  ['core', 'Abdos & gainage', ['Abdos & gainage', 'Abdos & gainage', 'Abdos & gainage', 'Mobilité & équilibre']],
+  ['cardio', 'Cardio & HIIT', ['Cardio', 'Cardio', 'Abdos & gainage', 'Cardio', 'Jambes']],
+  ['mobility', 'Mobilité & équilibre', ['Mobilité & équilibre', 'Mobilité & équilibre', 'Abdos & gainage', 'Mobilité & équilibre']],
+];
+const focusById = (id) => DAY_FOCUS.find((f) => f[0] === id) || DAY_FOCUS[0];
+let trainMode = 'plan';
+let todayFocus = null;
+// Default split for N days, adapted to the goal; the person can change every day.
+function suggestSplit(n, goal) {
+  const g = goal || trainQuiz().goal;
+  const glutes = g === 'gentle' ? false : state.profile?.sex === 'female' || state.profile?.muscleFocus === 'lower';
+  const table = {
+    1: ['full'],
+    2: g === 'muscle' || g === 'strength' ? ['upper', 'lower'] : ['full', 'full'],
+    3: g === 'muscle' || g === 'strength' ? (glutes ? ['lower', 'upper', 'glutes'] : ['push', 'pull', 'legs']) : g === 'gentle' ? ['full', 'mobility', 'full'] : glutes ? ['lower', 'upper', 'glutes'] : ['full', 'cardio', 'full'],
+    4: glutes ? ['lower', 'upper', 'glutes', 'upper'] : ['upper', 'lower', 'upper', 'lower'],
+    5: glutes ? ['legs', 'upper', 'glutes', 'push', 'lower'] : ['push', 'pull', 'legs', 'upper', 'lower'],
+    6: ['push', 'pull', 'legs', 'push', 'pull', 'legs'],
+    7: ['push', 'pull', 'legs', 'upper', 'lower', 'cardio', 'mobility'],
+  };
+  return table[Math.max(1, Math.min(7, n))] || table[3];
+}
+function trainPlan() {
+  const tp = state.trainPlan || {};
+  const days = Array.isArray(tp.days) ? WEEKDAY_ORDER.filter((d) => tp.days.includes(d)) : [];
+  return { days, focus: tp.focus || {}, edited: tp.edited || {} };
+}
+// Days the person set by hand keep their choice; the others follow the suggested split.
+function setPlanDays(days) {
+  const ordered = WEEKDAY_ORDER.filter((d) => days.includes(d));
+  const { focus: old, edited } = trainPlan();
+  const split = suggestSplit(ordered.length);
+  const focus = {};
+  ordered.forEach((wd, i) => { focus[wd] = edited[wd] ? old[wd] : split[i]; });
+  state.trainPlan = { days: ordered, focus, edited: Object.fromEntries(Object.entries(edited).filter(([wd]) => ordered.includes(Number(wd)))) };
+}
+function styleForGoal(goal, focusIds = []) {
+  const id = goal === 'muscle' ? 'hypertrophy' : goal === 'strength' ? 'strength' : goal === 'fat' ? 'fatloss' : goal === 'gentle' ? 'gentle' : 'athletic';
+  const s = COACH_STYLES.find((c) => c.id === (focusIds.every((f) => f === 'glutes') && focusIds.length ? 'glutes' : id)) || COACH_STYLES[0];
+  return s;
+}
+// Builds one session from a focus: exercises from the library, filtered by place, sets by level.
+function buildFocusSession(focusIds, opts, sid, usage = {}) {
+  const q = opts;
+  const style = styleForGoal(q.goal, focusIds);
+  const per = { 20: 4, 30: 4, 45: 5, 60: 6 }[q.time] || 5;
+  const groups = focusIds.flatMap((f) => focusById(f)[2]);
+  const homeOnly = q.place !== 'gym';
+  const pool = (g) => Object.keys(EXERCISES).filter((id) => exGroup(id) === g && (!homeOnly || EXERCISES[id].home));
+  const levelAdj = q.level === 'beginner' ? -1 : q.level === 'advanced' ? 1 : 0;
+  const ex = [];
+  let guard = 0;
+  while (ex.length < per && guard < 60) {
+    const g = groups[guard % groups.length];
+    const list = pool(g);
+    if (list.length) {
+      usage[g] = usage[g] || 0;
+      for (let k = 0; k < list.length; k += 1) {
+        const id = list[(usage[g] + k) % list.length];
+        if (!ex.some((e) => e[0] === id)) {
+          usage[g] += k + 1;
+          const cardio = g === 'Cardio';
+          const mob = g === 'Mobilité & équilibre';
+          ex.push([id, cardio || mob ? Math.max(1, 2 + levelAdj) : Math.max(2, style.sets + levelAdj), cardio ? (id === 'brisk-walk' ? '15 min' : '40 s') : mob ? '30 s' : style.reps, cardio ? 20 : mob ? 20 : style.rest]);
+          break;
+        }
+      }
+    }
+    guard += 1;
+  }
+  return { id: sid, name: focusIds.map((f) => focusById(f)[1]).join(' + '), focus: [...new Set(groups)].slice(0, 4).join(' · '), ex };
+}
+function buildPlanProgram() {
+  const q = trainQuiz();
+  const { days, focus } = trainPlan();
+  const usage = {};
+  const sessions = days.map((wd, i) => buildFocusSession([focus[wd] || 'full'], q, `S${i + 1}`, usage));
+  const levelName = { beginner: 'Débutant', intermediate: 'Intermédiaire', advanced: 'Confirmé' }[q.level] || 'Sur mesure';
+  return { id: `plan-${Date.now()}`, name: 'Mon planning', level: levelName, place: q.place === 'gym' ? 'gym' : q.place === 'outdoor' ? 'outdoor' : 'home', days: days.length, focus: ['custom'], style: styleForGoal(q.goal).id, custom: true, fromPlanner: true,
+    desc: days.map((wd) => `${dateForWeekday(wd).toLocaleDateString(locale(), { weekday: 'short' }).replace('.', '')} : ${L(focusById(focus[wd])[1])}`).join(' · '), sessions };
+}
+function splitSummary() {
+  const { days, focus } = trainPlan();
+  const count = {};
+  days.forEach((wd) => { const f = focus[wd] || 'full'; count[f] = (count[f] || 0) + 1; });
+  return Object.entries(count).map(([f, n]) => `${L(focusById(f)[1])} ${n}×`).join(' · ');
+}
+function trainingPlanner() {
+  const q = trainQuiz();
+  const { days, focus } = trainPlan();
+  const planned = hasTrainingPlan();
+  const wdLabel = (wd, long = false) => esc(dateForWeekday(wd).toLocaleDateString(locale(), { weekday: long ? 'long' : 'short' }).replace('.', ''));
+  const chips = (key, opts) => `<div class="tq-opts">${opts.map(([v, txt, ico]) => `<button class="${q[key] === v ? 'on' : ''}" data-tq="${key}:${v}">${ico ? icon(ico) : ''}${L(txt)}</button>`).join('')}</div>`;
+  const modes = `<div class="tp-modes" role="tablist">
+      <button class="${trainMode === 'plan' ? 'on' : ''}" data-train-mode="plan" role="tab" aria-selected="${trainMode === 'plan'}">${icon('calendar')}<span><b>${L('Suivre un planning')}</b><small>${L('Mes jours, ce que je travaille chaque jour')}</small></span></button>
+      <button class="${trainMode === 'today' ? 'on' : ''}" data-train-mode="today" role="tab" aria-selected="${trainMode === 'today'}">${icon('flame')}<span><b>${L('M’entraîner maintenant')}</b><small>${L('Je choisis ce que je travaille aujourd’hui')}</small></span></button>
+    </div>`;
+  if (trainMode === 'today') {
+    const sel = todayFocus || [];
+    const plannedToday = planned ? todaySession() : null;
+    return `${modes}
+      <section class="tq">
+        <div class="tq-q"><span class="tq-n">1</span><div><b>${L('Que voulez-vous travailler aujourd’hui ?')}</b><div class="tq-opts">${DAY_FOCUS.map(([id, label]) => `<button class="${sel.includes(id) ? 'on' : ''}" data-today-focus="${id}">${L(label)}</button>`).join('')}</div></div></div>
+        <div class="tq-q"><span class="tq-n">2</span><div><b>${L('Temps disponible')}</b>${chips('time', TQ[4][2])}</div></div>
+        <div class="tq-q"><span class="tq-n">3</span><div><b>${L('Où ?')}</b>${chips('place', TQ[1][2])}</div></div>
+      </section>
+      <button class="btn btn-lime btn-wide btn-xl" data-today-build ${sel.length ? '' : 'disabled'}>${icon('flame')} ${sel.length ? L('Créer ma séance du jour') : L('Choisissez au moins une zone')}</button>
+      ${plannedToday ? `<button class="tp-follow" data-session="${esc(plannedToday.id)}" data-program="${esc(currentProgram().id)}">${icon('calendar')}<span><small>${L('Ou suivre mon planning')}</small><b>${esc(L(plannedToday.name))}</b></span>${icon('chevron')}</button>` : ''}`;
+  }
+  const ranked = [...WORKOUT_PROGRAMS, ...MENO_PROGRAMS].map((x) => ({ x, ...programMatch(x, { ...q, days: String(days.length || 3) }) })).sort((a, b) => b.score - a.score).slice(0, 3);
+  return `${modes}
+    <section class="tq">
+      <div class="tq-q"><span class="tq-n">1</span><div><b>${L('Quels jours vous entraînez-vous ?')}</b>
+        <div class="day-picker big">${WEEKDAY_ORDER.map((wd) => `<button class="${days.includes(wd) ? 'on' : ''}" data-plan-day="${wd}" aria-pressed="${days.includes(wd)}">${wdLabel(wd)}</button>`).join('')}</div>
+        <small class="tp-count">${days.length ? L('{n} jours par semaine', { n: days.length }) : L('Touchez vos jours d’entraînement')}</small></div></div>
+      ${days.length ? `<div class="tq-q"><span class="tq-n">2</span><div><b>${L('Que travaillez-vous chaque jour ?')}</b>
+        <div class="tp-days">${days.map((wd) => `<label class="tp-day"><span>${wdLabel(wd, true)}</span><select data-plan-focus="${wd}">${DAY_FOCUS.map(([id, label]) => `<option value="${id}" ${focus[wd] === id ? 'selected' : ''}>${esc(L(label))}</option>`).join('')}</select></label>`).join('')}</div>
+        <div class="tp-sum"><span>${icon('check')} ${esc(splitSummary())}</span><button class="link-btn" data-plan-suggest>${L('Suggestion automatique')}</button></div></div></div>` : ''}
+      <div class="tq-q"><span class="tq-n">${days.length ? 3 : 2}</span><div><b>${L('Votre objectif')}</b>${chips('goal', TQ[0][2])}</div></div>
+      <div class="tq-q"><span class="tq-n">${days.length ? 4 : 3}</span><div><b>${L('Où et à quel niveau ?')}</b>${chips('place', TQ[1][2])}${chips('level', TQ[2][2])}</div></div>
+      <div class="tq-q"><span class="tq-n">${days.length ? 5 : 4}</span><div><b>${L('Temps par séance')}</b>${chips('time', TQ[4][2])}</div></div>
+    </section>
+    <button class="btn btn-lime btn-wide btn-xl" data-plan-build ${days.length ? '' : 'disabled'}>${icon('sparkle')} ${days.length ? L('Créer mon programme ({n} séances)', { n: days.length }) : L('Choisissez au moins un jour')}</button>
+    <p class="fine center-fine">${L('Chaque séance est construite avec les exercices de la bibliothèque, adaptés à votre lieu et à votre niveau. Tout reste modifiable.')}</p>
+    <div class="section-label"><h3>${L('Ou un programme prêt, sur vos jours')}</h3></div>
+    <div class="tq-alt">${ranked.map((r) => `<div class="tq-alt-card"><span class="tq-mini-score">${r.score}%</span><span><b>${esc(L(r.x.name))}</b><small>${esc(L(r.x.level))} · ${L('{n} séances différentes', { n: r.x.sessions.length })}</small></span>${r.x.id === (planned ? currentProgram().id : '') ? '<em>✓</em>' : `<button class="btn btn-primary" data-workout-program="${esc(r.x.id)}">${L('Choisir')}</button>`}</div>`).join('')}</div>
+    <button class="btn btn-ghost btn-wide" data-train-tab="programs">${icon('list')} ${L('Voir tous les programmes ({n})', { n: allPrograms().filter((x) => !x.quick).length })}</button>`;
+}
 function trainingQuiz() {
   const q = trainQuiz();
   const ranked = [...WORKOUT_PROGRAMS, ...MENO_PROGRAMS].map((x) => ({ x, ...programMatch(x, q) })).sort((a, b) => b.score - a.score);
@@ -3818,11 +3984,12 @@ function trainingScreen() {
   const today = planned ? todaySession() : null;
   // Order: choose (quiz) or my week first, then every programme, tools, and lessons last.
   if (trainTab === 'cardio') { trainTab = 'programs'; trainGroup = 'cardio'; }
-  if (trainTab === 'mine' && !planned) trainTab = 'quiz';
-  const tabs = [...(planned ? [['mine', 'Ma semaine']] : []), ['quiz', planned ? 'Changer de programme' : 'Trouver mon programme'], ['programs', 'Tous les programmes'], ['create', 'Créer'], ['library', 'Exercices'], ['history', 'Historique'], ['lessons', 'Leçons']];
+  if (trainTab === 'quiz') trainTab = 'plan';
+  if (trainTab === 'mine' && !planned) trainTab = 'plan';
+  const tabs = [...(planned ? [['mine', 'Ma semaine']] : []), ['plan', planned ? 'Planifier / s’entraîner' : 'Planifier mes séances'], ['programs', 'Tous les programmes'], ['create', 'Créer'], ['library', 'Exercices'], ['history', 'Historique'], ['lessons', 'Leçons']];
   let body = '';
   if (trainTab === 'mine') body = trainingMine(program);
-  else if (trainTab === 'quiz') body = trainingQuiz();
+  else if (trainTab === 'plan') body = trainingPlanner();
   else if (trainTab === 'history') body = trainingHistory();
   else if (trainTab === 'programs') body = trainingPrograms(program);
   else if (trainTab === 'create') body = trainingCreate();
@@ -3886,12 +4053,15 @@ function programRow(x, current, reco) {
     ${isCur ? `<span class="pc-current">✓ ${L('Programme actuel')}</span>` : `<button class="btn btn-primary btn-wide" data-workout-program="${esc(x.id)}">${L('Choisir ce programme')}</button>`}
   </article>`;
 }
+let tqOpen = null;
 function trainingPrograms(current) {
   const reco = recommendedProgramId();
-  const all = allPrograms().filter((x) => trainPlace === 'all' || x.place === trainPlace);
+  const all = allPrograms().filter((x) => !x.quick && (trainPlace === 'all' || x.place === trainPlace));
   const groups = PROGRAM_GROUPS.map(([id, label, ico]) => [id, label, ico, all.filter((x) => programGroup(x) === id)]).filter((g) => g[3].length);
   const shown = trainGroup === 'all' ? groups : groups.filter((g) => g[0] === trainGroup);
+  const qOpen = tqOpen ?? !hasTrainingPlan();
   return `
+    <details class="tq-fold" ${qOpen ? 'open' : ''}><summary data-tq-fold>${icon('sparkle')}<b>${L('Trouver mon programme')}</b>${icon('chevron')}</summary>${trainingQuiz()}</details>
     <div class="pg-filter">
       <div class="chip-row">${[['all', 'Partout'], ['gym', 'Salle'], ['home', 'Maison'], ['outdoor', 'Extérieur']].map(([k, label]) => `<button class="mini-choice ${trainPlace === k ? 'selected' : ''}" data-train-place="${k}">${L(label)}</button>`).join('')}</div>
       <div class="pg-cats">${[['all', 'Toutes les catégories', 'grid', all.length], ...groups.map((g) => [g[0], g[1], g[2], g[3].length])].map(([k, label, ico, n]) => `<button class="pg-cat ${trainGroup === k ? 'on' : ''}" data-train-group="${k}">${icon(ico)}<span>${L(label)}</span><em>${n}</em></button>`).join('')}</div>
@@ -4870,7 +5040,7 @@ function saveGoal() {
   saveState();
   track('GoalSaved', { source: goal });
   goalDraft = null;
-  toast(L('Objectif enregistré ✓'));
+  toast(L('Objectif enregistré ✓')); celebrate();
   return nav(goalReturn && goalReturn !== 'goal' ? goalReturn : 'progress');
 }
 
@@ -5227,7 +5397,7 @@ function readSuppForm() {
 }
 
 // ---- v13: Sleep, stress & eating behaviour ---------------------------------------------
-let sleepTab = 'sleep';
+let sleepTab = 'today';
 let relaxRun = null;
 const BREATHS = [
   ['coherence', 'Cohérence 5-5', 'Inspirez 5 s, expirez 5 s. Calme le rythme du cœur.', [['in', 5], ['out', 5]]],
@@ -5239,6 +5409,11 @@ const RELAX = [
   ['night', 'Préparer le sommeil', 5, ['Éteignez les écrans et baissez la lumière.', 'Allongez-vous et posez une main sur votre ventre.', 'Inspirez en comptant jusqu’à quatre.', 'Expirez lentement en comptant jusqu’à six.', 'Pensez à trois choses simples qui se sont bien passées aujourd’hui.', 'Si une pensée revient, notez-la mentalement pour demain, puis revenez au souffle.', 'Imaginez un endroit calme où vous vous sentez en sécurité.', 'Remarquez les sons, la température, la lumière douce de cet endroit.', 'Laissez votre respiration devenir de plus en plus lente.', 'Il n’y a rien d’autre à faire maintenant que vous reposer.']],
   ['reset', 'Pause anti-stress', 2, ['Posez les deux pieds au sol.', 'Nommez cinq choses que vous voyez autour de vous.', 'Quatre choses que vous pouvez toucher.', 'Trois sons que vous entendez.', 'Inspirez profondément, puis soufflez longuement par la bouche.', 'Encore une fois, plus lentement.', 'Demandez-vous : de quoi ai-je besoin, là, maintenant ?', 'Choisissez une petite action pour les dix prochaines minutes.']],
 ];
+RELAX.push(
+  ['wake', 'Réveillé(e) la nuit', 4, ['Ne regardez pas l’heure : elle relance le stress.', 'Allongé(e) sur le dos, posez les mains sur le ventre.', 'Inspirez par le nez en gonflant doucement le ventre.', 'Expirez lentement, un peu plus longtemps que l’inspiration.', 'Imaginez un escalier : à chaque expiration, vous descendez d’une marche.', 'Si une pensée arrive, dites-lui « plus tard » et revenez au souffle.', 'Relâchez la langue, la mâchoire et le front.', 'Laissez le corps s’enfoncer dans le matelas.', 'Si vous êtes toujours éveillé(e) dans 20 minutes, levez-vous, lumière douce, puis revenez quand le sommeil arrive.']],
+  ['gratitude', 'Gratitude du soir', 3, ['Asseyez-vous ou allongez-vous confortablement.', 'Repensez à un moment agréable de votre journée, même tout petit.', 'Revivez-le : où étiez-vous, qu’avez-vous ressenti ?', 'Pensez à une personne qui a compté pour vous aujourd’hui.', 'Remerciez-vous pour une chose que vous avez faite.', 'Respirez lentement trois fois en gardant ces images.', 'Demain est un nouveau jour : il n’y a rien d’autre à faire ce soir.']],
+  ['anxiety', 'Apaiser l’anxiété', 4, ['Posez une main sur la poitrine, une main sur le ventre.', 'Remarquez simplement votre respiration, sans la changer.', 'Maintenant, ralentissez l’expiration : comptez jusqu’à six.', 'Dites-vous : « C’est désagréable, mais je suis en sécurité. »', 'Desserrez les poings, laissez tomber les épaules.', 'Nommez ce que vous ressentez : peur, colère, fatigue… Nommer apaise.', 'Encore trois respirations lentes, l’expiration plus longue.', 'Choisissez une petite chose douce à faire maintenant.']],
+);
 const ROUTINE = [['screens', 'Écrans éteints 30 minutes avant le coucher'], ['light', 'Lumière douce le soir'], ['cool', 'Chambre fraîche et aérée'], ['caffeine', 'Pas de caféine après 14 h'], ['dinner', 'Dîner léger au moins 2 h avant le coucher'], ['breath', '3 minutes de respiration'], ['same', 'Coucher à heure régulière']];
 const EMOTIONS = [['stress', 'Stress'], ['bored', 'Ennui'], ['tired', 'Fatigue'], ['sad', 'Tristesse'], ['happy', 'Joie / fête'], ['social', 'Entourage'], ['habit', 'Habitude']];
 function sleepDuration(e) {
@@ -5302,35 +5477,219 @@ function runRelax(id) {
   };
   setTimeout(tick, 60);
 }
-function sleepScreen() {
-  const tabs = [['sleep', 'Sommeil'], ['relax', 'Respirer & se détendre'], ['hunger', 'Faim ou envie ?'], ['routine', 'Rituel du soir'], ['restart', 'Reprendre la routine']];
+// ---- v16: Sleep & stress platform ------------------------------------------------------
+const SLEEP_FACTORS = [['caffeine', 'Caféine après 14 h', 'drop'], ['alcohol', 'Alcool', 'moon'], ['screens', 'Écrans au lit', 'scan'], ['lateMeal', 'Dîner tardif', 'fork'], ['lateSport', 'Sport le soir', 'dumbbell'], ['stress', 'Journée stressante', 'bell'], ['nap', 'Sieste', 'sun']];
+const SOUNDS = [['rain', 'Pluie', 'drop'], ['waves', 'Vagues', 'heart'], ['fire', 'Feu de cheminée', 'flame'], ['brown', 'Bruit brun', 'moon'], ['pink', 'Bruit rose', 'leaf'], ['white', 'Bruit blanc', 'star']];
+const SLEEP_NIGHTS = [
+  ['Fixez votre heure de lever', ['Se lever à la même heure, même le week-end, règle l’horloge interne.', 'Choisissez une heure tenable 7 jours sur 7.', 'Le soir, couchez-vous quand vous avez sommeil, pas avant.'], 'Réglez une alarme de lever identique pour toute la semaine.'],
+  ['La lumière, votre meilleur réglage', ['La lumière du matin avance l’endormissement du soir.', 'Le soir, la lumière vive et les écrans retardent la mélatonine.', '10 minutes dehors le matin suffisent, même par temps gris.'], 'Demain matin : 10 minutes de lumière naturelle dans l’heure qui suit le lever.'],
+  ['Caféine, alcool et dîner', ['La caféine agit 6 à 8 heures : la dernière tasse avant 14 h.', 'L’alcool endort mais fragmente la seconde moitié de la nuit.', 'Un dîner léger 2 à 3 heures avant le coucher facilite le sommeil.'], 'Ce soir : pas de caféine après 14 h et dîner au moins 2 h avant le coucher.'],
+  ['Une chambre faite pour dormir', ['Fraîche (autour de 18 °C), sombre et calme.', 'Le lit sert à dormir : évitez d’y travailler ou d’y scroller.', 'Un bruit de fond régulier masque les bruits soudains.'], 'Ce soir : chambre aérée, téléphone hors du lit et un son apaisant si besoin.'],
+  ['Vider sa tête avant de dormir', ['Les pensées qui tournent retardent l’endormissement.', 'Les écrire sur papier ou dans l’app les « range » pour demain.', 'Associez chaque souci à une petite action concrète.'], 'Ce soir : 5 minutes dans « Stress & pensées » avant d’éteindre.'],
+  ['Si le sommeil ne vient pas', ['Rester au lit éveillé(e) associe le lit à l’agitation.', 'Au bout d’environ 20 minutes, levez-vous dans une lumière douce.', 'Revenez au lit quand les paupières sont lourdes.'], 'Ce soir, si vous ne dormez pas : la relaxation « Réveillé(e) la nuit », puis la règle des 20 minutes.'],
+  ['Votre routine durable', ['Gardez les 2 ou 3 habitudes qui ont le plus aidé.', 'Une semaine imparfaite n’annule rien : la régularité gagne.', 'Si les nuits restent difficiles plus de 3 mois, parlez-en à un médecin.'], 'Choisissez vos 3 habitudes dans « Rituel du soir » et gardez-les.'],
+];
+const SLEEP_LESSONS = [
+  ['Les cycles du sommeil', 'Une nuit compte 4 à 6 cycles d’environ 90 minutes, alternant sommeil léger, profond et paradoxal (rêves). Le sommeil profond domine en début de nuit, les rêves en fin de nuit : se coucher très tard ou se lever trop tôt prive surtout de l’un ou de l’autre.'],
+  ['L’horloge interne', 'Le rythme circadien suit la lumière. Une heure de lever fixe et la lumière du matin le stabilisent ; les écrans et la lumière vive le soir le décalent vers plus tard.'],
+  ['Sieste : la bonne dose', 'Une sieste de 10 à 20 minutes avant 15 h recharge sans gêner la nuit. Au-delà de 30 minutes, on entre en sommeil profond et le réveil est pâteux.'],
+  ['Stress et cortisol', 'Le stress élève le cortisol et l’éveil. La respiration lente, avec une expiration plus longue que l’inspiration, active le système parasympathique qui calme le corps.'],
+  ['Sommeil et appétit', 'Après une nuit courte, la faim et l’envie de sucre augmentent. Mieux dormir aide donc aussi à mieux manger et à atteindre un objectif de poids.'],
+  ['Ménopause et nuits', 'Bouffées de chaleur et sueurs nocturnes fragmentent le sommeil. Chambre fraîche, vêtements légers, alcool limité et suivi des facteurs aident ; parlez à un médecin si cela vous gêne beaucoup.'],
+];
+// Sleep score 0–100 from duration, felt quality and night wakings (an indication, not a measure).
+function sleepScore(e) {
+  const h = sleepDuration(e);
+  if (!h) return 0;
+  const dur = h >= 7 && h <= 9 ? 50 : h < 7 ? Math.max(0, 50 - (7 - h) * 16) : Math.max(25, 50 - (h - 9) * 12);
+  const q = e.quality ? (Number(e.quality) / 5) * 30 : 18;
+  const w = e.wakeups === undefined ? 14 : [20, 14, 8, 3][Math.min(3, Number(e.wakeups))];
+  return Math.round(dur + q + w);
+}
+function lastNight() {
+  for (let i = 0; i < 2; i += 1) { const d = addDays(-i); if (state.sleepLog?.[d] && sleepDuration(state.sleepLog[d])) return [d, state.sleepLog[d]]; }
+  return [null, null];
+}
+function factorInsights() {
+  const entries = Object.entries(state.sleepLog || {}).filter(([, e]) => sleepDuration(e)).slice(-30);
+  const out = [];
+  for (const [k, label] of SLEEP_FACTORS) {
+    const withF = entries.filter(([, e]) => (e.factors || []).includes(k)).map(([, e]) => sleepDuration(e));
+    const without = entries.filter(([, e]) => !(e.factors || []).includes(k)).map(([, e]) => sleepDuration(e));
+    if (withF.length >= 2 && without.length >= 2) {
+      const diff = withF.reduce((a, b) => a + b, 0) / withF.length - without.reduce((a, b) => a + b, 0) / without.length;
+      if (Math.abs(diff) >= 0.3) out.push([label, diff]);
+    }
+  }
+  return out.sort((a, b) => a[1] - b[1]);
+}
+// Calming sounds generated on the phone (no download, works offline).
+const SleepAudio = {
+  ctx: null, nodes: [], timers: [], current: '', endsAt: 0, volume: 0.6, master: null,
+  noise(type) {
+    const ctx = this.ctx; const len = ctx.sampleRate * 4; const buf = ctx.createBuffer(1, len, ctx.sampleRate); const d = buf.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, last = 0;
+    for (let i = 0; i < len; i += 1) {
+      const w = Math.random() * 2 - 1;
+      if (type === 'white') d[i] = w * 0.35;
+      else if (type === 'brown') { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.2; }
+      else { b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852; b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898; d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.09; b6 = w * 0.115926; }
+    }
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; return src;
+  },
+  play(id, minutes) {
+    this.stop(true);
+    try { this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)(); } catch { return toast('Son indisponible sur cet appareil.'); }
+    const ctx = this.ctx; ctx.resume?.();
+    const master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination); this.master = master;
+    master.gain.linearRampToValueAtTime(this.volume, ctx.currentTime + 2);
+    const add = (n) => { this.nodes.push(n); return n; };
+    if (['white', 'pink', 'brown'].includes(id)) { const n = add(this.noise(id)); n.connect(master); n.start(); }
+    if (id === 'rain') {
+      const n = add(this.noise('pink')); const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 400; const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6000; n.connect(hp).connect(lp).connect(master); n.start();
+      const drops = add(this.noise('white')); const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2500; bp.Q.value = 3; const g = ctx.createGain(); g.gain.value = 0; drops.connect(bp).connect(g).connect(master); drops.start();
+      this.timers.push(setInterval(() => { const t = ctx.currentTime; g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(0.25 * Math.random(), t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05 + Math.random() * 0.08); }, 70));
+    }
+    if (id === 'waves') {
+      const n = add(this.noise('brown')); const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; const g = ctx.createGain(); g.gain.value = 0.5;
+      const lfo = add(ctx.createOscillator()); lfo.frequency.value = 0.09; const depth = ctx.createGain(); depth.gain.value = 0.45; lfo.connect(depth).connect(g.gain);
+      n.connect(lp).connect(g).connect(master); n.start(); lfo.start();
+    }
+    if (id === 'fire') {
+      const n = add(this.noise('brown')); const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500; n.connect(lp).connect(master); n.start();
+      const c = add(this.noise('white')); const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1800; const g = ctx.createGain(); g.gain.value = 0; c.connect(hp).connect(g).connect(master); c.start();
+      this.timers.push(setInterval(() => { if (Math.random() < 0.35) { const t = ctx.currentTime; g.gain.setValueAtTime(0.5 * Math.random(), t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.03); } }, 90));
+    }
+    this.current = id;
+    this.endsAt = minutes ? Date.now() + minutes * 60000 : 0;
+    if (minutes) this.timers.push(setTimeout(() => this.stop(), minutes * 60000));
+    track('SleepSound', { id, minutes: minutes || 0 });
+  },
+  setVolume(v) { this.volume = v; if (this.master && this.ctx) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); },
+  stop(immediate = false) {
+    this.timers.forEach((t) => { clearInterval(t); clearTimeout(t); }); this.timers = [];
+    const nodes = this.nodes; const master = this.master; this.nodes = []; this.master = null;
+    const end = () => { nodes.forEach((n) => { try { n.stop?.(); n.disconnect(); } catch { /* already stopped */ } }); try { master?.disconnect(); } catch { /* ignore */ } };
+    if (master && this.ctx && !immediate) { master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.8); setTimeout(end, 3000); } else end();
+    this.current = ''; this.endsAt = 0;
+    if (route === 'sleep' && sleepTab === 'sounds') render();
+  },
+};
+let napTimer = null;
+// Soft wake-up chime (Web Audio).
+function chime() {
+  try {
+    const ctx = SleepAudio.ctx || (SleepAudio.ctx = new (window.AudioContext || window.webkitAudioContext)());
+    [523.25, 659.25, 783.99].forEach((f, i) => { const o = ctx.createOscillator(); const g = ctx.createGain(); o.frequency.value = f; o.type = 'sine'; g.gain.setValueAtTime(0, ctx.currentTime + i * 0.35); g.gain.linearRampToValueAtTime(0.25, ctx.currentTime + i * 0.35 + 0.05); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.35 + 1.4); o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + i * 0.35); o.stop(ctx.currentTime + i * 0.35 + 1.5); });
+  } catch { /* sound optional */ }
+}
+function sleepTabBody() {
   const today = todayKey();
-  let body = '';
+  if (sleepTab === 'today') {
+    const [d, e] = lastNight();
+    const score = e ? sleepScore(e) : 0;
+    const week = Array.from({ length: 7 }, (_, i) => state.sleepLog?.[addDays(-i)]).filter((x) => sleepDuration(x));
+    const avg = week.length ? week.reduce((a, x) => a + sleepDuration(x), 0) / week.length : 0;
+    const stress = state.stressLog?.[today];
+    const stressDays = Array.from({ length: 14 }, (_, i) => addDays(-(13 - i)));
+    const night = Math.min(7, Object.keys(state.sleepProgram?.done || {}).length + 1);
+    const tip = !week.length ? 'Notez votre nuit chaque matin : en 3 jours, vous verrez vos premières tendances.'
+      : avg < 6.5 ? 'Vos nuits sont courtes : avancez votre coucher de 15 minutes cette semaine.'
+      : stress >= 4 ? 'Journée chargée : 3 minutes de respiration avant le dîner aident à décrocher.'
+      : 'Belle régularité : gardez la même heure de lever, même le week-end.';
+    return `<section class="sl-hero">
+        <div class="sl-score" style="--p:${score}%"><b data-count="${score}">${score || '—'}</b><small>${L('score sommeil')}</small></div>
+        <div class="sl-hero-txt"><small>${d ? L('Dernière nuit') : L('Aujourd’hui')}</small><b>${e ? `${fmt(sleepDuration(e), 1)} h` : L('Pas encore de nuit notée')}</b>
+          <span>${avg ? L('Moyenne 7 nuits : {h}', { h: `${fmt(avg, 1)} h` }) : L('Notez votre première nuit')}</span>
+          <button class="btn btn-lime" data-sleep-tab="sleep">${e && d === today ? L('Modifier ma nuit') : L('Noter ma nuit')}</button></div>
+      </section>
+      <section class="sl-card"><h3>${L('Votre niveau de stress aujourd’hui')}</h3>
+        <div class="q-row stress">${[1, 2, 3, 4, 5].map((v) => `<button class="${stress === v ? 'on' : ''}" data-stress="${v}" aria-label="${v}">${['😌', '🙂', '😐', '😟', '😣'][v - 1]}</button>`).join('')}</div>
+        <div class="stress-chart">${stressDays.map((x) => { const v = state.stressLog?.[x] || 0; return `<i class="${v >= 4 ? 'hi' : ''}" style="height:${v * 20}%" title="${x}"></i>`; }).join('')}</div>
+        <small class="fine">${L('14 derniers jours')}</small></section>
+      <div class="sl-quick">
+        <button data-sleep-tab="sounds">${icon('moon')}<b>${L('Sons apaisants')}</b><small>${SleepAudio.current ? L('En cours') : L('Pluie, vagues, feu…')}</small></button>
+        <button data-breath-now="478">${icon('heart')}<b>${L('Respirer 1 minute')}</b><small>${L('Respiration 4-7-8')}</small></button>
+        <button data-sleep-tab="program">${icon('calendar')}<b>${L('Programme 7 nuits')}</b><small>${L('Nuit {n} sur 7', { n: night })}</small></button>
+        <button data-sleep-tab="mind">${icon('book')}<b>${L('Vider ma tête')}</b><small>${L('Stress & pensées')}</small></button>
+      </div>
+      <div class="insight"><strong>${L('Conseil du jour')}</strong>${L(tip)}</div>`;
+  }
   if (sleepTab === 'sleep') {
     const e = state.sleepLog?.[today] || {};
     const days = Array.from({ length: 14 }, (_, i) => addDays(-(13 - i)));
-    const vals = days.map((d) => ({ d, h: sleepDuration(state.sleepLog?.[d]), q: state.sleepLog?.[d]?.quality || 0 }));
+    const vals = days.map((x) => ({ d: x, h: sleepDuration(state.sleepLog?.[x]) }));
     const logged = vals.filter((v) => v.h);
-    const avg = logged.length ? logged.reduce((s, v) => s + v.h, 0) / logged.length : 0;
-    body = `<section class="sl-card"><h3>${L('Ma nuit dernière')}</h3>
+    const avg = logged.length ? logged.reduce((a, v) => a + v.h, 0) / logged.length : 0;
+    const ins = factorInsights();
+    return `<section class="sl-card"><h3>${L('Ma nuit dernière')}</h3>
       <div class="pf-grid"><label class="pf-field"><span>${L('Couché(e) à')}</span><input id="sl-bed" type="time" value="${esc(e.bed || '23:00')}"></label><label class="pf-field"><span>${L('Levé(e) à')}</span><input id="sl-wake" type="time" value="${esc(e.wake || '07:00')}"></label></div>
       <h4>${L('Qualité ressentie')}</h4><div class="q-row">${[1, 2, 3, 4, 5].map((q) => `<button class="${Number(e.quality) === q ? 'on' : ''}" data-sl-q="${q}">${['😫', '😕', '😐', '🙂', '😴'][q - 1]}</button>`).join('')}</div>
       <h4>${L('Réveils dans la nuit')}</h4><div class="pf-chips">${[[0, 'Aucun'], [1, '1'], [2, '2'], [3, '3 ou plus']].map(([v, l]) => `<button class="pf-chip ${Number(e.wakeups) === v && e.wakeups !== undefined ? 'on' : ''}" data-sl-w="${v}"><b>${L(l)}</b></button>`).join('')}</div>
+      <h4>${L('Hier, il y a eu…')}</h4><div class="pf-chips">${SLEEP_FACTORS.map(([k, l, ico]) => `<button class="pf-chip ${(e.factors || []).includes(k) ? 'on' : ''}" data-sl-factor="${k}">${icon(ico)}<b>${L(l)}</b></button>`).join('')}</div>
       <button class="btn btn-primary btn-wide" data-sl-save>${L('Enregistrer ma nuit')}</button></section>
       <div class="section-label"><h3>${L('14 dernières nuits')}</h3><span class="fine">${avg ? L('Moyenne {h}', { h: `${fmt(avg, 1)} h` }) : ''}</span></div>
       <div class="chart-card sl-chart">${vals.map((v) => `<div class="slc"><i style="height:${Math.min(100, v.h / 10 * 100)}%" class="${v.h && v.h < 6 ? 'short' : ''}"></i><span>${new Date(`${v.d}T12:00:00`).toLocaleDateString(locale(), { weekday: 'narrow' })}</span></div>`).join('')}</div>
+      ${ins.length ? `<div class="insight"><strong>${L('Ce qui joue sur vos nuits')}</strong>${ins.map(([l, diff]) => esc(L('{f} : {d} h en moyenne', { f: L(l), d: `${diff > 0 ? '+' : '−'}${fmt(Math.abs(diff), 1)}` }))).join('<br>')}</div>` : `<p class="fine">${L('Cochez les facteurs de la veille : après quelques nuits, NutriPilot vous montre ce qui raccourcit ou allonge votre sommeil.')}</p>`}
       <div class="insight"><strong>${L('Repère')}</strong>${L('La plupart des adultes ont besoin de 7 à 9 heures. La régularité des horaires compte autant que la durée.')}</div>
       <p class="fine">${L('Si vous ronflez fort, vous réveillez en suffoquant ou restez épuisé(e) malgré des nuits complètes, parlez-en à un médecin.')}</p>`;
-  } else if (sleepTab === 'relax') {
+  }
+  if (sleepTab === 'sounds') {
+    const cur = SleepAudio.current;
+    const left = SleepAudio.endsAt ? Math.max(0, Math.round((SleepAudio.endsAt - Date.now()) / 60000)) : 0;
+    return `<p class="screen-sub">${L('Des sons générés sur votre téléphone, sans téléchargement, avec arrêt progressif.')}</p>
+      <div class="snd-grid">${SOUNDS.map(([id, name, ico]) => `<button class="snd ${cur === id ? 'on' : ''}" data-sound="${id}" aria-pressed="${cur === id}">${icon(ico)}<b>${L(name)}</b>${cur === id ? '<span class="eq"><i></i><i></i><i></i></span>' : ''}</button>`).join('')}</div>
+      <div class="snd-ctrl">
+        <label>${icon('moon')}<input id="snd-vol" type="range" min="0" max="1" step="0.05" value="${SleepAudio.volume}" aria-label="${L('Volume')}"></label>
+        <div class="chip-row">${[[15, '15 min'], [30, '30 min'], [60, '1 h'], [0, '∞']].map(([m, l]) => `<button class="mini-choice ${(state.soundMinutes ?? 30) === m ? 'selected' : ''}" data-sound-timer="${m}">${l}</button>`).join('')}</div>
+        ${cur ? `<button class="btn btn-ghost btn-wide" data-sound-stop>${L('Arrêter le son')}${left ? ` · ${L('{n} min restantes', { n: left })}` : ''}</button>` : ''}
+      </div>
+      <section class="sl-card nap"><h3>${icon('sun')} ${L('Sieste flash')}</h3><p class="fine">${L('10 à 20 minutes avant 15 h : de l’énergie sans gêner la nuit. Un son doux et une vibration vous réveillent.')}</p>
+        <div class="chip-row">${[10, 15, 20].map((m) => `<button class="mini-choice ${napTimer?.minutes === m ? 'selected' : ''}" data-nap="${m}">${m} min</button>`).join('')}${napTimer ? `<button class="mini-choice" data-nap="0">${L('Arrêter')}</button>` : ''}</div>
+        ${napTimer ? `<p class="nap-left">${L('Réveil à {t}', { t: new Date(napTimer.end).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) })}</p>` : ''}</section>`;
+  }
+  if (sleepTab === 'relax') {
     const running = relaxRun;
-    body = `<div class="section-label"><h3>${L('Respirations guidées')}</h3><label class="voice-toggle"><input type="checkbox" id="relax-voice" ${state.relaxVoice === false ? '' : 'checked'}> ${L('Voix')}</label></div>
+    return `<div class="section-label"><h3>${L('Respirations guidées')}</h3><label class="voice-toggle"><input type="checkbox" id="relax-voice" ${state.relaxVoice === false ? '' : 'checked'}> ${L('Voix')}</label></div>
       <div id="breath-live" class="breath-live"><b>${L('Choisissez une respiration')}</b><small></small></div>
       <div class="br-list">${BREATHS.map(([id, name, sub]) => `<button class="br-card ${running?.id === id ? 'on' : ''}" data-breath="${id}"><b>${L(name)}</b><small>${L(sub)}</small></button>`).join('')}</div>
       <div class="section-label"><h3>${L('Relaxations guidées')}</h3></div>
       <div id="relax-live" class="relax-live"><b>${L('Une voix vous guide pas à pas, dans votre langue.')}</b></div>
       <div class="br-list">${RELAX.map(([id, name, min]) => `<button class="br-card" data-relax="${id}"><b>${L(name)}</b><small>${L('{n} min', { n: min })}</small></button>`).join('')}</div>
       <button class="btn btn-ghost btn-wide" data-relax-stop>${L('Arrêter')}</button>`;
-  } else if (sleepTab === 'hunger') {
+  }
+  if (sleepTab === 'program') {
+    const done = state.sleepProgram?.done || {};
+    const next = SLEEP_NIGHTS.findIndex((_, i) => !done[i + 1]);
+    return `<section class="sl-prog-head"><b>${L('Programme 7 nuits')}</b><small>${L('Une habitude par soir, expliquée simplement. Basé sur les recommandations de thérapie comportementale du sommeil.')}</small>
+        <div class="progress"><i style="width:${Object.keys(done).length / 7 * 100}%"></i></div><span class="fine">${L('{n} sur {t}', { n: Object.keys(done).length, t: 7 })}</span></section>
+      <div class="night-list">${SLEEP_NIGHTS.map(([title, points, action], i) => { const n = i + 1; const isDone = done[n]; const open = i === next || (next === -1 && i === 6); const locked = next !== -1 && i > next; return `<details class="night ${isDone ? 'done' : ''} ${locked ? 'locked' : ''}" ${open ? 'open' : ''}>
+        <summary><span class="night-n">${isDone ? icon('check') : n}</span><b>${L(title)}</b>${locked ? icon('lock') : ''}</summary>
+        ${locked ? `<p class="fine">${L('Terminez la nuit précédente pour débloquer celle-ci.')}</p>` : `<ul>${points.map((x) => `<li>${L(x)}</li>`).join('')}</ul><div class="night-action">${icon('star')}<span><small>${L('Ce soir')}</small>${L(action)}</span></div>
+        ${isDone ? `<span class="pc-current">✓ ${L('Fait')}</span>` : `<button class="btn btn-primary btn-wide" data-night-done="${n}">${L('C’est fait pour ce soir')}</button>`}`}
+      </details>`; }).join('')}</div>`;
+  }
+  if (sleepTab === 'mind') {
+    const worries = (state.worries || []).slice(0, 8);
+    return `<section class="sl-card"><h3>${L('Vider ma tête')}</h3><p class="fine">${L('Écrivez ce qui vous préoccupe, puis une seule petite action pour demain. Votre cerveau peut lâcher prise : c’est noté.')}</p>
+        <textarea class="textarea compact" id="worry-text" maxlength="400" placeholder="${L('Ce qui me préoccupe…')}"></textarea>
+        <input class="text-input" id="worry-action" maxlength="160" placeholder="${L('Une petite action pour demain')}">
+        <button class="btn btn-primary btn-wide" data-worry-save>${L('Ranger pour demain')}</button></section>
+      ${worries.length ? `<div class="section-label"><h3>${L('Mes notes')}</h3></div><div class="worry-list">${worries.map((w, i) => `<div class="worry ${w.done ? 'done' : ''}"><small>${esc(new Date(w.at).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' }))}</small><p>${esc(w.text)}</p>${w.action ? `<button class="worry-act" data-worry-done="${i}">${w.done ? icon('check') : icon('star')} ${esc(w.action)}</button>` : ''}</div>`).join('')}</div>` : ''}
+      <div class="sl-quick two"><button data-relax-now="anxiety">${icon('heart')}<b>${L('Apaiser l’anxiété')}</b><small>${L('{n} min', { n: 4 })}</small></button><button data-relax-now="reset">${icon('leaf')}<b>${L('Pause anti-stress')}</b><small>${L('{n} min', { n: 2 })}</small></button></div>
+      <p class="fine">${L('Si le stress ou l’anxiété durent et pèsent sur votre quotidien, un professionnel de santé peut vous aider. En cas de détresse, contactez les services d’urgence.')}</p>`;
+  }
+  if (sleepTab === 'learn') {
+    return `<div class="lesson-list">${SLEEP_LESSONS.map(([title, text], i) => `<details class="si-card" ${i === 0 ? 'open' : ''}><summary><b>${L(title)}</b></summary><p>${L(text)}</p></details>`).join('')}</div>`;
+  }
+  return null;
+}
+function sleepScreen() {
+  const tabs = [['today', 'Aujourd’hui'], ['sleep', 'Journal du sommeil'], ['sounds', 'Sons apaisants'], ['relax', 'Respirer & se détendre'], ['program', 'Programme 7 nuits'], ['mind', 'Stress & pensées'], ['hunger', 'Faim ou envie ?'], ['routine', 'Rituel du soir'], ['learn', 'Leçons'], ['restart', 'Reprendre la routine']];
+  const today = todayKey();
+  let body = sleepTabBody();
+  if (body === null && sleepTab === 'hunger') {
+
     const log = (state.hungerLog || []).slice(0, 12);
     const week = (state.hungerLog || []).filter((x) => x.day >= addDays(-6) && x.kind === 'craving');
     const byEmotion = EMOTIONS.map(([k, label]) => [label, week.filter((x) => x.emotion === k).length]).filter(([, n]) => n).sort((a, b) => b[1] - a[1]);
@@ -5348,7 +5707,7 @@ function sleepScreen() {
     body = `<p class="screen-sub">${L('Cochez ce que vous faites ce soir. De petites habitudes régulières aident à mieux dormir.')}</p>
       <div class="task-list rt-list">${ROUTINE.map(([k, label]) => `<button class="task ${done[k] ? 'done' : ''}" data-rt="${k}"><span>${done[k] ? icon('check') : ''}</span>${L(label)}</button>`).join('')}</div>
       <p class="fine center-fine">${L('{n} sur {t} ce soir', { n, t: ROUTINE.length })}</p>`;
-  } else {
+  } else if (body === null) {
     body = `<section class="sl-card"><h3>${L('Reprendre, sans tout recommencer')}</h3>
       <ol class="restart-list"><li>${L('Pas de rattrapage : on ne compense pas les jours passés en mangeant moins.')}</li><li>${L('Choisissez une seule action pour aujourd’hui : noter un repas, boire de l’eau ou marcher 10 minutes.')}</li><li>${L('Préparez le prochain repas, pas toute la semaine.')}</li><li>${L('Revenez à vos horaires de sommeil habituels dès ce soir.')}</li><li>${L('Regardez la tendance sur plusieurs semaines, pas un seul jour.')}</li></ol>
       <div class="settings-two"><button class="btn btn-lime" data-open-add>${icon('scan')}<span>${L('Noter un repas')}</span></button><button class="btn btn-ghost" data-go="planner">${icon('sparkle')}<span>${L('Que manger ensuite ?')}</span></button></div></section>`;
@@ -5357,6 +5716,7 @@ function sleepScreen() {
     ${appHeader('Sommeil & stress')}
     <div class="screen">
       <div class="tab-scroll mod-tabs">${tabs.map(([k, label]) => `<button class="${sleepTab === k ? 'active' : ''}" data-sleep-tab="${k}">${L(label)}</button>`).join('')}</div>
+      ${SleepAudio.current && sleepTab !== 'sounds' ? `<button class="now-playing" data-sleep-tab="sounds"><span class="eq"><i></i><i></i><i></i></span>${L((SOUNDS.find((x) => x[0] === SleepAudio.current) || [])[1] || '')}<em>${L('Arrêter')}</em></button>` : ''}
       ${body}
     </div>
     ${bottom('sleep')}
@@ -5473,6 +5833,21 @@ function access() {
   </div>`;
 }
 
+// Web visitors subscribe in the store app (trial and payment are handled by Apple / Google).
+function storeSheet() {
+  const plan = findPlan(modal.plan) || findPlan('complete');
+  const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const android = /Android/i.test(navigator.userAgent);
+  const btn = (url, label, sub, ico) => `<a class="store-btn ${url ? '' : 'off'}" ${url ? `href="${esc(url)}" target="_blank" rel="noopener"` : 'aria-disabled="true"'}>${ico}<span><small>${L(sub)}</small><b>${label}</b></span></a>`;
+  const apple = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.1-1.2 2.9-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.4-.9-2.4-3.9zM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.6 2.8-1.4z"/></svg>';
+  const play = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 2.8v18.4c0 .4.4.6.7.4l10.2-9.2c.2-.2.2-.6 0-.8L4.7 2.4c-.3-.2-.7 0-.7.4zm12.4 7.6 2.7-2.4c.3-.3.2-.7-.1-.9L7.2 1.2l9.2 9.2zm0 3.2-9.2 9.2 11.8-5.9c.3-.2.4-.6.1-.9l-2.7-2.4z"/></svg>';
+  return `<div class="sheet-head"><h2>${L('Abonnez-vous dans l’application')}</h2><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
+    <p class="screen-sub">${L('NutriPilot est disponible sur l’App Store et Google Play. Vos {n} jours gratuits commencent dans l’application ; le paiement est géré par Apple ou Google, annulable à tout moment.', { n: Billing.trialDays() })}</p>
+    <div class="store-plan"><span class="mod-ico ${plan.tone}">${icon(plan.icon)}</span><span><small>${L('Formule choisie')}</small><b>${esc(planName(plan))}</b></span><em>${euro(modal.period === 'annual' ? plan.annual.price / 12 : plan.monthly.price)} ${L('/ mois')}</em></div>
+    <div class="store-btns">${[btn(config.appStoreUrl, 'App Store', 'Télécharger sur', apple), btn(config.playStoreUrl, 'Google Play', 'Disponible sur', play)].sort((x) => (android && x.includes('Google') ? -1 : ios && x.includes('App Store') ? -1 : 0)).join('')}</div>
+    <p class="fine center-fine">${L('Connectez-vous dans l’application avec le même e-mail : votre profil, vos repas et vos séances vous suivent.')}</p>`;
+}
+
 function openAdd(tab = 'photo') {
   modal = { type: 'add', tab, result: null, loading: false, mealType: mealTypeFromHour() };
   renderModal();
@@ -5484,7 +5859,7 @@ function renderModal() {
   if (!modal) return;
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
@@ -5929,7 +6304,8 @@ function render() {
   const noFab = state.premium || ['goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
   a11yPass(app);
-  if (window.__npLastRoute !== route) {
+  const entered = window.__npLastRoute !== route;
+  if (entered) {
     if (route === 'plans') track('PlansView', { from: window.__npLastRoute || 'direct' });
     if (window.__npLastRoute) app.firstElementChild?.classList.add('route-in');
     window.__npLastRoute = route;
@@ -5938,7 +6314,7 @@ function render() {
   document.documentElement.dir = lang() === 'ar' ? 'rtl' : 'ltr';
   bind();
   if (route === 'analyzing' && !analyzingTimer) startAnalyzing();
-  if ((route === 'app' && state.premium) || route === 'progress') runCountUps();
+  if (entered || (route === 'app' && state.premium && !window.__npCounted)) { runCountUps(); window.__npCounted = true; }
   if (route === 'progress') renderPhotos();
   if (route === 'saving' && !savingTimer) startSaving();
 }
@@ -5956,6 +6332,11 @@ function a11yPass(root) {
 function bind() {
   app.onchange = (event) => {
     const el = event.target;
+    if (el.matches('[data-plan-focus]')) {
+      const tp = trainPlan();
+      state.trainPlan = { days: tp.days, focus: { ...tp.focus, [el.dataset.planFocus]: el.value }, edited: { ...tp.edited, [el.dataset.planFocus]: true } };
+      saveState(); const y = scrollY; render(); scrollTo(0, y); return;
+    }
     if (el.matches('[data-shop]')) {
       state.shoppingChecked[el.dataset.shop] = el.checked;
       saveState();
@@ -5969,6 +6350,7 @@ function bind() {
     }
   };
   app.oninput = (event) => {
+    if (event.target.id === 'snd-vol') { SleepAudio.setVolume(Number(event.target.value)); return; }
     const el = event.target;
     if (el.id === 'goal-range' && goalDraft) {
       goalDraft.target = Number(el.value);
@@ -5985,6 +6367,8 @@ function bind() {
     if (el.id === 'grid-name' || el.dataset.gridSessionName !== undefined || el.dataset.gridReps !== undefined) saveState(false);
   };
   app.onclick = async (event) => {
+    const fold = event.target.closest('[data-tq-fold]');
+    if (fold) { tqOpen = !fold.parentElement.open; return; }
     const button = event.target.closest('button, [role="button"]');
     if (!button) return;
 
@@ -6133,6 +6517,48 @@ function bind() {
     }
     // Sleep & stress
     if (button.dataset.sleepTab) { sleepTab = button.dataset.sleepTab; return render(); }
+    if (button.dataset.stress) { state.stressLog = state.stressLog || {}; state.stressLog[todayKey()] = Number(button.dataset.stress); saveState(); const y = scrollY; render(); scrollTo(0, y); return; }
+    if (button.dataset.slFactor) {
+      const d = todayKey(); state.sleepLog = state.sleepLog || {};
+      const e = state.sleepLog[d] = { ...(state.sleepLog[d] || {}), bed: $('#sl-bed')?.value || state.sleepLog[d]?.bed, wake: $('#sl-wake')?.value || state.sleepLog[d]?.wake };
+      const f = new Set(e.factors || []); f.has(button.dataset.slFactor) ? f.delete(button.dataset.slFactor) : f.add(button.dataset.slFactor); e.factors = [...f];
+      saveState(false); const y = scrollY; render(); scrollTo(0, y); return;
+    }
+    if (button.dataset.sound) {
+      if (SleepAudio.current === button.dataset.sound) { SleepAudio.stop(); return; }
+      SleepAudio.play(button.dataset.sound, state.soundMinutes ?? 30); return render();
+    }
+    if (button.dataset.soundTimer !== undefined) {
+      state.soundMinutes = Number(button.dataset.soundTimer); saveState(false);
+      if (SleepAudio.current) SleepAudio.play(SleepAudio.current, state.soundMinutes);
+      return render();
+    }
+    if (button.dataset.soundStop !== undefined) { SleepAudio.stop(); return render(); }
+    if (button.dataset.nap !== undefined) {
+      const m = Number(button.dataset.nap);
+      if (napTimer) { clearTimeout(napTimer.id); napTimer = null; }
+      if (m) {
+        const end = Date.now() + m * 60000;
+        napTimer = { minutes: m, end, id: setTimeout(() => { napTimer = null; try { navigator.vibrate?.([400, 200, 400, 200, 600]); } catch { /* optional */ } chime(); toast('Fin de la sieste ✓'); if (route === 'sleep') render(); }, m * 60000) };
+        track('NapTimer', { minutes: m });
+      }
+      return render();
+    }
+    if (button.dataset.nightDone) {
+      state.sleepProgram = state.sleepProgram || { start: todayKey(), done: {} };
+      state.sleepProgram.done[button.dataset.nightDone] = todayKey();
+      saveState(); toast(Object.keys(state.sleepProgram.done).length >= 7 ? 'Programme terminé, bravo ! 🌙' : 'Bravo, à demain soir ✓'); celebrate();
+      return render();
+    }
+    if (button.dataset.worrySave !== undefined) {
+      const text = $('#worry-text')?.value.trim(); const action = $('#worry-action')?.value.trim();
+      if (!text) return toast('Écrivez d’abord ce qui vous préoccupe.');
+      state.worries = [{ at: new Date().toISOString(), text: text.slice(0, 400), action: (action || '').slice(0, 160), done: false }, ...(state.worries || [])].slice(0, 30);
+      saveState(); toast('C’est rangé pour demain ✓'); return render();
+    }
+    if (button.dataset.worryDone !== undefined) { const w = state.worries?.[Number(button.dataset.worryDone)]; if (w) { w.done = !w.done; saveState(); } return render(); }
+    if (button.dataset.breathNow) { sleepTab = 'relax'; render(); runBreath(button.dataset.breathNow); return; }
+    if (button.dataset.relaxNow) { sleepTab = 'relax'; render(); runRelax(button.dataset.relaxNow); return; }
     if (button.dataset.slQ) { const d = todayKey(); state.sleepLog = state.sleepLog || {}; state.sleepLog[d] = { ...(state.sleepLog[d] || {}), bed: $('#sl-bed')?.value, wake: $('#sl-wake')?.value, quality: Number(button.dataset.slQ) }; saveState(false); return render(); }
     if (button.dataset.slW !== undefined) { const d = todayKey(); state.sleepLog = state.sleepLog || {}; state.sleepLog[d] = { ...(state.sleepLog[d] || {}), bed: $('#sl-bed')?.value, wake: $('#sl-wake')?.value, wakeups: Number(button.dataset.slW) }; saveState(false); return render(); }
     if (button.dataset.slSave !== undefined) {
@@ -6248,6 +6674,7 @@ function bind() {
       return nav('analyzing');
     }
     if (button.dataset.activate !== undefined) {
+      selectedTier = ''; // the paywall opens on the plan recommended for this person's goal
       state.profile = { ...calculatePlan(), estimated: false };
       if (state.profile.warning && Number(state.profile.age) < 18) return toast('Cette version est réservée aux adultes.');
       state.onboarding = true;
@@ -6290,7 +6717,44 @@ function bind() {
       return renderModal();
     }
     if (button.dataset.trainTab) { trainTab = button.dataset.trainTab; return render(); }
-    if (button.dataset.tq) { const [k, v] = button.dataset.tq.split(':'); state.trainQuiz = { ...trainQuiz(), [k]: v }; saveState(); return render(); }
+    if (button.dataset.trainMode) { trainMode = button.dataset.trainMode; return render(); }
+    if (button.dataset.planDay) {
+      const wd = Number(button.dataset.planDay);
+      const days = trainPlan().days;
+      setPlanDays(days.includes(wd) ? days.filter((d) => d !== wd) : [...days, wd]);
+      saveState(); const y = scrollY; render(); scrollTo(0, y); return;
+    }
+    if (button.dataset.planSuggest !== undefined) {
+      const { days } = trainPlan(); const split = suggestSplit(days.length);
+      state.trainPlan = { days, focus: Object.fromEntries(days.map((wd, i) => [wd, split[i]])), edited: {} };
+      saveState(); const y = scrollY; render(); scrollTo(0, y); return;
+    }
+    if (button.dataset.planBuild !== undefined) {
+      if (!trainPlan().days.length) return toast('Choisissez au moins un jour.');
+      const program = buildPlanProgram();
+      state.customPrograms = [...(state.customPrograms || []).filter((x) => !x.fromPlanner), program].slice(-12);
+      state.workoutProgram = program.id;
+      state.trainingWeekdays = trainPlan().days.slice();
+      saveState(); trainTab = 'mine';
+      track('ProgramBuilt', { source: 'planner', days: program.days });
+      toast(L('Votre programme est prêt ✓')); scrollTo(0, 0); render(); celebrate(); return;
+    }
+    if (button.dataset.todayFocus) {
+      const id = button.dataset.todayFocus; const sel = todayFocus || [];
+      todayFocus = sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id].slice(-3);
+      const y = scrollY; render(); scrollTo(0, y); return;
+    }
+    if (button.dataset.todayBuild !== undefined) {
+      if (!todayFocus?.length) return toast('Choisissez au moins une zone');
+      const q = trainQuiz();
+      const session = buildFocusSession(todayFocus, q, 'T1');
+      state.quickProgram = { id: 'quick', quick: true, custom: true, name: 'Séance du jour', level: 'Sur mesure', place: q.place === 'gym' ? 'gym' : 'home', days: 1, focus: ['custom'], style: styleForGoal(q.goal).id, desc: '', sessions: [session] };
+      saveState(false);
+      track('QuickWorkout', { focus: todayFocus.join('+') });
+      modal = { type: 'session', sessionId: 'T1', programId: 'quick' };
+      return renderModal();
+    }
+    if (button.dataset.tq) { tqOpen = true; const [k, v] = button.dataset.tq.split(':'); state.trainQuiz = { ...trainQuiz(), [k]: v }; saveState(); return render(); }
     if (button.dataset.trainGroup) { trainGroup = button.dataset.trainGroup; return render(); }
     if (button.dataset.trainPlace) { trainPlace = button.dataset.trainPlace; trainGroup = 'all'; return render(); }
     if (button.dataset.menoTab) { menoTab = button.dataset.menoTab; return render(); }
@@ -6418,7 +6882,10 @@ function bind() {
     if (button.dataset.workoutProgram) {
       state.workoutProgram = button.dataset.workoutProgram;
       const chosen = findProgram(state.workoutProgram);
-      if (chosen && trainingDays().length !== (chosen.days || chosen.sessions.length)) state.trainingWeekdays = DEFAULT_DAYS[chosen.days || chosen.sessions.length] || state.trainingWeekdays;
+      // The programme follows the days the person chose; without a choice, a default spread.
+      if (trainPlan().days.length) state.trainingWeekdays = trainPlan().days.slice();
+      else if (chosen && trainingDays().length !== (chosen.days || chosen.sessions.length)) state.trainingWeekdays = DEFAULT_DAYS[chosen.days || chosen.sessions.length] || state.trainingWeekdays;
+      toast(L('Programme choisi ✓'));
       trainTab = 'mine';
       saveState();
       return render();
@@ -6727,7 +7194,7 @@ function bindModal(root) {
       track('WorkoutDone', { program: programId });
       modal = null;
       root.remove();
-      toast('Séance enregistrée. Bravo ! 💪');
+      toast('Séance enregistrée. Bravo ! 💪'); celebrate();
       return render();
     }
     if (button.dataset.mtab) {
