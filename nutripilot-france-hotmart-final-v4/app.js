@@ -1304,7 +1304,7 @@ const FOCI = {
     title: 'Des recettes pour chaque objectif.', sub: 'Pour maigrir, prendre du muscle, la ménopause, végétariennes ou prêtes en 15 minutes : chaque recette calculée en grammes, calories et macros.',
     points: [['flame', 'Pour maigrir', 'Rassasiantes et légères, critère affiché'], ['dumbbell', 'Prise de muscle', '30 g de protéines et plus par portion'], ['flower', 'Ménopause 40+', 'Riches en protéines et en fibres'], ['timer', 'Prêtes en 15 min', 'Courses automatiques et portions ajustables']] },
   training: { slugs: ['treino', 'treinos', 'academia', 'musculacao', 'entrainement', 'entraînement', 'training', 'workout', 'gym', 'entrenamiento', 'allenamento', 'trening', 'antrenman', 'fitness'],
-    track: 'muscle', tier: 'performance', tone: 'm-train', ico: 'dumbbell', mod: 'training', kicker: 'Entraînement',
+    track: 'muscle', tier: 'body', tone: 'm-train', ico: 'dumbbell', mod: 'training', kicker: 'Entraînement',
     title: 'Votre entraînement, construit à votre façon.', sub: 'Choisissez vos jours et ce que vous travaillez chaque jour. Démonstrations animées, charges suivies et la nutrition qui suit.',
     points: [['calendar', 'Vos jours, vos muscles', 'Jambes 2 fois ? Haut du corps lundi ? Vous décidez'], ['dumbbell', 'Démonstrations animées', 'Chaque mouvement expliqué'], ['progress', 'Charges et records', 'Progression suggérée séance après séance'], ['fork', 'Nutrition sportive', 'Protéines et calories alignées sur vos séances']] },
 };
@@ -2175,13 +2175,16 @@ async function accountVerify() {
 
 // ---- Pricing -------------------------------------------------------------------
 // Prices are set in US dollars and converted exactly (day's rate) to the buyer's currency.
-// Ladder: a combination = its modules' sum − 15 % (2), 20 % (3), 25 % (4), 30 % (5), ending in ,90;
-// adding a module always costs more; when a combination would reach the Complete kit, the kit is offered instead.
+// Rules (checked for every currency by the QA script):
+// - every plan on sale except the kit costs at most half of the kit, so any two plans together never cost more than the kit;
+// - a combination = its modules' sum − 15 %, rounded down to ,90; the kit saves 21 %, so no way of buying the
+//   modules in parts is ever cheaper than the kit;
+// - adding a module always costs more; when a combination would reach the kit, the kit is offered instead.
 // Annual = exactly 10 × monthly (2 months free), in every currency.
 const r2 = (v) => Math.round(v * 100) / 100;
-const MONTHLY_PRICE = { nutrition: 9.99, recipes: 4.99, training: 14.99, menopause: 12.99, nutrients: 2.99, sleep: 4.99 };
+const MONTHLY_PRICE = { nutrition: 7.99, recipes: 3.99, training: 9.99, menopause: 8.99, nutrients: 2.99, sleep: 3.99 };
 const KIT_MONTHLY = 29.9;
-const COMBO_OFF = { 2: 0.15, 3: 0.2, 4: 0.25, 5: 0.3 };
+const COMBO_OFF = { 2: 0.15, 3: 0.15, 4: 0.15, 5: 0.15 };
 const annualOf = (monthly) => r2(monthly * 10);
 const PAID_MODULES = MODULES.filter((m) => !m.free);
 const FREE_MODULES = MODULES.filter((m) => m.free);
@@ -2200,7 +2203,7 @@ function comboMonthly(mods) {
   else if (list.length >= PAID_IDS.length) price = KIT_MONTHLY;
   else {
     const sum = list.reduce((t, id) => t + MONTHLY_PRICE[id], 0);
-    price = r2(Math.floor(sum * (1 - (COMBO_OFF[list.length] || 0.3))) - 0.1);
+    price = r2(Math.floor(sum * (1 - (COMBO_OFF[list.length] || 0.15)) - 0.9) + 0.9);
     // Always more than any smaller selection inside it.
     const floor = Math.max(...list.map((id) => comboMonthly(list.filter((x) => x !== id))));
     if (price <= floor) { const up = Math.floor(floor) + 0.9; price = r2(up > floor + 1e-9 ? up : up + 1); }
@@ -2213,9 +2216,9 @@ const MODULE_PRICES = Object.fromEntries([...PAID_IDS.map((id) => [id, [MONTHLY_
 // Themed combinations, priced with the same rule as any combination the person composes.
 const BUNDLES = [
   { id: 'body', name: 'Corps en forme', sub: 'Entraînement + Nutrition', tagline: 'Perdre du gras et prendre du muscle, repas et séances accordés.', icon: 'dumbbell', tone: 'm-train', modules: ['training', 'nutrition'], badge: 'Le plus choisi' },
-  { id: 'women40', name: 'Femme 40+', sub: 'Ménopause + Nutrition + Sommeil + Vitamines', tagline: 'L’accompagnement complet de la (pré)ménopause.', icon: 'flower', tone: 'm-meno', modules: ['menopause', 'nutrition', 'sleep', 'nutrients'], badge: 'Spécial 40+' },
+  { id: 'women40', name: 'Femme 40+', sub: 'Ménopause + Nutrition', tagline: 'La (pré)ménopause et une alimentation adaptée après 40 ans.', icon: 'flower', tone: 'm-meno', modules: ['menopause', 'nutrition'], badge: 'Spécial 40+' },
   { id: 'kitchen', name: 'Cuisine saine', sub: 'Nutrition + Recettes', tagline: 'Bien manger chaque jour, sans y passer des heures.', icon: 'fork', tone: 'm-rec', modules: ['nutrition', 'recipes'] },
-  { id: 'performance', name: 'Performance', sub: 'Entraînement + Nutrition + Vitamines', tagline: 'S’entraîner fort et récupérer, avec la nutrition qui suit.', icon: 'heart', tone: 'm-sup', modules: ['training', 'nutrition', 'nutrients'] },
+  { id: 'performance', name: 'Performance', sub: 'Entraînement + Vitamines', tagline: 'S’entraîner fort et suivre vos vitamines et minéraux pour bien récupérer.', icon: 'heart', tone: 'm-sup', modules: ['training', 'nutrients'] },
   { id: 'wellness', name: 'Bien-être', sub: 'Sommeil + Vitamines', tagline: 'Mieux dormir, moins de stress, compléments sous contrôle.', icon: 'moon', tone: 'm-sleep', modules: ['sleep', 'nutrients'] },
 ].map((b) => ({ ...b, price: [comboMonthly(b.modules), annualOf(comboMonthly(b.modules))] }));
 const bundleById = (id) => BUNDLES.find((b) => b.id === id);
@@ -2285,7 +2288,7 @@ function storeCatalog() {
 }
 function recommendedTier() {
   const track = state.profile?.track;
-  return track === 'menopause' ? 'women40' : track === 'muscle' ? 'performance' : track === 'eat' ? 'kitchen' : track === 'lose' ? 'body' : 'complete';
+  return track === 'menopause' ? 'women40' : track === 'muscle' ? 'body' : track === 'eat' ? 'kitchen' : track === 'lose' ? 'body' : 'complete';
 }
 function findPlan(tier) {
   if (String(tier).startsWith('custom:')) return customPlan(String(tier).slice(7).split('+'));
