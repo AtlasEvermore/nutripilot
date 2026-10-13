@@ -1677,3 +1677,35 @@ a.btn{text-decoration:none;color:var(--ink)}a.btn-lime,a.btn-ghost{color:var(--i
 .pt-row span{min-width:0;overflow-wrap:anywhere}.pt-row.head span{font-size:10px;hyphens:auto}
 .recipe-card h3,.pl-txt b,.rg-card b,.hello-points b,.mod-card b{overflow-wrap:anywhere;hyphens:auto}
 @media (max-width:370px){.pt-row{grid-template-columns:minmax(0,1.5fr) .9fr .9fr .85fr;padding:8px;font-size:11.5px}}
+/* v23 recipes: goal badge, regions, fit block, ingredient table */
+.rc-goal{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px;font-weight:800;line-height:1.2;padding:4px 8px 4px 6px;border-radius:999px;background:var(--mt);color:var(--ink);border:1px solid color-mix(in srgb,var(--mc) 35%,transparent)}
+.rc-goal .ico{width:12px;height:12px;flex:none;color:var(--mc)}
+.rc-goal>span{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rf-goals .rc-goal{white-space:normal}
+.region-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.region-chip{display:grid;justify-items:center;gap:2px;border:1px solid var(--line);background:#fff;border-radius:14px;padding:8px 4px;font-size:11px;font-weight:800;line-height:1.15;text-align:center;overflow-wrap:anywhere;min-width:0}
+.region-chip span{font-size:18px;line-height:1}
+.region-chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.rg-count{margin:2px 2px 8px;font-size:12px;color:var(--muted);font-weight:700}
+.recipe-fit{display:grid;gap:8px;margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
+.rf-goals,.rf-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rf-why,.rf-prot{display:flex;gap:7px;margin:0;font-size:12.5px;line-height:1.45;color:#34453b}
+.rf-why .ico{width:15px;height:15px;flex:none;margin-top:2px;color:#0d7f47}
+.rf-prot{font-weight:700;color:var(--ink)}
+.rf-ok,.rf-allergen{font-size:10.5px;font-weight:800;border-radius:999px;padding:4px 8px}
+.rf-ok{background:#e8f6ea;color:#0b6a3b}
+.rf-allergen{background:#fff2e5;color:#8a4a10;border:1px solid #f2dcc4}
+.rf-label{font-size:11px;font-weight:800;color:var(--muted)}
+.ing-table{display:grid;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.ing-row{display:grid;grid-template-columns:minmax(0,1fr) 62px 46px 56px;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12.5px}
+.ing-row>*:not(:first-child){text-align:end;font-variant-numeric:tabular-nums}
+.ing-row>span:first-child{overflow-wrap:anywhere;color:#2f3e35}
+.ing-head{background:#f4f3ea;font-size:10.5px;font-weight:800;color:var(--muted);padding-block:6px}
+.ing-total{border-bottom:0;background:var(--ink);color:#fff;font-weight:800}
+.ing-total>span:first-child{color:#fff}
+.ing-state{display:inline-block;margin-inline-start:6px;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:999px;vertical-align:1px}
+.ing-state.cru{background:#fdecec;color:#9b2c2c}.ing-state.cuit{background:#eef3fb;color:#2b5797}
+.ing-note{margin-top:6px}
+@media (max-width:380px){.ing-row{grid-template-columns:minmax(0,1fr) 54px 40px 50px;padding:8px;font-size:12px}.region-chip{font-size:10px;padding:7px 2px}}
+@media (max-width:330px){.region-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
+[dir=rtl] .ing-row>*:not(:first-child){text-align:start}

@@ -1,4 +1,4 @@
-import { WORLD_RECIPES, CUISINES, INGREDIENTS, ingredientAisle } from './food.js';
+import { WORLD_RECIPES, CUISINES, INGREDIENTS, ingredientAisle, enrichRecipe, ingredientMacros, ingredientState, ALLERGENS } from './food.js';
 import { EXTRA_EXERCISES, EQUIPMENT, EQUIP_OF, moveSvg } from './exercises.js';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -69,7 +69,7 @@ const curatedRecipes = [
     fat: 11,
     fiber: 10,
     ingredients: [
-      ['Dinde', 150], ['Quinoa cuit', 150], ['Carotte', 100], ['Concombre', 120], ['Tomate', 120], ['Yaourt nature', 60],
+      ['Dinde', 150], ['Quinoa cuit', 150], ['Carotte', 100], ['Concombre', 120], ['Tomates', 120], ['Yaourt nature', 60],
     ],
     steps: ['Cuisez la dinde.', 'Préparez les crudités.', 'Assemblez avec quinoa et sauce au yaourt.'],
   },
@@ -103,7 +103,7 @@ const curatedRecipes = [
     fat: 23,
     fiber: 9,
     ingredients: [
-      ['Œufs', 150], ['Pain complet', 60], ['Avocat', 60], ['Tomate', 120], ['Roquette', 30],
+      ['Œufs', 150], ['Pain complet', 60], ['Avocat', 60], ['Tomates', 120], ['Roquette', 30],
     ],
     steps: ['Préparez l’omelette.', 'Toastez le pain.', 'Servez avec avocat, tomate et roquette.'],
   },
@@ -137,7 +137,7 @@ const curatedRecipes = [
     fat: 15,
     fiber: 17,
     ingredients: [
-      ['Lentilles cuites', 210], ['Feta', 45], ['Tomate', 140], ['Concombre', 120], ['Carotte', 80], ['Huile d’olive', 6],
+      ['Lentilles cuites', 210], ['Feta', 45], ['Tomates', 140], ['Concombre', 120], ['Carotte', 80], ['Huile d’olive', 6],
     ],
     steps: ['Réchauffez légèrement les lentilles.', 'Ajoutez les légumes.', 'Terminez avec feta et vinaigrette légère.'],
   },
@@ -154,7 +154,7 @@ const curatedRecipes = [
     fat: 18,
     fiber: 10,
     ingredients: [
-      ['Tofu', 170], ['Riz cuit', 150], ['Brocoli', 180], ['Carotte', 100], ['Lait de coco léger', 70], ['Curry', 4],
+      ['Tofu', 170], ['Riz cuit', 150], ['Brocoli', 180], ['Carotte', 100], ['Lait de coco léger', 70], ['Épices', 4],
     ],
     steps: ['Dorez le tofu.', 'Ajoutez légumes, curry et lait de coco.', 'Servez avec le riz.'],
   },
@@ -188,7 +188,7 @@ const curatedRecipes = [
     fat: 21,
     fiber: 9,
     ingredients: [
-      ['Steak haché 5%', 130], ['Pain burger', 75], ['Pommes de terre', 220], ['Tomate', 80], ['Salade', 50], ['Sauce yaourt', 35],
+      ['Steak haché 5%', 130], ['Pain burger', 75], ['Pommes de terre', 220], ['Tomates', 80], ['Salade', 50], ['Sauce yaourt', 35],
     ],
     steps: ['Cuisez les potatoes au four.', 'Cuisez le steak.', 'Montez le burger avec crudités et sauce au yaourt.'],
   },
@@ -233,10 +233,8 @@ const RECIPE_TYPE = { 'Petit-déjeuner': 'b', Collation: 's' };
 const MEAT_RE = /(poulet|dinde|steak|jambon|boeuf|bœuf|porc|saucisse)/i;
 const FISH_RE = /(saumon|thon|crevette|cabillaud|poisson|sardine)/i;
 const ALL_RECIPES = [
-  ...curatedRecipes.map((r) => ({
-    ...r, cuisine: r.cuisine || 'fr', type: RECIPE_TYPE[r.category] || 'm', prepMin: Number.parseInt(r.prep, 10) || 20,
-    meat: r.ingredients.some(([n]) => MEAT_RE.test(n)), fish: r.ingredients.some(([n]) => FISH_RE.test(n)),
-  })),
+  // Calories and macros are always computed from the ingredient grams, never typed by hand.
+  ...curatedRecipes.map((r) => enrichRecipe({ ...r, cuisine: r.cuisine || 'fr', type: RECIPE_TYPE[r.category] || 'm', prepMin: Number.parseInt(r.prep, 10) || 20 })),
   ...WORLD_RECIPES,
 ];
 const LANG_CUISINE = { fr: 'fr', pt: 'br', es: 'es', it: 'it', de: 'de', en: 'us', nl: 'nl', pl: 'pl', tr: 'tr', ar: 'me', ja: 'jp', ko: 'kr', zh: 'cn', id: 'id', hi: 'in' };
@@ -263,15 +261,28 @@ let recipeFilter = 'all';
 // Recipe collections by goal. Each one states its criterion: a single recipe does not make anyone
 // lose weight or build muscle; it fits a goal through its calories and macros.
 const RECIPE_GOALS = [
-  { id: 'lose', ico: 'flame', tone: 'm-nut', name: 'Pour maigrir', rule: '≤ 450 kcal et rassasiantes : ≥ 20 g de protéines ou ≥ 6 g de fibres', test: (r) => r.kcal <= 450 && (r.protein >= 20 || r.fiber >= 6) },
-  { id: 'muscle', ico: 'dumbbell', tone: 'm-train', name: 'Prise de muscle', rule: '≥ 30 g de protéines par portion', test: (r) => r.protein >= 30 },
-  { id: 'meno', ico: 'flower', tone: 'm-meno', name: 'Ménopause 40+', rule: '≥ 20 g de protéines et ≥ 5 g de fibres, pour les besoins après 40 ans', test: (r) => r.protein >= 20 && r.fiber >= 5 },
-  { id: 'post', ico: 'heart', tone: 'm-sup', name: 'Après l’entraînement', rule: '≥ 25 g de protéines et ≥ 30 g de glucides', test: (r) => r.protein >= 25 && r.carbs >= 30 },
-  { id: 'lowcarb', ico: 'leaf', tone: 'm-vit', name: 'Pauvres en glucides', rule: '≤ 20 g de glucides par portion', test: (r) => r.carbs <= 20 },
-  { id: 'quick', ico: 'timer', tone: 'm-rec', name: 'Prêtes en 15 min', rule: '15 minutes ou moins', test: (r) => r.prepMin <= 15 },
-  { id: 'veg', ico: 'leaf', tone: 'm-sleep', name: 'Végétariennes', rule: 'Sans viande ni poisson', test: (r) => !r.meat && !r.fish },
-  { id: 'light', ico: 'fork', tone: 'm-scan', name: 'Collations légères', rule: 'Collations de 250 kcal ou moins', test: (r) => r.type === 's' && r.kcal <= 250 },
+  { id: 'lose', ico: 'flame', tone: 'm-nut', name: 'Pour maigrir', rule: 'Repas de 450 kcal ou moins avec ≥ 20 g de protéines ou ≥ 6 g de fibres pour tenir jusqu’au repas suivant ; collations de 200 kcal ou moins.' },
+  { id: 'cut', ico: 'scale', tone: 'm-coach', name: 'Sèche & définition', rule: '≥ 35 g de protéines pour 500 kcal maximum et ≤ 15 g de lipides : beaucoup de protéines, peu de calories.' },
+  { id: 'muscle', ico: 'dumbbell', tone: 'm-train', name: 'Prise de muscle', rule: '≥ 550 kcal et ≥ 35 g de protéines par portion pour couvrir un surplus calorique.' },
+  { id: 'meno', ico: 'flower', tone: 'm-meno', name: 'Ménopause 40+', rule: '≥ 20 g de protéines, ≥ 5 g de fibres et une source de calcium ou de soja à chaque portion.' },
+  { id: 'post', ico: 'heart', tone: 'm-sup', name: 'Après l’entraînement', rule: '≥ 25 g de protéines et ≥ 40 g de glucides pour réparer le muscle et refaire les réserves.' },
+  { id: 'pre', ico: 'sparkle', tone: 'm-kit', name: 'Avant l’entraînement', rule: '≥ 35 g de glucides, ≤ 10 g de lipides et 450 kcal maximum : de l’énergie facile à digérer.' },
+  { id: 'lowcarb', ico: 'grid', tone: 'm-vit', name: 'Pauvres en glucides', rule: '≤ 20 g de glucides et ≥ 20 g de protéines par portion.' },
+  { id: 'dessert', ico: 'star', tone: 'm-rec', name: 'Desserts protéinés', rule: 'Douceurs de 300 kcal ou moins avec ≥ 10 g de protéines.' },
+  { id: 'mealprep', ico: 'calendar', tone: 'm-scan', name: 'À préparer à l’avance', rule: '≥ 25 g de protéines, se cuisinent en une fois et se gardent 3 à 4 jours au réfrigérateur.' },
+  { id: 'vegan', ico: 'leaf', tone: 'm-sleep', name: '100 % végétal', rule: 'Sans viande, poisson, laitages, œufs ni miel, avec ≥ 12 g de protéines végétales.' },
+  { id: 'quick', ico: 'timer', tone: 'm-rec', name: 'Prêtes en 15 min', rule: '15 minutes ou moins', attr: (r) => r.prepMin <= 15 },
+  { id: 'veg', ico: 'leaf', tone: 'm-sleep', name: 'Végétariennes', rule: 'Sans viande ni poisson', attr: (r) => !r.meat && !r.fish },
+].map((g) => ({ ...g, test: g.attr || ((r) => (r.goals || []).includes(g.id)) }));
+const GOAL_BY_ID = Object.fromEntries(RECIPE_GOALS.map((g) => [g.id, g]));
+// Regions group the cuisines so each country's recipes are easy to find.
+const RECIPE_REGIONS = [
+  ['eu', 'Europe', '🇪🇺', ['fr', 'es', 'it', 'de', 'pl', 'nl']],
+  ['am', 'Amériques', '🌎', ['us', 'mx', 'br']],
+  ['asia', 'Asie', '🌏', ['as', 'jp', 'kr', 'cn', 'id']],
+  ['east', 'Orient & Inde', '🕌', ['me', 'tr', 'in']],
 ];
+let recipeRegion = 'all';
 let recipeGoal = '';
 let recipeQuery = '';
 
@@ -456,11 +467,24 @@ function addRecipeToPlan(recipeId, dayIndex) {
 function recipeList() {
   const favs = new Set(state.recipeFavorites || []);
   const q = foldText(recipeQuery);
-  return ALL_RECIPES.filter((r) => (recipeCuisine === 'all' || r.cuisine === recipeCuisine)
+  const region = RECIPE_REGIONS.find((x) => x[0] === recipeRegion);
+  const goal = GOAL_BY_ID[recipeGoal];
+  const list = ALL_RECIPES.filter((r) => (recipeCuisine === 'all' || r.cuisine === recipeCuisine)
+    && (!region || region[3].includes(r.cuisine))
     && (recipeType === 'all' || r.type === recipeType)
-    && (!recipeGoal || RECIPE_GOALS.find((g) => g.id === recipeGoal)?.test(r))
-    && (recipeFilter === 'all' || (recipeFilter === 'quick' && r.prepMin <= 15) || (recipeFilter === 'protein' && r.protein >= 30) || (recipeFilter === 'veg' && !r.meat && !r.fish) || (recipeFilter === 'fav' && favs.has(r.id)) || (recipeFilter === 'budget' && !r.fish && (r.ingredients || []).length <= 6) || (recipeFilter === 'fit' && recipeAllowed(r)))
+    && (!goal || goal.test(r))
+    && (recipeFilter === 'all' || (recipeFilter === 'quick' && r.prepMin <= 15) || (recipeFilter === 'protein' && r.protein >= 30) || (recipeFilter === 'veg' && !r.meat && !r.fish) || (recipeFilter === 'gf' && r.glutenFree) || (recipeFilter === 'lf' && r.lactoseFree) || (recipeFilter === 'fav' && favs.has(r.id)) || (recipeFilter === 'budget' && !r.fish && (r.ingredients || []).length <= 6) || (recipeFilter === 'fit' && recipeAllowed(r)))
     && (!q || foldText(L(r.name, null, false)).includes(q) || foldText(r.name).includes(q) || r.ingredients.some(([n]) => foldText(L(n, null, false)).includes(q))));
+  if (!goal || goal.attr) return list;
+  // Recipes written for this goal come first, then the ones that also meet its rule; the user's own cuisines lead.
+  const mine = new Set(planCuisines());
+  const rank = (r) => (r.goals[0] === goal.id ? (r.goalsWritten ? 0 : 2) : 4) + (mine.has(r.cuisine) ? 0 : 1);
+  return list.map((r, i) => [r, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([r]) => r);
+}
+function goalBadge(r) {
+  // Inside a collection the badge names the recipe's other use, so it never repeats the open filter.
+  const g = GOAL_BY_ID[(r.goals || []).find((id) => id !== recipeGoal)];
+  return g ? `<span class="rc-goal ${g.tone}">${icon(g.ico)}<span>${esc(L(g.name))}</span></span>` : '';
 }
 
 function recipeCardHtml(r) {
@@ -468,6 +492,7 @@ function recipeCardHtml(r) {
   return `<article class="recipe-card r-${r.type}" data-recipe-id="${esc(r.id)}" role="button" tabindex="0">
     <div class="recipe-card-top"><span class="rc-flag">${CUISINE_FLAG[r.cuisine] || '🍽️'}</span><span class="pill">${esc(L(r.category))}</span><button class="heart ${favs.has(r.id) ? 'active' : ''}" data-fav-recipe="${esc(r.id)}" aria-label="${L('Favori')}">${favs.has(r.id) ? '♥' : '♡'}</button></div>
     <h3>${esc(L(r.name))}</h3>
+    ${goalBadge(r)}
     <div class="recipe-stats"><span><b>${fmt(r.kcal)}</b> kcal</span><span><b>${fmt(r.protein)}</b> g ${L('prot.')}</span><span>${icon('timer')} ${esc(L(r.prep))}</span></div>
   </article>`;
 }
@@ -477,6 +502,7 @@ function recipeGridHtml() {
   return list.map((r) => `<article class="recipe-card r-${r.type}" data-recipe-id="${esc(r.id)}" role="button" tabindex="0">
     <div class="recipe-card-top"><span class="rc-flag">${CUISINE_FLAG[r.cuisine] || '🍽️'}</span><span class="pill">${esc(L(r.category))}</span><button class="heart ${favs.has(r.id) ? 'active' : ''}" data-fav-recipe="${esc(r.id)}" aria-label="${L('Favori')}">${favs.has(r.id) ? '♥' : '♡'}</button></div>
     <h3>${esc(L(r.name))}</h3>
+    ${goalBadge(r)}
     <div class="recipe-stats"><span><b>${fmt(r.kcal)}</b> kcal</span><span><b>${fmt(r.protein)}</b> g ${L('prot.')}</span><span>${icon('timer')} ${esc(L(r.prep))}</span></div>
   </article>`).join('') || `<div class="empty">${L('Aucune recette dans ce filtre.')}</div>`;
 }
@@ -488,7 +514,10 @@ function recipeTabs() {
 }
 function recipesScreen() {
   const types = [['all', 'Tout'], ['b', 'Petit-déjeuner'], ['m', 'Repas'], ['s', 'Collation']];
-  const filters = [['all', 'Toutes'], ['fit', 'Adaptées à mon profil'], ['quick', 'Rapides'], ['protein', 'Protéinées'], ['veg', 'Végétariennes'], ['budget', 'Économiques']];
+  const filters = [['all', 'Toutes'], ['fit', 'Adaptées à mon profil'], ['quick', 'Rapides'], ['protein', 'Protéinées'], ['veg', 'Végétariennes'], ['gf', 'Sans gluten'], ['lf', 'Sans lactose'], ['budget', 'Économiques']];
+  const region = RECIPE_REGIONS.find((x) => x[0] === recipeRegion);
+  const cuisines = region ? CUISINES.filter(([k]) => region[3].includes(k)) : CUISINES;
+  const shown = recipeList().length;
   if (recipeView !== 'explore') {
     const t = totals(); const p = state.profile;
     const list = recipeView === 'fav' ? ALL_RECIPES.filter((r) => state.recipeFavorites.includes(r.id)) : recipeView === 'made' ? (state.recipesMade || []).map((x) => ALL_RECIPES.find((r) => r.id === x.id)).filter(Boolean) : [];
@@ -506,13 +535,41 @@ function recipesScreen() {
       <div class="rg-row scroll">${RECIPE_GOALS.map((g) => `<button class="rg-card ${g.tone} ${recipeGoal === g.id ? 'on' : ''}" data-recipe-goal="${g.id}" aria-pressed="${recipeGoal === g.id}"><span class="mod-ico">${icon(g.ico)}</span><b>${L(g.name)}</b><em>${L('{n} recettes', { n: ALL_RECIPES.filter(g.test).length })}</em></button>`).join('')}</div>
       ${recipeGoal ? `<p class="rg-rule">${icon('check')}<span>${L(RECIPE_GOALS.find((g) => g.id === recipeGoal).rule)}</span></p>` : ''}
       <label class="search-box">${icon('search')}<input id="recipe-search" type="search" value="${esc(recipeQuery)}" placeholder="${L('Rechercher un plat ou un ingrédient')}"></label>
-      <div class="cuisine-row scroll"><button class="cuisine-chip ${recipeCuisine === 'all' ? 'on' : ''}" data-recipe-cuisine="all"><span>🌍</span>${L('Toutes')}</button>${CUISINES.map(([k, name, flag]) => `<button class="cuisine-chip ${recipeCuisine === k ? 'on' : ''}" data-recipe-cuisine="${k}"><span>${flag}</span>${L(name)}</button>`).join('')}</div>
+      <div class="section-label"><h3>${L('Par région')}</h3></div>
+      <div class="region-row">${[['all', 'Monde', '🌍'], ...RECIPE_REGIONS].map(([k, name, flag]) => `<button class="region-chip ${recipeRegion === k ? 'on' : ''}" data-recipe-region="${k}" aria-pressed="${recipeRegion === k}"><span>${flag}</span>${L(name)}</button>`).join('')}</div>
+      <div class="cuisine-row scroll"><button class="cuisine-chip ${recipeCuisine === 'all' ? 'on' : ''}" data-recipe-cuisine="all"><span>${region ? region[2] : '🌍'}</span>${L('Toutes')}</button>${cuisines.map(([k, name, flag]) => `<button class="cuisine-chip ${recipeCuisine === k ? 'on' : ''}" data-recipe-cuisine="${k}"><span>${flag}</span>${L(name)}</button>`).join('')}</div>
       <div class="segmented seg-4 slim">${types.map(([k, label]) => `<button class="${recipeType === k ? 'active' : ''}" data-recipe-type="${k}">${L(label)}</button>`).join('')}</div>
       <div class="chip-row">${filters.map(([k, label]) => `<button class="mini-choice ${recipeFilter === k ? 'selected' : ''}" data-recipe-filter="${k}">${L(label)}</button>`).join('')}</div>
+      <p class="rg-count" id="recipe-count">${L('{n} recettes', { n: shown })}</p>
       <div id="recipe-grid" class="recipe-grid">${recipeGridHtml()}</div>
     </div>
     ${bottom('recipes')}
   </div>`;
+}
+
+// Why a recipe belongs to its collections, with its own numbers next to each goal's rule.
+function recipeFitHtml(r) {
+  const goals = (r.goals || []).map((id) => GOAL_BY_ID[id]).filter(Boolean);
+  const allergens = ALLERGENS.filter(([code]) => (r.allergens || []).includes(code));
+  const diet = [r.vegan ? '100 % végétal' : (!r.meat && !r.fish ? 'Végétarienne' : ''), r.glutenFree ? 'Sans gluten' : '', r.lactoseFree ? 'Sans lactose' : ''].filter(Boolean);
+  return `<div class="recipe-fit">
+    ${goals.length ? `<div class="rf-goals">${goals.map((g) => `<span class="rc-goal ${g.tone}">${icon(g.ico)}${esc(L(g.name))}</span>`).join('')}</div><p class="rf-why">${icon('check')}<span>${esc(L(goals[0].rule))}</span></p>` : ''}
+    ${r.mainProtein ? `<p class="rf-prot">${L('Source principale de protéines : {g} g de {name} ({state}) apportent {p} g de protéines.', { g: fmt(r.mainProtein.grams), name: lang() === 'de' ? L(r.mainProtein.name) : L(r.mainProtein.name).toLocaleLowerCase(locale()), state: L(ingredientState(r.mainProtein.name) === 'cru' ? 'pesé cru' : ingredientState(r.mainProtein.name) === 'cuit' ? 'pesé cuit' : 'tel quel'), p: fmt(r.mainProtein.protein) })}</p>` : ''}
+    <div class="rf-tags">${diet.map((d) => `<span class="rf-ok">${esc(L(d))}</span>`).join('')}${allergens.length ? `<span class="rf-label">${L('Allergènes :')}</span>${allergens.map(([, label]) => `<span class="rf-allergen">${esc(L(label))}</span>`).join('')}` : `<span class="rf-ok">${L('Sans allergène majeur')}</span>`}</div>
+  </div>`;
+}
+
+// Ingredient lines with the grams and what those grams bring, so each protein figure can be checked.
+function ingredientTableHtml(r, servings) {
+  const rows = r.ingredients.map(([name, grams]) => ({ name, grams: grams * servings, v: ingredientMacros(name, grams * servings), state: ingredientState(name) }));
+  const sum = rows.reduce((t, x) => ({ kcal: t.kcal + (x.v?.kcal || 0), protein: t.protein + (x.v?.protein || 0) }), { kcal: 0, protein: 0 });
+  const one = (x) => (x >= 10 ? fmt(Math.round(x)) : Number((Math.round(x * 10) / 10).toFixed(1)).toLocaleString(locale(), { maximumFractionDigits: 1 }));
+  return `<div class="ing-table" role="table">
+    <div class="ing-row ing-head" role="row"><span role="columnheader">${L('Ingrédient')}</span><span role="columnheader">${L('Poids')}</span><span role="columnheader">kcal</span><span role="columnheader">${L('Prot.')}</span></div>
+    ${rows.map((x) => `<div class="ing-row" role="row"><span role="cell">${esc(L(x.name))}${x.state ? `<small class="ing-state ${x.state}">${L(x.state)}</small>` : ''}</span><b role="cell">${fmt(x.grams)} g</b><span role="cell">${x.v ? fmt(Math.round(x.v.kcal)) : '–'}</span><span role="cell">${x.v ? `${one(x.v.protein)} g` : '–'}</span></div>`).join('')}
+    <div class="ing-row ing-total" role="row"><span role="cell">${servings > 1 ? L('Total ({n} portions)', { n: servings }) : L('Total de la portion')}</span><b role="cell">${fmt(rows.reduce((t, x) => t + x.grams, 0))} g</b><span role="cell">${fmt(Math.round(sum.kcal))}</span><span role="cell">${fmt(Math.round(sum.protein))} g</span></div>
+  </div>
+  <p class="fine ing-note">${L('Viandes et poissons pesés crus, féculents et légumineuses pesés cuits. Valeurs calculées à partir des tables nutritionnelles de référence (CIQUAL, USDA) ; elles peuvent varier selon les marques.')}</p>`;
 }
 
 function recipeSheet(recipe) {
@@ -520,9 +577,10 @@ function recipeSheet(recipe) {
   const fromLib = ALL_RECIPES.some((x) => x.id === recipe.id);
   return `<div class="sheet-head"><div><span class="tag">${CUISINE_FLAG[recipe.cuisine] || ''} ${esc(L(recipe.category || 'RECETTE'))}</span><h2>${esc(L(recipe.name))}</h2></div><button class="icon-btn" data-close>×</button></div>
     <div class="recipe-hero-stats"><div><b>${fmt(recipe.kcal)}</b><span>kcal</span></div><div><b>${fmt(recipe.protein)}</b><span>${L('prot.')}</span></div><div><b>${fmt(recipe.carbs)}</b><span>${L('gluc.')}</span></div><div><b>${fmt(recipe.fat)}</b><span>${L('lip.')}</span></div><div><b>${esc(L(recipe.prep))}</b><span>${L('temps')}</span></div></div>
+    ${recipeFitHtml(recipe)}
     <div class="section-label"><h3>${L('Ingrédients')}</h3><div class="stepper sm"><button data-servings="-1" aria-label="−">${icon('minus')}</button><b>${modal?.servings || 1}</b><button data-servings="1" aria-label="+">${icon('plus')}</button></div></div>
     <p class="fine serv-note">${L('Quantités pour {n} personne(s). Valeurs nutritionnelles par portion.', { n: modal?.servings || 1 })}</p>
-    <div class="ingredient-table">${recipe.ingredients.map((item) => `<div><span>${esc(L(item[0]))}</span><b>${fmt(item[1] * (modal?.servings || 1))} g</b></div>`).join('')}</div>
+    ${ingredientTableHtml(recipe, modal?.servings || 1)}
     <div class="section-label"><h3>${L('Préparation')}</h3></div>
     <ol class="steps-list">${recipe.steps.map((step) => `<li>${esc(L(step))}</li>`).join('')}</ol>
     <div class="modal-actions three">
@@ -790,6 +848,8 @@ window.__npCollect = () => {
   TOUR.forEach((x) => { touch(x[1]); touch(x[2]); });
   COACH_STYLES.forEach((c) => { touch(c.name); touch(c.desc); });
   WORLD_RECIPES.forEach((r) => { [r.name, r.category, r.difficulty, ...r.steps].forEach(touch); });
+  RECIPE_GOALS.forEach((g) => { touch(g.name); touch(g.rule); }); RECIPE_REGIONS.forEach((x) => touch(x[1])); ALLERGENS.forEach((x) => touch(x[1]));
+  ['Monde', 'Sans gluten', 'Sans lactose', 'Végétarienne', '100 % végétal', 'Sans allergène majeur', 'pesé cru', 'pesé cuit', 'tel quel', 'cru', 'cuit'].forEach(touch);
   Object.keys(INGREDIENTS).forEach(touch); CUISINES.forEach((c) => touch(c[1]));
   Object.values(EXERCISES).forEach((e) => [e.name, e.muscle, ...(e.cues || [])].forEach(touch)); Object.values(EQUIPMENT).forEach(touch);
   MEASURES.forEach((m) => touch(m[1])); BUNDLES.forEach((b) => [b.name, b.sub, b.tagline, b.badge].forEach(touch)); TQ.forEach(([, label, opts]) => { touch(label); opts.forEach((o) => touch(o[1])); }); PROGRAM_GROUPS.forEach((g) => touch(g[1])); SUPP_PRESETS.forEach((x) => { touch(x.name); touch(x.serving); x.ings.forEach((i) => touch(i[0])); }); SLEEP_FACTORS.forEach((x) => touch(x[1])); SOUNDS.forEach((x) => touch(x[1])); SLEEP_NIGHTS.forEach(([t, pts, a]) => { touch(t); pts.forEach(touch); touch(a); }); SLEEP_LESSONS.forEach(([t, x]) => { touch(t); touch(x); }); DAY_FOCUS.forEach((f) => touch(f[1])); FREE_MODULES.forEach((m) => touch(m.name)); ['Notez votre nuit chaque matin : en 3 jours, vous verrez vos premières tendances.', 'Vos nuits sont courtes : avancez votre coucher de 15 minutes cette semaine.', 'Journée chargée : 3 minutes de respiration avant le dîner aident à décrocher.', 'Belle régularité : gardez la même heure de lever, même le week-end.', 'Mon planning', 'Séance du jour', 'Débutant', 'Intermédiaire', 'Confirmé', 'Sur mesure'].forEach(touch); ['Calories', 'Protéines', 'Glucides', 'Lipides', 'Collation'].forEach(touch); DEFAULT_PLANS.forEach((x) => [x.label, x.sub, x.tagline, x.badge].forEach(touch));
@@ -6839,7 +6899,7 @@ function bind() {
     }
     if (el.id === 'lib-search') { libQuery = el.value; const grid = $('#lib-grid'); if (grid) grid.innerHTML = libraryList(libGroup, libEquip, libQuery).map((id) => exCardHtml(id)).join('') || `<div class="empty">${L('Aucun exercice pour ce filtre.')}</div>`; }
     if (el.id === 'global-search') { const box = $('#gs-results'); if (box) box.innerHTML = globalSearch(el.value); }
-    if (el.id === 'recipe-search') { recipeQuery = el.value; const grid = $('#recipe-grid'); if (grid) grid.innerHTML = recipeGridHtml(); }
+    if (el.id === 'recipe-search') { recipeQuery = el.value; const grid = $('#recipe-grid'); if (grid) grid.innerHTML = recipeGridHtml(); const count = $('#recipe-count'); if (count) count.textContent = L('{n} recettes', { n: recipeList().length }); }
     if (el.id === 'grid-name') gridDraft().name = el.value;
     if (el.dataset.gridSessionName !== undefined) gridDraft().days[Number(el.dataset.gridSessionName)].name = el.value;
     if (el.dataset.gridReps !== undefined) { const [d, e] = el.dataset.gridReps.split(':').map(Number); gridDraft().days[d].ex[e][2] = el.value; }
@@ -7305,6 +7365,7 @@ function bind() {
     if (button.dataset.gridPick !== undefined) { pickerState = { day: Number(button.dataset.gridPick), group: 'all', equip: 'all', query: '' }; modal = { type: 'ex-picker' }; return renderModal(); }
     if (button.dataset.gridSave !== undefined) { if (!state.premium) return nav('paywall'); return saveGrid(); }
     if (button.dataset.recipeCuisine) { recipeCuisine = button.dataset.recipeCuisine; return render(); }
+    if (button.dataset.recipeRegion) { recipeRegion = button.dataset.recipeRegion; recipeCuisine = 'all'; return render(); }
     if (button.dataset.recipeType) { recipeType = button.dataset.recipeType; return render(); }
     if (button.dataset.planCuisine) {
       const set = new Set(planCuisines()); const k = button.dataset.planCuisine;
@@ -7504,7 +7565,7 @@ function bind() {
       else render();
       return;
     }
-    if (button.dataset.recipeGoal !== undefined) { recipeGoal = recipeGoal === button.dataset.recipeGoal ? '' : button.dataset.recipeGoal; recipeView = 'explore'; return render(); }
+    if (button.dataset.recipeGoal !== undefined) { recipeGoal = recipeGoal === button.dataset.recipeGoal ? '' : button.dataset.recipeGoal; recipeView = 'explore'; render(); requestAnimationFrame(() => { const card = document.querySelector('.rg-card.on'); const row = card?.parentElement; if (card && row) { const c = card.getBoundingClientRect(); const w = row.getBoundingClientRect(); row.scrollBy({ left: c.left - w.left - (w.width - c.width) / 2, behavior: 'instant' }); } }); return; }
     if (button.dataset.recipeFilter) { recipeFilter = button.dataset.recipeFilter; return render(); }
 
     if (button.dataset.quickCoach) return sendCoach(button.dataset.quickCoach);
