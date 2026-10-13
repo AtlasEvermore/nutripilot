@@ -647,6 +647,8 @@ const defaultState = {
   basicsDone: false,
   helloSeen: false,
   focus: '',
+  country: '',
+  currency: '',
   basicsFilled: {},
   workoutLog: [],
   workoutProgram: '',
@@ -1559,6 +1561,7 @@ function basicsScreen() {
           <label class="field"><span>${esc(t('weight'))}</span><div class="unit-input"><input id="b-weight" type="number" inputmode="decimal" min="35" max="250" step="0.1" value="${esc(state.basicsFilled?.weight ? d.weight || '' : '')}"><i>kg</i></div></label>
           <label class="field"><span>${esc(t('height'))}</span><div class="unit-input"><input id="b-height" type="number" inputmode="numeric" min="130" max="220" value="${esc(state.basicsFilled?.height ? d.height || '' : '')}"><i>cm</i></div></label>
         </div>
+        ${locationPicker(true)}
         <label class="later-toggle"><input type="checkbox" id="b-later"> ${esc(t('later'))}</label>
       </div>
       <div class="welcome-cta"><button class="btn btn-primary btn-wide btn-xl" data-basics-ok>${esc(t('basicsCta'))}</button></div>
@@ -1948,13 +1951,14 @@ const moduleById = (id) => MODULES.find((m) => m.id === id);
 const moduleForRoute = (r = route) => moduleById(MODULE_ROUTES[r]);
 
 // ---- Pricing -------------------------------------------------------------------
-// Monthly prices in US dollars (base); every other currency is converted at the day's rate.
-// Any combination costs its modules' sum minus a small, readable discount, rounded to ,90.
-// Annual = 10 × monthly (2 months free). The Complete kit is the top price and the best value.
+// Prices are set in US dollars and converted exactly (day's rate) to the buyer's currency.
+// Ladder: a combination = its modules' sum − 15 % (2), 20 % (3), 25 % (4), 30 % (5), ending in ,90;
+// adding a module always costs more; when a combination would reach the Complete kit, the kit is offered instead.
+// Annual = exactly 10 × monthly (2 months free), in every currency.
 const r2 = (v) => Math.round(v * 100) / 100;
 const MONTHLY_PRICE = { nutrition: 9.99, recipes: 4.99, training: 14.99, menopause: 12.99, nutrients: 2.99, sleep: 4.99 };
-const KIT_MONTHLY = 39.9;
-const COMBO_OFF = { 2: 0.15, 3: 0.18, 4: 0.2, 5: 0.22 };
+const KIT_MONTHLY = 29.9;
+const COMBO_OFF = { 2: 0.15, 3: 0.2, 4: 0.25, 5: 0.3 };
 const annualOf = (monthly) => r2(monthly * 10);
 const PAID_MODULES = MODULES.filter((m) => !m.free);
 const FREE_MODULES = MODULES.filter((m) => m.free);
@@ -1963,13 +1967,24 @@ const PAID_IDS = PAID_MODULES.map((m) => m.id);
 const MOD_CODE = { nutrition: 'n', recipes: 'r', training: 't', menopause: 'm', nutrients: 'v', sleep: 's' };
 const CODE_MOD = Object.fromEntries(Object.entries(MOD_CODE).map(([k, v]) => [v, k]));
 const sortMods = (mods) => PAID_IDS.filter((id) => mods.includes(id));
+const comboMemo = new Map();
 function comboMonthly(mods) {
   const list = sortMods(mods);
-  if (list.length === 1) return MONTHLY_PRICE[list[0]];
-  if (list.length >= PAID_IDS.length) return KIT_MONTHLY;
-  const sum = list.reduce((t, id) => t + MONTHLY_PRICE[id], 0);
-  const price = Math.ceil(sum * (1 - (COMBO_OFF[list.length] || 0.22))) - 0.1;
-  return r2(Math.min(price, sum - 0.5, KIT_MONTHLY - 1));
+  const key = list.join();
+  if (comboMemo.has(key)) return comboMemo.get(key);
+  let price;
+  if (list.length === 1) price = MONTHLY_PRICE[list[0]];
+  else if (list.length >= PAID_IDS.length) price = KIT_MONTHLY;
+  else {
+    const sum = list.reduce((t, id) => t + MONTHLY_PRICE[id], 0);
+    price = r2(Math.floor(sum * (1 - (COMBO_OFF[list.length] || 0.3))) - 0.1);
+    // Always more than any smaller selection inside it.
+    const floor = Math.max(...list.map((id) => comboMonthly(list.filter((x) => x !== id))));
+    if (price <= floor) { const up = Math.floor(floor) + 0.9; price = r2(up > floor + 1e-9 ? up : up + 1); }
+    if (price >= KIT_MONTHLY - 1) price = KIT_MONTHLY;
+  }
+  comboMemo.set(key, price);
+  return price;
 }
 const MODULE_PRICES = Object.fromEntries([...PAID_IDS.map((id) => [id, [MONTHLY_PRICE[id], annualOf(MONTHLY_PRICE[id])]]), ['complete', [KIT_MONTHLY, annualOf(KIT_MONTHLY)]]]);
 // Themed combinations, priced with the same rule as any combination the person composes.
@@ -2014,7 +2029,7 @@ function customPlan(parts) {
   if (!mods.length) return null;
   const plans = DEFAULT_PLANS;
   if (mods.length === 1) return plans.find((p) => p.tier === mods[0]);
-  if (mods.length === PAID_IDS.length) return plans.find((p) => p.tier === 'complete');
+  if (mods.length === PAID_IDS.length || comboMonthly(mods) >= KIT_MONTHLY) return plans.find((p) => p.tier === 'complete');
   const same = plans.find((p) => p.kind === 'bundle' && sortMods(p.modules).join() === mods.join());
   if (same) return same;
   const code = mods.map((id) => MOD_CODE[id]).join('');
@@ -2271,71 +2286,28 @@ function detectCountry() {
   for (const l of navigator.languages || [navigator.language || '']) { const cc = String(l).split('-')[1]; if (countryCurrency(cc)) return cc.toUpperCase(); }
   return '';
 }
-function detectCurrency() { return countryCurrency(config.country) || countryCurrency(detectCountry()) || 'USD'; }
+function buyerCountry() { return [state?.country, config.country, detectCountry()].find((c) => countryCurrency(c)) || 'US'; }
+function detectCurrency() { return countryCurrency(buyerCountry()) || 'USD'; }
 function rates() { return config.rates && typeof config.rates === 'object' && config.ratesBase === 'USD' ? { ...FALLBACK_RATES, ...config.rates, USD: 1 } : FALLBACK_RATES; }
 function currency() {
   const native = window.NutriPilotNative?.currency;
   if (native) return native;
   return state?.currency && rates()[state.currency] ? state.currency : detectCurrency();
 }
-// Store-style price point near a converted amount.
-function pricePoint(v, cur) {
-  if (cur === BASE_CURRENCY) return r2(v);
-  if (ZERO_DEC.includes(cur)) {
-    const digits = Math.floor(Math.log10(Math.max(1, v))) + 1;
-    const step = Math.pow(10, Math.max(0, digits - 2));
-    const p = Math.round(v / step) * step;
-    return Math.max(step, p - (step >= 10 ? step / 10 : 0));
-  }
-  if (v < 1) return 0.99;
-  if (v >= 1000) return Math.max(999, Math.round(v / 100) * 100 - 1);   // 1 299, 7 699
-  if (v >= 100) return Math.max(99, Math.round(v / 10) * 10 - 1);       // 549, 2 879
-  if (v >= 20) return Math.round(v) - 0.01;                               // 43.99
-  const k = Math.floor(v);
-  const options = [k - 0.01, k + 0.49, k + 0.99].filter((x) => x > 0);  // 2.49, 2.99
-  return r2(options.reduce((a, c) => (Math.abs(c - v) < Math.abs(a - v) ? c : a)));
-}
-// Price of one product in the buyer's currency.
+// Exact conversion: the dollar price × today's rate, to the cent (whole units for currencies without cents).
+const roundCur = (v, cur) => (ZERO_DEC.includes(cur) ? Math.round(v) : r2(v));
 function localPrice(basePrice, storeId = '', cur = currency()) {
   const store = storeId && window.NutriPilotNative?.products?.[storeId];
   if (store && Number.isFinite(Number(store.price))) return Number(store.price);
-  return pricePoint(basePrice * (rates()[cur] || 1), cur);
+  return roundCur(basePrice * (rates()[cur] || 1), cur);
 }
-// Smallest store price point strictly above v.
-function nextPoint(v, cur) {
-  let x = v, d = ZERO_DEC.includes(cur) ? 1 : 0.05;
-  for (let i = 0; i < 400; i++) { x += d; d *= 1.04; const p = pricePoint(x, cur); if (p > v + 1e-9) return p; }
-  return v;
-}
-// Largest store price point at or below v.
-function prevPoint(v, cur) {
-  let x = v, d = ZERO_DEC.includes(cur) ? 1 : 0.05;
-  for (let i = 0; i < 400 && x > 0; i++) { const p = pricePoint(x, cur); if (p <= v + 1e-9) return p; x -= d; d *= 1.04; }
-  return v;
-}
-// Local price of a set of modules. Each set costs strictly more than any smaller set inside it,
-// and the annual price stays ≈ 10 × the local monthly (2 months free in every currency).
-const lpCache = new Map();
-function lpMods(mods, period, cur) {
-  const key = `${cur}:${rates()[cur]}:${period}:${mods.join()}`;
-  if (lpCache.has(key)) return lpCache.get(key);
-  const plan = customPlan(mods);
-  let price = period === 'annual' ? pricePoint(lpMods(mods, 'monthly', cur) * 10, cur) : pricePoint(plan.monthly.price * (rates()[cur] || 1), cur);
-  if (mods.length > 1) {
-    const floor = Math.max(...mods.map((id) => lpMods(mods.filter((x) => x !== id), period, cur)));
-    if (price <= floor) price = nextPoint(floor, cur);
-    // Never more than the same modules bought one by one.
-    const sum = r2(mods.reduce((t, id) => t + lpMods([id], period, cur), 0));
-    if (price > sum) { const cap = prevPoint(sum, cur); price = cap > floor ? cap : sum; }
-  }
-  lpCache.set(key, price);
-  return price;
-}
+// Price of a plan in the buyer's currency. The store's own price wins in the iPhone / Android app.
+// Annual = exactly 10 × the local monthly price, so the 2 free months add up in every currency.
 function lp(plan, period, cur = currency()) {
   const store = window.NutriPilotNative?.products?.[plan[period].storeId];
   if (store && Number.isFinite(Number(store.price))) return Number(store.price);
-  if (cur === BASE_CURRENCY) return plan[period].price;
-  return lpMods(sortMods(plan.modules || []), period, cur);
+  const monthly = localPrice(plan.monthly.price, '', cur);
+  return period === 'annual' ? roundCur(monthly * 10, cur) : monthly;
 }
 function money(value, cur = currency()) {
   try {
@@ -2344,12 +2316,30 @@ function money(value, cur = currency()) {
 }
 const euro = money;
 // Read-only pricing hook for QA and for the store setup list.
-window.__npPricing = { currency: () => currency(), money: (v, c) => money(v, c), catalog: () => storeCatalog(), local: (v, c) => localPrice(v, '', c), currencies: () => Object.keys(rates()).filter((k) => CUR_NAMES[k]), combo: (mods, period, c) => lp(customPlan(mods), period, c),
+window.__npPricing = { rate: (c) => rates()[c], zero: (c) => ZERO_DEC.includes(c), usd: (mods) => customPlan(mods).monthly.price, currency: () => currency(), money: (v, c) => money(v, c), catalog: () => storeCatalog(), local: (v, c) => localPrice(v, '', c), currencies: () => Object.keys(rates()).filter((k) => CUR_NAMES[k]), combo: (mods, period, c) => lp(customPlan(mods), period, c),
   plans: (c) => DEFAULT_PLANS.map((p) => ({ tier: p.tier, monthly: lp(p, 'monthly', c), annual: lp(p, 'annual', c), save: planSaving(p, 'monthly'), ref: refPrice(p, 'monthly', c) })) };
-function currencyPicker() {
+// Country (auto-detected) sets the currency; the person can change the country or pay in another currency.
+const flagOf = (cc) => String.fromCodePoint(...[...cc.toUpperCase()].map((ch) => 127397 + ch.charCodeAt(0)));
+function countryName(cc) { try { return new Intl.DisplayNames([locale()], { type: 'region' }).of(cc) || cc; } catch { return cc; } }
+function locationPicker(compact = false) {
   if (window.NutriPilotNative?.currency) return '';
+  const cc = buyerCountry();
   const cur = currency();
-  return `<label class="cur-pick">${icon('globe')}<span>${L('Prix en')}</span><select data-currency aria-label="${L('Devise')}">${Object.keys(rates()).filter((k) => CUR_NAMES[k]).sort((a, b) => (a === cur ? -1 : b === cur ? 1 : a.localeCompare(b))).map((k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${esc(`${k} · ${CUR_NAMES[k]}`)}</option>`).join('')}</select></label>`;
+  const local = countryCurrency(cc) || 'USD';
+  const countries = Object.keys(CC_CUR).map((c) => [c, countryName(c)]).sort((a, b) => a[1].localeCompare(b[1], locale()));
+  const intl = ['USD', 'EUR', 'GBP'].filter((c) => c !== local);
+  const others = Object.keys(rates()).filter((k) => CUR_NAMES[k] && k !== local && !intl.includes(k)).sort();
+  const opt = (k, label) => `<option value="${k}" ${state.currency === k ? 'selected' : ''}>${esc(label)}</option>`;
+  const rate = rates()[cur];
+  return `<div class="loc-pick ${compact ? 'compact' : ''}">
+    <label><span>${L('Pays')}</span><select data-country aria-label="${L('Pays')}">${countries.map(([c, n]) => `<option value="${c}" ${c === cc ? 'selected' : ''}>${flagOf(c)} ${esc(n)}</option>`).join('')}</select></label>
+    <label><span>${L('Devise de paiement')}</span><select data-currency aria-label="${L('Devise de paiement')}">
+      <option value="" ${state.currency ? '' : 'selected'}>${esc(`${L('Locale')} · ${local} (${CUR_NAMES[local] || local})`)}</option>
+      <optgroup label="${L('Internationales')}">${intl.map((k) => opt(k, `${k} · ${CUR_NAMES[k]}`)).join('')}</optgroup>
+      <optgroup label="${L('Autres devises')}">${others.map((k) => opt(k, `${k} · ${CUR_NAMES[k]}`)).join('')}</optgroup>
+    </select></label>
+    ${cur !== BASE_CURRENCY && rate ? `<p class="loc-rate">${L('Prix fixés en dollar et convertis au taux du jour : 1 US$ = {r}', { r: money(rate, cur) })}</p>` : ''}
+  </div>`;
 }
 // Final price as charged: "R$ 149,90 / an" — never a per-month equivalent on its own.
 const unitOf = (period) => (period === 'annual' ? L('/ an') : L('/ mois'));
@@ -2361,11 +2351,6 @@ function compareHtml(plan, period) {
   return `<i class="cmpx"><s>${money(refPrice(plan, period))}</s> ${L('économisez {p}', { p: money(save) })}</i>`;
 }
 
-function comboSaving(plans, period) {
-  const complete = plans.find((x) => x.tier === 'complete');
-  const separate = plans.filter((x) => x.kind === 'module').reduce((sum, x) => sum + x[period].price, 0);
-  return complete && separate ? Math.round((1 - complete[period].price / separate) * 100) : 0;
-}
 
 function waitlistMode(option) {
   return !Billing.native() && !option?.offer;
@@ -2427,7 +2412,7 @@ function paywall() {
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
       </div>
       ${freeBanner(true)}
-      ${currencyPicker()}
+      ${locationPicker()}
       <div class="plan-list" role="radiogroup">
         ${(() => {
           const kit = plans.find((x) => x.tier === 'complete');
@@ -3098,8 +3083,11 @@ let buildSel = null;
 function planName(x) {
   return x.kind === 'custom' ? x.parts.map((t) => L(moduleById(t)?.name || findPlan(t)?.label || t)).join(' + ') : L(x.label);
 }
+// Short module names next to their icons, so a plan's contents read at a glance.
+const MOD_SHORT = { nutrition: 'Nutrition', recipes: 'Recettes', training: 'Entraînement', menopause: 'Ménopause', nutrients: 'Vitamines', sleep: 'Sommeil', scanner: 'Scanner', supplements: 'Compléments', coach: 'Coach' };
 function modChips(mods, small = false) {
-  return `<span class="mchips ${small ? 'small' : ''}">${mods.map((id) => { const m = moduleById(id); return `<span class="mchip ${m.tone}">${icon(m.icon)}${small ? '' : `<i>${esc(L(m.name))}</i>`}</span>`; }).join('')}</span>`;
+  const paid = mods.filter((id) => !moduleById(id)?.free);
+  return `<span class="mchips ${small ? 'small' : ''}">${paid.map((id) => { const m = moduleById(id); return `<span class="mchip ${m.tone}">${icon(m.icon)}<i>${esc(L(small ? MOD_SHORT[id] || m.name : m.name))}</i></span>`; }).join('')}</span>${small && paid.length ? `<em class="pl-free">${icon('check')} ${L('Scanner, Compléments et Coach offerts')}</em>` : ''}`;
 }
 function priceBlock(x, period = selectedPeriod) {
   return `<div class="pp-price"><b>${money(lp(x, period))}</b><small>${unitOf(period)}</small>${compareHtml(x, period)}</div>`;
@@ -3139,6 +3127,7 @@ function plansScreen() {
       ? `<div class="bd-grid">${PAID_MODULES.map((m) => `<button class="bd-mod ${m.tone} ${buildSel.includes(m.id) ? 'on' : ''}" data-build-mod="${m.id}" aria-pressed="${buildSel.includes(m.id)}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.name))}</b><i class="bd-check">${icon('check')}</i></button>`).join('')}</div>
         ${best ? `<div class="bd-best compact"><small>${L('Le prix de votre sélection')}</small><b>${esc(planName(best))}</b>
           <div class="bd-price"><b>${per(lp(best, selectedPeriod))}</b><small>${unit}</small>${compareHtml(best, selectedPeriod)}</div>
+          ${best.kind === 'complete' && buildSel.length < PAID_IDS.length ? `<p class="bd-up">${L('Pour ce prix, le Kit complet vous donne tous les modules : c’est la meilleure option pour votre sélection.')}</p>` : ''}
           ${best.kind !== 'complete' && kit ? `<p class="bd-up">${L('Pour {p} de plus, prenez le Kit complet : les 9 modules.', { p: `${per(r2(lp(kit, selectedPeriod) - lp(best, selectedPeriod)))} ${unit}` })}</p>` : ''}
           <button class="btn btn-lime btn-wide" data-choose-plan="${esc(best.tier)}">${Billing.trialDays() ? L('Essayer {n} jours gratuits', { n: Billing.trialDays() }) : L('Choisir cette formule')}</button></div>` : `<div class="empty">${L('Choisissez au moins un module.')}</div>`}`
       : `<div class="pl-list">${bundles.map(row).join('')}</div>`;
@@ -3148,7 +3137,7 @@ function plansScreen() {
       <p class="pl-sub">${L('Un module, une combinaison ou tout. {n} jours gratuits, sans engagement.', { n: 3 })}</p>
       ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
       ${freeBanner(true)}
-      ${currencyPicker()}
+      ${locationPicker()}
       <div class="period-toggle slim" role="tablist">
         <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>${L('2 mois offerts')}</span></button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
@@ -3159,6 +3148,14 @@ function plansScreen() {
       </button>` : ''}
       <div class="plans-tabs" role="tablist">${tab('bundles', 'Combinaisons')}${tab('modules', 'Modules')}${tab('builder', 'Composer')}</div>
       ${body}
+      <details class="pl-more"><summary>${L('Le calcul de chaque formule')}</summary>
+        <p class="pt-note">${L('Chaque formule coûte moins que ses modules achetés un par un. Plus vous en prenez, plus la remise augmente : 15 % pour 2, 20 % pour 3, 25 % pour 4. Le Kit complet réunit tout pour moins cher que trois grands modules.')}</p>
+        <div class="price-table" role="table">
+          <div class="pt-row head" role="row"><span>${L('Formule')}</span><span>${L('Séparément')}</span><span>${L('Prix')}</span><span>${L('Économie')}</span></div>
+          ${[kit, ...bundles, ...mods].map((x) => { const ref = refPrice(x, selectedPeriod); const pr = lp(x, selectedPeriod); return `<div class="pt-row ${x.kind}" role="row"><span><b>${esc(L(x.label))}</b><small>${x.kind === 'module' ? esc(L(x.sub)) : sortMods(x.modules).map((id) => `${L(MOD_SHORT[id])} ${money(lp(DEFAULT_PLANS.find((p) => p.tier === id), selectedPeriod))}`).join(' + ')}</small></span><span>${x.kind === 'module' && selectedPeriod === 'monthly' ? '—' : `<s>${money(ref)}</s>`}</span><span><b>${money(pr)}</b></span><span>${ref - pr >= 0.01 ? `−${money(r2(ref - pr))}` : '—'}</span></div>`; }).join('')}
+          <p class="pt-foot">${selectedPeriod === 'annual' ? L('Prix par an. « Séparément » = 12 mois de chaque module au prix mensuel ; l’annuel offre 2 mois.') : L('Prix par mois.')} ${L('Scanner, Compléments et Coach offerts')}.</p>
+        </div>
+      </details>
       <details class="pl-more"><summary>${L('Comparer les formules')}</summary>
         <div class="cmp2" role="table">
           <div class="cmp2-row head" role="row"><span></span>${[kit, ...bundles].map((x) => `<b class="${x.tone}" title="${esc(L(x.label))}">${icon(x.icon)}</b>`).join('')}</div>
@@ -6636,7 +6633,8 @@ function a11yPass(root) {
 function bind() {
   app.onchange = (event) => {
     const el = event.target;
-    if (el.matches('[data-currency]')) { state.currency = rates()[el.value] ? el.value : ''; saveState(); return render(); }
+    if (el.matches('[data-currency]')) { state.currency = rates()[el.value] ? el.value : ''; saveState(); track('SelectCurrency', { source: state.currency || 'auto' }); return render(); }
+    if (el.matches('[data-country]')) { state.country = CC_CUR[el.value] ? el.value : ''; state.currency = ''; saveState(); return render(); }
     if (el.matches('[data-plan-focus]')) {
       const tp = trainPlan();
       state.trainPlan = { days: tp.days, focus: { ...tp.focus, [el.dataset.planFocus]: el.value }, edited: { ...tp.edited, [el.dataset.planFocus]: true } };
