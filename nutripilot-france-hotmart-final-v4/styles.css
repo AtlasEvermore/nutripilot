@@ -1663,3 +1663,5 @@ html[lang=ko] body{word-break:keep-all}
 .pt-row s{color:var(--muted)}.pt-row span:last-child{color:#2f7a22;font-weight:800}
 .pt-row.complete{background:#f3f9e8}
 .pt-foot{margin:0;padding:9px 10px;font-size:11px;color:var(--muted);border-top:1px solid var(--line);line-height:1.4}
+.pl-kitup{display:block;font-style:normal;font-size:10.5px;font-weight:800;color:var(--ink2);margin-top:4px;opacity:.8}
+.pl-oneof{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.4;color:var(--ink2);background:#fff;border:1px dashed var(--line);border-radius:12px;padding:9px 11px;margin:2px 0 10px}.pl-oneof svg{width:15px;height:15px;flex:none;margin-top:1px;color:#2f7a22}

@@ -1091,7 +1091,15 @@ async function init() {
   saveState(false);
   await loadDict(lang());
   render();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) {
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    navigator.serviceWorker.register('/sw.js').then((reg) => {
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+    }).catch(() => {});
+    // A new version took over: reload once so prices and screens are never stale.
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
+  }
   startReminderLoop();
 }
 
@@ -3117,12 +3125,13 @@ function plansScreen() {
     const save = planSaving(x, selectedPeriod);
     return `<button class="pl-row ${x.tone} ${mine ? 'mine' : ''}" ${mine ? 'disabled' : `data-choose-plan="${esc(x.tier)}"`}>
       <span class="mod-ico">${icon(x.icon)}</span>
-      <span class="pl-txt"><b>${esc(L(x.label))}${x.tier === reco && !mine ? ` <i class="pl-reco">${L('Recommandé')}</i>` : ''}</b>${x.kind === 'module' ? `<small>${esc(L(x.sub))}</small>` : modChips(x.modules, true)}</span>
+      <span class="pl-txt"><b>${esc(L(x.label))}${x.tier === reco && !mine ? ` <i class="pl-reco">${L('Recommandé')}</i>` : ''}</b>${x.kind === 'module' ? `<small>${esc(L(x.sub))}</small>` : modChips(x.modules, true)}${kit && !mine && !ownsAll ? `<em class="pl-kitup">${L('Tous les modules : Kit complet pour {p} de plus', { p: per(r2(lp(kit, selectedPeriod) - lp(x, selectedPeriod))) })}</em>` : ''}</span>
       <span class="pl-price">${mine ? `<em class="pl-mine">${icon('check')} ${L('Activé')}</em>` : `<b>${per(lp(x, selectedPeriod))}</b><small>${unit}</small>${compareHtml(x, selectedPeriod)}`}</span>
     </button>`;
   };
+  const oneOf = `<p class="pl-oneof">${icon('check')}<span>${L('Chaque option est un abonnement à part : choisissez-en une. Pour tout avoir, le Kit complet coûte {p}.', { p: `${per(lp(kit, selectedPeriod))} ${unit}` })}</span></p>`;
   const body = plansTab === 'modules'
-    ? `<div class="pl-list">${mods.map(row).join('')}</div>`
+    ? `${oneOf}<div class="pl-list">${mods.map(row).join('')}</div>`
     : plansTab === 'builder'
       ? `<div class="bd-grid">${PAID_MODULES.map((m) => `<button class="bd-mod ${m.tone} ${buildSel.includes(m.id) ? 'on' : ''}" data-build-mod="${m.id}" aria-pressed="${buildSel.includes(m.id)}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.name))}</b><i class="bd-check">${icon('check')}</i></button>`).join('')}</div>
         ${best ? `<div class="bd-best compact"><small>${L('Le prix de votre sélection')}</small><b>${esc(planName(best))}</b>
@@ -3130,7 +3139,7 @@ function plansScreen() {
           ${best.kind === 'complete' && buildSel.length < PAID_IDS.length ? `<p class="bd-up">${L('Pour ce prix, le Kit complet vous donne tous les modules : c’est la meilleure option pour votre sélection.')}</p>` : ''}
           ${best.kind !== 'complete' && kit ? `<p class="bd-up">${L('Pour {p} de plus, prenez le Kit complet : les 9 modules.', { p: `${per(r2(lp(kit, selectedPeriod) - lp(best, selectedPeriod)))} ${unit}` })}</p>` : ''}
           <button class="btn btn-lime btn-wide" data-choose-plan="${esc(best.tier)}">${Billing.trialDays() ? L('Essayer {n} jours gratuits', { n: Billing.trialDays() }) : L('Choisir cette formule')}</button></div>` : `<div class="empty">${L('Choisissez au moins un module.')}</div>`}`
-      : `<div class="pl-list">${bundles.map(row).join('')}</div>`;
+      : `${oneOf}<div class="pl-list">${bundles.map(row).join('')}</div>`;
   return `<div class="mobile-app plans-page">
     ${appHeader('Nos formules')}
     <div class="screen">
