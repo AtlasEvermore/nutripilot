@@ -130,7 +130,7 @@ function clientIp(req) {
   return fwd || req.socket?.remoteAddress || 'unknown';
 }
 
-const FUNNEL_EVENTS = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated']);
+const FUNNEL_EVENTS = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus']);
 let funnelBuffer = {};
 let funnelTimer = null;
 function scheduleFunnelFlush() { if (!funnelTimer) funnelTimer = setTimeout(() => { funnelTimer = null; flushFunnel().catch(() => {}); }, 30_000); }

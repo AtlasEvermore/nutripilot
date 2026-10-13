@@ -891,12 +891,12 @@ function track(name, params = {}) {
   try { window.fbq?.('trackCustom', name, params); } catch {}
   if (FUNNEL.has(name)) {
     try {
-      const body = JSON.stringify({ name, lang: lang(), detail: params.plan || params.source || params.feature || params.from || '' });
+      const body = JSON.stringify({ name, lang: lang(), detail: params.plan || params.focus || params.source || params.feature || params.from || '' });
       if (!navigator.sendBeacon?.('/api/event', new Blob([body], { type: 'application/json' }))) fetch('/api/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => {});
     } catch { /* analytics must never break the app */ }
   }
 }
-const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated']);
+const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus']);
 
 function logo() {
   return `<div class="logo"><span class="logo-mark"></span>${esc(config.brand)}</div>`;
