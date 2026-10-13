@@ -13,6 +13,10 @@ const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 const BRAND_NAME = process.env.BRAND_NAME || 'NutriPilot';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || '';
+const OPENAI_BASE_URL = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
+// Reasoning models (o1/o3/o4, gpt-5…) count hidden reasoning in max_output_tokens: they need more room and a low effort.
+const REASONING_MODEL = /^(o\d|gpt-5)/i.test(OPENAI_MODEL);
+let reasoningParamOk = true;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const RESEND_FROM = process.env.RESEND_FROM || '';
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@atlasevermore.com';
@@ -544,11 +548,11 @@ function langFromRequest(req) {
   return LANG_NAMES[code] ? code : 'fr';
 }
 
-async function callAI(input, max = 1600, timeoutMs = 45_000) {
+async function callAI(input, max = 1600, timeoutMs = 45_000, { json = true } = {}) {
   if (!OPENAI_API_KEY || !OPENAI_MODEL) throw new Error('IA non configurée');
   const langCode = requestLang.getStore();
   if (langCode && langCode !== 'fr' && LANG_NAMES[langCode]) {
-    const note = `\nIMPORTANT : rédige tous les textes destinés à l'utilisateur (titres, noms d'aliments et de plats, conseils, étapes, réponses) en ${LANG_NAMES[langCode]}. Les clés JSON restent identiques.`;
+    const note = `\nIMPORTANT : rédige tous les textes destinés à l'utilisateur (titres, noms d'aliments et de plats, conseils, étapes, réponses) en ${LANG_NAMES[langCode]}.${json ? ' Les clés JSON restent identiques.' : ''}`;
     if (Array.isArray(input)) {
       input = input.map((msg, i) => (i === 0 && Array.isArray(msg.content)
         ? { ...msg, content: msg.content.map((c, j) => (j === 0 && c.type === 'input_text' ? { ...c, text: c.text + note } : c)) }
@@ -557,26 +561,49 @@ async function callAI(input, max = 1600, timeoutMs = 45_000) {
       input = `${input}${note}`;
     }
   }
-  const { response, data } = await fetchJson('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ model: OPENAI_MODEL, input, max_output_tokens: max }),
-  }, timeoutMs);
-  if (!response.ok) {
-    const error = publicError('Le service IA est temporairement indisponible.', 502);
-    error.internalMessage = safeText(data?.error?.message || `OpenAI HTTP ${response.status}`, 500);
-    throw error;
+  const started = Date.now();
+  let lastError = null;
+  // Up to 3 tries: transient errors (429/5xx/timeout), an empty answer, or a refused optional parameter.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const remaining = timeoutMs - (Date.now() - started);
+    if (remaining < 4000) break;
+    const body = { model: OPENAI_MODEL, input, max_output_tokens: REASONING_MODEL ? Math.max(4000, max * 3) : max };
+    if (REASONING_MODEL && reasoningParamOk) body.reasoning = { effort: 'low' };
+    let response, data;
+    try {
+      ({ response, data } = await fetchJson(`${OPENAI_BASE_URL}/responses`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }, remaining));
+    } catch (cause) {
+      lastError = publicError('Le service IA est temporairement indisponible.', 502);
+      lastError.internalMessage = `OpenAI network: ${safeText(cause?.message || cause?.name || 'error', 200)}`;
+      continue;
+    }
+    if (!response.ok) {
+      const msg = safeText(data?.error?.message || `OpenAI HTTP ${response.status}`, 500);
+      lastError = publicError('Le service IA est temporairement indisponible.', 502);
+      lastError.internalMessage = msg;
+      if (response.status === 400 && body.reasoning && /reasoning/i.test(msg)) { reasoningParamOk = false; continue; }
+      if (response.status === 429 || response.status >= 500) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+      throw lastError;
+    }
+    const text = outputText(data).trim();
+    if (!text) {
+      lastError = publicError('La réponse IA n’a pas pu être interprétée. Réessayez.', 502);
+      lastError.internalMessage = `OpenAI empty output (status ${data?.status || '?'}, ${data?.incomplete_details?.reason || 'no reason'})`;
+      continue;
+    }
+    if (!json) return text;
+    try {
+      return parseJson(text);
+    } catch (cause) {
+      lastError = publicError('La réponse IA n’a pas pu être interprétée. Réessayez.', 502);
+      lastError.internalMessage = `OpenAI non-JSON output: ${safeText(text, 160)}`;
+    }
   }
-  try {
-    return parseJson(outputText(data));
-  } catch (cause) {
-    const error = publicError('La réponse IA n’a pas pu être interprétée. Réessayez.', 502);
-    error.cause = cause;
-    throw error;
-  }
+  throw lastError || publicError('Le service IA est temporairement indisponible.', 502);
 }
 
 // Reads a supplement label (photo or typed text). Educational only: never advises a dose.
@@ -681,7 +708,7 @@ Retourne UNIQUEMENT JSON: {"options":[{"name":"...","kcal":450,"protein":30,"car
 
 const SUPPORT_LANGS = LANG_NAMES;
 const SUPPORT_KNOWLEDGE = `NutriPilot est une application de nutrition, d'entraînement et de coaching pour mincir, gérer la ménopause, prendre du muscle ou mieux manger.
-Fonctions disponibles : scanner de repas (photo, texte/voix, code-barres, étiquette, saisie manuelle), objectif calorique et macros personnalisés, plan de repas 7 jours, recettes avec grammes et calories, liste de courses, « Que manger ensuite ? », mode frigo, mode restaurant, coach IA, suivi du poids et des mensurations, bilan hebdomadaire, guides (dont ménopause), programmes d'entraînement salle et maison avec suivi des charges.
+Fonctions disponibles : scanner de repas (photo, texte/voix, code-barres, étiquette, saisie manuelle), objectif calorique et macros personnalisés, plan de repas 7 jours, recettes avec grammes et calories, liste de courses, « Que manger ensuite ? », mode frigo, mode restaurant, coach, suivi du poids et des mensurations, bilan hebdomadaire, guides (dont ménopause), programmes d'entraînement salle et maison avec suivi des charges.
 Formules : Kit complet (nutrition + entraînement + Académie), Nutrition, Entraînement ; en mensuel ou annuel. Les prix exacts sont affichés sur l'écran des formules. Académie : cours courts (fondamentaux de la perte de poids, musculation, ménopause, premiers pas), la première leçon de chaque cours est gratuite.
 Lancement : les abonnements ouvrent avec la sortie des applications iPhone et Android ; en attendant, on peut s'inscrire sur la liste d'attente depuis l'écran des formules. Les clients existants gardent leur accès.
 Essai gratuit de 3 jours dans les applications iPhone et Android : aucun paiement pendant l'essai, abonnement ensuite sauf annulation au moins 24 h avant la fin.
@@ -763,7 +790,7 @@ async function coach(body) {
 
   if (!OPENAI_API_KEY || !OPENAI_MODEL) return { answer: '', offline: true };
 
-  const input = `Tu es le ${COACH_MODES[mode]} de l'application NutriPilot.
+  const input = `Tu es le ${COACH_MODES[mode]} de l'application NutriPilot (présente-toi simplement comme « le coach », jamais comme une IA nommée).
 Style : concret, chaleureux, court (6 phrases ou 5 puces maximum), sans jargon. Utilise le prénom si tu le connais.
 Pour chaque recommandation, explique en une phrase POURQUOI elle convient à cette personne (son objectif, sa journée, ses goûts, sa culture culinaire).
 Adapte les exemples d'aliments et de plats à sa cuisine et à son pays. Respecte ses allergies et son régime.
@@ -774,9 +801,19 @@ Contexte autorisé par l'utilisateur : ${context}
 Conversation récente :
 ${history || '(début)'}
 Nouvelle question : ${safeText(body.message, 1200)}
-Retourne UNIQUEMENT JSON : {"answer":"..."}.`;
-  const raw = await callAI(input, 1100);
-  return { answer: safeText(raw.answer || '', 2200) };
+Réponds directement en texte simple (pas de JSON, pas de titre), avec des puces « • » si utile.`;
+  try {
+    const text = await callAI(input, 1200, 50_000, { json: false });
+    let answer = String(text).replace(/^\s*```\w*\s*|\s*```\s*$/g, '').trim();
+    // Some models still wrap the answer in JSON: unwrap it.
+    if (/^\{/.test(answer)) { try { answer = JSON.parse(answer.match(/\{[\s\S]*\}/)[0]).answer || answer; } catch {} }
+    answer = String(answer).replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 2400);
+    if (answer) return { answer };
+  } catch (error) {
+    console.error(`[NutriPilot] coach fallback: ${safeText(error?.internalMessage || error?.message || 'error', 300)}`);
+  }
+  // Never show an error in the chat: the app answers from the person's own data instead.
+  return { answer: '', offline: true };
 }
 
 function normalizeIngredient(x) {

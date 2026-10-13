@@ -770,7 +770,7 @@ window.__npCollect = () => {
   WORLD_RECIPES.forEach((r) => { [r.name, r.category, r.difficulty, ...r.steps].forEach(touch); });
   Object.keys(INGREDIENTS).forEach(touch); CUISINES.forEach((c) => touch(c[1]));
   Object.values(EXERCISES).forEach((e) => [e.name, e.muscle, ...(e.cues || [])].forEach(touch)); Object.values(EQUIPMENT).forEach(touch);
-  MEASURES.forEach((m) => touch(m[1])); BUNDLES.forEach((b) => [b.name, b.sub, b.tagline, b.badge].forEach(touch)); TQ.forEach(([, label, opts]) => { touch(label); opts.forEach((o) => touch(o[1])); }); PROGRAM_GROUPS.forEach((g) => touch(g[1])); DEFAULT_PLANS.forEach((x) => [x.label, x.sub, x.tagline, x.badge].forEach(touch));
+  MEASURES.forEach((m) => touch(m[1])); BUNDLES.forEach((b) => [b.name, b.sub, b.tagline, b.badge].forEach(touch)); TQ.forEach(([, label, opts]) => { touch(label); opts.forEach((o) => touch(o[1])); }); PROGRAM_GROUPS.forEach((g) => touch(g[1])); SUPP_PRESETS.forEach((x) => { touch(x.name); touch(x.serving); x.ings.forEach((i) => touch(i[0])); }); ['Calories', 'Protéines', 'Glucides', 'Lipides', 'Collation'].forEach(touch); DEFAULT_PLANS.forEach((x) => [x.label, x.sub, x.tagline, x.badge].forEach(touch));
   badgeList().forEach((b) => touch(b[1])); REPS_CHOICES.forEach(touch);
   ['Enregistrer un repas', 'Atteindre mon objectif d’eau', 'Atteindre 80 % de mes protéines', 'Faire ma séance du jour', 'Remplir mon journal ménopause', 'Faire mon check-in', 'Insuffisance pondérale', 'Corpulence normale', 'Surpoids', 'Obésité', 'Formules', 'Nos formules', 'Cours nutrition', 'Monter ma grille', 'Générateur intelligent', 'Importer', 'Choisissez vos jours et vos exercices, un par un.', 'Vos préférences, NutriPilot construit les séances.', 'Le programme de votre coach ou votre plan alimentaire.', 'Tout matériel', 'À la maison', 'Recettes du monde', 'Exercices animés', 'Espace Ménopause 40+', 'Cours', '{n} recettes', '{n} mouvements', 'Journal, programme, séances', 'Première leçon offerte', 'Repas', 'Tout', 'Adaptées à mon profil', 'Mes ajouts', 'Passer à cette formule', 'Choisir', 'Retour à l’accueil', 'Continuer à explorer', 'Mettre à jour ma grille', 'Enregistrer ma grille', 'Sur mesure', 'Ma grille', 'Séance {n}', 'Votre grille : {n} séances par semaine.', 'Monter', 'Retirer', 'Jour {n}'].forEach(touch);
   TRAIN_FOCUS.forEach((x) => touch(x[1])); EX_GROUPS.forEach(touch); BUILDER_GROUPS.forEach(touch);
@@ -787,7 +787,7 @@ window.__npCollect = () => {
   BREATHS.forEach((b) => [b[1], b[2]].forEach(touch)); RELAX.forEach((r) => { touch(r[1]); r[3].forEach(touch); });
   ROUTINE.forEach((r) => touch(r[1])); EMOTIONS.forEach((e) => touch(e[1])); FOOD_GROUPS.forEach((g) => touch(g[1]));
   COACH_TABS.forEach((c) => { touch(c[1]); c[3].forEach(touch); }); PF_TRACKS.forEach((x) => { touch(x[1]); touch(x[2]); });
-  ['Inspirez', 'Expirez', 'Retenez', 'Bravo', 'Terminé', 'Extérieur', 'Vitamine B6', 'Caféine', 'Créatine', 'Autre', 'Moyenne', 'Coach IA', 'Modules', 'Découverte', 'Recettes', 'Compléments', 'Sommeil & stress', 'Vitamines & nutriments', 'Scanner'].forEach(touch);
+  ['Inspirez', 'Expirez', 'Retenez', 'Bravo', 'Terminé', 'Extérieur', 'Vitamine B6', 'Caféine', 'Créatine', 'Autre', 'Moyenne', 'Modules', 'Découverte', 'Recettes', 'Compléments', 'Sommeil & stress', 'Vitamines & nutriments', 'Scanner'].forEach(touch);
   [['hot'], ['sleep'], ['afternoon'], ['evening'], ['morning']].forEach(() => {});
   ['Votre moment sensible approche', 'Vous avez le plus faim l’après-midi : prévoyez une collation protéinée vers 16 h (yaourt, fruit et quelques noix).', 'Le soir, votre moment sensible', 'Un dîner riche en protéines et en légumes, puis une tisane : les envies du soir diminuent souvent.', 'Un petit-déjeuner qui tient', 'Vous avez faim le matin : misez sur 20 à 30 g de protéines (œufs, skyr, fromage blanc) pour tenir jusqu’au déjeuner.', 'Bouffées de chaleur', 'Le soir, limitez alcool, plats très épicés et boissons chaudes : notez-les dans vos facteurs pour voir l’effet chez vous.', 'Pour mieux dormir', 'Dernière caféine avant 14 h, dîner léger et chambre fraîche : votre module Sommeil propose une relaxation guidée.', 'Objectif légumes', 'Ajoutez une portion de légumes au prochain repas : la moitié de l’assiette, c’est le bon repère.', 'Moins de sucre', 'Une envie de sucré ? Essayez un fruit avec un yaourt nature, ou la respiration SOS d’une minute.', 'Horaires décalés', 'Gardez vos repas à heures régulières par rapport à votre réveil, pas à l’horloge : c’est ce qui compte.'].forEach(touch);
   localFood.forEach((f) => touch(f[0]));
@@ -882,8 +882,12 @@ function logo() {
   return `<div class="logo"><span class="logo-mark"></span>${esc(config.brand)}</div>`;
 }
 
-function nav(next) {
+// Screens visited in this session, for the header back button.
+const navStack = [];
+const ROOT_ROUTES = ['app', 'modules', 'coach', 'progress', 'hub'];
+function nav(next, { back = false } = {}) {
   if (next === 'lang' && route !== 'lang') langNext = route;
+  if (!back && next !== route && !['lang', 'basics', 'saving', 'analyzing'].includes(route)) { navStack.push(route); if (navStack.length > 30) navStack.shift(); }
   route = next;
   closeDrawer(true);
   if (history.state?.npOverlay) history.replaceState(null, '', '#' + next);
@@ -1499,7 +1503,7 @@ const TOUR = [
 ];
 function tourScreen() {
   return `<div class="mobile-app">
-    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="app">←</button><h2>${esc(t('hubTour'))}</h2><span></span></div></div>
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${esc(t('hubTour'))}</h2><span></span></div></div>
     <div class="screen">
       <h1 class="screen-title">${L('Tout NutriPilot, en un coup d’œil.')}</h1>
       <div class="tour-list">${TOUR.map(([ico, title, text, r]) => `<div class="tour-card"><span class="tour-ico">${icon(ico)}</span><div><b>${esc(L(title))}</b><p>${esc(L(text))}</p><button class="link-btn" ${r === 'add' ? 'data-open-add' : `data-go="${r}"`}>${L('Essayer →')}</button></div></div>`).join('')}</div>
@@ -1525,7 +1529,7 @@ let supportMessages = [];
 let supportLoading = false;
 function supportScreen() {
   return `<div class="mobile-app">
-    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="app">←</button><h2>${esc(t('hubSupport'))}</h2><span></span></div></div>
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${esc(t('hubSupport'))}</h2><span></span></div></div>
     <div class="screen">
       <h1 class="screen-title">${L('Comment pouvons-nous vous aider ?')}</h1>
       <button class="today-card support-cta" data-support-open>${icon('help')}<span><b>${L('Discuter avec l’assistant')}</b><small>${L('Réponse immédiate, 24 h/24')}</small></span><em>→</em></button>
@@ -1658,6 +1662,7 @@ function calculatePlan(data = onboardingState.data) {
 }
 
 const ICONS = {
+  back: '<path d="M14.5 5.5 8 12l6.5 6.5"/>',
   trophy: '<path d="M8 4h8v4.5a4 4 0 0 1-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 0 0 2.6 3.3M16 6h2.5a2.5 2.5 0 0 1-2.6 3.3M12 12.5V16M9 20h6M10 16h4v4h-4z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
   home: '<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/>',
@@ -1702,7 +1707,7 @@ const ICONS = {
   fork: '<path d="M7 3.5v7a2 2 0 0 0 4 0v-7M9 10.5v10M16.5 20.5V3.5c-2 1-3 3.6-3 6.5v3h3"/>',
 };
 function icon(name, cls = '') {
-  if (name === 'chevron') cls += ' flip-rtl';
+  if (name === 'chevron' || name === 'back') cls += ' flip-rtl';
   return `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 }
 
@@ -1817,7 +1822,7 @@ const MODULES = [
     features: ['Scanner d’étiquette de complément', 'Mes compléments et doses déclarées', 'Alerte en cas d’ingrédient en double', 'Fiches : niveau de preuve et précautions'] },
   { id: 'sleep', name: 'Sommeil & stress', sub: 'Sommeil, respiration, envies de manger', icon: 'moon', route: 'sleep', tone: 'm-sleep',
     features: ['Journal du sommeil', 'Respirations et relaxations guidées à voix haute', 'Faim physique ou envie : le journal', 'Bouton SOS et retour à la routine'] },
-  { id: 'coach', name: 'Coach IA', sub: 'Nutrition, entraînement et recettes', icon: 'coach', route: 'coach', tone: 'm-coach',
+  { id: 'coach', name: 'Coach', sub: 'Nutrition, entraînement et recettes', icon: 'coach', route: 'coach', tone: 'm-coach',
     features: ['Réponses adaptées à votre profil et à votre journée', 'Coach nutrition et coach entraînement', 'Explique chaque suggestion', 'Limites claires sur les questions médicales'] },
 ];
 const MODULE_ROUTES = {
@@ -1843,10 +1848,10 @@ const BUNDLES = [
 const bundleById = (id) => BUNDLES.find((b) => b.id === id);
 const DEFAULT_PLANS = [
   { tier: 'complete', kind: 'complete', label: 'Kit complet', sub: 'Tous les modules NutriPilot', tagline: 'Tout NutriPilot, sans limite.', icon: 'star', tone: 'm-kit', badge: 'Meilleure offre', modules: MODULES.map((m) => m.id),
-    features: ['Les 9 modules, sans limite', 'Nutrition, recettes, scanner et entraînement', 'Ménopause 40+, vitamines, compléments et sommeil', 'Coach IA dans chaque module'],
+    features: ['Les 9 modules, sans limite', 'Nutrition, recettes, scanner et entraînement', 'Ménopause 40+, vitamines, compléments et sommeil', 'Coach dans chaque module'],
     monthly: { price: MODULE_PRICES.complete[0], storeId: 'np_complete_monthly' }, annual: { price: MODULE_PRICES.complete[1], storeId: 'np_complete_annual' } },
   ...BUNDLES.map((b) => ({ tier: b.id, kind: 'bundle', label: b.name, sub: b.sub, tagline: b.tagline, icon: b.icon, tone: b.tone, badge: b.badge, modules: b.modules,
-    features: [...b.modules.map((id) => moduleById(id).name), 'Coach IA dans chaque module'],
+    features: [...b.modules.map((id) => moduleById(id).name), 'Coach dans chaque module'],
     monthly: { price: b.price[0], storeId: `np_${b.id}_monthly` }, annual: { price: b.price[1], storeId: `np_${b.id}_annual` } })),
   ...MODULES.map((m) => ({ tier: m.id, kind: 'module', label: m.name, sub: m.sub, tagline: m.sub, icon: m.icon, tone: m.tone, modules: [m.id], features: m.features,
     monthly: { price: MODULE_PRICES[m.id][0], storeId: `np_${m.id}_monthly` }, annual: { price: MODULE_PRICES[m.id][1], storeId: `np_${m.id}_annual` } })),
@@ -1973,6 +1978,7 @@ function modulesScreen() {
       <p class="screen-sub">${L('Chaque module est un espace complet. Activez seulement ce dont vous avez besoin, ou tout avec le Kit complet.')}</p>
       <div class="mod-grid">${MODULES.map((m) => `<button class="mod-card ${m.tone} ${owned.includes(m.id) ? 'owned' : ''}" data-go="${m.route}">
         <span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b><small>${L(m.sub)}</small>${moduleBadge(m.id)}</button>`).join('')}</div>
+      <button class="plans-link" data-go="plans">${icon('star')}<span><b>${L('Nos formules')}</b><small>${L('Modules, combinaisons et Kit complet')}</small></span>${icon('chevron')}</button>
       ${owned.length < MODULES.length && kit ? `<button class="kit-card" data-module-buy="complete"><span><small>${L('Kit complet')}</small><b>${L('Les 9 modules pour {price} / mois', { price: euro(kit.annual.price / 12) })}</b><em>${L('Économisez {n} % par rapport aux modules séparés', { n: comboSaving(plans, 'annual') })}</em></span>${icon('chevron')}</button>` : ''}
       <div class="section-label"><h3>${L('Inclus pour tous')}</h3></div>
       <div class="free-row"><button data-go="app">${icon('home')}<span>${L('Aujourd’hui')}</span></button><button data-go="progress">${icon('progress')}<span>${L('Progrès')}</span></button><button data-open-goal>${icon('scale')}<span>${L('Objectif')}</span></button><button data-open-profile>${icon('user')}<span>${L('Profil')}</span></button></div>
@@ -2094,9 +2100,9 @@ function planOptionHtml(x, current) {
     ${reco ? `<span class="plan-badge reco">${esc(L('Recommandé pour vous'))}</span>` : x.badge ? `<span class="plan-badge">${esc(L(x.badge))}</span>` : ''}
     <span class="plan-radio"></span>
     <span class="plan-main"><b>${esc(planName(x))}</b><small>${esc(x.kind === 'bundle' ? x.modules.map((id) => L(moduleById(id).name)).join(' · ') : L(x.sub))}</small>
-      ${x.kind !== 'custom' ? `<span class="plan-feats">${x.features.slice(0, 4).map((f) => `<i>✓ ${esc(L(f, { n: CUISINES.length }))}</i>`).join('')}</span>` : ''}</span>
+      ${x.kind !== 'custom' && x.tier === current ? `<span class="plan-feats">${x.features.slice(0, 3).map((f) => `<i>✓ ${esc(L(f, { n: CUISINES.length }))}</i>`).join('')}</span>` : ''}</span>
     <span class="plan-per">${sep ? `<s>${euro(sepMonth)}</s>` : ''}<b>${euro(perMonth)}</b><small>${L('/ mois')}</small>${yearly > 0 ? `<em>−${yearly} %</em>` : ''}</span>
-    ${sep ? `<span class="plan-combo">${L('{n} % moins cher que les modules séparés', { n: planSaving(x, selectedPeriod) })}</span>` : ''}
+    ${sep && x.tier === current ? `<span class="plan-combo">${L('{n} % moins cher que les modules séparés', { n: planSaving(x, selectedPeriod) })}</span>` : ''}
   </button>`;
 }
 
@@ -2116,7 +2122,7 @@ function paywall() {
       : L('{price} / {period}. Renouvellement automatique, annulable à tout moment.', { price, period: periodLabel });
   const maxSaving = Math.max(...plans.map((x) => Math.round((1 - x.annual.price / (x.monthly.price * 12)) * 100)));
   return `<div class="mobile-app no-nav paywall">
-    <div class="app-head"><div class="app-head-row">${logo()}<button class="link-btn" data-go="access">${L('Se connecter')}</button></div></div>
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button>${logo()}<button class="link-btn" data-go="access">${L('Se connecter')}</button></div></div>
     <div class="screen">
       <h1 class="screen-title">${p.name ? L('{name}, choisissez votre formule.', { name: esc(p.name) }) : L('Choisissez votre formule.')}</h1>
       ${proj ? `<div class="pw-goal">${icon('progress')}<span>${L('Objectif {target} · estimé le {date}', { target: `<b>${kgFmt(p.target)} kg</b>`, date: `<b>${esc(dateFr(proj.end))}</b>` })}</span></div>` : ''}
@@ -2182,8 +2188,9 @@ function lockedScreen(feature) {
 }
 
 function appHeader(title) {
+  const showBack = !ROOT_ROUTES.includes(route);
   return `<header class="app-head"><div class="app-head-row">
-    <button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>
+    <div class="head-left">${showBack ? `<button class="icon-btn back-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button>` : ''}<button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button></div>
     <div class="head-titles"><small class="head-date">${new Date().toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</small><h2>${esc(L(title, null, !/👋/.test(title)))}</h2></div>
     <div class="head-actions"><button class="icon-btn coach-btn" data-go="coach" aria-label="${L('Coach')}">${icon('coach')}</button></div>
   </div></header>${exploreBanner()}`;
@@ -2209,6 +2216,7 @@ function drawerHtml() {
         ${item('progress', 'progress', 'Progrès')}
         ${item('goal', 'scale', 'Mon objectif de poids')}
         ${item('profile', 'user', 'Mon profil')}
+        ${item('plans', 'star', 'Nos formules')}
         <small>${L('Modules')}</small>
         ${MODULES.map((m) => `<button class="drawer-item ${moduleForRoute()?.id === m.id ? 'active' : ''}" data-go="${m.route}">${icon(m.icon)}<span>${L(m.name)}</span>${state.premium && !hasModule(m.id) ? `<em class="dr-lock">${icon('lock')}</em>` : ''}</button>`).join('')}
         ${item('modules', 'grid', 'Tous les modules')}
@@ -2221,7 +2229,6 @@ function drawerHtml() {
         ${item('tour', 'star', 'Découvrir l’application')}
         ${item('settings', 'settings', 'Réglages')}
         ${item('lang', 'globe', 'Langue')}
-        ${item('plans', 'star', 'Nos formules')}
       </nav>
       ${state.premium ? '' : `<button class="btn btn-lime btn-wide" data-go="plans">${esc(t('unlock'))}</button>`}
       <p class="drawer-foot">NutriPilot · ${esc(config.supportEmail)}</p>
@@ -2822,77 +2829,61 @@ function plansScreen() {
   const bundles = plans.filter((x) => x.kind === 'bundle');
   const mods = plans.filter((x) => x.kind === 'module');
   const isMine = (x) => state.premium && x.modules.every((id) => owned.includes(id));
-  const maxBundle = Math.max(...bundles.map((b) => planSaving(b, selectedPeriod)));
   if (!buildSel) buildSel = [...(findPlan(recommendedTier())?.modules || ['nutrition', 'training'])];
   const best = bestOffer(buildSel, selectedPeriod);
   const sepTotal = separatePrice(buildSel, selectedPeriod);
   const per = (v) => euro(selectedPeriod === 'annual' ? v / 12 : v);
-  const tab = (id, label, n) => `<button class="${plansTab === id ? 'active' : ''}" data-plans-tab="${id}" role="tab" aria-selected="${plansTab === id}">${L(label)}${n ? ` <span>${n}</span>` : ''}</button>`;
+  const reco = recommendedTier();
+  const tab = (id, label) => `<button class="${plansTab === id ? 'active' : ''}" data-plans-tab="${id}" role="tab" aria-selected="${plansTab === id}">${L(label)}</button>`;
+  // One compact, fully tappable row per plan.
+  const row = (x) => {
+    const mine = isMine(x);
+    const save = planSaving(x, selectedPeriod);
+    return `<button class="pl-row ${x.tone} ${mine ? 'mine' : ''}" ${mine ? 'disabled' : `data-choose-plan="${esc(x.tier)}"`}>
+      <span class="mod-ico">${icon(x.icon)}</span>
+      <span class="pl-txt"><b>${esc(L(x.label))}${x.tier === reco && !mine ? ` <i class="pl-reco">${L('Recommandé')}</i>` : ''}</b>${x.kind === 'module' ? `<small>${esc(L(x.sub))}</small>` : modChips(x.modules, true)}</span>
+      <span class="pl-price">${mine ? `<em class="pl-mine">${icon('check')} ${L('Activé')}</em>` : `<b>${per(x[selectedPeriod].price)}</b><small>${L('/ mois')}</small>${save ? `<i>−${save} %</i>` : ''}`}</span>
+    </button>`;
+  };
   const body = plansTab === 'modules'
-    ? `<div class="pm-list">${mods.map((x) => { const m = moduleById(x.tier); return `<article class="pm-row ${x.tone}">
-        <button class="pm-open" data-go="${m.route}" aria-label="${esc(L(m.name))}"><span class="mod-ico">${icon(m.icon)}</span><span><b>${esc(L(m.name))}</b><small>${esc(L(m.sub))}</small></span></button>
-        <div class="pm-side">${priceBlock(x)}${choosePlanBtn(x, isMine(x))}</div>
-        <details><summary>${L('Ce qui est inclus')}</summary><ul>${x.features.map((f) => `<li>${icon('check')}<span>${esc(L(f, { n: CUISINES.length }))}</span></li>`).join('')}</ul></details>
-      </article>`; }).join('')}</div>
-      <p class="fine center-fine">${L('Vous pouvez cumuler plusieurs modules : chacun s’ajoute à votre abonnement.')}</p>`
+    ? `<div class="pl-list">${mods.map(row).join('')}</div>`
     : plansTab === 'builder'
-      ? `<section class="builder">
-        <p class="screen-sub">${L('Cochez les modules qui vous intéressent. NutriPilot calcule automatiquement la formule la moins chère.')}</p>
-        <div class="bd-grid">${MODULES.map((m) => `<button class="bd-mod ${m.tone} ${buildSel.includes(m.id) ? 'on' : ''}" data-build-mod="${m.id}" aria-pressed="${buildSel.includes(m.id)}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.name))}</b><small>${per(MODULE_PRICES[m.id][selectedPeriod === 'annual' ? 1 : 0])} ${L('/ mois')}</small><i class="bd-check">${icon('check')}</i></button>`).join('')}</div>
-        ${best ? `<div class="bd-result">
-          <div class="bd-line"><span>${L('{n} modules séparés', { n: buildSel.length })}</span><b>${per(sepTotal)} ${L('/ mois')}</b></div>
-          <div class="bd-best"><small>${L('Le moins cher pour votre sélection')}</small><b>${esc(planName(best))}</b>${best.kind !== 'custom' && best.modules.length > buildSel.length ? `<em>${L('inclut aussi : {list}', { list: best.modules.filter((id) => !buildSel.includes(id) && id !== 'coach').map((id) => L(moduleById(id).name)).join(', ') })}</em>` : ''}
-            <div class="bd-price"><b>${per(best[selectedPeriod].price)}</b><small>${L('/ mois')}</small>${sepTotal - best[selectedPeriod].price > 0.5 ? `<span class="bd-save">${L('Économie : {v} / mois', { v: per(sepTotal - best[selectedPeriod].price) })}</span>` : ''}</div>
-          </div>
-          <button class="btn btn-lime btn-wide btn-xl" data-choose-plan="${esc(best.tier)}">${Billing.trialDays() ? L('Essayer {n} jours gratuits', { n: Billing.trialDays() }) : L('Choisir cette formule')}</button>
-          ${best.kind === 'custom' ? `<p class="fine">${L('Chaque module est un abonnement séparé : vous pourrez en ajouter ou en retirer quand vous voulez.')}</p>` : ''}
-        </div>` : `<div class="empty">${L('Choisissez au moins un module.')}</div>`}
-      </section>`
-      : `<div class="pb-list">${bundles.map((x) => `<article class="pb-card ${x.tone}">
-        ${x.badge ? `<span class="pc-badge">${esc(L(x.badge))}</span>` : ''}
-        <div class="pb-head"><span class="mod-ico">${icon(x.icon)}</span><div><h2>${esc(L(x.label))}</h2><p>${esc(L(x.tagline))}</p></div></div>
-        ${modChips(x.modules)}
-        <div class="pb-foot">${priceBlock(x)}<span class="pb-save">−${planSaving(x, selectedPeriod)} %</span></div>
-        <div class="pb-cta">${choosePlanBtn(x, isMine(x))}<span class="fine">${icon('coach')} ${L('Coach IA inclus')}</span></div>
-      </article>`).join('')}</div>`;
+      ? `<div class="bd-grid">${MODULES.map((m) => `<button class="bd-mod ${m.tone} ${buildSel.includes(m.id) ? 'on' : ''}" data-build-mod="${m.id}" aria-pressed="${buildSel.includes(m.id)}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.name))}</b><i class="bd-check">${icon('check')}</i></button>`).join('')}</div>
+        ${best ? `<div class="bd-best compact"><small>${L('Le moins cher pour votre sélection')}</small><b>${esc(planName(best))}</b>
+          <div class="bd-price">${sepTotal - best[selectedPeriod].price > 0.5 ? `<s>${per(sepTotal)}</s>` : ''}<b>${per(best[selectedPeriod].price)}</b><small>${L('/ mois')}</small></div>
+          <button class="btn btn-lime btn-wide" data-choose-plan="${esc(best.tier)}">${Billing.trialDays() ? L('Essayer {n} jours gratuits', { n: Billing.trialDays() }) : L('Choisir cette formule')}</button></div>` : `<div class="empty">${L('Choisissez au moins un module.')}</div>`}`
+      : `<div class="pl-list">${bundles.map(row).join('')}</div>`;
   return `<div class="mobile-app plans-page">
     ${appHeader('Nos formules')}
     <div class="screen">
-      <section class="plans-hero">
-        <h1>${L('Payez seulement ce que vous utilisez.')}</h1>
-        <p>${L('Un module, une combinaison ou tout NutriPilot. {n} jours gratuits sur iPhone et Android, annulable à tout moment.', { n: 3 })}</p>
-        ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
-      </section>
-      <div class="period-toggle" role="tablist">
-        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>${L('2 mois offerts et plus')}</span></button>
+      <p class="pl-sub">${L('Un module, une combinaison ou tout. {n} jours gratuits, sans engagement.', { n: 3 })}</p>
+      ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
+      <div class="period-toggle slim" role="tablist">
+        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>−${Math.round((1 - kit.annual.price / (kit.monthly.price * 12)) * 100)} %</span></button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
       </div>
-      ${kit ? `<article class="kit-hero">
-        <span class="pc-badge">${esc(L(kit.badge))}</span>
-        <small>${L('Kit complet')}</small>
-        <h2>${L('Les 9 modules et le coach IA')}</h2>
-        ${modChips(kit.modules, true)}
-        <div class="kh-foot">${priceBlock(kit)}<span class="pb-save">−${planSaving(kit, selectedPeriod)} %</span></div>
-        ${ownsAll ? `<span class="pc-mine">${icon('check')} ${L('Votre formule')}</span>` : choosePlanBtn(kit, false)}
-      </article>` : ''}
-      <div class="plans-tabs" role="tablist">${tab('bundles', 'Combinaisons', '')}${tab('modules', 'Modules', mods.length)}${tab('builder', 'Composer', '')}</div>
-      ${plansTab === 'bundles' ? `<p class="screen-sub">${L('Des modules pensés pour aller ensemble, jusqu’à {n} % moins chers que séparément.', { n: maxBundle })}</p>` : ''}
+      ${kit ? `<button class="kit-row" ${ownsAll ? 'disabled' : `data-choose-plan="complete"`}>
+        <span class="kr-txt"><small>${L('Kit complet')} · ${esc(L(kit.badge))}</small><b>${L('Les 9 modules et le coach')}</b></span>
+        <span class="kr-price">${ownsAll ? `<em>${icon('check')} ${L('Activé')}</em>` : `<s>${per(separatePrice(kit.modules, selectedPeriod))}</s><b>${per(kit[selectedPeriod].price)}</b><small>${L('/ mois')}</small>`}</span>
+      </button>` : ''}
+      <div class="plans-tabs" role="tablist">${tab('bundles', 'Combinaisons')}${tab('modules', 'Modules')}${tab('builder', 'Composer')}</div>
       ${body}
-      <div class="section-label"><h3>${L('Comparer les formules')}</h3></div>
-      <div class="cmp2" role="table">
-        <div class="cmp2-row head" role="row"><span></span>${[kit, ...bundles].map((x) => `<b class="${x.tone}" title="${esc(L(x.label))}">${icon(x.icon)}</b>`).join('')}</div>
-        ${MODULES.map((m) => `<div class="cmp2-row" role="row"><span>${icon(m.icon)} ${esc(L(m.name))}</span>${[kit, ...bundles].map((x) => `<i class="${x.modules.includes(m.id) || m.id === 'coach' ? 'yes' : 'no'}">${x.modules.includes(m.id) || m.id === 'coach' ? icon('check') : '–'}</i>`).join('')}</div>`).join('')}
-        <div class="cmp2-row price" role="row"><span>${L('Prix / mois')}</span>${[kit, ...bundles].map((x) => `<i>${euro(selectedPeriod === 'annual' ? x.annual.price / 12 : x.monthly.price).replace(/[,.]\d\d(?=\D*$)/, '')}</i>`).join('')}</div>
-        <div class="cmp2-legend">${[kit, ...bundles].map((x) => `<span><b class="${x.tone}">${icon(x.icon)}</b>${esc(L(x.label))}</span>`).join('')}</div>
-      </div>
-      <div class="plans-faq">
-        <details><summary>${L('Comment fonctionne l’essai gratuit ?')}</summary><p>${L('Dans l’application iPhone et Android, chaque formule commence par 3 jours gratuits. Vous pouvez annuler avant la fin de l’essai sans rien payer.')}</p></details>
-        <details><summary>${L('Puis-je combiner plusieurs modules ?')}</summary><p>${L('Oui. Chaque module s’ajoute à votre abonnement. Si une combinaison ou le Kit complet revient moins cher, NutriPilot vous le propose dans « Composer ».')}</p></details>
-        <details><summary>${L('Puis-je changer de formule ?')}</summary><p>${L('Oui, à tout moment depuis les réglages de votre compte App Store ou Google Play.')}</p></details>
-        <details><summary>${L('Le coach IA est-il inclus ?')}</summary><p>${L('Oui, le coach IA répond dans chaque module que vous avez activé.')}</p></details>
-        <details><summary>${L('Puis-je explorer avant de m’abonner ?')}</summary><p>${L('Oui : recettes, exercices, programmes et la première leçon de chaque cours sont visibles gratuitement.')}</p></details>
-      </div>
-      <button class="btn btn-ghost btn-wide" data-go="app">${L(state.premium ? 'Retour à l’accueil' : 'Continuer à explorer')}</button>
+      <details class="pl-more"><summary>${L('Comparer les formules')}</summary>
+        <div class="cmp2" role="table">
+          <div class="cmp2-row head" role="row"><span></span>${[kit, ...bundles].map((x) => `<b class="${x.tone}" title="${esc(L(x.label))}">${icon(x.icon)}</b>`).join('')}</div>
+          ${MODULES.map((m) => `<div class="cmp2-row" role="row"><span>${esc(L(m.name))}</span>${[kit, ...bundles].map((x) => `<i class="${x.modules.includes(m.id) || m.id === 'coach' ? 'yes' : 'no'}">${x.modules.includes(m.id) || m.id === 'coach' ? icon('check') : '–'}</i>`).join('')}</div>`).join('')}
+          <div class="cmp2-legend">${[kit, ...bundles].map((x) => `<span><b class="${x.tone}">${icon(x.icon)}</b>${esc(L(x.label))}</span>`).join('')}</div>
+        </div>
+      </details>
+      <details class="pl-more"><summary>${L('Questions fréquentes')}</summary>
+        <div class="plans-faq">
+          <p><b>${L('Comment fonctionne l’essai gratuit ?')}</b> ${L('Dans l’application iPhone et Android, chaque formule commence par 3 jours gratuits. Vous pouvez annuler avant la fin de l’essai sans rien payer.')}</p>
+          <p><b>${L('Puis-je combiner plusieurs modules ?')}</b> ${L('Oui. Chaque module s’ajoute à votre abonnement. Si une combinaison ou le Kit complet revient moins cher, NutriPilot vous le propose dans « Composer ».')}</p>
+          <p><b>${L('Puis-je changer de formule ?')}</b> ${L('Oui, à tout moment depuis les réglages de votre compte App Store ou Google Play.')}</p>
+          <p><b>${L('Le coach est-il inclus ?')}</b> ${L('Oui, le coach répond dans chaque module que vous avez activé.')}</p>
+        </div>
+      </details>
+      ${state.premium ? '' : `<button class="link-btn center-fine pl-login" data-go="access">${L('Déjà client ? Se connecter')}</button>`}
     </div>
     ${bottom('plans')}
   </div>`;
@@ -4672,6 +4663,43 @@ function coachContext() {
     supplements: (state.supplements || []).filter((x) => !x.paused).map((x) => x.name),
   };
 }
+// Answer built from the person's own data, used when the coach service can't be reached: never an error in the chat.
+function localCoachAnswer(message, mode) {
+  const p = state.profile || {};
+  const t = totals();
+  const name = p.name ? `${p.name}, ` : '';
+  const low = String(message).toLowerCase();
+  const lines = [];
+  const kcalLeft = Math.max(0, Math.round((p.dailyKcal || 0) - t.kcal));
+  const protLeft = Math.max(0, Math.round((p.protein || 0) - t.protein));
+  const recipeIdeas = (n) => ALL_RECIPES.filter((r) => recipeAllowed(r) && (!kcalLeft || r.kcal <= kcalLeft + 80)).sort((a, b) => (b.protein / b.kcal) - (a.protein / a.kcal)).slice(0, n);
+  const lazy = /pregui|flemme|motiv|lazy|pereza|ganas|keine lust|voglia|zin|nie chce|üşen|やる気|귀찮|懒|كسل|malas/.test(low);
+  if (mode === 'training' || lazy) {
+    const s = todaySession();
+    if (lazy) lines.push(name + L('commencez petit : mettez votre tenue et faites seulement l’échauffement (5 minutes). Si l’envie revient, continuez ; sinon, c’est déjà une victoire.'));
+    if (s) lines.push(L('Séance prévue aujourd’hui : {name} ({focus}).', { name: L(s.name), focus: L(s.focus) }));
+    else if (hasTrainingPlan()) lines.push(L('Aujourd’hui est un jour de repos : 20 à 30 minutes de marche suffisent.'));
+    else lines.push(L('Vous n’avez pas encore de programme : le quiz « Trouver mon programme » vous en propose un en 1 minute.'));
+    lines.push(L('Une séance courte vaut mieux qu’aucune séance : 15 minutes aujourd’hui comptent.'));
+  } else if (mode === 'scanner') {
+    const sc = state.scanHistory?.[0];
+    lines.push(sc ? L('Votre dernier scan : {name}, environ {kcal} kcal.', { name: sc.title, kcal: fmt(sc.total?.kcal || sc.per100?.kcal || 0) }) : L('Scannez un code-barres, une étiquette ou une photo : vous verrez calories, macros, allergènes et additifs.'));
+    lines.push(L('Comparez toujours pour 100 g, puis regardez la portion que vous mangez vraiment.'));
+  } else if (mode === 'wellbeing') {
+    lines.push(L('Essayez la respiration 4-7-8 dans Sommeil & stress : une minute suffit pour faire baisser la tension.'));
+    lines.push(L('Pour mieux dormir : dernière caféine avant 14 h et écrans éteints 30 minutes avant le coucher.'));
+    lines.push(L('Envie de grignoter ? Notez si c’est de la faim ou une envie : cela aide à choisir la bonne réponse.'));
+  } else if (mode === 'menopause') {
+    lines.push(L('Pour les bouffées de chaleur, notez vos facteurs (alcool, épices, boissons chaudes) dans votre journal : vous verrez ce qui joue chez vous.'));
+    lines.push(L('Deux séances de renforcement par semaine aident à protéger les os et les muscles.'));
+    lines.push(L('Visez des protéines à chaque repas et une source de calcium par jour.'));
+  } else {
+    if (p.dailyKcal) lines.push(name + L('il vous reste environ {kcal} kcal et {p} g de protéines aujourd’hui.', { kcal: fmt(kcalLeft), p: protLeft }));
+    recipeIdeas(mode === 'recipes' ? 2 : 1).forEach((r) => lines.push(L('Idée adaptée : {recipe} ({kcal} kcal, {p} g de protéines).', { recipe: L(r.name), kcal: fmt(r.kcal), p: Math.round(r.protein) })));
+    lines.push(L('Remplissez la moitié de l’assiette de légumes et ajoutez une source de protéines.'));
+  }
+  return lines.map((x, i) => (i ? `• ${x}` : x)).join('\n');
+}
 function coachText(text) {
   return esc(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
 }
@@ -4681,14 +4709,14 @@ function coachScreen() {
   const tab = COACH_TABS.find((x) => x[0] === coachMode) || COACH_TABS[0];
   const msgs = state.coach.slice(-18);
   return `<div class="mobile-app">
-    ${appHeader('Coach IA')}
+    ${appHeader('Coach')}
     <div class="screen coach-screen">
       <div class="tab-scroll mod-tabs coach-modes">${COACH_TABS.map(([k, label, ico]) => `<button class="${coachMode === k ? 'active' : ''}" data-coach-mode="${k}">${icon(ico)} ${L(label)}</button>`).join('')}</div>
       <div class="quick-prompts">${tab[3].map((q) => `<button data-quick-coach="${esc(L(q))}">${esc(L(q))}</button>`).join('')}</div>
       <div class="chat" id="chat">${msgs.length ? msgs.map((m, i) => `<div class="bubble ${m.role === 'user' ? 'user' : 'ai'}">${coachText(m.text)}${m.role !== 'user' && i === msgs.length - 1 && state.premium ? `<span class="fb"><button data-coach-fb="up" aria-label="${L('Utile')}">👍</button><button data-coach-fb="down" aria-label="${L('Pas adapté')}">👎</button></span>` : ''}</div>`).join('') : `<div class="bubble ai">${L('Bonjour {name} 👋 Je connais votre objectif, votre journée et vos préférences. Posez votre question ou choisissez une idée ci-dessus.', { name: esc(p.name || '') })}</div>`}</div>
       <div class="chatbar"><input id="coach-input" placeholder="${L('Posez votre question…')}" enterkeyhint="send"><button class="btn btn-primary" data-coach-send aria-label="${L('Envoyer')}"><span class="flip-rtl">→</span></button></div>
       <div class="coach-ctl"><label><input type="checkbox" id="coach-data" ${state.coachUsesData === false ? '' : 'checked'}> ${L('Utiliser mes données (repas, séances, sommeil) pour personnaliser')}</label>${state.coach.length ? `<button class="link-btn" data-coach-clear>${L('Effacer la conversation')}</button>` : ''}</div>
-      <div class="fine">${L('Le coach est une IA : il peut se tromper. Il ne pose pas de diagnostic et ne prescrit ni médicament ni hormone. En cas de symptôme ou de question médicale, consultez un professionnel.')}</div>
+      <div class="fine">${L('Réponses générées automatiquement : elles peuvent contenir des erreurs. Le coach ne pose pas de diagnostic et ne prescrit ni médicament ni hormone. En cas de symptôme ou de question médicale, consultez un professionnel.')}</div>
     </div>
     ${bottom('coach')}
   </div>`;
@@ -4800,7 +4828,7 @@ function goalScreen() {
   const quick = ready ? [[-3, '−3 kg'], [-5, '−5 kg'], [-10, '−10 kg'], [0, L('Maintenir')], [3, '+3 kg']] : [];
   const paces = [[0.25, 'Tranquille', 'Très facile à tenir'], [0.35, 'Régulier', 'Recommandé'], [0.5, 'Soutenu', 'Plus exigeant']];
   return `<div class="mobile-app">
-    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-goal-back aria-label="${L('Retour')}">←</button><h2>${L('Mon objectif de poids')}</h2><span></span></div></div>
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-goal-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Mon objectif de poids')}</h2><span></span></div></div>
     <div class="screen gp">
       <p class="screen-sub">${L('Choisissez votre poids actuel et le poids que vous voulez atteindre. Tout votre plan s’adapte immédiatement.')}</p>
       <section class="gp-card">
@@ -4865,7 +4893,7 @@ function profileScreen() {
   const home = CUISINES.find((c) => c[0] === base);
   const section = (title, body, sub = '') => `<section class="pf-sec"><h3>${L(title)}</h3>${sub ? `<p class="fine">${L(sub)}</p>` : ''}${body}</section>`;
   return `<div class="mobile-app">
-    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="${state.premium ? 'settings' : 'app'}" aria-label="${L('Retour')}">←</button><h2>${L('Mon profil')}</h2><span></span></div></div>
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Mon profil')}</h2><span></span></div></div>
     <div class="screen pf">
       <p class="screen-sub">${L('Modifiez n’importe quelle réponse : votre plan, vos recettes et vos séances sont recalculés dès que vous enregistrez.')}</p>
       <button class="pf-goal" data-open-goal>${icon('scale')}<span><small>${L('Objectif de poids')}</small><b>${goalSet() ? `${fmt(lastWeight(), 1)} → ${fmt(state.profile.target, 1)} kg` : L('Définir mon objectif')}</b></span>${icon('chevron')}</button>
@@ -5107,6 +5135,28 @@ function suppAlerts() {
   }
   return out;
 }
+// Quick-add catalogue: typical values per serving, editable before saving (check your own label).
+const SUPP_PRESETS = [
+  { id: 'whey', name: 'Whey protéine', serving: '30 g', icon: 'dumbbell', ings: [['Protéines', 24, 'g', 'protein']], macros: { kcal: 120, protein: 24, carbs: 3, fat: 1.5 } },
+  { id: 'whey-iso', name: 'Whey isolate', serving: '30 g', icon: 'dumbbell', ings: [['Protéines', 27, 'g', 'protein']], macros: { kcal: 110, protein: 27, carbs: 1, fat: 0.5 } },
+  { id: 'plant', name: 'Protéine végétale', serving: '30 g', icon: 'leaf', ings: [['Protéines', 21, 'g', 'protein']], macros: { kcal: 115, protein: 21, carbs: 3, fat: 2 } },
+  { id: 'creatine', name: 'Créatine monohydrate', serving: '3 g', icon: 'flame', ings: [['Créatine', 3, 'g', 'creatine']] },
+  { id: 'vitd', name: 'Vitamine D3', serving: '1 gélule', icon: 'sun', ings: [['Vitamine D3', 25, 'µg', 'vitD']] },
+  { id: 'omega3', name: 'Oméga-3', serving: '1 g', icon: 'drop', ings: [['EPA + DHA', 300, 'mg', 'omega3']] },
+  { id: 'magnesium', name: 'Magnésium', serving: '1 comprimé', icon: 'moon', ings: [['Magnésium', 100, 'mg', 'magnesium']] },
+  { id: 'multi', name: 'Multivitamines', serving: '1 comprimé', icon: 'pill', ings: [['Vitamine C', 80, 'mg', 'vitC'], ['Vitamine D', 5, 'µg', 'vitD'], ['Vitamine E', 12, 'mg', 'vitE'], ['Vitamine B9 (folates)', 200, 'µg', 'b9'], ['Vitamine B12', 2.5, 'µg', 'b12'], ['Zinc', 5, 'mg', 'zinc']] },
+  { id: 'b12', name: 'Vitamine B12', serving: '1 comprimé', icon: 'pill', ings: [['Vitamine B12', 25, 'µg', 'b12']] },
+  { id: 'collagen', name: 'Collagène', serving: '10 g', icon: 'heart', ings: [['Collagène', 10, 'g', 'other']], macros: { kcal: 36, protein: 9, carbs: 0, fat: 0 } },
+  { id: 'preworkout', name: 'Pré-entraînement', serving: '1 dose', icon: 'flame', ings: [['Caféine', 200, 'mg', 'caffeine']] },
+  { id: 'iron', name: 'Fer', serving: '1 comprimé', icon: 'pill', ings: [['Fer', 14, 'mg', 'iron']] },
+];
+function presetDraft(id) {
+  const p = SUPP_PRESETS.find((x) => x.id === id);
+  if (!p) return null;
+  return { name: `${L(p.name)} (${L(p.serving)})`, brand: '', perDay: 1, preset: p.id, ingredients: p.ings.map(([name, amount, unit, key]) => ({ name: L(name), amount, unit, key })), macros: p.macros ? { ...p.macros } : null, warnings: [] };
+}
+function suppKey(i) { const x = state.supplements?.[i]; if (x && !x.id) x.id = `s${Date.now().toString(36)}${i}`; return x?.id || `i${i}`; }
+function suppTakenToday(i) { return Boolean(state.suppTaken?.[todayKey()]?.[suppKey(i)]); }
 function suppForm(d) {
   return `<div class="supp-form">
     <label class="pf-field wide"><span>${L('Nom du produit')}</span><input id="sp-name" maxlength="100" value="${esc(d.name || '')}"></label>
@@ -5114,6 +5164,10 @@ function suppForm(d) {
     <h4>${L('Ingrédients déclarés (par prise)')}</h4>
     <div class="sp-ings">${(d.ingredients || []).map((x, i) => `<div class="sp-ing"><span><b>${esc(x.name)}</b><small>${x.amount != null ? `${fmt(x.amount, 2)} ${esc(x.unit)}` : L('quantité non lue')}</small></span><button class="icon-btn" data-sp-ing-del="${i}" aria-label="${L('Retirer')}">${icon('close')}</button></div>`).join('') || `<p class="fine">${L('Aucun ingrédient pour l’instant.')}</p>`}</div>
     <div class="sp-add"><input id="sp-ing-name" placeholder="${L('Ex. Vitamine D3')}"><input id="sp-ing-amount" type="number" step="any" placeholder="25"><select id="sp-ing-unit">${['mg', 'µg', 'g', 'UI'].map((u) => `<option>${u}</option>`).join('')}</select><select id="sp-ing-key">${[...NUTRIENTS.filter((n) => n[2] !== 'macro' || n[0] === 'omega3'), ['b6', 'Vitamine B6'], ['caffeine', 'Caféine'], ['creatine', 'Créatine'], ['other', 'Autre']].map((n) => `<option value="${n[0]}">${L(n[1])}</option>`).join('')}</select><button class="btn btn-ghost" data-sp-ing-add>${icon('plus')}</button></div>
+    <details class="sp-macros" ${d.macros ? 'open' : ''}><summary>${L('Valeurs nutritionnelles par prise (protéines en poudre, shakes)')}</summary>
+      <div class="pf-grid four">${[['kcal', 'Calories', 'kcal'], ['protein', 'Protéines', 'g'], ['carbs', 'Glucides', 'g'], ['fat', 'Lipides', 'g']].map(([k, label, u]) => `<label class="pf-field"><span>${L(label)} (${u})</span><input id="sp-m-${k}" type="number" min="0" step="any" value="${d.macros?.[k] ?? ''}"></label>`).join('')}</div>
+      <p class="fine">${L('Renseignées, elles permettent d’ajouter la prise à votre journal alimentaire en un geste.')}</p>
+    </details>
     ${d.warnings?.length ? `<div class="warn"><b>${L('Mentions de l’étiquette')}</b><br>${d.warnings.map(esc).join('<br>')}</div>` : ''}
     <div class="modal-actions"><button class="btn btn-ghost" data-sp-cancel>${L('Annuler')}</button><button class="btn btn-primary" data-sp-save>${L('Enregistrer')}</button></div>
   </div>`;
@@ -5124,7 +5178,17 @@ function supplementsScreen() {
   let body = '';
   if (suppDraft) body = suppForm(suppDraft);
   else if (suppTab === 'mine') {
-    body = `${list.length ? `<div class="supp-list">${list.map((s, i) => `<div class="supp-card ${s.paused ? 'paused' : ''}"><span class="supp-ico">${icon('pill')}</span><span><b>${esc(s.name)}</b><small>${esc(s.brand || '')}${s.brand ? ' · ' : ''}${L('{n} par jour', { n: fmt(s.perDay || 1, 1) })} · ${L('{n} ingrédients', { n: (s.ingredients || []).length })}</small></span><span class="supp-actions"><button class="link-btn" data-sp-edit="${i}">${L('Modifier')}</button><button class="link-btn" data-sp-pause="${i}">${s.paused ? L('Reprendre') : L('Pause')}</button></span></div>`).join('')}</div>` : `<div class="empty">${L('Ajoutez vos compléments pour repérer les doublons et les doses élevées.')}</div>`}
+    const active = list.map((x, i) => [x, i]).filter(([x]) => !x.paused);
+    const taken = active.filter(([, i]) => suppTakenToday(i)).length;
+    const protToday = state.meals.filter((m) => m.day === todayKey() && m.source === 'supplement').reduce((sum, m) => sum + Number(m.total?.protein || 0), 0);
+    body = `${active.length ? `<div class="supp-today"><div><small>${L('Aujourd’hui')}</small><b>${L('{n} sur {t} pris', { n: taken, t: active.length })}</b></div><span class="supp-ring" style="--p:${Math.round(taken / active.length * 100)}%"><i>${Math.round(taken / active.length * 100)}%</i></span>${protToday ? `<em>${icon('dumbbell')} ${L('{n} g de protéines ajoutées au journal', { n: fmt(protToday) })}</em>` : ''}</div>` : ''}
+      ${list.length ? `<div class="supp-list">${list.map((x, i) => { const done = suppTakenToday(i); const per = x.macros?.protein ? L('{p} g de protéines · {k} kcal par prise', { p: fmt(x.macros.protein, 1), k: fmt(x.macros.kcal || 0) }) : L('{n} ingrédients', { n: (x.ingredients || []).length }); return `<div class="supp-card ${x.paused ? 'paused' : ''} ${done ? 'done' : ''}">
+          <button class="supp-check" data-sp-take="${i}" ${x.paused ? 'disabled' : ''} aria-pressed="${done}" aria-label="${L('Pris aujourd’hui')}">${icon('check')}</button>
+          <span class="supp-main"><b>${esc(x.name)}</b><small>${esc(x.brand || '')}${x.brand ? ' · ' : ''}${L('{n} par jour', { n: fmt(x.perDay || 1, 1) })} · ${per}</small>
+            ${x.macros?.protein && !x.paused ? `<button class="supp-log" data-sp-log="${i}">${icon('plus')} ${L('Ajouter un shake au journal')}</button>` : ''}</span>
+          <span class="supp-actions"><button class="link-btn" data-sp-edit="${i}">${L('Modifier')}</button><button class="link-btn" data-sp-pause="${i}">${x.paused ? L('Reprendre') : L('Pause')}</button></span></div>`; }).join('')}</div>` : `<div class="empty">${L('Ajoutez vos compléments pour repérer les doublons et les doses élevées.')}</div>`}
+      <div class="section-label"><h3>${L('Ajouter rapidement')}</h3><span class="fine">${L('valeurs courantes, modifiables')}</span></div>
+      <div class="sp-presets">${SUPP_PRESETS.map((p) => `<button class="sp-preset" data-sp-preset="${p.id}">${icon(p.icon)}<span><b>${esc(L(p.name))}</b><small>${esc(L(p.serving))}${p.macros ? ` · ${fmt(p.macros.protein)} g ${L('prot.')}` : ''}</small></span></button>`).join('')}</div>
       <div class="settings-two"><button class="btn btn-lime" data-supp-tab="scan">${icon('camera')}<span>${L('Scanner l’étiquette')}</span></button><button class="btn btn-ghost" data-sp-new>${icon('plus')}<span>${L('Saisir à la main')}</span></button></div>`;
   } else if (suppTab === 'scan') {
     body = `<label class="upload"><input id="supp-image" type="file" accept="image/*" capture="environment"><div class="camera-ico">📷</div><h3>${L('Photographier l’étiquette')}</h3><p class="fine">${L('Cadrez la liste des ingrédients et le tableau des quantités.')}</p></label>
@@ -5155,6 +5219,10 @@ function readSuppForm() {
   const v = (id) => document.getElementById(id)?.value;
   if (v('sp-name') !== undefined) suppDraft.name = String(v('sp-name')).trim().slice(0, 100);
   if (v('sp-brand') !== undefined) suppDraft.brand = String(v('sp-brand')).trim().slice(0, 80);
+  if (v('sp-m-protein') !== undefined) {
+    const m = Object.fromEntries(['kcal', 'protein', 'carbs', 'fat'].map((k) => [k, v(`sp-m-${k}`) === '' ? null : Math.max(0, Number(v(`sp-m-${k}`)) || 0)]));
+    suppDraft.macros = m.kcal != null || m.protein != null ? { kcal: m.kcal || 0, protein: m.protein || 0, carbs: m.carbs || 0, fat: m.fat || 0 } : null;
+  }
   if (v('sp-perday') !== undefined) suppDraft.perDay = clamp(Number(v('sp-perday')) || 1, 0.5, 6);
 }
 
@@ -5357,9 +5425,9 @@ function applyManualTargets(profile) {
 
 function settings() {
   return `<div class="mobile-app">
-    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="app">←</button><h2>${L('Réglages')}</h2><span></span></div></div>
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Réglages')}</h2><span></span></div></div>
     <div class="screen">
-      ${state.premium ? '' : `<button class="explore-banner" data-go="paywall">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button>`}
+      ${state.premium ? '' : `<button class="explore-banner" data-go="paywall">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button><button class="btn btn-ghost btn-wide" data-go="access">${icon('user')} ${L('Déjà client ? Se connecter')}</button>`}
       <button class="btn btn-ghost btn-wide" data-go="lang">${icon('globe')} ${L('Langue')} · ${esc(LANGS.find((x) => x[0] === lang())?.[1] || 'Français')}</button>
       <div class="success warn" ${state.premium ? '' : 'hidden'}><b>${L('NutriPilot Premium actif ✓')}</b><br>${esc(state.premiumEmail || L('Accès activé'))}</div>
       <div class="kpi settings-goal"><small>${L('Votre objectif quotidien')}</small><b>${fmt(state.profile.dailyKcal)} kcal</b><div class="fine">P ${state.profile.protein} g · G ${state.profile.carbs} g · L ${state.profile.fat} g · Fibres ${state.profile.fiber} g</div></div>
@@ -5384,19 +5452,23 @@ function settings() {
 
 function legal() {
   const legalInfo = config.legal || {};
-  return `<div class="mobile-app"><div class="app-head"><div class="app-head-row"><button class="icon-btn" data-go="${state.premium ? 'settings' : 'access'}">←</button><h2>${L('Informations')}</h2><span></span></div></div><div class="screen"><h1 class="screen-title">${L('Transparence')}</h1><div class="day-card"><h3>${L('Nature du service')}</h3><p class="screen-sub">${L('{brand} est un outil général de suivi nutritionnel et de bien-être. Les calories, grammes, portions et macros restent des estimations lorsqu’ils ne proviennent pas de données mesurées.', { brand: esc(config.brand) })}</p></div><div class="day-card"><h3>${L('Scanner photo')}</h3><p class="screen-sub">${L('Une photo ne pèse pas un aliment. NutriPilot affiche des estimations et vous permet de corriger les grammes avant enregistrement.')}</p></div><div class="day-card"><h3>${L('Vos données')}</h3><p class="screen-sub">${L('Vos repas, mesures et journaux servent uniquement à votre suivi. Les photos de progression restent sur votre appareil. Pour améliorer l’application, nous comptons de façon anonyme quelques étapes (par exemple « page des formules vue »), sans identifiant ni contenu personnel.')}</p></div><div class="day-card"><h3>${L('Limites de l’IA')}</h3><p class="screen-sub">${L('Le coach et l’analyse photo utilisent une IA qui peut se tromper. Ils ne posent pas de diagnostic et ne prescrivent ni médicament ni traitement hormonal.')}</p></div><div class="day-card"><h3>${L('Abonnement')}</h3><p class="screen-sub">${L('La durée, le prix, le renouvellement et les conditions d’annulation sont présentés avant tout paiement.')}</p></div><div class="day-card"><h3>${L('Éditeur')}</h3><p class="screen-sub"><b>${esc(legalInfo.company || L('À compléter'))}</b><br>${esc(legalInfo.address || L('Adresse à compléter'))}<br>${esc(legalInfo.id || L('Identifiant à compléter'))}<br>${L('Support : {email}', { email: esc(config.supportEmail) })}</p></div></div></div>`;
+  return `<div class="mobile-app"><div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Informations')}</h2><span></span></div></div><div class="screen"><h1 class="screen-title">${L('Transparence')}</h1><div class="day-card"><h3>${L('Nature du service')}</h3><p class="screen-sub">${L('{brand} est un outil général de suivi nutritionnel et de bien-être. Les calories, grammes, portions et macros restent des estimations lorsqu’ils ne proviennent pas de données mesurées.', { brand: esc(config.brand) })}</p></div><div class="day-card"><h3>${L('Scanner photo')}</h3><p class="screen-sub">${L('Une photo ne pèse pas un aliment. NutriPilot affiche des estimations et vous permet de corriger les grammes avant enregistrement.')}</p></div><div class="day-card"><h3>${L('Vos données')}</h3><p class="screen-sub">${L('Vos repas, mesures et journaux servent uniquement à votre suivi. Les photos de progression restent sur votre appareil. Pour améliorer l’application, nous comptons de façon anonyme quelques étapes (par exemple « page des formules vue »), sans identifiant ni contenu personnel.')}</p></div><div class="day-card"><h3>${L('Limites de l’IA')}</h3><p class="screen-sub">${L('Le coach et l’analyse photo utilisent une IA qui peut se tromper. Ils ne posent pas de diagnostic et ne prescrivent ni médicament ni traitement hormonal.')}</p></div><div class="day-card"><h3>${L('Abonnement')}</h3><p class="screen-sub">${L('La durée, le prix, le renouvellement et les conditions d’annulation sont présentés avant tout paiement.')}</p></div><div class="day-card"><h3>${L('Éditeur')}</h3><p class="screen-sub"><b>${esc(legalInfo.company || L('À compléter'))}</b><br>${esc(legalInfo.address || L('Adresse à compléter'))}<br>${esc(legalInfo.id || L('Identifiant à compléter'))}<br>${L('Support : {email}', { email: esc(config.supportEmail) })}</p></div></div></div>`;
 }
 
+// Login for existing customers only (no marketing "private area"): reached from "Already a customer?".
 function access() {
-  return `<div class="mobile-app access-shell">
-    <div class="app-head"><div class="app-head-row">${logo()}<div class="head-actions"><span class="pill">${L('Espace privé')}</span>${langChip()}</div></div></div>
+  return `<div class="mobile-app access-shell no-nav">
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Se connecter')}</h2>${langChip()}</div></div>
     <div class="screen">
-      <div class="access-hero"><span class="tag">${L('NUTRIPILOT PREMIUM')}</span><h1>${L('Votre programme est réservé aux clients.')}</h1><p>${L('Utilisez l’e-mail de votre achat pour recevoir votre code d’accès sécurisé.')}</p></div>
-      <div class="access-benefits"><div>📸 <b>${L('Scanner IA')}</b><span>${L('photo, texte, étiquette et code-barres')}</span></div><div>▦ <b>${L('Plan personnalisé')}</b><span>${L('7 jours, recettes et liste de courses')}</span></div><div>✦ <b>${L('Décisions intelligentes')}</b><span>${L('prochain repas, frigo, restaurant, coach')}</span></div><div>↗ <b>${L('Progression')}</b><span>${L('poids, tendances et bilan hebdomadaire')}</span></div></div>
-      <div class="access-card"><h3>${L('Déverrouiller mon accès')}</h3><div class="field"><label>${L('E-mail utilisé lors de l’achat')}</label><input id="access-email" type="email" autocomplete="email" placeholder="${L('vous@exemple.fr')}" value="${esc(state.premiumEmail || '')}"></div><button class="btn btn-primary btn-wide" data-request-code>${L('Recevoir mon code sécurisé')}</button><div id="code-area" style="display:none"><div class="field"><label>${L('Code à 6 chiffres')}</label><input id="access-code" class="code-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div><button class="btn btn-lime btn-wide" data-verify-code>${L('Entrer dans NutriPilot →')}</button></div><div id="access-msg"></div></div>
-      <div class="fine center-fine">${L('Vous n’avez pas encore NutriPilot ?')}</div>
-      <a class="btn btn-ghost btn-wide" href="${esc(config.salesUrl || 'https://atlasevermore.com/#tarifs')}">${L('Découvrir le programme →')}</a>
-      <div class="warn"><b>${L('Besoin d’aide ?')}</b><br>${esc(config.supportEmail)}</div>
+      <div class="access-card login-card">
+        <p class="screen-sub">${L('Déjà client ? Recevez un code à 6 chiffres sur l’e-mail de votre achat.')}</p>
+        <div class="field"><label for="access-email">${L('E-mail')}</label><input id="access-email" type="email" autocomplete="email" placeholder="${L('vous@exemple.fr')}" value="${esc(state.premiumEmail || '')}"></div>
+        <button class="btn btn-primary btn-wide" data-request-code>${L('Recevoir mon code')}</button>
+        <div id="code-area" style="display:none"><div class="field"><label for="access-code">${L('Code à 6 chiffres')}</label><input id="access-code" class="code-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div><button class="btn btn-lime btn-wide" data-verify-code>${L('Se connecter')}</button></div>
+        <div id="access-msg"></div>
+        ${Billing.native() ? `<button class="link-btn center-fine" data-restore>${L('Restaurer mes achats')}</button>` : ''}
+      </div>
+      <p class="fine center-fine">${L('Besoin d’aide ?')} ${esc(config.supportEmail)}</p>
     </div>
   </div>`;
 }
@@ -5713,10 +5785,12 @@ async function sendCoach(prefill = '') {
     const response = await apiFetch('/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, mode: coachMode || 'nutrition', history, context: coachContext(), goal: p.goal, dailyKcal: p.dailyKcal, remaining: Math.max(0, p.dailyKcal - t.kcal), proteinLeft: Math.max(0, p.protein - t.protein), diet: p.diet, allergies: p.allergies, week: weeklyData().map((d) => ({ day: d.day, kcal: d.kcal, protein: d.protein })), weightTrend: (state.weights || []).slice(-12) }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
-    finish(data.offline ? L('Le coach est momentanément indisponible. En attendant, « Que manger ensuite ? », votre plan et le scanner partent de vos données réelles.') : (data.answer || L('Je n’ai pas pu formuler de réponse.')));
-    track('CoachAnswer', { source: coachMode });
+    finish(data.answer || localCoachAnswer(message, coachMode));
+    track('CoachAnswer', { source: coachMode, local: !data.answer });
   } catch (error) {
-    finish(L('Je n’ai pas pu répondre : {e}', { e: L(error.message || '') }));
+    // Offline, expired session or server issue: still a useful answer.
+    finish(localCoachAnswer(message, coachMode));
+    track('CoachAnswer', { source: coachMode, local: true });
   }
 }
 
@@ -5920,6 +5994,11 @@ function bind() {
       return nav('paywall');
     }
     if (button.dataset.drawer !== undefined) return openDrawer();
+    if (button.dataset.navBack !== undefined) {
+      let prev = navStack.pop();
+      while (prev && (prev === route || ['lang', 'basics', 'saving', 'analyzing'].includes(prev))) prev = navStack.pop();
+      return nav(prev || (state.premium || state.basicsDone ? 'app' : 'lang'), { back: true });
+    }
     if (button.dataset.reminders !== undefined) { modal = { type: 'reminders' }; return renderModal(); }
     if (button.dataset.supportOpen !== undefined) {
       modal = { type: 'support' };
@@ -5997,6 +6076,24 @@ function bind() {
     if (button.dataset.spEdit !== undefined) { suppDraft = { ...clone(state.supplements[Number(button.dataset.spEdit)]), index: Number(button.dataset.spEdit) }; return render(); }
     if (button.dataset.spPause !== undefined) { const x = state.supplements[Number(button.dataset.spPause)]; if (x) { x.paused = !x.paused; saveState(); } return render(); }
     if (button.dataset.spCancel !== undefined) { suppDraft = null; return render(); }
+    if (button.dataset.spPreset) { if (!state.premium) return nav('paywall'); suppDraft = presetDraft(button.dataset.spPreset); return render(); }
+    if (button.dataset.spTake !== undefined) {
+      const i = Number(button.dataset.spTake); const d = todayKey();
+      state.suppTaken = state.suppTaken || {};
+      // keep only the last 60 days
+      for (const k of Object.keys(state.suppTaken)) if (k < addDays(-60)) delete state.suppTaken[k];
+      const day = state.suppTaken[d] = state.suppTaken[d] || {};
+      const key = suppKey(i);
+      if (day[key]) delete day[key]; else day[key] = true;
+      saveState(); const y = scrollY; render(); scrollTo(0, y); return;
+    }
+    if (button.dataset.spLog !== undefined) {
+      const x = state.supplements[Number(button.dataset.spLog)];
+      if (!x?.macros) return;
+      state.meals.push({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, day: todayKey(), type: 'Collation', title: x.name, foods: [{ name: x.name, grams: 0, kcal: Number(x.macros.kcal || 0) }], total: { kcal: Number(x.macros.kcal || 0), protein: Number(x.macros.protein || 0), carbs: Number(x.macros.carbs || 0), fat: Number(x.macros.fat || 0), fiber: 0 }, icon: '🥤', source: 'supplement' });
+      state.suppTaken = state.suppTaken || {}; (state.suppTaken[todayKey()] = state.suppTaken[todayKey()] || {})[suppKey(Number(button.dataset.spLog))] = true;
+      saveState(); toast(L('Ajouté au journal : +{p} g de protéines ✓', { p: fmt(x.macros.protein, 1) })); const y = scrollY; render(); scrollTo(0, y); return;
+    }
     if (button.dataset.spIngDel !== undefined) { readSuppForm(); suppDraft.ingredients.splice(Number(button.dataset.spIngDel), 1); return render(); }
     if (button.dataset.spIngAdd !== undefined) {
       readSuppForm();
@@ -6010,11 +6107,13 @@ function bind() {
       readSuppForm();
       if (!suppDraft.name) return toast('Indiquez le nom du produit.');
       const { index, ...item } = suppDraft;
+      item.id = item.id || `s${Date.now().toString(36)}`;
       state.supplements = state.supplements || [];
       if (index !== undefined) state.supplements[index] = item; else state.supplements.unshift(item);
       saveState(); suppDraft = null; suppTab = 'mine';
       const alerts = suppAlerts();
       toast(alerts.length ? L('{n} alerte(s) à consulter', { n: alerts.length }) : 'Complément enregistré ✓');
+      track('SupplementSaved', { preset: item.preset || 'custom' });
       return render();
     }
     if (button.dataset.suppRead !== undefined) {
@@ -6486,9 +6585,7 @@ function bind() {
       state.premiumEmail = '';
       state.subscriptionPlan = '';
       saveState(false);
-      route = 'access';
-      location.hash = 'access';
-      return render();
+      return nav('app');
     }
     if (button.dataset.export === 'meno') {
       const keys = Object.keys(state.menoLog || {}).sort();
