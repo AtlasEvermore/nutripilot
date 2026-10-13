@@ -3,6 +3,19 @@
 
 // [kcal, protein, carbs, fat, fiber, aisle, kind]  aisle: P protéines, L légumes, F fruits, S féculents, D laitiers, X divers · kind: m viande, f poisson
 export const INGREDIENTS = {
+  'Algue nori': [35, 6, 5, 0.3, 0.4, 'X', ''],
+  'Miso': [200, 12, 26, 6, 5, 'X', ''],
+  'Gingembre': [80, 1.8, 18, 0.8, 2, 'L', ''],
+  'Ail': [149, 6, 33, 0.5, 2, 'L', ''],
+  'Hareng': [200, 18, 0, 14, 0, 'P', 'f'],
+  'Fromage gouda': [356, 25, 2, 27, 0, 'D', ''],
+  'Betterave cuite': [44, 1.7, 10, 0.2, 2, 'L', ''],
+  'Chou kale': [49, 4.3, 9, 0.9, 4, 'L', ''],
+  'Kéfir': [55, 3.5, 4, 3, 0, 'D', ''],
+  'Lait demi-écrémé': [46, 3.4, 4.8, 1.5, 0, 'D', ''],
+  'Tempeh': [195, 20, 8, 11, 5, 'P', ''],
+  'Nouilles de blé cuites': [138, 4.5, 25, 2, 1.5, 'S', ''],
+  'Huile de sésame': [884, 0, 0, 100, 0, 'X', ''],
   'Blanc de poulet': [110, 23, 0, 1.5, 0, 'P', 'm'],
   'Poulet grillé': [165, 31, 0, 3.6, 0, 'P', 'm'],
   'Dinde': [105, 24, 0, 1, 0, 'P', 'm'],
@@ -112,7 +125,8 @@ export const AISLES = { P: 'Protéines', L: 'Légumes', F: 'Fruits', S: 'Fécule
 export const CUISINES = [
   ['fr', 'Française', '🇫🇷'], ['br', 'Brésilienne', '🇧🇷'], ['es', 'Espagnole', '🇪🇸'], ['it', 'Italienne', '🇮🇹'],
   ['de', 'Allemande & nordique', '🇩🇪'], ['us', 'Américaine & britannique', '🇺🇸'], ['mx', 'Mexicaine & latino', '🇲🇽'],
-  ['as', 'Asiatique', '🥢'], ['me', 'Orientale & turque', '🫓'], ['in', 'Indienne', '🇮🇳'],
+  ['as', 'Asiatique', '🥢'], ['me', 'Orientale', '🫓'], ['in', 'Indienne', '🇮🇳'],
+  ['jp', 'Japonaise', '🇯🇵'], ['kr', 'Coréenne', '🇰🇷'], ['cn', 'Chinoise', '🇨🇳'], ['tr', 'Turque', '🇹🇷'], ['pl', 'Polonaise', '🇵🇱'], ['nl', 'Néerlandaise', '🇳🇱'], ['id', 'Indonésienne', '🇮🇩'],
 ];
 
 // [id, cuisine, type (b petit-déjeuner, m repas, s collation), name, prep minutes, ingredients, steps]
@@ -186,6 +200,41 @@ const R = [
   ['in-m2', 'in', 'm', 'Poulet tikka au yaourt, riz & concombre', 30, [['Blanc de poulet', 150], ['Yaourt nature', 60], ['Épices', 4], ['Riz cuit', 140], ['Concombre', 80], ['Citron', 10]], ['Marinez le poulet dans le yaourt et les épices tikka.', 'Faites-le griller au four 15 minutes.', 'Servez avec riz et concombre citronné.']],
   ['in-m3', 'in', 'm', 'Chana masala & chapati', 25, [['Pois chiches cuits', 200], ['Tomates', 120], ['Oignon', 50], ['Huile d’olive', 6], ['Épices', 3], ['Chapati', 50], ['Yaourt nature', 50]], ['Faites revenir oignon et garam masala.', 'Ajoutez tomates et pois chiches, mijotez 15 minutes.', 'Servez avec chapati et yaourt.']],
   ['in-s1', 'in', 's', 'Lassi protéiné à la mangue', 3, [['Yaourt nature', 150], ['Skyr', 80], ['Mangue', 100]], ['Mixez tous les ingrédients.', 'Ajoutez une pincée de cardamome.', 'Servez bien frais.']],
+
+  ['jp-b1', 'jp', 'b', 'Petit-déjeuner japonais : riz, saumon & soupe miso', 15, [['Riz cuit', 120], ['Saumon', 80], ['Miso', 15], ['Tofu', 50], ['Algue nori', 2], ['Épinards', 50]], ['Faites cuire le saumon à la poêle 4 minutes de chaque côté.', 'Délayez le miso dans de l’eau chaude avec le tofu et les épinards.', 'Servez avec le riz et la feuille de nori.']],
+  ['jp-m1', 'jp', 'm', 'Bol de soba au poulet & légumes', 20, [['Nouilles soba cuites', 180], ['Blanc de poulet', 120], ['Brocoli', 100], ['Carotte', 60], ['Sauce soja', 15], ['Gingembre', 5]], ['Faites dorer le poulet émincé.', 'Ajoutez les légumes et le gingembre, faites sauter 4 minutes.', 'Mélangez avec les nouilles et la sauce soja.']],
+  ['jp-m2', 'jp', 'm', 'Onigiri au thon & salade de concombre', 15, [['Riz cuit', 180], ['Thon au naturel', 80], ['Algue nori', 3], ['Concombre', 120], ['Graines de sésame', 5], ['Sauce soja', 8]], ['Mélangez le thon avec un peu de sauce soja.', 'Formez des boules de riz garnies de thon et entourez-les de nori.', 'Servez avec le concombre parsemé de sésame.']],
+  ['jp-s1', 'jp', 's', 'Tofu frais, gingembre & sauce soja', 5, [['Tofu', 150], ['Gingembre', 3], ['Sauce soja', 8], ['Graines de sésame', 3]], ['Coupez le tofu en cubes.', 'Ajoutez le gingembre râpé et la sauce soja.', 'Parsemez de sésame.']],
+
+  ['kr-b1', 'kr', 'b', 'Omelette roulée coréenne & riz', 15, [['Œufs', 150], ['Carotte', 40], ['Oignon', 20], ['Riz cuit', 100], ['Kimchi', 50]], ['Battez les œufs avec la carotte et l’oignon hachés.', 'Cuisez en fine omelette et roulez-la au fur et à mesure.', 'Servez avec le riz et le kimchi.']],
+  ['kr-m1', 'kr', 'm', 'Ragoût de tofu au kimchi', 25, [['Tofu', 180], ['Kimchi', 120], ['Champignons', 80], ['Oignon', 40], ['Riz cuit', 120], ['Épices', 3]], ['Faites revenir l’oignon et le kimchi 3 minutes.', 'Ajoutez de l’eau, les champignons et le tofu, laissez mijoter 10 minutes.', 'Servez avec le riz.']],
+  ['kr-m2', 'kr', 'm', 'Poulet bulgogi léger, riz & légumes', 25, [['Blanc de poulet', 150], ['Sauce soja', 15], ['Miel', 8], ['Ail', 5], ['Riz cuit', 150], ['Épinards', 80], ['Carotte', 60], ['Huile de sésame', 5]], ['Faites mariner le poulet émincé avec la sauce soja, le miel et l’ail.', 'Saisissez-le à la poêle 6 minutes.', 'Servez sur le riz avec les légumes sautés.']],
+  ['kr-s1', 'kr', 's', 'Patate douce rôtie au sésame', 5, [['Patate douce cuite', 150], ['Graines de sésame', 3]], ['Réchauffez la patate douce au four.', 'Parsemez de sésame.', 'Dégustez tiède.']],
+
+  ['cn-b1', 'cn', 'b', 'Congee de riz au poulet & gingembre', 25, [['Riz cuit', 150], ['Blanc de poulet', 80], ['Gingembre', 5], ['Œufs', 50], ['Bok choy', 60]], ['Faites mijoter le riz dans beaucoup d’eau jusqu’à obtenir une bouillie.', 'Ajoutez le poulet émincé, le gingembre et le bok choy, cuisez 8 minutes.', 'Servez avec un œuf mollet.']],
+  ['cn-m1', 'cn', 'm', 'Tofu mapo léger & riz', 20, [['Tofu', 200], ['Steak haché 5%', 60], ['Épices', 3], ['Sauce soja', 10], ['Ail', 5], ['Riz cuit', 150], ['Petits pois', 60]], ['Faites revenir l’ail et la viande hachée.', 'Ajoutez le tofu en cubes, la sauce soja, les épices et un peu d’eau, laissez mijoter 6 minutes.', 'Servez avec le riz et les petits pois.']],
+  ['cn-m2', 'cn', 'm', 'Crevettes sautées, légumes & nouilles', 20, [['Crevettes', 150], ['Nouilles de blé cuites', 160], ['Poivron', 80], ['Bok choy', 80], ['Sauce soja', 12], ['Gingembre', 4]], ['Faites sauter le gingembre et les crevettes 3 minutes.', 'Ajoutez les légumes, puis les nouilles.', 'Assaisonnez de sauce soja et servez.']],
+  ['cn-s1', 'cn', 's', 'Edamame aux épices', 6, [['Edamame', 150], ['Épices', 2]], ['Faites cuire les edamame 4 minutes.', 'Égouttez et assaisonnez.', 'Dégustez tièdes.']],
+
+  ['tr-b1', 'tr', 'b', 'Menemen (œufs, tomates & poivrons)', 15, [['Œufs', 120], ['Tomates', 150], ['Poivron', 80], ['Oignon', 30], ['Pain complet', 50], ['Huile d’olive', 5]], ['Faites revenir l’oignon et le poivron dans l’huile.', 'Ajoutez les tomates puis les œufs battus, remuez doucement.', 'Servez avec le pain.']],
+  ['tr-m1', 'tr', 'm', 'Poulet mariné au four, boulgour & salade', 30, [['Blanc de poulet', 150], ['Sauce yaourt', 60], ['Boulgour cuit', 150], ['Tomates', 100], ['Concombre', 100], ['Épices', 3]], ['Faites mariner le poulet avec les épices et la moitié de la sauce yaourt.', 'Enfournez 20 minutes.', 'Servez avec le boulgour, la salade et le reste de sauce.']],
+  ['tr-m2', 'tr', 'm', 'Aubergines farcies légères', 40, [['Aubergine', 250], ['Steak haché 5%', 100], ['Tomates', 120], ['Oignon', 50], ['Riz cuit', 100], ['Huile d’olive', 8]], ['Faites rôtir les aubergines ouvertes 15 minutes.', 'Faites revenir la viande avec l’oignon et les tomates.', 'Garnissez les aubergines, enfournez 15 minutes et servez avec le riz.']],
+  ['tr-s1', 'tr', 's', 'Yaourt au concombre & herbes (cacık)', 5, [['Yaourt nature', 150], ['Concombre', 100], ['Herbes', 3]], ['Râpez le concombre.', 'Mélangez avec le yaourt et les herbes.', 'Servez frais.']],
+
+  ['pl-b1', 'pl', 'b', 'Fromage frais aux herbes & pain de seigle', 5, [['Fromage blanc 0%', 150], ['Pain de seigle', 60], ['Concombre', 80], ['Herbes', 3]], ['Mélangez le fromage blanc avec les herbes.', 'Coupez le concombre en dés.', 'Servez avec le pain de seigle.']],
+  ['pl-m1', 'pl', 'm', 'Soupe de betterave & œuf (barszcz)', 30, [['Betterave cuite', 200], ['Pommes de terre', 120], ['Carotte', 60], ['Oignon', 40], ['Œufs', 60], ['Yaourt nature', 50]], ['Faites cuire la carotte, l’oignon et les pommes de terre dans un bouillon 15 minutes.', 'Ajoutez la betterave râpée et laissez mijoter 5 minutes.', 'Servez avec un œuf dur et une cuillère de yaourt.']],
+  ['pl-m2', 'pl', 'm', 'Poulet, pommes de terre & salade de chou', 30, [['Blanc de poulet', 150], ['Pommes de terre', 200], ['Chou blanc', 120], ['Carotte', 40], ['Yaourt nature', 40]], ['Faites cuire les pommes de terre.', 'Saisissez le poulet 5 minutes de chaque côté.', 'Mélangez le chou et la carotte râpés avec le yaourt et servez.']],
+  ['pl-s1', 'pl', 's', 'Kéfir & pomme', 2, [['Kéfir', 250], ['Pomme', 120]], ['Coupez la pomme.', 'Servez avec le kéfir bien frais.', 'Ajoutez une pincée de cannelle si vous aimez.']],
+
+  ['nl-b1', 'nl', 'b', 'Pain complet, gouda & crudités', 5, [['Pain complet', 70], ['Fromage gouda', 25], ['Concombre', 60], ['Tomates', 60]], ['Tranchez le pain.', 'Garnissez de gouda, de concombre et de tomate.', 'Servez avec un thé ou un verre d’eau.']],
+  ['nl-m1', 'nl', 'm', 'Purée au chou kale & saucisse (stamppot)', 30, [['Pommes de terre', 220], ['Chou kale', 150], ['Saucisse de volaille', 100], ['Lait demi-écrémé', 50], ['Moutarde', 10]], ['Faites cuire les pommes de terre et le chou 20 minutes.', 'Écrasez avec le lait.', 'Servez avec la saucisse grillée et la moutarde.']],
+  ['nl-m2', 'nl', 'm', 'Hareng, pommes de terre & haricots verts', 20, [['Hareng', 120], ['Pommes de terre', 200], ['Haricots verts', 150], ['Oignon', 20], ['Citron', 10]], ['Faites cuire les pommes de terre et les haricots verts.', 'Servez avec le hareng et l’oignon émincé.', 'Ajoutez un filet de citron.']],
+  ['nl-s1', 'nl', 's', 'Skyr, fruits rouges & avoine', 3, [['Skyr', 150], ['Fruits rouges', 100], ['Flocons d’avoine', 20]], ['Versez le skyr dans un bol.', 'Ajoutez les fruits rouges.', 'Parsemez de flocons d’avoine.']],
+
+  ['id-b1', 'id', 'b', 'Riz sauté léger aux œufs (nasi goreng)', 15, [['Riz cuit', 150], ['Œufs', 100], ['Petits pois', 40], ['Carotte', 40], ['Sauce soja', 10], ['Épices', 2]], ['Faites sauter la carotte et les petits pois 3 minutes.', 'Ajoutez le riz et la sauce soja, puis les œufs battus.', 'Remuez jusqu’à ce que les œufs soient cuits.']],
+  ['id-m1', 'id', 'm', 'Gado-gado : légumes, tofu & sauce cacahuète', 25, [['Tofu', 150], ['Pommes de terre', 100], ['Haricots verts', 100], ['Chou blanc', 80], ['Œufs', 50], ['Beurre de cacahuète', 20], ['Sauce soja', 5]], ['Faites cuire les pommes de terre et les haricots verts.', 'Faites dorer le tofu.', 'Délayez le beurre de cacahuète avec de l’eau et la sauce soja, versez sur les légumes.']],
+  ['id-m2', 'id', 'm', 'Poulet satay, riz & concombre', 25, [['Blanc de poulet', 150], ['Beurre de cacahuète', 15], ['Sauce soja', 10], ['Riz cuit', 150], ['Concombre', 100]], ['Faites mariner le poulet en cubes avec la sauce soja.', 'Grillez les brochettes 8 minutes.', 'Servez avec le riz, le concombre et une sauce au beurre de cacahuète allongée d’eau.']],
+  ['id-s1', 'id', 's', 'Tempeh grillé & sauce soja', 10, [['Tempeh', 100], ['Sauce soja', 8]], ['Coupez le tempeh en tranches.', 'Faites-le griller 3 minutes de chaque côté.', 'Arrosez de sauce soja.']],
 ];
 
 function macros(ingredients) {

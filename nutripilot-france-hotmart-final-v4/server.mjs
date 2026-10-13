@@ -728,7 +728,17 @@ Retourne UNIQUEMENT JSON: {"answer":"..."}.`;
   return { answer: safeText(raw.answer || '', 1200) };
 }
 
+const COACH_MODES = {
+  nutrition: 'coach en nutrition : repas, portions, calories, protéines, organisation',
+  training: 'coach d’entraînement : séances, technique, progression des charges, récupération',
+  recipes: 'assistant cuisine : idées de recettes, substitutions d’ingrédients, portions, budget',
+  scanner: 'expert des étiquettes : explique les résultats du scanner, les valeurs nutritionnelles, les allergènes et additifs déclarés',
+  wellbeing: 'coach bien-être : sommeil, stress, envies de manger, reprise de la routine',
+  menopause: 'coach ménopause : alimentation, activité, sommeil et suivi des symptômes, sans traitement',
+};
 async function coach(body) {
+  const mode = COACH_MODES[body.mode] ? body.mode : 'nutrition';
+  const ctx = body.context && typeof body.context === 'object' ? body.context : {};
   const context = JSON.stringify({
     goal: safeText(body.goal, 40),
     dailyKcal: finiteNumber(body.dailyKcal, 1700, 1000, 5000),
@@ -739,19 +749,34 @@ async function coach(body) {
     week: Array.isArray(body.week) ? body.week.slice(-7) : [],
     weightTrend: Array.isArray(body.weightTrend) ? body.weightTrend.slice(-12) : [],
     planSummary: Array.isArray(body.planSummary) ? body.planSummary.slice(0, 8) : [],
-  }).slice(0, 14_000);
+    profile: ctx.profile || null,
+    today: ctx.today || null,
+    recentMeals: Array.isArray(ctx.recentMeals) ? ctx.recentMeals.slice(0, 8) : [],
+    training: ctx.training || null,
+    lastScan: ctx.lastScan || null,
+    menopause: ctx.menopause || null,
+    sleep: ctx.sleep || null,
+    supplements: Array.isArray(ctx.supplements) ? ctx.supplements.slice(0, 10) : [],
+  }).slice(0, 16_000);
+  const history = (Array.isArray(body.history) ? body.history : []).slice(-8)
+    .map((m) => `${m?.role === 'user' ? 'Utilisateur' : 'Coach'} : ${safeText(m?.text || '', 600)}`).join('\n');
 
-  if (!OPENAI_API_KEY || !OPENAI_MODEL) {
-    return { answer: 'Je peux vous aider à transformer votre objectif du jour en choix concrets. Utilisez « Que manger ensuite ? », votre plan 7 jours ou le scanner pour partir de données réelles.' };
-  }
+  if (!OPENAI_API_KEY || !OPENAI_MODEL) return { answer: '', offline: true };
 
-  const input = `Tu es le coach nutritionnel de NutriPilot. Réponds en français (sauf consigne de langue ci-dessous), de façon concrète, bienveillante et courte. Tu aides à la perte de poids progressive et à la régularité, sans diagnostic, prescription médicale, culpabilisation ni restriction extrême.
-Contexte utilisateur: ${context}
-Question: ${safeText(body.message, 1200)}
-Si la question concerne grossesse, trouble alimentaire, maladie, traitement, symptômes ou situation médicale, recommande un professionnel de santé approprié.
-Retourne UNIQUEMENT JSON: {"answer":"..."}.`;
-  const raw = await callAI(input, 900);
-  return { answer: safeText(raw.answer || '', 1600) };
+  const input = `Tu es le ${COACH_MODES[mode]} de l'application NutriPilot.
+Style : concret, chaleureux, court (6 phrases ou 5 puces maximum), sans jargon. Utilise le prénom si tu le connais.
+Pour chaque recommandation, explique en une phrase POURQUOI elle convient à cette personne (son objectif, sa journée, ses goûts, sa culture culinaire).
+Adapte les exemples d'aliments et de plats à sa cuisine et à son pays. Respecte ses allergies et son régime.
+Interdits : diagnostic, prescription de médicaments ou d'hormones, doses de compléments, régimes très restrictifs, culpabilisation.
+Si la question touche une grossesse, un trouble alimentaire, une maladie, un traitement, une douleur ou un symptôme inquiétant, conseille un professionnel de santé ; en cas d'urgence, les services d'urgence.
+Si l'utilisateur dit qu'une réponse précédente ne convient pas, corrige-la en proposant une alternative différente.
+Contexte autorisé par l'utilisateur : ${context}
+Conversation récente :
+${history || '(début)'}
+Nouvelle question : ${safeText(body.message, 1200)}
+Retourne UNIQUEMENT JSON : {"answer":"..."}.`;
+  const raw = await callAI(input, 1100);
+  return { answer: safeText(raw.answer || '', 2200) };
 }
 
 function normalizeIngredient(x) {

@@ -239,7 +239,7 @@ const ALL_RECIPES = [
   })),
   ...WORLD_RECIPES,
 ];
-const LANG_CUISINE = { fr: 'fr', pt: 'br', es: 'es', it: 'it', de: 'de', en: 'us', nl: 'de', pl: 'de', tr: 'me', ar: 'me', ja: 'as', ko: 'as', zh: 'as', id: 'as', hi: 'in' };
+const LANG_CUISINE = { fr: 'fr', pt: 'br', es: 'es', it: 'it', de: 'de', en: 'us', nl: 'nl', pl: 'pl', tr: 'tr', ar: 'me', ja: 'jp', ko: 'kr', zh: 'cn', id: 'id', hi: 'in' };
 const CUISINE_FLAG = Object.fromEntries(CUISINES.map(([k, , f]) => [k, f]));
 const SLOT_PLANS = {
   2: [['m', 'Déjeuner', 0.5], ['m', 'Dîner', 0.5]],
@@ -268,7 +268,9 @@ function planCuisines() {
   const base = LANG_CUISINE[lang()] || 'fr';
   if (p.cuisine === 'med') return [...new Set([base, 'it', 'es', 'me'])];
   if (p.cuisine === 'world') return CUISINES.map((c) => c[0]);
-  return [base];
+  // Smaller national collections are completed with the closest food culture for variety.
+  const NEAR = { jp: ['as'], kr: ['as'], cn: ['as'], id: ['as'], tr: ['me'], pl: ['de'], nl: ['de'], br: ['mx'] };
+  return [base, ...(NEAR[base] || [])];
 }
 
 function recipeAllowed(r) {
@@ -770,6 +772,16 @@ window.__npCollect = () => {
   ['Kit complet', 'Nutrition', 'Entraînement', 'Ménopause 40+', 'Ménopause', 'Repos', 'Maison', 'Salle'].forEach(touch);
   FAQ.forEach((x) => { touch(x[0]); touch(x[1]); });
   curatedRecipes.forEach((r) => { [r.name, r.category, r.prep, r.difficulty, ...r.steps].forEach(touch); r.ingredients.forEach((i) => touch(i[0])); });
+  // v13 modules
+  MODULES.forEach((m) => [m.name, m.sub, ...m.features].forEach(touch));
+  NUTRIENTS.forEach((n) => [n[1], n[5], ...n[6], n[7], n[8]].forEach(touch));
+  SUPP_INFO.forEach((x) => [x[1], x[2], x[3], x[4]].forEach(touch));
+  BREATHS.forEach((b) => [b[1], b[2]].forEach(touch)); RELAX.forEach((r) => { touch(r[1]); r[3].forEach(touch); });
+  ROUTINE.forEach((r) => touch(r[1])); EMOTIONS.forEach((e) => touch(e[1])); FOOD_GROUPS.forEach((g) => touch(g[1]));
+  COACH_TABS.forEach((c) => { touch(c[1]); c[3].forEach(touch); }); PF_TRACKS.forEach((x) => { touch(x[1]); touch(x[2]); });
+  ['Inspirez', 'Expirez', 'Retenez', 'Bravo', 'Terminé', 'Extérieur', 'Vitamine B6', 'Caféine', 'Créatine', 'Autre', 'Moyenne', 'Coach IA', 'Modules', 'Découverte', 'Recettes', 'Compléments', 'Sommeil & stress', 'Vitamines & nutriments', 'Scanner'].forEach(touch);
+  [['hot'], ['sleep'], ['afternoon'], ['evening'], ['morning']].forEach(() => {});
+  ['Votre moment sensible approche', 'Vous avez le plus faim l’après-midi : prévoyez une collation protéinée vers 16 h (yaourt, fruit et quelques noix).', 'Le soir, votre moment sensible', 'Un dîner riche en protéines et en légumes, puis une tisane : les envies du soir diminuent souvent.', 'Un petit-déjeuner qui tient', 'Vous avez faim le matin : misez sur 20 à 30 g de protéines (œufs, skyr, fromage blanc) pour tenir jusqu’au déjeuner.', 'Bouffées de chaleur', 'Le soir, limitez alcool, plats très épicés et boissons chaudes : notez-les dans vos facteurs pour voir l’effet chez vous.', 'Pour mieux dormir', 'Dernière caféine avant 14 h, dîner léger et chambre fraîche : votre module Sommeil propose une relaxation guidée.', 'Objectif légumes', 'Ajoutez une portion de légumes au prochain repas : la moitié de l’assiette, c’est le bon repère.', 'Moins de sucre', 'Une envie de sucré ? Essayez un fruit avec un yaourt nature, ou la respiration SOS d’une minute.', 'Horaires décalés', 'Gardez vos repas à heures régulières par rapport à votre réveil, pas à l’horloge : c’est ce qui compte.'].forEach(touch);
   localFood.forEach((f) => touch(f[0]));
   ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Collation', 'Basse', 'Haute', 'RECETTE', 'Favori', 'Premier repas', '5 scans', 'Série 3 jours', 'Série 7 jours', 'Plan 7 jours', '3 recettes favorites', 'Que manger avec mes calories restantes ?', 'Je veux une pizza ce soir.', 'Comment augmenter mes protéines ?', 'Analyse ma semaine.', 'Photographier l’étiquette', 'Photographier mon repas', 'Cadrez les valeurs nutritionnelles et la portion.', 'Une photo donne une estimation. Vous pourrez corriger chaque quantité avant de l’enregistrer.', 'Photo', 'Texte / voix', 'Code-barres', 'Étiquette', 'Manuel', 'Favoris', 'Votre semaine est prête', 'Complet'].forEach(touch);
   return [...missingKeys];
@@ -1064,6 +1076,7 @@ window.addEventListener('beforeinstallprompt', (event) => {
 
 const kgFmt = (value) => fmt(value, Number.isInteger(Number(value)) ? 0 : 1);
 const onboardingSteps = [
+  { key: 'name', title: 'Comment vous appelez-vous ?', sub: 'Votre programme sera fait pour vous, à votre nom.', type: 'text', placeholder: 'Votre prénom' },
   { key: 'goal', when: (d) => !['lose', 'menopause'].includes(d.track), title: 'Quel est votre objectif principal ?', sub: 'Votre programme sera construit autour de cette réponse.', type: 'options', opts: (d) => d.track === 'muscle' ? [['gain', 'Prendre du muscle', 'Gagner en force et en volume'], ['lose', 'Perdre du gras et me tonifier', 'Un corps plus sec et dessiné'], ['maintain', 'Me sculpter sans changer de poids', 'Recomposition corporelle']] : [['lose', 'Perdre du poids', 'Durablement, sans régime extrême'], ['maintain', 'Stabiliser mon poids', 'Mieux manger sans y penser'], ['gain', 'Prendre du poids', 'Avec une progression contrôlée']] },
   { key: 'motivation', title: 'Qu’est-ce qui compte le plus pour vous ?', sub: 'C’est ce que nous vous rappellerons les jours difficiles.', type: 'options', opts: [['confidence', 'Me sentir bien dans mon corps', 'Retrouver confiance en moi'], ['clothes', 'Rentrer à nouveau dans mes vêtements', 'Sans avoir à tout racheter'], ['energy', 'Avoir plus d’énergie', 'Fini les coups de fatigue'], ['health', 'Prendre soin de ma santé', 'Pour aujourd’hui et pour demain']] },
   { key: 'sex', when: (d) => d.track !== 'menopause', title: 'Vous êtes…', sub: 'Vos besoins énergétiques en dépendent.', type: 'options', opts: [['female', 'Une femme', ''], ['male', 'Un homme', ''], ['other', 'Je préfère ne pas répondre', 'Estimation intermédiaire']] },
@@ -1074,7 +1087,7 @@ const onboardingSteps = [
   { key: 'target', when: (d) => d.goal !== 'maintain', title: 'Quel poids aimeriez-vous atteindre ?', sub: 'Choisissez un objectif qui vous ferait vraiment plaisir.', type: 'number', min: 35, max: 250, step: 0.1, unit: 'kg' },
   {
     key: 'info-target', type: 'info', icon: '✦',
-    title: (d) => d.goal === 'lose' ? L('Perdre {kg} kg : c’est un objectif atteignable.', { kg: kgFmt(Math.abs(Number(d.weight) - Number(d.target))) }) : L(d.goal === 'gain' ? 'Prendre du muscle, ça se construit repas après repas.' : 'Votre objectif est noté.'),
+    title: (d) => d.goal === 'lose' ? (d.name ? L('{name}, perdre {kg} kg est un objectif atteignable.', { name: d.name, kg: kgFmt(Math.abs(Number(d.weight) - Number(d.target))) }) : L('Perdre {kg} kg : c’est un objectif atteignable.', { kg: kgFmt(Math.abs(Number(d.weight) - Number(d.target))) })) : L(d.goal === 'gain' ? 'Prendre du muscle, ça se construit repas après repas.' : 'Votre objectif est noté.'),
     sub: (d) => L(d.goal === 'gain' ? 'NutriPilot ajuste vos calories et vos protéines à votre entraînement pour progresser sans prendre de gras inutile.' : 'NutriPilot ne vous demandera pas de tout supprimer. Il calcule un rythme qui respecte votre énergie, votre vie sociale et le plaisir de manger, puis vous guide repas après repas.'),
   },
   { key: 'event', title: 'Avez-vous une date en tête ?', sub: 'Un objectif daté aide à garder le cap.', type: 'options', opts: [['holidays', 'Les prochaines vacances', 'Me sentir bien à la plage'], ['event', 'Un événement important', 'Mariage, anniversaire, soirée…'], ['season', 'La nouvelle saison', 'Repartir sur de bonnes bases'], ['none', 'Pas de date précise', 'Je veux surtout que ça dure']] },
@@ -1083,11 +1096,17 @@ const onboardingSteps = [
   { key: 'trainPlace', title: 'Voulez-vous un programme d’entraînement ?', sub: 'Le sport accélère les résultats et protège vos muscles. Il est inclus.', type: 'options', opts: (d) => [['gym', 'Oui, en salle de sport', 'Machines, haltères, barre'], ['home', 'Oui, à la maison', 'Sans matériel, 30 minutes'], ...(d.track === 'muscle' ? [] : [['none', 'Pas pour l’instant', 'Je me concentre sur l’alimentation']])] },
   { key: 'trainLevel', when: (d) => d.trainPlace && d.trainPlace !== 'none', title: 'Quel est votre niveau ?', sub: 'Vos séances partiront de là.', type: 'options', opts: [['beginner', 'Débutant(e)', 'Je découvre ou je reprends'], ['intermediate', 'Intermédiaire', 'Je m’entraîne depuis quelques mois'], ['advanced', 'Confirmé(e)', 'Plus d’un an de pratique régulière']] },
   { key: 'trainDays', when: (d) => d.trainPlace && d.trainPlace !== 'none', title: 'Combien de séances par semaine ?', sub: 'Mieux vaut moins de séances tenues que trop de séances abandonnées.', type: 'options', opts: [[2, '2 séances', 'L’essentiel'], [3, '3 séances', 'Recommandé'], [4, '4 séances ou plus', 'Pour progresser plus vite']] },
+  { key: 'menoFocus', when: (d) => d.track === 'menopause', title: 'Qu’est-ce qui vous gêne le plus en ce moment ?', sub: 'Votre espace Ménopause commencera par ce point.', type: 'options', opts: [['hot', 'Les bouffées de chaleur', 'Et les sueurs nocturnes'], ['sleep', 'Le sommeil', 'Réveils, nuits courtes'], ['belly', 'Le ventre qui s’arrondit', 'Le poids qui change de place'], ['mood', 'L’humeur et le stress', 'Irritabilité, fringales'], ['joints', 'Les articulations', 'Raideurs, douleurs'], ['fatigue', 'La fatigue', 'Moins d’énergie']] },
+  { key: 'muscleFocus', when: (d) => d.track === 'muscle', title: 'Quelle zone voulez-vous développer en priorité ?', sub: 'Votre programme mettra plus de volume sur cette zone.', type: 'options', opts: [['full', 'Tout le corps', 'Une silhouette équilibrée'], ['upper', 'Le haut du corps', 'Pectoraux, dos, épaules, bras'], ['lower', 'Le bas du corps', 'Jambes et fessiers']] },
+  { key: 'sessionLength', when: (d) => d.trainPlace && d.trainPlace !== 'none', title: 'Combien de temps par séance ?', sub: 'Vos séances tiendront dans ce temps, échauffement compris.', type: 'options', opts: [[30, '30 minutes', 'Court et efficace'], [45, '45 minutes', 'Le bon équilibre'], [60, '60 minutes ou plus', 'Pour un travail complet']] },
+  { key: 'eatFocus', when: (d) => d.track === 'eat', title: 'Qu’aimeriez-vous améliorer en premier ?', sub: 'Vos conseils du jour commenceront par là.', type: 'options', opts: [['energy', 'Mon énergie', 'Moins de coups de fatigue'], ['sugar', 'Moins de sucre', 'Grignotage, boissons sucrées'], ['veg', 'Plus de légumes', 'Et plus de fibres'], ['cook', 'Cuisiner plus', 'Moins de plats préparés'], ['digestion', 'Ma digestion', 'Ballonnements, confort']] },
+  { key: 'hungerTime', title: 'À quel moment avez-vous le plus faim ?', sub: 'Votre plan placera une collation ou un repas plus copieux à ce moment-là.', type: 'options', opts: [['morning', 'Le matin', 'Je me réveille affamé(e)'], ['afternoon', 'L’après-midi', 'Le fameux creux de 16 h'], ['evening', 'Le soir', 'Après le dîner, devant un écran'], ['steady', 'Pas de moment précis', 'Ma faim est assez régulière']] },
+  { key: 'schedule', title: 'À quoi ressemblent vos journées ?', sub: 'Les horaires de vos repas et rappels s’y adapteront.', type: 'options', opts: [['office', 'Horaires réguliers', 'Bureau, école, journée classique'], ['shift', 'Horaires décalés', 'Nuits, gardes, rotations'], ['home', 'À la maison', 'Horaires flexibles'], ['move', 'Toujours en déplacement', 'Repas souvent à l’extérieur']] },
   { key: 'tried', title: 'Qu’avez-vous déjà essayé ?', sub: 'Pour ne pas vous refaire vivre ce qui n’a pas marché.', type: 'options', opts: [['diets', 'Des régimes stricts', 'Et le poids est revenu'], ['apps', 'Des applis de comptage', 'Trop long, j’ai arrêté'], ['fasting', 'Le jeûne ou sauter des repas', 'Difficile à tenir'], ['nothing', 'Rien de structuré', 'C’est ma première vraie démarche']] },
   { key: 'challenge', title: 'Qu’est-ce qui vous fait le plus craquer ?', sub: 'Votre tableau de bord mettra l’accent sur ce point.', type: 'options', opts: [['portions', 'Les portions', 'Je ne sais pas combien manger'], ['ideas', 'Les idées de repas', 'Je mange toujours la même chose'], ['snacking', 'Le grignotage', 'Surtout le soir ou entre les repas'], ['consistency', 'La régularité', 'Je commence puis j’abandonne'], ['restaurant', 'Les repas à l’extérieur', 'Restaurant, apéro, repas de famille']] },
   {
     key: 'info-why', type: 'info', icon: '♡',
-    title: () => L('Ce n’est pas un manque de volonté.'),
+    title: (d) => d.name ? L('{name}, ce n’est pas un manque de volonté.', { name: d.name }) : L('Ce n’est pas un manque de volonté.'),
     sub: (d) => {
       const why = {
         portions: 'Sans repères, on mange au jugé. NutriPilot vous montre la bonne portion en une photo, à chaque repas.',
@@ -1103,9 +1122,8 @@ const onboardingSteps = [
   { key: 'allergies', title: 'Des aliments à éviter ?', sub: 'Allergies, intolérances ou simplement ce que vous n’aimez pas. Laissez vide si rien.', type: 'text', optional: true, placeholder: 'Ex. arachides, lactose, champignons…' },
   { key: 'mealsPerDay', title: 'Combien de repas par jour ?', sub: 'Votre plan suivra votre rythme, pas l’inverse.', type: 'options', opts: [[2, '2 repas', 'Simple et efficace'], [3, '3 repas', 'Le classique'], [4, '3 repas + 1 collation', 'Pour éviter les fringales']] },
   { key: 'cooking', title: 'Combien de temps pour cuisiner ?', sub: 'Toutes vos recettes respecteront ce temps.', type: 'options', opts: [['<15 min', 'Moins de 15 min', 'Le plus rapide possible'], ['15-30 min', '15 à 30 min', 'Simple mais bon'], ['30-45 min', '30 à 45 min', 'J’aime cuisiner']] },
-  { key: 'cuisine', title: 'Quelle cuisine vous fait envie ?', sub: 'Un plan qui donne envie, c’est un plan qu’on suit.', type: 'options', opts: [['france', 'Française & familiale', 'Les bons classiques, version légère'], ['med', 'Méditerranéenne', 'Fraîche et ensoleillée'], ['world', 'Cuisine du monde', 'Asie, Orient, Amériques…'], ['simple', 'Très simple', 'Peu d’ingrédients']] },
+  { key: 'cuisine', title: 'Quelle cuisine vous fait envie ?', sub: 'Un plan qui donne envie, c’est un plan qu’on suit.', type: 'options', opts: () => { const c = CUISINES.find((x) => x[0] === (LANG_CUISINE[lang()] || 'fr')) || CUISINES[0]; return [['home', `${c[2]} ${L(c[1])}`, 'Les plats de chez moi, en version légère'], ['med', 'Méditerranéenne', 'Fraîche et ensoleillée'], ['world', 'Cuisine du monde', 'Les recettes de tous les pays'], ['simple', 'Très simple', 'Peu d’ingrédients']]; } },
   { key: 'budget', title: 'Quel budget pour vos courses ?', sub: 'Votre liste de courses sera adaptée.', type: 'options', opts: [['economy', 'Économique', 'Des produits simples'], ['standard', 'Standard', 'Équilibre prix et variété'], ['flexible', 'Flexible', 'Plus de liberté']] },
-  { key: 'name', title: 'Dernière question : votre prénom ?', sub: 'Pour personnaliser votre programme.', type: 'text', placeholder: 'Votre prénom' },
 ];
 const stepText = (value, data) => (typeof value === 'function' ? value(data) : L(value || ''));
 const stepVisible = (index, data = onboardingState.data) => {
@@ -1859,6 +1877,21 @@ function moduleBar(id) {
   const owned = hasModule(id);
   return `<div class="mod-bar ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><span class="mod-name"><b>${L(m.name)}</b><small>${owned ? L('Module activé') : L('Aperçu du module')}</small></span>${owned ? `<button class="mod-all" data-go="modules">${L('Modules')}</button>` : `<button class="mod-cta" data-module-buy="${m.id}">${Billing.trialDays() ? L('Essai gratuit') : L('Débloquer')}</button>`}</div>`;
 }
+function globalSearch(q) {
+  q = q.trim().toLowerCase();
+  if (q.length < 2) return '';
+  const hit = (txt) => String(txt || '').toLowerCase().includes(q) || L(String(txt || ''), null, false).toLowerCase().includes(q);
+  const recipes = ALL_RECIPES.filter((r) => hit(r.name) || r.ingredients.some((i) => hit(i[0]))).slice(0, 5);
+  const ex = Object.entries(EXERCISES).filter(([, e]) => hit(e.name) || hit(e.muscle)).slice(0, 5);
+  const nut = NUTRIENTS.filter((n) => hit(n[1])).slice(0, 4);
+  const lessons = GUIDE_COLLECTIONS.flatMap((c) => c.guides).filter((g) => hit(g.title)).slice(0, 4);
+  const group = (title, items) => items.length ? `<div class="gs-group"><small>${L(title)}</small>${items.join('')}</div>` : '';
+  const out = group('Recettes', recipes.map((r) => `<button class="gs-item" data-recipe-id="${esc(r.id)}">${CUISINE_FLAG[r.cuisine] || '🍽️'} <span>${esc(L(r.name))}</span><em>${fmt(r.kcal)} kcal</em></button>`))
+    + group('Exercices', ex.map(([id, e]) => `<button class="gs-item" data-exercise="${esc(id)}">${icon('dumbbell')} <span>${esc(L(e.name))}</span><em>${esc(L(e.muscle))}</em></button>`))
+    + group('Vitamines & nutriments', nut.map((n) => `<button class="gs-item" data-go-nutrient="${n[0]}">${icon('leaf')} <span>${esc(L(n[1]))}</span></button>`))
+    + group('Leçons', lessons.map((g) => `<button class="gs-item" data-guide="${esc(g.id)}">${icon('book')} <span>${esc(L(g.title))}</span></button>`));
+  return out ? `<div class="gs-box">${out}</div>` : `<div class="gs-box"><p class="fine">${L('Aucun résultat pour « {q} ».', { q: esc(q) })}</p></div>`;
+}
 function modulesScreen() {
   const owned = ownedModules();
   const plans = Billing.plans();
@@ -1866,6 +1899,8 @@ function modulesScreen() {
   return `<div class="mobile-app">
     ${appHeader('Modules')}
     <div class="screen">
+      <label class="search-box">${icon('search')}<input id="global-search" type="search" placeholder="${L('Rechercher une recette, un exercice, un nutriment…')}" autocomplete="off"></label>
+      <div id="gs-results"></div>
       <p class="screen-sub">${L('Chaque module est un espace complet. Activez seulement ce dont vous avez besoin, ou tout avec le Kit complet.')}</p>
       <div class="mod-grid">${MODULES.map((m) => `<button class="mod-card ${m.tone} ${owned.includes(m.id) ? 'owned' : ''}" data-go="${m.route}">
         <span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b><small>${L(m.sub)}</small>${moduleBadge(m.id)}</button>`).join('')}</div>
@@ -2160,13 +2195,30 @@ function mealsHtml(meals) {
   return `<div class="meal-list">${meals.map((meal) => `<button class="meal" data-meal="${esc(meal.id)}"><span class="meal-ico">${meal.icon || '🍽️'}</span><span><b>${esc(meal.title)}</b><small>${esc(L(meal.type || ''))}${meal.total?.protein ? ` · ${fmt(meal.total.protein)} g prot.` : ''}</small></span><b>${fmt(meal.total?.kcal)} kcal</b></button>`).join('')}</div>`;
 }
 
+// One personal tip based on the questionnaire answers (hunger time, focus), then the day's numbers.
+function personalTip(p) {
+  const h = new Date().getHours();
+  if (p.hungerTime === 'afternoon' && h >= 13 && h < 17) return ['Votre moment sensible approche', 'Vous avez le plus faim l’après-midi : prévoyez une collation protéinée vers 16 h (yaourt, fruit et quelques noix).'];
+  if (p.hungerTime === 'evening' && h >= 17) return ['Le soir, votre moment sensible', 'Un dîner riche en protéines et en légumes, puis une tisane : les envies du soir diminuent souvent.'];
+  if (p.hungerTime === 'morning' && h < 11) return ['Un petit-déjeuner qui tient', 'Vous avez faim le matin : misez sur 20 à 30 g de protéines (œufs, skyr, fromage blanc) pour tenir jusqu’au déjeuner.'];
+  if (p.track === 'menopause' && p.menoFocus === 'hot' && h >= 16) return ['Bouffées de chaleur', 'Le soir, limitez alcool, plats très épicés et boissons chaudes : notez-les dans vos facteurs pour voir l’effet chez vous.'];
+  if (p.track === 'menopause' && p.menoFocus === 'sleep' && h >= 18) return ['Pour mieux dormir', 'Dernière caféine avant 14 h, dîner léger et chambre fraîche : votre module Sommeil propose une relaxation guidée.'];
+  if (p.eatFocus === 'veg') return ['Objectif légumes', 'Ajoutez une portion de légumes au prochain repas : la moitié de l’assiette, c’est le bon repère.'];
+  if (p.eatFocus === 'sugar' && h >= 15) return ['Moins de sucre', 'Une envie de sucré ? Essayez un fruit avec un yaourt nature, ou la respiration SOS d’une minute.'];
+  if (p.schedule === 'shift') return ['Horaires décalés', 'Gardez vos repas à heures régulières par rapport à votre réveil, pas à l’horloge : c’est ce qui compte.'];
+  return null;
+}
 function dashboardInsight(t, p) {
-  if (!t.kcal) return `<div class="insight"><strong>${L('Commencez par votre prochain repas.')}</strong>${L('Scannez, vérifiez les grammes, puis laissez NutriPilot adapter le reste de la journée.')}</div>`;
+  const tip = personalTip(p);
+  const tipHtml = tip ? `<div class="insight tip-insight"><strong>${L(tip[0])}</strong>${L(tip[1])}</div>` : '';
+  if (!t.kcal) return tipHtml || `<div class="insight"><strong>${L('Commencez par votre prochain repas.')}</strong>${L('Scannez, vérifiez les grammes, puis laissez NutriPilot adapter le reste de la journée.')}</div>`;
   const left = p.dailyKcal - t.kcal;
   const proteinLeft = p.protein - t.protein;
-  if (left < 0) return `<div class="insight"><strong>${L('Une journée ne décide pas de votre progression.')}</strong>Vous avez dépassé votre repère d’environ ${fmt(Math.abs(left))} kcal. Reprenez simplement votre structure habituelle au prochain repas.</div>`;
-  if (proteinLeft > 35) return `<div class="insight"><strong>${L('Priorité utile : protéines.')}</strong>Il vous reste environ ${fmt(proteinLeft)} g pour atteindre votre repère. « Que manger ensuite ? » peut proposer trois options adaptées.</div>`;
-  return `<div class="insight"><strong>${L('Vous êtes bien cadré aujourd’hui.')}</strong>Il reste environ ${fmt(left)} kcal. Utilisez le plan ou composez votre prochain repas selon votre envie.</div>`;
+  let main;
+  if (left < 0) main = `<div class="insight"><strong>${L('Une journée ne décide pas de votre progression.')}</strong>${L('Vous avez dépassé votre repère d’environ {n} kcal. Reprenez simplement votre structure habituelle au prochain repas.', { n: fmt(Math.abs(left)) })}</div>`;
+  else if (proteinLeft > 35) main = `<div class="insight"><strong>${L('Priorité utile : protéines.')}</strong>${L('Il vous reste environ {n} g pour atteindre votre repère. « Que manger ensuite ? » peut proposer trois options adaptées.', { n: fmt(proteinLeft) })}</div>`;
+  else main = `<div class="insight"><strong>${L('Vous êtes bien cadré aujourd’hui.')}</strong>${L('Il reste environ {n} kcal. Utilisez le plan ou composez votre prochain repas selon votre envie.', { n: fmt(left) })}</div>`;
+  return tipHtml + main;
 }
 
 function ringArc(r, value, max, cls, width) {
@@ -2488,6 +2540,20 @@ function achievements() {
   return `<div class="achievement-grid">${badgeList().map(([ico, label, unlocked]) => `<div class="achievement ${unlocked ? '' : 'locked'}"><span>${ico}</span><b>${esc(L(label))}</b></div>`).join('')}</div>`;
 }
 
+function periodCompare() {
+  const range = (from, to) => {
+    const w = (state.weights || []).filter((x) => x.day >= from && x.day <= to).map((x) => Number(x.value));
+    const days = []; for (let i = 0; ; i += 1) { const d = new Date(`${from}T12:00:00`); d.setDate(d.getDate() + i); const k = todayKey(d); if (k > to) break; days.push(k); }
+    const kc = days.map((d) => totals(d).kcal).filter(Boolean);
+    const sl = days.map((d) => sleepDuration(state.sleepLog?.[d])).filter(Boolean);
+    return { weight: w.length ? w.reduce((a, b) => a + b, 0) / w.length : null, kcal: kc.length ? kc.reduce((a, b) => a + b, 0) / kc.length : null, workouts: (state.workoutLog || []).filter((x) => x.day >= from && x.day <= to).length, logged: kc.length, sleep: sl.length ? sl.reduce((a, b) => a + b, 0) / sl.length : null };
+  };
+  const now = range(addDays(-29), todayKey());
+  const prev = range(addDays(-59), addDays(-30));
+  const row = (label, a, b, unit, digits = 0, goodDown = false) => { const diff = a != null && b != null ? a - b : null; const good = diff == null || Math.abs(diff) < 0.05 ? '' : (diff < 0) === goodDown ? 'good' : 'neutral'; return `<div class="pc-row"><span>${L(label)}</span><b>${a != null ? `${fmt(a, digits)} ${unit}` : '—'}</b><em class="${good}">${diff != null && Math.abs(diff) >= 0.05 ? `${diff > 0 ? '+' : '−'}${fmt(Math.abs(diff), digits)}` : '='}</em></div>`; };
+  return `<div class="section-label"><h3>${L('30 derniers jours vs les 30 précédents')}</h3></div>
+    <div class="pc-card">${row('Poids moyen', now.weight, prev.weight, 'kg', 1, state.profile.goal === 'lose')}${row('Calories moyennes', now.kcal, prev.kcal, 'kcal')}${row('Jours notés', now.logged, prev.logged, '', 0)}${row('Séances', now.workouts, prev.workouts, '', 0)}${row('Sommeil moyen', now.sleep, prev.sleep, 'h', 1)}</div>`;
+}
 function progressScreen() {
   if (!weightKnown()) {
     return `<div class="mobile-app">${appHeader('Progrès')}<div class="screen">
@@ -2551,6 +2617,7 @@ function progressScreen() {
         <div class="stat"><small>${L('Séances')}</small><b>${(state.workoutLog || []).filter((w) => w.day >= addDays(-30)).length}</b><em>${L('30 derniers jours')}</em></div>
       </div>
 
+      ${periodCompare()}
       <div class="section-label"><h3>${L('Calories, 7 derniers jours')}</h3></div>
       <div class="chart-card">${barChart(data.map((d) => ({ label: new Date(`${d.day}T12:00:00`).toLocaleDateString(locale(), { weekday: 'narrow' }), value: d.kcal, today: d.day === todayKey() })), p.dailyKcal, 'kcal')}</div>
 
@@ -3412,6 +3479,8 @@ function recommendedProgramId(p = state.profile || {}) {
   if (p.track === 'menopause') return p.trainPlace === 'gym' ? 'meno-gym' : 'meno-home';
   if (p.trainPlace === 'home') return Number(p.trainDays) >= 4 ? 'home-db-4' : p.goal === 'lose' ? 'home-burn-3' : 'home-full-3';
   if (p.trainPlace === 'gym') {
+    if (p.muscleFocus === 'lower' && p.trainLevel !== 'advanced') return 'gym-glutes-3';
+    if (p.muscleFocus === 'upper' && p.trainLevel !== 'beginner') return 'gym-upper-focus';
     if (p.trainLevel === 'beginner' && Number(p.trainDays) <= 2) return 'gym-beginner-2';
     if (p.trainLevel === 'advanced' && p.goal === 'gain') return 'gym-strength-3';
     if (Number(p.trainDays) >= 4 && p.trainLevel !== 'beginner') return p.goal === 'gain' ? 'gym-upper-focus' : 'gym-upper-lower-4';
@@ -3456,6 +3525,13 @@ function nextSession(program = currentProgram()) {
   return todaySession() || program.sessions[(state.workoutLog || []).filter((x) => x.programId === program.id).length % program.sessions.length];
 }
 
+// Automatic progression: the same load completed in the last two sessions → suggest a small increase.
+function suggestedLoad(exerciseId) {
+  const loads = [...(state.workoutLog || [])].reverse().map((e) => Number(e.loads?.[exerciseId] || 0)).filter(Boolean).slice(0, 2);
+  if (loads.length < 2 || loads[0] !== loads[1]) return 0;
+  const lower = /(squat|leg|deadlift|rdl|hip|lunge|calf|press-jambe)/.test(exerciseId);
+  return loads[0] + (lower ? 5 : 2.5);
+}
 function lastLoad(exerciseId) {
   const log = [...(state.workoutLog || [])].reverse();
   for (const entry of log) {
@@ -3701,7 +3777,7 @@ function sessionSheet(sessionId, programId) {
         ${(ex.cues || []).length ? `<ul class="guide-points">${ex.cues.map((c) => `<li>${esc(L(c))}</li>`).join('')}</ul>` : ''}
         <div class="set-dots">${Array.from({ length: Number(sets) || 1 }, (_, s) => `<button class="set-dot" data-set-dot="${esc(id)}-${s}" aria-label="${L('Série {n}', { n: s + 1 })}">${s + 1}</button>`).join('')}</div>
         <div class="ex-actions">
-          <label class="ex-load">${L('Charge utilisée (kg)')} <input type="number" inputmode="decimal" min="0" step="0.5" data-load="${esc(id)}" value="${esc(lastLoad(id))}" placeholder="—"></label>
+          <label class="ex-load">${L('Charge utilisée (kg)')} <input type="number" inputmode="decimal" min="0" step="0.5" data-load="${esc(id)}" value="${esc(lastLoad(id))}" placeholder="—"></label>${suggestedLoad(id) ? `<small class="prog-hint">${icon('progress')} ${L('Progression suggérée : {n} kg si toutes vos répétitions passent.', { n: fmt(suggestedLoad(id), 1) })}</small>` : ''}
           ${rest ? `<button class="chip-btn" data-rest="${Number(rest)}">${icon('timer')} ${L('Repos')}</button>` : ''}
           ${EXERCISES[id] ? `<button class="chip-btn" data-swap-ex="${index}" data-program="${esc(program.id)}" data-session-id="${esc(session.id)}">${L('Remplacer l’exercice')}</button>` : ''}
         </div>
@@ -4136,7 +4212,7 @@ function menopauseScreen() {
 
 // v11 — menopause factors, 30-day evolution, printable report
 const MENO_FACTORS = [['caffeine', 'Caféine', '☕'], ['alcohol', 'Alcool', '🍷'], ['spicy', 'Plat épicé', '🌶️'], ['stress', 'Stress', '⚡'], ['heat', 'Chaleur', '☀️'], ['badsleep', 'Nuit courte', '🌙'], ['active', 'Activité physique', '🏃']];
-let menoChartKey = 'hot';
+let menoChartKey = '';
 let menoRange = 30;
 function menoScore(day) {
   const log = state.menoLog?.[day];
@@ -4150,6 +4226,7 @@ function menoValue(day, key) {
   return v === undefined ? null : Number(v);
 }
 function menoChartHtml() {
+  if (!menoChartKey) menoChartKey = ({ hot: 'hot', sleep: 'sleep', mood: 'mood', joints: 'joints', fatigue: 'fatigue', belly: 'all' })[state.profile?.menoFocus] || 'hot';
   const days = Array.from({ length: menoRange }, (_, i) => addDays(-(menoRange - 1 - i)));
   const W = 320, H = 120, padL = 22, padB = 18;
   const step = (W - padL - 6) / Math.max(1, days.length - 1);
@@ -4337,20 +4414,50 @@ function suggestionHtml(options = []) {
   return `<div class="suggestion-list">${options.map((s) => `<article class="suggestion"><div class="suggestion-top"><h3>${esc(s.name)}</h3><span class="pill">${fmt(s.kcal)} kcal</span></div><p>${esc(s.why || s.tip || '')}</p>${s.ingredients?.length ? `<div class="ingredients">${s.ingredients.map((x) => `<span class="chip">${esc(typeof x === 'string' ? x : x.name)}</span>`).join('')}</div>` : ''}<div class="nutrition-line"><div><b>${fmt(s.kcal)}</b>kcal</div><div><b>${fmt(s.protein)}</b>${L('prot.')}</div><div><b>${fmt(s.carbs)}</b>${L('gluc.')}</div><div><b>${fmt(s.fiber)}</b>${L('fibres')}</div></div>${s.prep ? `<div class="fine prep-line">⏱ ${esc(s.prep)}</div>` : ''}<button class="btn btn-ghost btn-wide" data-add-suggestion='${esc(JSON.stringify(s))}'>${L('Ajouter au journal')}</button></article>`).join('')}</div>`;
 }
 
+const COACH_TABS = [
+  ['nutrition', 'Nutrition', 'fork', ['Que manger avec mes calories restantes ?', 'Comment augmenter mes protéines ?', 'Je mange au restaurant ce soir.', 'Analyse ma semaine.']],
+  ['training', 'Entraînement', 'dumbbell', ['Quelle séance faire aujourd’hui ?', 'Comment progresser sur mes charges ?', 'J’ai des courbatures, je m’entraîne ?', 'Comment bien faire un squat ?']],
+  ['recipes', 'Recettes', 'book', ['Une recette rapide avec ce que j’ai.', 'Par quoi remplacer la crème ?', 'Un dîner léger de chez moi.', 'Des collations protéinées.']],
+  ['scanner', 'Scanner', 'scan', ['Explique mon dernier scan.', 'Comment lire une étiquette ?', 'Ce produit est-il un bon choix ?', 'C’est quoi un additif ?']],
+  ['wellbeing', 'Bien-être', 'moon', ['J’ai envie de grignoter le soir.', 'Je dors mal, que changer ?', 'Je suis stressé(e), une idée ?', 'Je reprends après une pause.']],
+  ['menopause', 'Ménopause', 'flower', ['Que manger contre les bouffées de chaleur ?', 'Pourquoi mon ventre change ?', 'Quels exercices pour mes os ?', 'Analyse mon journal.']],
+];
+let coachMode = '';
+function coachContext() {
+  if (state.coachUsesData === false) return {};
+  const p = state.profile || {};
+  const t = totals();
+  const prog = hasTrainingPlan() ? currentProgram() : null;
+  const sleepDays = Object.entries(state.sleepLog || {}).filter(([d]) => d >= addDays(-7));
+  const meno = Object.entries(state.menoLog || {}).filter(([d]) => d >= addDays(-7));
+  return {
+    profile: { name: p.name || '', track: p.track || '', goal: p.goal, age: p.age, sex: p.sex, weightNow: weightKnown() ? lastWeight() : null, target: goalSet() ? p.target : null, activity: p.activity, diet: p.diet, allergies: p.allergies, cuisine: CUISINES.find((c) => c[0] === (LANG_CUISINE[lang()] || 'fr'))?.[1] || '', country_language: lang(), hungerTime: p.hungerTime || '', schedule: p.schedule || '', focus: p.menoFocus || p.muscleFocus || p.eatFocus || '', trainPlace: p.trainPlace || '', level: p.trainLevel || '' },
+    today: { kcal: t.kcal, protein: t.protein, targetKcal: p.dailyKcal, targetProtein: p.protein, water: waterToday(), hour: new Date().getHours() },
+    recentMeals: state.meals.slice(-8).reverse().map((m) => `${m.day} ${m.type || ''}: ${m.title} (${Math.round(m.total?.kcal || 0)} kcal, ${Math.round(m.total?.protein || 0)} g prot.)`),
+    training: prog ? { program: prog.name, today: todaySession()?.name || 'repos', lastWorkouts: (state.workoutLog || []).slice(-5).map((w) => ({ day: w.day, session: w.sessionId, loads: w.loads })) } : null,
+    lastScan: state.scanHistory?.[0] ? { title: state.scanHistory[0].title, total: state.scanHistory[0].total, per100: state.scanHistory[0].per100, allergens: state.scanHistory[0].product?.allergens, additives: state.scanHistory[0].product?.additives, nutriscore: state.scanHistory[0].product?.nutriscore } : null,
+    menopause: meno.length ? { days: meno.length, focus: p.menoFocus || '', avg: Object.fromEntries(MENO_SYMPTOMS.map(([k]) => [k, menoAvg(k, 0, 7)])) } : null,
+    sleep: sleepDays.length ? { nights: sleepDays.length, avgHours: +(sleepDays.reduce((s2, [, e]) => s2 + sleepDuration(e), 0) / sleepDays.length).toFixed(1) } : null,
+    supplements: (state.supplements || []).filter((x) => !x.paused).map((x) => x.name),
+  };
+}
+function coachText(text) {
+  return esc(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+}
 function coachScreen() {
   const p = state.profile;
-  const quick = ['Que manger avec mes calories restantes ?', 'Je veux une pizza ce soir.', 'Comment augmenter mes protéines ?', 'Analyse ma semaine.'].map((q) => L(q));
+  if (!coachMode) coachMode = p.track === 'menopause' ? 'menopause' : p.track === 'muscle' ? 'training' : 'nutrition';
+  const tab = COACH_TABS.find((x) => x[0] === coachMode) || COACH_TABS[0];
+  const msgs = state.coach.slice(-18);
   return `<div class="mobile-app">
-    ${appHeader('Coach')}
-    <div class="screen">
-      <span class="tag">${L('COACH CONTEXTUEL')}</span>
-      <h1 class="screen-title">${L('Il connaît votre journée.')}</h1>
-      <div class="pw-soon">${icon('coach')}<span><b>${L('Bientôt')}</b>${L('Des nutritionnistes et coachs diplômés rejoindront NutriPilot pour vous accompagner.')}</span></div>
-      <p class="screen-sub">${L('NutriPilot utilise vos repères, vos repas récents et votre progression pour répondre avec contexte.')}</p>
-      <div class="quick-prompts">${quick.map((q) => `<button data-quick-coach="${esc(q)}">${esc(q)}</button>`).join('')}</div>
-      <div class="chat" id="chat">${state.coach.length ? state.coach.slice(-18).map((m) => `<div class="bubble ${m.role === 'user' ? 'user' : 'ai'}">${esc(m.text)}</div>`).join('') : `<div class="bubble ai">${L('Bonjour {name} 👋 Je peux relier votre objectif, vos repas et ce qu’il vous reste aujourd’hui.', { name: esc(p.name || '') })}</div>`}</div>
-      <div class="chatbar"><input id="coach-input" placeholder="${L('Posez votre question…')}"><button class="btn btn-primary" data-coach-send>→</button></div>
-      <div class="fine">${L('Conseils généraux uniquement. Une situation médicale, grossesse, trouble alimentaire, traitement ou symptôme nécessite un professionnel adapté.')}</div>
+    ${appHeader('Coach IA')}
+    <div class="screen coach-screen">
+      <div class="tab-scroll mod-tabs coach-modes">${COACH_TABS.map(([k, label, ico]) => `<button class="${coachMode === k ? 'active' : ''}" data-coach-mode="${k}">${icon(ico)} ${L(label)}</button>`).join('')}</div>
+      <div class="quick-prompts">${tab[3].map((q) => `<button data-quick-coach="${esc(L(q))}">${esc(L(q))}</button>`).join('')}</div>
+      <div class="chat" id="chat">${msgs.length ? msgs.map((m, i) => `<div class="bubble ${m.role === 'user' ? 'user' : 'ai'}">${coachText(m.text)}${m.role !== 'user' && i === msgs.length - 1 && state.premium ? `<span class="fb"><button data-coach-fb="up" aria-label="${L('Utile')}">👍</button><button data-coach-fb="down" aria-label="${L('Pas adapté')}">👎</button></span>` : ''}</div>`).join('') : `<div class="bubble ai">${L('Bonjour {name} 👋 Je connais votre objectif, votre journée et vos préférences. Posez votre question ou choisissez une idée ci-dessus.', { name: esc(p.name || '') })}</div>`}</div>
+      <div class="chatbar"><input id="coach-input" placeholder="${L('Posez votre question…')}" enterkeyhint="send"><button class="btn btn-primary" data-coach-send aria-label="${L('Envoyer')}"><span class="flip-rtl">→</span></button></div>
+      <div class="coach-ctl"><label><input type="checkbox" id="coach-data" ${state.coachUsesData === false ? '' : 'checked'}> ${L('Utiliser mes données (repas, séances, sommeil) pour personnaliser')}</label>${state.coach.length ? `<button class="link-btn" data-coach-clear>${L('Effacer la conversation')}</button>` : ''}</div>
+      <div class="fine">${L('Le coach est une IA : il peut se tromper. Il ne pose pas de diagnostic et ne prescrit ni médicament ni hormone. En cas de symptôme ou de question médicale, consultez un professionnel.')}</div>
     </div>
     ${bottom('coach')}
   </div>`;
@@ -4538,7 +4645,10 @@ function profileScreen() {
       </div>
       ${pfChips('sex', [['female', 'Une femme'], ['male', 'Un homme'], ['other', 'Je préfère ne pas répondre']])}`)}
       ${section('Mon focus', `<div class="pf-tracks">${PF_TRACKS.map(([v, label, sub, ico]) => `<button class="pf-track ${d.track === v ? 'on' : ''}" data-pf="track" data-pf-value="${v}">${icon(ico)}<b>${L(label)}</b><small>${L(sub)}</small></button>`).join('')}</div>
-        ${d.track === 'menopause' ? pfChips('menopause', [['peri', 'Préménopause'], ['post', 'Ménopause'], ['unsure', 'À préciser']]) : ''}`, 'Ce qui guide vos conseils, vos recettes et vos séances.')}
+        ${d.track === 'menopause' ? `${pfChips('menopause', [['peri', 'Préménopause'], ['post', 'Ménopause'], ['unsure', 'À préciser']])}<h4>${L('Ce qui me gêne le plus')}</h4>${pfChips('menoFocus', [['hot', 'Les bouffées de chaleur'], ['sleep', 'Le sommeil'], ['belly', 'Le ventre qui s’arrondit'], ['mood', 'L’humeur et le stress'], ['joints', 'Les articulations'], ['fatigue', 'La fatigue']])}` : ''}
+        ${d.track === 'muscle' ? `<h4>${L('Zone prioritaire')}</h4>${pfChips('muscleFocus', [['full', 'Tout le corps'], ['upper', 'Le haut du corps'], ['lower', 'Le bas du corps']])}` : ''}
+        ${d.track === 'eat' ? `<h4>${L('Ce que je veux améliorer')}</h4>${pfChips('eatFocus', [['energy', 'Mon énergie'], ['sugar', 'Moins de sucre'], ['veg', 'Plus de légumes'], ['cook', 'Cuisiner plus'], ['digestion', 'Ma digestion']])}` : ''}`, 'Ce qui guide vos conseils, vos recettes et vos séances.')}
+      ${section('Mon quotidien', `<h4>${L('Moment où j’ai le plus faim')}</h4>${pfChips('hungerTime', [['morning', 'Le matin'], ['afternoon', 'L’après-midi'], ['evening', 'Le soir'], ['steady', 'Pas de moment précis']])}<h4>${L('Mes journées')}</h4>${pfChips('schedule', [['office', 'Horaires réguliers'], ['shift', 'Horaires décalés'], ['home', 'À la maison'], ['move', 'Toujours en déplacement']])}`)}
       ${section('Activité au quotidien', pfChips('activity', [[1.2, 'Plutôt assise', 'Bureau, voiture, peu de sport'], [1.375, 'Un peu active', '1 à 3 séances ou longues marches'], [1.55, 'Active', '3 à 5 séances par semaine'], [1.725, 'Très active', 'Sport ou métier physique au quotidien']], true))}
       ${section('Alimentation', `${pfChips('diet', [['balanced', 'De tout'], ['mediterranean', 'Méditerranéen'], ['high-protein', 'Riche en protéines'], ['pescatarian', 'Pescétarien'], ['vegetarian', 'Végétarien']])}
         <label class="pf-field wide"><span>${L('Aliments à éviter')}</span><input id="pf-allergies" type="text" maxlength="120" value="${esc(d.allergies && d.allergies !== 'Aucun' ? d.allergies : '')}" placeholder="${L('Ex. arachides, lactose, champignons…')}"></label>
@@ -4547,7 +4657,7 @@ function profileScreen() {
         <h4>${L('Cuisine préférée')}</h4>${pfChips('cuisine', [['home', `${home?.[2] || ''} ${L(home?.[1] || 'Française')}`], ['med', 'Méditerranéenne'], ['world', 'Cuisine du monde'], ['simple', 'Très simple']])}
         <h4>${L('Budget courses')}</h4>${pfChips('budget', [['economy', 'Économique'], ['standard', 'Standard'], ['flexible', 'Flexible']])}`)}
       ${section('Entraînement', `${pfChips('trainPlace', [['gym', 'En salle de sport'], ['home', 'À la maison'], ['none', 'Pas pour l’instant']])}
-        ${d.trainPlace && d.trainPlace !== 'none' ? `<h4>${L('Niveau')}</h4>${pfChips('trainLevel', [['beginner', 'Débutant(e)'], ['intermediate', 'Intermédiaire'], ['advanced', 'Confirmé(e)']])}<h4>${L('Séances par semaine')}</h4>${pfChips('trainDays', [[2, '2 séances'], [3, '3 séances'], [4, '4 séances ou plus']], true)}` : ''}`)}
+        ${d.trainPlace && d.trainPlace !== 'none' ? `<h4>${L('Durée des séances')}</h4>${pfChips('sessionLength', [[30, '30 minutes'], [45, '45 minutes'], [60, '60 minutes ou plus']], true)}<h4>${L('Niveau')}</h4>${pfChips('trainLevel', [['beginner', 'Débutant(e)'], ['intermediate', 'Intermédiaire'], ['advanced', 'Confirmé(e)']])}<h4>${L('Séances par semaine')}</h4>${pfChips('trainDays', [[2, '2 séances'], [3, '3 séances'], [4, '4 séances ou plus']], true)}` : ''}`)}
       <div class="pf-save"><button class="btn btn-primary btn-wide btn-xl" data-pf-save>${L('Enregistrer mon profil')}</button></div>
     </div>
   </div>`;
@@ -5066,6 +5176,7 @@ function openAdd(tab = 'photo') {
 }
 
 function renderModal() {
+  stopBarcodeCamera();
   document.querySelector('.modal-wrap')?.remove();
   if (!modal) return;
   const wrap = document.createElement('div');
@@ -5102,6 +5213,26 @@ const localFood = [
   ['Œuf',143,12.6,.7,9.5,0], ['Pain complet',247,13,41,4.2,7], ['Avocat',160,2,8.5,14.7,6.7], ['Poulet grillé',165,31,0,3.6,0], ['Riz cuit',130,2.7,28,.3,.4], ['Pâtes cuites',158,5.8,31,.9,1.8], ['Saumon',208,20,0,13,0], ['Thon au naturel',116,26,0,1,0], ['Skyr',63,11,4,.2,0], ['Yaourt grec',97,9,3.9,5,0], ['Banane',89,1.1,23,.3,2.6], ['Pomme',52,.3,14,.2,2.4], ['Lentilles cuites',116,9,20,.4,8], ['Quinoa cuit',120,4.4,21,1.9,2.8], ['Brocoli',35,2.4,7.2,.4,3.3], ['Patate douce cuite',90,2,21,.2,3.3],
 ];
 
+let bcStream = null;
+function stopBarcodeCamera() { try { bcStream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ } bcStream = null; }
+async function startBarcodeCamera(root) {
+  const box = $('#bc-cam', root); const video = $('#bc-video', root);
+  if (!box || !video) return;
+  try {
+    const detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+    bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = bcStream; box.hidden = false; await video.play();
+    const scanLoop = async () => {
+      if (!bcStream || !document.body.contains(video)) return stopBarcodeCamera();
+      try {
+        const codes = await detector.detect(video);
+        if (codes[0]?.rawValue) { stopBarcodeCamera(); box.hidden = true; $('#barcode', root).value = codes[0].rawValue; navigator.vibrate?.(40); return $('[data-barcode]', root)?.click(); }
+      } catch { /* keep trying */ }
+      setTimeout(scanLoop, 250);
+    };
+    scanLoop();
+  } catch { stopBarcodeCamera(); toast('Caméra indisponible : saisissez le code à la main.'); }
+}
 function addTab(tab) {
   if (tab === 'recent') return recentTab();
   if (state.premium && !hasModule('scanner') && ['photo', 'barcode', 'label'].includes(tab)) {
@@ -5109,7 +5240,7 @@ function addTab(tab) {
   }
   if (tab === 'photo' || tab === 'label') return `<label class="upload"><input id="meal-image" type="file" accept="image/*" capture="environment"><div class="camera-ico">${tab === 'label' ? '▤' : '📸'}</div><h3>${L(tab === 'label' ? 'Photographier l’étiquette' : 'Photographier mon repas')}</h3><p>${L(tab === 'label' ? 'Cadrez les valeurs nutritionnelles et la portion.' : 'Une photo donne une estimation. Vous pourrez corriger chaque quantité avant de l’enregistrer.')}</p><span class="btn btn-primary">${L('Choisir une photo')}</span></label>`;
   if (tab === 'text') return `<div class="field"><label>${L('Décrivez votre repas')}</label><textarea class="textarea" id="meal-text" placeholder="${L('Ex. 150 g de poulet, 120 g de riz, courgettes et 1 c. à café d’huile d’olive')}"></textarea></div><div class="inline-actions"><button class="voice-btn" data-voice>${L('🎙 Dicter')}</button><button class="btn btn-primary" data-analyze-text>${L('Analyser →')}</button></div>`;
-  if (tab === 'barcode') return `<div class="day-card"><h3>${L('Produit emballé')}</h3><p class="screen-sub">${L('Entrez les 8 à 14 chiffres du code-barres. Les données disponibles proviennent d’Open Food Facts et restent à vérifier sur l’emballage.')}</p><div class="field"><label>${L('Code-barres')}</label><input id="barcode" inputmode="numeric" placeholder="${L('Ex. 3017620422003')}"></div><button class="btn btn-primary btn-wide" data-barcode>${L('Rechercher →')}</button></div>`;
+  if (tab === 'barcode') return `<div class="day-card"><h3>${L('Produit emballé')}</h3><p class="screen-sub">${L('Entrez les 8 à 14 chiffres du code-barres. Les données disponibles proviennent d’Open Food Facts et restent à vérifier sur l’emballage.')}</p>${'BarcodeDetector' in window ? `<button class="btn btn-lime btn-wide" data-barcode-cam>${icon('camera')} ${L('Scanner avec la caméra')}</button><div id="bc-cam" class="bc-cam" hidden><video id="bc-video" playsinline muted></video><span>${L('Placez le code-barres dans le cadre')}</span></div>` : ''}<div class="field"><label>${L('Code-barres')}</label><input id="barcode" inputmode="numeric" placeholder="${L('Ex. 3017620422003')}"></div><button class="btn btn-primary btn-wide" data-barcode>${L('Rechercher →')}</button></div>`;
   if (tab === 'manual') return `<div class="field"><label>${L('Rechercher un aliment')}</label><input id="manual-search" placeholder="${L('Ex. poulet, riz, skyr…')}"></div><div id="manual-list" class="manual-list">${manualResults('')}</div>`;
   if (tab === 'favorites') return state.favorites.length ? `<div class="manual-list">${state.favorites.map((fav, i) => `<button class="manual-item" data-fav="${i}"><span><b>${esc(fav.title)}</b><small>${fmt(fav.total?.kcal)} kcal</small></span><b>→</b></button>`).join('')}</div>` : `<div class="empty">${L('Aucun favori. Enregistrez un repas analysé comme favori pour le retrouver ici.')}</div>`;
   return '';
@@ -5339,22 +5470,22 @@ async function sendCoach(prefill = '') {
   if (!message) return;
   state.coach.push({ role: 'user', text: message });
   if (state.coach.length > 40) state.coach = state.coach.slice(-40);
-  saveState();
+  state.coach.push({ role: 'ai', text: L('…'), pending: true });
+  saveState(false);
   render();
+  setTimeout(() => { const chat = $('#chat'); if (chat) chat.scrollTop = chat.scrollHeight; }, 0);
+  const finish = (text) => { state.coach = state.coach.filter((m) => !m.pending); state.coach.push({ role: 'ai', text }); saveState(); render(); setTimeout(() => { const chat = $('#chat'); if (chat) chat.scrollTop = chat.scrollHeight; }, 0); };
   try {
     const t = totals();
     const p = state.profile;
-    const response = await apiFetch('/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, goal: p.goal, dailyKcal: p.dailyKcal, remaining: Math.max(0, p.dailyKcal - t.kcal), proteinLeft: Math.max(0, p.protein - t.protein), diet: p.diet, allergies: p.allergies, week: weeklyData(), weightTrend: state.weights.slice(-12), planSummary: state.weekPlan.slice(0, 2) }) });
+    const history = state.coach.filter((m) => !m.pending).slice(-9, -1);
+    const response = await apiFetch('/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, mode: coachMode || 'nutrition', history, context: coachContext(), goal: p.goal, dailyKcal: p.dailyKcal, remaining: Math.max(0, p.dailyKcal - t.kcal), proteinLeft: Math.max(0, p.protein - t.protein), diet: p.diet, allergies: p.allergies, week: weeklyData().map((d) => ({ day: d.day, kcal: d.kcal, protein: d.protein })), weightTrend: (state.weights || []).slice(-12) }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
-    state.coach.push({ role: 'ai', text: data.answer || 'Je n’ai pas pu formuler de réponse.' });
-    saveState();
-    render();
-    setTimeout(() => { const chat = $('#chat'); if (chat) chat.scrollTop = chat.scrollHeight; }, 0);
+    finish(data.offline ? L('Le coach est momentanément indisponible. En attendant, « Que manger ensuite ? », votre plan et le scanner partent de vos données réelles.') : (data.answer || L('Je n’ai pas pu formuler de réponse.')));
+    track('CoachAnswer', { source: coachMode });
   } catch (error) {
-    state.coach.push({ role: 'ai', text: `Je n’ai pas pu répondre : ${error.message}` });
-    saveState();
-    render();
+    finish(L('Je n’ai pas pu répondre : {e}', { e: L(error.message || '') }));
   }
 }
 
@@ -5442,6 +5573,7 @@ function ensureProfileDefaults() {
 function render() {
   document.querySelector('.modal-wrap')?.remove();
   if (route !== 'sleep' && relaxRun) stopRelax();
+  stopBarcodeCamera();
   guardRoute();
   ensureProfileDefaults();
 
@@ -5540,6 +5672,7 @@ function bind() {
       const out = $('#goal-diff'); if (out) out.textContent = `${diff > 0 ? '+' : diff < 0 ? '−' : ''}${fmt(Math.abs(diff), 1)} kg`;
     }
     if (el.id === 'lib-search') { libQuery = el.value; const grid = $('#lib-grid'); if (grid) grid.innerHTML = libraryList(libGroup, libEquip, libQuery).map((id) => exCardHtml(id)).join('') || `<div class="empty">${L('Aucun exercice pour ce filtre.')}</div>`; }
+    if (el.id === 'global-search') { const box = $('#gs-results'); if (box) box.innerHTML = globalSearch(el.value); }
     if (el.id === 'recipe-search') { recipeQuery = el.value; const grid = $('#recipe-grid'); if (grid) grid.innerHTML = recipeGridHtml(); }
     if (el.id === 'grid-name') gridDraft().name = el.value;
     if (el.dataset.gridSessionName !== undefined) gridDraft().days[Number(el.dataset.gridSessionName)].name = el.value;
@@ -5592,6 +5725,14 @@ function bind() {
     }
 
     if (button.dataset.retryRender !== undefined) return render();
+    if (button.dataset.coachMode) { coachMode = button.dataset.coachMode; return render(); }
+    if (button.dataset.coachClear !== undefined) { if (!confirmSoft(button)) return; state.coach = []; saveState(); return render(); }
+    if (button.dataset.coachFb) {
+      track('CoachFeedback', { source: button.dataset.coachFb });
+      if (button.dataset.coachFb === 'up') { button.parentElement.innerHTML = `<small>${L('Merci !')}</small>`; return; }
+      return sendCoach(L('Cette réponse ne me convient pas. Propose une alternative plus adaptée à ma situation.'));
+    }
+    if (button.dataset.goNutrient) { nutrientTab = 'guide'; nutrientOpen = button.dataset.goNutrient; return nav('nutrients'); }
     if (button.dataset.recipeView) { recipeView = button.dataset.recipeView; return render(); }
     // Scanner module
     if (button.dataset.scanOpen) { const item = (state.scanHistory || []).find((x) => x.id === button.dataset.scanOpen); if (item) { modal = { type: 'scan', item }; renderModal(); } return; }
@@ -5716,7 +5857,7 @@ function bind() {
     if (button.dataset.obValue !== undefined) {
       const step = onboardingSteps[onboardingState.step];
       let value = button.dataset.obValue;
-      if (['activity', 'speed', 'mealsPerDay', 'trainDays'].includes(step.key)) value = Number(value);
+      if (['activity', 'speed', 'mealsPerDay', 'trainDays', 'sessionLength'].includes(step.key)) value = Number(value);
       onboardingState.data[step.key] = value;
       return render();
     }
@@ -6138,6 +6279,8 @@ function bind() {
     if (!f) return;
     try { suppImage = await fileToData(f, 1600, 0.85); toast('Photo prête : touchez « Lire l’étiquette »'); } catch { toast('Image illisible.'); }
   };
+  const coachData = $('#coach-data');
+  if (coachData) coachData.onchange = () => { state.coachUsesData = coachData.checked; saveState(false); };
   const voice = $('#relax-voice');
   if (voice) voice.onchange = () => { state.relaxVoice = voice.checked; saveState(false); if (!voice.checked) try { speechSynthesis.cancel(); } catch {} };
   const coachInput = $('#coach-input');
@@ -6158,6 +6301,7 @@ function bindModal(root) {
     }
     if (button.dataset.guide) { root.remove(); return openLesson(button.dataset.guide); }
     if (button.dataset.moduleBuy) { modal = null; root.remove(); selectedTier = button.dataset.moduleBuy; return nav(state.premium ? 'upgrade' : 'paywall'); }
+    if (button.dataset.barcodeCam !== undefined) return startBarcodeCamera(root);
     if (button.dataset.servings) { modal.servings = clamp((modal.servings || 1) + Number(button.dataset.servings), 1, 12); return renderModal(); }
     if (button.dataset.scanLog) {
       const item = (state.scanHistory || []).find((x) => x.id === button.dataset.scanLog);
