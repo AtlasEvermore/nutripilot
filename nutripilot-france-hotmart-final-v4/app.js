@@ -707,8 +707,8 @@ let DICT_EN = {};
 let dictLang = 'fr';
 const CORE_LANGS = ['en', 'es', 'pt', 'de', 'it'];
 async function loadDict(code) {
-  if (!code || code === 'fr') { DICT = {}; DICT_EN = {}; dictLang = 'fr'; return; }
-  if (dictLang === code) return;
+  if (!code || code === 'fr') { DICT = {}; DICT_EN = {}; dictLang = 'fr'; return true; }
+  if (dictLang === code) return true;
   try {
     const [own, en] = await Promise.all([
       import(`./i18n/${code}.js`),
@@ -717,7 +717,15 @@ async function loadDict(code) {
     DICT = own.default || {};
     DICT_EN = en.default || {};
     dictLang = code;
-  } catch { /* offline before the language was cached: the app stays usable in French */ }
+    return true;
+  } catch { return false; /* offline before the language was cached */ }
+}
+// Warm the HTTP/service-worker cache so a tap on a language applies instantly.
+const dictPrefetched = new Set();
+function prefetchDict(code) {
+  if (!code || code === 'fr' || dictPrefetched.has(code)) return;
+  dictPrefetched.add(code);
+  import(`./i18n/${code}.js`).catch(() => dictPrefetched.delete(code));
 }
 const LOCALES = { fr: 'fr-FR', en: 'en-GB', es: 'es-ES', pt: 'pt-BR', de: 'de-DE', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL', tr: 'tr-TR', ja: 'ja-JP', ko: 'ko-KR', zh: 'zh-CN', ar: 'ar-u-nu-latn', id: 'id-ID' };
 function locale() {
@@ -762,7 +770,7 @@ window.__npCollect = () => {
   WORLD_RECIPES.forEach((r) => { [r.name, r.category, r.difficulty, ...r.steps].forEach(touch); });
   Object.keys(INGREDIENTS).forEach(touch); CUISINES.forEach((c) => touch(c[1]));
   Object.values(EXERCISES).forEach((e) => [e.name, e.muscle, ...(e.cues || [])].forEach(touch)); Object.values(EQUIPMENT).forEach(touch);
-  MEASURES.forEach((m) => touch(m[1])); COMPARE_ROWS.forEach((r) => touch(r[0])); Object.values(PLAN_LOOK).forEach((x) => touch(x.tagline));
+  MEASURES.forEach((m) => touch(m[1])); BUNDLES.forEach((b) => [b.name, b.sub, b.tagline, b.badge].forEach(touch)); TQ.forEach(([, label, opts]) => { touch(label); opts.forEach((o) => touch(o[1])); }); PROGRAM_GROUPS.forEach((g) => touch(g[1])); DEFAULT_PLANS.forEach((x) => [x.label, x.sub, x.tagline, x.badge].forEach(touch));
   badgeList().forEach((b) => touch(b[1])); REPS_CHOICES.forEach(touch);
   ['Enregistrer un repas', 'Atteindre mon objectif d’eau', 'Atteindre 80 % de mes protéines', 'Faire ma séance du jour', 'Remplir mon journal ménopause', 'Faire mon check-in', 'Insuffisance pondérale', 'Corpulence normale', 'Surpoids', 'Obésité', 'Formules', 'Nos formules', 'Cours nutrition', 'Monter ma grille', 'Générateur intelligent', 'Importer', 'Choisissez vos jours et vos exercices, un par un.', 'Vos préférences, NutriPilot construit les séances.', 'Le programme de votre coach ou votre plan alimentaire.', 'Tout matériel', 'À la maison', 'Recettes du monde', 'Exercices animés', 'Espace Ménopause 40+', 'Cours', '{n} recettes', '{n} mouvements', 'Journal, programme, séances', 'Première leçon offerte', 'Repas', 'Tout', 'Adaptées à mon profil', 'Mes ajouts', 'Passer à cette formule', 'Choisir', 'Retour à l’accueil', 'Continuer à explorer', 'Mettre à jour ma grille', 'Enregistrer ma grille', 'Sur mesure', 'Ma grille', 'Séance {n}', 'Votre grille : {n} séances par semaine.', 'Monter', 'Retirer', 'Jour {n}'].forEach(touch);
   TRAIN_FOCUS.forEach((x) => touch(x[1])); EX_GROUPS.forEach(touch); BUILDER_GROUPS.forEach(touch);
@@ -875,6 +883,7 @@ function logo() {
 }
 
 function nav(next) {
+  if (next === 'lang' && route !== 'lang') langNext = route;
   route = next;
   closeDrawer(true);
   if (history.state?.npOverlay) history.replaceState(null, '', '#' + next);
@@ -970,11 +979,13 @@ function mealTypeFromHour() {
 }
 
 const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang', 'menopause', 'plans', 'goal', 'profile', 'modules', 'scanner', 'nutrients', 'supplements', 'sleep', 'diary', 'targets'];
+let langNext = '';
 function guardRoute() {
   if (!routeAllowed()) route = 'app';
+  // Paying customers who log in on a new phone also choose their language first.
+  if (!state.lang && !['lang', 'legal'].includes(route)) { langNext = route; route = 'lang'; return; }
   if (!state.premium) {
     if (['access', 'legal'].includes(route)) return;
-    if (!state.lang) { route = 'lang'; return; }
     if (!state.basicsDone) { if (!['lang', 'basics', 'saving'].includes(route)) route = 'basics'; return; }
     if (route === 'upgrade') route = 'paywall';
     if (route === 'hub') route = 'app';
@@ -1168,7 +1179,7 @@ function onboarding() {
       <div class="quote-card"><b>${L('Quelques questions. Un plan fait pour vous.')}</b><p>${L('Vos réponses servent uniquement à construire votre programme.')}</p></div>
     </aside>
     <main class="onboard-main">
-      <div class="ob-top"><button class="back" data-ob-back ${onboardingState.step === 0 ? 'style="visibility:hidden"' : ''} aria-label="${L('Retour')}">←</button><div class="progress-steps"><i style="width:${percent}%"></i></div><small class="ob-percent">${Math.round(percent)} %</small></div>
+      <div class="ob-top"><button class="back" data-ob-back ${onboardingState.step === 0 ? 'style="visibility:hidden"' : ''} aria-label="${L('Retour')}">←</button><div class="progress-steps"><i style="width:${percent}%"></i></div><small class="ob-percent">${Math.round(percent)} %</small>${langChip()}</div>
       ${body}
       <div class="nextbar"><button class="btn btn-primary btn-wide" data-ob-next>${isLast ? L('Créer mon programme') : L('Continuer')}</button></div>
     </main>
@@ -1400,13 +1411,18 @@ function detectLang() {
 }
 
 let pendingLang = '';
+function langChip() {
+  const cur = LANGS.find((x) => x[0] === lang()) || LANGS[0];
+  return `<button class="lang-chip" data-go="lang" aria-label="${L('Langue')}"><span>${cur[2]}</span>${esc(cur[0].toUpperCase())}</button>`;
+}
 function langScreen() {
   const current = pendingLang || state.lang || detectLang();
+  prefetchDict(current);
   return `<div class="welcome">
     <div class="welcome-inner">
-      ${logo()}
+      <div class="lang-top">${state.lang ? `<button class="back" data-lang-ok="${current}" aria-label="${L('Retour')}">${lang() === 'ar' ? '→' : '←'}</button>` : '<span></span>'}${logo()}<span></span></div>
       <div class="welcome-copy"><h1>${esc(I18N[current]?.langTitle || t('langTitle'))}</h1></div>
-      <div class="lang-grid">${LANGS.map(([code, label, flag]) => `<button class="lang-card ${code === current ? 'selected' : ''}" data-lang="${code}"><span>${flag}</span><b>${label}</b></button>`).join('')}</div>
+      <div class="lang-grid">${LANGS.map(([code, label, flag]) => `<button class="lang-card ${code === current ? 'selected' : ''}" data-lang="${code}" aria-pressed="${code === current}" lang="${code}"><span>${flag}</span><b>${label}</b></button>`).join('')}</div>
       <div class="welcome-cta"><button class="btn btn-lime btn-wide btn-xl" data-lang-ok="${current}">${esc(I18N[current]?.langCta || 'Continuer')}</button></div>
     </div>
   </div>`;
@@ -1642,6 +1658,8 @@ function calculatePlan(data = onboardingState.data) {
 }
 
 const ICONS = {
+  trophy: '<path d="M8 4h8v4.5a4 4 0 0 1-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 0 0 2.6 3.3M16 6h2.5a2.5 2.5 0 0 1-2.6 3.3M12 12.5V16M9 20h6M10 16h4v4h-4z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
   home: '<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/>',
   program: '<rect x="4.5" y="4.5" width="15" height="15" rx="3"/><path d="M8.5 9.5h7M8.5 12.5h7M8.5 15.5h4"/>',
   scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.5"/>',
@@ -1814,13 +1832,63 @@ const MODULE_PRICES = {
   complete: [44.99, 189.99], nutrition: [14.99, 79.99], recipes: [9.99, 59.99], scanner: [9.99, 59.99], training: [19.99, 99.99],
   menopause: [24.99, 119.99], nutrients: [6.99, 39.99], supplements: [6.99, 39.99], sleep: [9.99, 59.99], coach: [9.99, 59.99],
 };
+// Themed bundles: each costs clearly less than its modules bought separately.
+const BUNDLES = [
+  { id: 'body', name: 'Corps en forme', sub: 'Entraînement + Nutrition + Scanner', tagline: 'Perdre du gras et prendre du muscle, repas et séances accordés.', icon: 'dumbbell', tone: 'm-train', modules: ['training', 'nutrition', 'scanner'], price: [29.99, 149.99], badge: 'Le plus choisi' },
+  { id: 'women40', name: 'Femme 40+', sub: 'Ménopause + Nutrition + Sommeil + Vitamines', tagline: 'L’accompagnement complet de la (pré)ménopause.', icon: 'flower', tone: 'm-meno', modules: ['menopause', 'nutrition', 'sleep', 'nutrients'], price: [34.99, 169.99], badge: 'Spécial 40+' },
+  { id: 'kitchen', name: 'Cuisine saine', sub: 'Nutrition + Recettes + Scanner', tagline: 'Bien manger chaque jour, sans y passer des heures.', icon: 'fork', tone: 'm-rec', modules: ['nutrition', 'recipes', 'scanner'], price: [24.99, 119.99] },
+  { id: 'performance', name: 'Performance', sub: 'Entraînement + Nutrition + Compléments + Vitamines', tagline: 'S’entraîner fort et récupérer, avec la nutrition qui suit.', icon: 'heart', tone: 'm-sup', modules: ['training', 'nutrition', 'supplements', 'nutrients'], price: [32.99, 159.99] },
+  { id: 'wellness', name: 'Bien-être', sub: 'Sommeil + Vitamines + Compléments', tagline: 'Mieux dormir, moins de stress, compléments sous contrôle.', icon: 'moon', tone: 'm-sleep', modules: ['sleep', 'nutrients', 'supplements'], price: [14.99, 79.99] },
+];
+const bundleById = (id) => BUNDLES.find((b) => b.id === id);
 const DEFAULT_PLANS = [
-  { tier: 'complete', label: 'Kit complet', sub: 'Tous les modules NutriPilot', badge: 'Meilleure offre', modules: MODULES.map((m) => m.id),
+  { tier: 'complete', kind: 'complete', label: 'Kit complet', sub: 'Tous les modules NutriPilot', tagline: 'Tout NutriPilot, sans limite.', icon: 'star', tone: 'm-kit', badge: 'Meilleure offre', modules: MODULES.map((m) => m.id),
     features: ['Les 9 modules, sans limite', 'Nutrition, recettes, scanner et entraînement', 'Ménopause 40+, vitamines, compléments et sommeil', 'Coach IA dans chaque module'],
     monthly: { price: MODULE_PRICES.complete[0], storeId: 'np_complete_monthly' }, annual: { price: MODULE_PRICES.complete[1], storeId: 'np_complete_annual' } },
-  ...MODULES.map((m) => ({ tier: m.id, label: m.name, sub: m.sub, modules: [m.id], features: m.features,
+  ...BUNDLES.map((b) => ({ tier: b.id, kind: 'bundle', label: b.name, sub: b.sub, tagline: b.tagline, icon: b.icon, tone: b.tone, badge: b.badge, modules: b.modules,
+    features: [...b.modules.map((id) => moduleById(id).name), 'Coach IA dans chaque module'],
+    monthly: { price: b.price[0], storeId: `np_${b.id}_monthly` }, annual: { price: b.price[1], storeId: `np_${b.id}_annual` } })),
+  ...MODULES.map((m) => ({ tier: m.id, kind: 'module', label: m.name, sub: m.sub, tagline: m.sub, icon: m.icon, tone: m.tone, modules: [m.id], features: m.features,
     monthly: { price: MODULE_PRICES[m.id][0], storeId: `np_${m.id}_monthly` }, annual: { price: MODULE_PRICES[m.id][1], storeId: `np_${m.id}_annual` } })),
 ];
+// Price of buying these modules one by one.
+function separatePrice(modules, period) {
+  const i = period === 'annual' ? 1 : 0;
+  return modules.reduce((sum, id) => sum + (MODULE_PRICES[id]?.[i] || 0), 0);
+}
+function planSaving(plan, period) {
+  const sep = separatePrice(plan.modules || [], period);
+  return sep && plan.kind !== 'module' ? Math.max(0, Math.round((1 - plan[period].price / sep) * 100)) : 0;
+}
+// "Compose my plan": several subscriptions bought together (single modules and/or one bundle).
+function customPlan(parts) {
+  const plans = DEFAULT_PLANS;
+  const items = parts.map((t) => plans.find((p) => p.tier === t)).filter((p) => p && p.kind !== 'complete');
+  const mods = MODULES.map((m) => m.id).filter((id) => items.some((p) => p.modules.includes(id)));
+  const sum = (k) => Math.round(items.reduce((t, p) => t + p[k].price, 0) * 100) / 100;
+  return { tier: 'custom:' + items.map((p) => p.tier).join('+'), kind: 'custom', parts: items.map((p) => p.tier), label: '', sub: 'Ma sélection', icon: 'grid', tone: 'm-kit', modules: mods, features: [],
+    monthly: { price: sum('monthly'), storeId: '' }, annual: { price: sum('annual'), storeId: '' } };
+}
+// Cheapest way to get at least the chosen modules: separate modules, a bundle (+ the missing modules) or the kit.
+function bestOffer(modules, period) {
+  if (!modules.length) return null;
+  const plans = Billing.plans();
+  const options = [modules.length === 1 ? plans.find((p) => p.tier === modules[0]) : customPlan(modules)];
+  for (const p of plans.filter((x) => x.kind !== 'module')) {
+    const missing = modules.filter((id) => !p.modules.includes(id));
+    if (!missing.length) options.push(p);
+    else if (p.kind === 'bundle' && missing.length < modules.length) options.push(customPlan([p.tier, ...missing]));
+  }
+  return options.filter(Boolean).sort((a, b) => a[period].price - b[period].price || b.modules.length - a.modules.length)[0];
+}
+function recommendedTier() {
+  const track = state.profile?.track;
+  return track === 'menopause' ? 'women40' : track === 'muscle' ? 'performance' : track === 'eat' ? 'kitchen' : track === 'lose' ? 'body' : 'complete';
+}
+function findPlan(tier) {
+  if (String(tier).startsWith('custom:')) return customPlan(String(tier).slice(7).split('+'));
+  return Billing.plans().find((x) => x.tier === tier);
+}
 let selectedTier = '';
 let selectedPeriod = 'annual';
 
@@ -1835,8 +1903,9 @@ function ownedModules() {
   const set = new Set();
   for (const id of ids) {
     const tier = id.replace(/_(monthly|annual|yearly|trial)$/, '');
+    if (bundleById(tier)) { bundleById(tier).modules.forEach((x) => set.add(x)); continue; }
     if (tier === 'complete' || !(moduleById(tier) || LEGACY_PLAN_MODULES[tier])) { all.forEach((x) => set.add(x)); continue; }
-    const legacy = !/(recipes|scanner|nutrients|supplements|sleep|coach)/.test(String(state.subscriptionPlan)) && LEGACY_PLAN_MODULES[tier];
+    const legacy = !/(recipes|scanner|nutrients|supplements|sleep|coach|body|women40|kitchen|performance|wellness)/.test(String(state.subscriptionPlan)) && LEGACY_PLAN_MODULES[tier];
     (legacy || [tier]).forEach((x) => set.add(x));
   }
   if (set.size) set.add('coach'); // the coach answers inside every paid module
@@ -1940,17 +2009,25 @@ const Billing = {
     const id = `${plan.tier}_${period}`;
     track('InitiateCheckout', { plan: id, value: option.price, currency: 'EUR' });
     if (this.native()) {
-      const result = await window.NutriPilotNative.purchase(option.storeId);
-      if (result?.token) {
+      // A custom selection is bought module by module; each one is confirmed in the store.
+      const parts = plan.kind === 'custom' ? plan.parts.map((t) => findPlan(t)) : [plan];
+      const bought = [];
+      for (const part of parts) {
+        const result = await window.NutriPilotNative.purchase(part[period].storeId);
+        if (!result?.token) break;
         state.premium = true;
         state.accessToken = result.token;
         state.premiumEmail = result.email || state.premiumEmail;
-        state.subscriptionPlan = id;
-        saveState();
-        track('StartTrial', { plan: id });
-        return nav('app');
+        bought.push(`${part.tier}_${period}`);
       }
-      return;
+      if (!bought.length) return;
+      // Adding a module keeps the ones already owned (the Complete kit replaces everything).
+      const previous = String(state.subscriptionPlan || '').split(',').map((x) => x.trim()).filter(Boolean);
+      state.subscriptionPlan = (plan.tier === 'complete' ? bought : [...new Set([...previous, ...bought])]).join(',');
+      saveState();
+      track('StartTrial', { plan: bought.join(',') });
+      toast(bought.length > 1 ? L('{n} modules activés ✓', { n: bought.length }) : L('Formule activée ✓'));
+      return nav(state.onboarding ? 'app' : 'onboarding');
     }
     if (!option.offer) return toast('Cette formule sera disponible dans l’application iPhone et Android.');
     const url = new URL(config.checkoutUrl || 'https://pay.hotmart.com/R107884011S');
@@ -1978,7 +2055,7 @@ function euro(value) {
 
 function comboSaving(plans, period) {
   const complete = plans.find((x) => x.tier === 'complete');
-  const separate = plans.filter((x) => x.tier !== 'complete').reduce((sum, x) => sum + x[period].price, 0);
+  const separate = plans.filter((x) => x.kind === 'module').reduce((sum, x) => sum + x[period].price, 0);
   return complete && separate ? Math.round((1 - complete[period].price / separate) * 100) : 0;
 }
 
@@ -2003,13 +2080,30 @@ async function joinWaitlist() {
 }
 
 function defaultTier() {
-  return moduleById(selectedTier) ? selectedTier : state.profile?.track === 'menopause' ? 'menopause' : 'complete';
+  return selectedTier && findPlan(selectedTier) ? selectedTier : recommendedTier();
+}
+// One selectable plan row (paywall).
+function planOptionHtml(x, current) {
+  const o = x[selectedPeriod];
+  const perMonth = selectedPeriod === 'annual' ? o.price / 12 : o.price;
+  const yearly = selectedPeriod === 'annual' ? Math.round((1 - o.price / (x.monthly.price * 12)) * 100) : 0;
+  const sep = x.kind === 'bundle' || x.kind === 'complete' ? separatePrice(x.modules, selectedPeriod) : 0;
+  const sepMonth = selectedPeriod === 'annual' ? sep / 12 : sep;
+  const reco = x.tier === recommendedTier() && state.onboarding;
+  return `<button class="plan-option ${x.tone || ''} ${x.tier === current ? 'selected' : ''}" role="radio" aria-checked="${x.tier === current}" data-tier="${esc(x.tier)}">
+    ${reco ? `<span class="plan-badge reco">${esc(L('Recommandé pour vous'))}</span>` : x.badge ? `<span class="plan-badge">${esc(L(x.badge))}</span>` : ''}
+    <span class="plan-radio"></span>
+    <span class="plan-main"><b>${esc(planName(x))}</b><small>${esc(x.kind === 'bundle' ? x.modules.map((id) => L(moduleById(id).name)).join(' · ') : L(x.sub))}</small>
+      ${x.kind !== 'custom' ? `<span class="plan-feats">${x.features.slice(0, 4).map((f) => `<i>✓ ${esc(L(f, { n: CUISINES.length }))}</i>`).join('')}</span>` : ''}</span>
+    <span class="plan-per">${sep ? `<s>${euro(sepMonth)}</s>` : ''}<b>${euro(perMonth)}</b><small>${L('/ mois')}</small>${yearly > 0 ? `<em>−${yearly} %</em>` : ''}</span>
+    ${sep ? `<span class="plan-combo">${L('{n} % moins cher que les modules séparés', { n: planSaving(x, selectedPeriod) })}</span>` : ''}
+  </button>`;
 }
 
 function paywall() {
   const p = state.profile || {};
   const plans = Billing.plans();
-  const plan = plans.find((x) => x.tier === (selectedTier || defaultTier())) || plans[0];
+  const plan = findPlan(defaultTier()) || plans[0];
   const option = plan[selectedPeriod];
   const periodLabel = selectedPeriod === 'annual' ? L('an') : L('mois');
   const trial = Billing.trialDays();
@@ -2031,19 +2125,16 @@ function paywall() {
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
       </div>
       <div class="plan-list" role="radiogroup">
-        ${(() => { const first = [plan, ...(plan.tier !== 'complete' ? [plans.find((x) => x.tier === 'complete')] : [])].filter(Boolean); const rest = plans.filter((x) => !first.includes(x)); return [first, rest]; })().map((group, gi) => `${gi ? `<details class="more-plans"><summary>${L('Autres modules')} (${group.length})</summary>` : ''}${group.map((x) => {
-          const o = x[selectedPeriod];
-          const perMonth = selectedPeriod === 'annual' ? o.price / 12 : o.price;
-          const saving = selectedPeriod === 'annual' ? Math.round((1 - o.price / (x.monthly.price * 12)) * 100) : 0;
-          return `<button class="plan-option ${x.tier === plan.tier ? 'selected' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}">
-            ${x.tier === 'menopause' && state.profile?.track === 'menopause' ? `<span class="plan-badge reco">${esc(L('Recommandé pour vous'))}</span>` : x.badge ? `<span class="plan-badge">${esc(L(x.badge))}</span>` : ''}
-            <span class="plan-radio"></span>
-            <span class="plan-main"><b>${esc(L(x.label))}</b><small>${esc(L(x.sub))}</small>
-              <span class="plan-feats">${x.features.map((f) => `<i>✓ ${esc(L(f, { n: CUISINES.length }))}</i>`).join('')}</span></span>
-            <span class="plan-per"><b>${euro(perMonth)}</b><small>${L('/ mois')}</small>${saving > 0 ? `<em>−${saving} %</em>` : ''}</span>
-            ${x.tier === 'complete' ? `<span class="plan-combo">${L('Économisez {n} % par rapport aux modules séparés', { n: comboSaving(plans, selectedPeriod) })}</span>` : ''}
-          </button>`;
-        }).join('')}${gi ? '</details>' : ''}`).join('')}
+        ${(() => {
+          const kit = plans.find((x) => x.tier === 'complete');
+          const first = [plan, ...(plan.tier !== 'complete' && kit ? [kit] : [])];
+          const bundles = plans.filter((x) => x.kind === 'bundle' && !first.includes(x));
+          const mods = plans.filter((x) => x.kind === 'module' && !first.includes(x));
+          return first.map((x) => planOptionHtml(x, plan.tier)).join('')
+            + `<details class="more-plans" ${plan.kind === 'bundle' ? '' : ''}><summary>${L('Combinaisons')} <span>${L('jusqu’à −{n} %', { n: Math.max(...BUNDLES.map((b) => planSaving(findPlan(b.id), selectedPeriod))) })}</span></summary>${bundles.map((x) => planOptionHtml(x, plan.tier)).join('')}</details>`
+            + `<details class="more-plans"><summary>${L('Modules individuels')} <span>${mods.length}</span></summary>${mods.map((x) => planOptionHtml(x, plan.tier)).join('')}</details>`
+            + `<button class="link-btn pw-builder" data-go-builder>${icon('grid')} ${L('Composer ma formule module par module')}</button>`;
+        })()}
       </div>
       ${trial ? `<div class="trial-timeline">
         <div><span class="tl-dot on">${icon('lock')}</span><p><b>${L('Aujourd’hui')}</b>${L('Accès complet à votre formule. Aucun paiement maintenant.')}</p></div>
@@ -2054,7 +2145,7 @@ function paywall() {
         <b>${L('Bientôt sur iPhone et Android')}</b>
         <p>${L('Les abonnements ouvrent avec le lancement des applications. Laissez votre e-mail : vous serez prévenu(e) en premier, avec l’essai gratuit de 3 jours.')}</p>
         ${state.waitlistEmail ? `<div class="warn success">✓ ${L('Vous êtes sur la liste : {email}', { email: esc(state.waitlistEmail) })}</div>` : `<div class="chat-input"><input id="waitlist-email" type="email" autocomplete="email" placeholder="${L('vous@exemple.fr')}"><button class="btn btn-lime" data-waitlist>${L('Me prévenir')}</button></div>`}
-        <p class="pw-terms">${L('Formule choisie : {plan} · {price} / {period}. Un seul e-mail au lancement, désinscription en un clic.', { plan: esc(L(plan.label)), price, period: periodLabel })}</p>
+        <p class="pw-terms">${L('Formule choisie : {plan} · {price} / {period}. Un seul e-mail au lancement, désinscription en un clic.', { plan: esc(planName(plan)), price, period: periodLabel })}</p>
       </div>` : `<div class="sticky-cta">
         <button class="btn btn-lime btn-wide btn-xl" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
         <p class="pw-terms">${terms}</p>
@@ -2702,57 +2793,103 @@ async function compressImage(file, maxSide) {
 }
 
 // ---- Plans page ---------------------------------------------------------------
-const PLAN_LOOK = {
-  complete: { icon: 'star', cls: 'pl-complete', tagline: 'Tout NutriPilot, sans limite.' },
-  menopause: { icon: 'flower', cls: 'pl-meno', tagline: 'Pensé pour les femmes en (pré)ménopause.' },
-  nutrition: { icon: 'fork', cls: 'pl-nutri', tagline: 'Mincir et mieux manger, sans régime extrême.' },
-  training: { icon: 'dumbbell', cls: 'pl-train', tagline: 'Salle ou maison, chaque séance guidée.' },
-};
-const COMPARE_ROWS = [
-  ['Scanner de repas illimité', ['complete', 'menopause', 'nutrition', 'training']],
-  ['Coach au quotidien', ['complete', 'menopause', 'nutrition', 'training']],
-  ['Plan de repas 7 jours', ['complete', 'menopause', 'nutrition']],
-  ['Recettes du monde et liste de courses', ['complete', 'menopause', 'nutrition']],
-  ['Cours nutrition', ['complete', 'menopause', 'nutrition']],
-  ['Programmes d’entraînement et grille', ['complete', 'training']],
-  ['Bibliothèque d’exercices animés', ['complete', 'training']],
-  ['Cours de technique et de musculation', ['complete', 'training']],
-  ['Journal des symptômes de la ménopause', ['complete', 'menopause']],
-  ['Programme guidé de 8 semaines', ['complete', 'menopause']],
-  ['Séances force, os et équilibre', ['complete', 'menopause']],
-];
-
+// Complete kit on top, then themed bundles, single modules and a "compose my plan" builder.
+let plansTab = 'bundles';
+let buildSel = null;
+function planName(x) {
+  return x.kind === 'custom' ? x.parts.map((t) => L(findPlan(t)?.label || t)).join(' + ') : L(x.label);
+}
+function modChips(mods, small = false) {
+  return `<span class="mchips ${small ? 'small' : ''}">${mods.map((id) => { const m = moduleById(id); return `<span class="mchip ${m.tone}">${icon(m.icon)}${small ? '' : `<i>${esc(L(m.name))}</i>`}</span>`; }).join('')}</span>`;
+}
+function priceBlock(x, period = selectedPeriod) {
+  const o = x[period];
+  const perMonth = period === 'annual' ? o.price / 12 : o.price;
+  const sep = x.kind !== 'module' ? separatePrice(x.modules, period) : 0;
+  const sepMonth = period === 'annual' ? sep / 12 : sep;
+  return `<div class="pp-price">${sep > o.price ? `<s>${euro(sepMonth)}</s>` : ''}<b>${euro(perMonth)}</b><small>${L('/ mois')}${period === 'annual' ? ` · ${L('{price} par an', { price: euro(o.price) })}` : ''}</small></div>`;
+}
+function choosePlanBtn(x, mine) {
+  if (mine) return `<span class="pc-mine">${icon('check')} ${L('Votre formule')}</span>`;
+  const trial = Billing.trialDays();
+  return `<button class="btn ${x.kind === 'complete' ? 'btn-lime' : 'btn-primary'}" data-choose-plan="${esc(x.tier)}">${trial ? L('Essayer {n} jours gratuits', { n: trial }) : L('Choisir')}</button>`;
+}
 function plansScreen() {
   const plans = Billing.plans();
-  const mine = state.premium ? planTier() : '';
-  const tiers = plans.map((x) => x.tier);
+  const owned = ownedModules();
+  const ownsAll = state.premium && owned.length >= MODULES.length;
+  const kit = plans.find((x) => x.kind === 'complete');
+  const bundles = plans.filter((x) => x.kind === 'bundle');
+  const mods = plans.filter((x) => x.kind === 'module');
+  const isMine = (x) => state.premium && x.modules.every((id) => owned.includes(id));
+  const maxBundle = Math.max(...bundles.map((b) => planSaving(b, selectedPeriod)));
+  if (!buildSel) buildSel = [...(findPlan(recommendedTier())?.modules || ['nutrition', 'training'])];
+  const best = bestOffer(buildSel, selectedPeriod);
+  const sepTotal = separatePrice(buildSel, selectedPeriod);
+  const per = (v) => euro(selectedPeriod === 'annual' ? v / 12 : v);
+  const tab = (id, label, n) => `<button class="${plansTab === id ? 'active' : ''}" data-plans-tab="${id}" role="tab" aria-selected="${plansTab === id}">${L(label)}${n ? ` <span>${n}</span>` : ''}</button>`;
+  const body = plansTab === 'modules'
+    ? `<div class="pm-list">${mods.map((x) => { const m = moduleById(x.tier); return `<article class="pm-row ${x.tone}">
+        <button class="pm-open" data-go="${m.route}" aria-label="${esc(L(m.name))}"><span class="mod-ico">${icon(m.icon)}</span><span><b>${esc(L(m.name))}</b><small>${esc(L(m.sub))}</small></span></button>
+        <div class="pm-side">${priceBlock(x)}${choosePlanBtn(x, isMine(x))}</div>
+        <details><summary>${L('Ce qui est inclus')}</summary><ul>${x.features.map((f) => `<li>${icon('check')}<span>${esc(L(f, { n: CUISINES.length }))}</span></li>`).join('')}</ul></details>
+      </article>`; }).join('')}</div>
+      <p class="fine center-fine">${L('Vous pouvez cumuler plusieurs modules : chacun s’ajoute à votre abonnement.')}</p>`
+    : plansTab === 'builder'
+      ? `<section class="builder">
+        <p class="screen-sub">${L('Cochez les modules qui vous intéressent. NutriPilot calcule automatiquement la formule la moins chère.')}</p>
+        <div class="bd-grid">${MODULES.map((m) => `<button class="bd-mod ${m.tone} ${buildSel.includes(m.id) ? 'on' : ''}" data-build-mod="${m.id}" aria-pressed="${buildSel.includes(m.id)}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.name))}</b><small>${per(MODULE_PRICES[m.id][selectedPeriod === 'annual' ? 1 : 0])} ${L('/ mois')}</small><i class="bd-check">${icon('check')}</i></button>`).join('')}</div>
+        ${best ? `<div class="bd-result">
+          <div class="bd-line"><span>${L('{n} modules séparés', { n: buildSel.length })}</span><b>${per(sepTotal)} ${L('/ mois')}</b></div>
+          <div class="bd-best"><small>${L('Le moins cher pour votre sélection')}</small><b>${esc(planName(best))}</b>${best.kind !== 'custom' && best.modules.length > buildSel.length ? `<em>${L('inclut aussi : {list}', { list: best.modules.filter((id) => !buildSel.includes(id) && id !== 'coach').map((id) => L(moduleById(id).name)).join(', ') })}</em>` : ''}
+            <div class="bd-price"><b>${per(best[selectedPeriod].price)}</b><small>${L('/ mois')}</small>${sepTotal - best[selectedPeriod].price > 0.5 ? `<span class="bd-save">${L('Économie : {v} / mois', { v: per(sepTotal - best[selectedPeriod].price) })}</span>` : ''}</div>
+          </div>
+          <button class="btn btn-lime btn-wide btn-xl" data-choose-plan="${esc(best.tier)}">${Billing.trialDays() ? L('Essayer {n} jours gratuits', { n: Billing.trialDays() }) : L('Choisir cette formule')}</button>
+          ${best.kind === 'custom' ? `<p class="fine">${L('Chaque module est un abonnement séparé : vous pourrez en ajouter ou en retirer quand vous voulez.')}</p>` : ''}
+        </div>` : `<div class="empty">${L('Choisissez au moins un module.')}</div>`}
+      </section>`
+      : `<div class="pb-list">${bundles.map((x) => `<article class="pb-card ${x.tone}">
+        ${x.badge ? `<span class="pc-badge">${esc(L(x.badge))}</span>` : ''}
+        <div class="pb-head"><span class="mod-ico">${icon(x.icon)}</span><div><h2>${esc(L(x.label))}</h2><p>${esc(L(x.tagline))}</p></div></div>
+        ${modChips(x.modules)}
+        <div class="pb-foot">${priceBlock(x)}<span class="pb-save">−${planSaving(x, selectedPeriod)} %</span></div>
+        <div class="pb-cta">${choosePlanBtn(x, isMine(x))}<span class="fine">${icon('coach')} ${L('Coach IA inclus')}</span></div>
+      </article>`).join('')}</div>`;
   return `<div class="mobile-app plans-page">
     ${appHeader('Nos formules')}
     <div class="screen">
       <section class="plans-hero">
-        <h1>${L('Une formule pour chaque objectif.')}</h1>
-        <p>${L('Nutrition, entraînement, ménopause ou tout à la fois. Changez de formule quand vous voulez.')}</p>
-        <div class="ph-chips"><span>${icon('fork')} ${L('{n} recettes', { n: ALL_RECIPES.length })}</span><span>${icon('dumbbell')} ${L('{n} exercices animés', { n: Object.keys(EXERCISES).length })}</span><span>${icon('globe')} ${L('{n} langues', { n: LANGS.length })}</span></div>
+        <h1>${L('Payez seulement ce que vous utilisez.')}</h1>
+        <p>${L('Un module, une combinaison ou tout NutriPilot. {n} jours gratuits sur iPhone et Android, annulable à tout moment.', { n: 3 })}</p>
+        ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
       </section>
-      <div class="plan-cards">${plans.map((x) => {
-        const look = PLAN_LOOK[x.tier] || PLAN_LOOK.complete;
-        const fromMonth = euro(x.annual.price / 12);
-        return `<article class="plan-card ${look.cls} ${mine === x.tier ? 'mine' : ''}">
-          <div class="pc-head"><span class="pc-ico">${icon(look.icon)}</span><div><h2>${esc(L(x.label))}</h2><p>${L(look.tagline)}</p></div>${x.badge ? `<span class="pc-badge">${esc(L(x.badge))}</span>` : ''}</div>
-          <ul>${x.features.map((f) => `<li>${icon('check')}<span>${esc(L(f))}</span></li>`).join('')}</ul>
-          <div class="pc-foot"><div class="pc-price"><small>${L('à partir de')}</small><b>${fromMonth}</b><small>${L('/ mois, en annuel')}</small></div>
-          ${mine === x.tier ? `<span class="pc-mine">${icon('check')} ${L('Votre formule')}</span>` : `<button class="btn ${x.tier === 'complete' ? 'btn-lime' : 'btn-primary'}" data-choose-plan="${esc(x.tier)}">${L(state.premium ? 'Choisir cette formule' : 'Choisir')}</button>`}</div>
-        </article>`;
-      }).join('')}</div>
+      <div class="period-toggle" role="tablist">
+        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>${L('2 mois offerts et plus')}</span></button>
+        <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
+      </div>
+      ${kit ? `<article class="kit-hero">
+        <span class="pc-badge">${esc(L(kit.badge))}</span>
+        <small>${L('Kit complet')}</small>
+        <h2>${L('Les 9 modules et le coach IA')}</h2>
+        ${modChips(kit.modules, true)}
+        <div class="kh-foot">${priceBlock(kit)}<span class="pb-save">−${planSaving(kit, selectedPeriod)} %</span></div>
+        ${ownsAll ? `<span class="pc-mine">${icon('check')} ${L('Votre formule')}</span>` : choosePlanBtn(kit, false)}
+      </article>` : ''}
+      <div class="plans-tabs" role="tablist">${tab('bundles', 'Combinaisons', '')}${tab('modules', 'Modules', mods.length)}${tab('builder', 'Composer', '')}</div>
+      ${plansTab === 'bundles' ? `<p class="screen-sub">${L('Des modules pensés pour aller ensemble, jusqu’à {n} % moins chers que séparément.', { n: maxBundle })}</p>` : ''}
+      ${body}
       <div class="section-label"><h3>${L('Comparer les formules')}</h3></div>
-      <div class="compare">
-        <div class="cmp-row head"><span></span>${tiers.map((t) => `<b class="${PLAN_LOOK[t]?.cls || ''}">${icon(PLAN_LOOK[t]?.icon || 'star')}</b>`).join('')}</div>
-        ${COMPARE_ROWS.map(([label, inc]) => `<div class="cmp-row"><span>${L(label)}</span>${tiers.map((t) => `<i class="${inc.includes(t) ? 'yes' : 'no'}">${inc.includes(t) ? icon('check') : '–'}</i>`).join('')}</div>`).join('')}
-        <div class="cmp-row legend">${tiers.map((t) => `<span><b class="${PLAN_LOOK[t]?.cls || ''}">${icon(PLAN_LOOK[t]?.icon || 'star')}</b>${esc(L(plans.find((p) => p.tier === t).label))}</span>`).join('')}</div>
+      <div class="cmp2" role="table">
+        <div class="cmp2-row head" role="row"><span></span>${[kit, ...bundles].map((x) => `<b class="${x.tone}" title="${esc(L(x.label))}">${icon(x.icon)}</b>`).join('')}</div>
+        ${MODULES.map((m) => `<div class="cmp2-row" role="row"><span>${icon(m.icon)} ${esc(L(m.name))}</span>${[kit, ...bundles].map((x) => `<i class="${x.modules.includes(m.id) || m.id === 'coach' ? 'yes' : 'no'}">${x.modules.includes(m.id) || m.id === 'coach' ? icon('check') : '–'}</i>`).join('')}</div>`).join('')}
+        <div class="cmp2-row price" role="row"><span>${L('Prix / mois')}</span>${[kit, ...bundles].map((x) => `<i>${euro(selectedPeriod === 'annual' ? x.annual.price / 12 : x.monthly.price).replace(/[,.]\d\d(?=\D*$)/, '')}</i>`).join('')}</div>
+        <div class="cmp2-legend">${[kit, ...bundles].map((x) => `<span><b class="${x.tone}">${icon(x.icon)}</b>${esc(L(x.label))}</span>`).join('')}</div>
       </div>
       <div class="plans-faq">
         <details><summary>${L('Comment fonctionne l’essai gratuit ?')}</summary><p>${L('Dans l’application iPhone et Android, chaque formule commence par 3 jours gratuits. Vous pouvez annuler avant la fin de l’essai sans rien payer.')}</p></details>
+        <details><summary>${L('Puis-je combiner plusieurs modules ?')}</summary><p>${L('Oui. Chaque module s’ajoute à votre abonnement. Si une combinaison ou le Kit complet revient moins cher, NutriPilot vous le propose dans « Composer ».')}</p></details>
         <details><summary>${L('Puis-je changer de formule ?')}</summary><p>${L('Oui, à tout moment depuis les réglages de votre compte App Store ou Google Play.')}</p></details>
+        <details><summary>${L('Le coach IA est-il inclus ?')}</summary><p>${L('Oui, le coach IA répond dans chaque module que vous avez activé.')}</p></details>
         <details><summary>${L('Puis-je explorer avant de m’abonner ?')}</summary><p>${L('Oui : recettes, exercices, programmes et la première leçon de chaque cours sont visibles gratuitement.')}</p></details>
       </div>
       <button class="btn btn-ghost btn-wide" data-go="app">${L(state.premium ? 'Retour à l’accueil' : 'Continuer à explorer')}</button>
@@ -2785,7 +2922,7 @@ function hubScreen() {
         <button data-open-goal>${icon('scale')}<span><small>${L('Objectif de poids')}</small><b>${goalSet() ? `${fmt(lastWeight(), 1)} → ${fmt(p.target, 1)} kg` : L('Définir mon objectif')}</b></span>${icon('chevron')}</button>
       </div>
       <div class="section-label"><h3>${L('Nos formules')}</h3><button class="link-btn" data-go="plans">${L('Comparer →')}</button></div>
-      <div class="plan-strip">${plans.map((x) => { const look = PLAN_LOOK[x.tier] || PLAN_LOOK.complete; return `<button class="plan-mini ${look.cls}" data-choose-plan="${esc(x.tier)}"><span class="pc-ico">${icon(look.icon)}</span><b>${esc(L(x.label))}</b><small>${L(look.tagline)}</small><em>${L('dès {p} / mois', { p: euro(x.annual.price / 12) })}</em></button>`; }).join('')}</div>
+      <div class="plan-strip">${plans.filter((x) => x.kind !== 'module').map((x) => `<button class="plan-mini ${x.tone}" data-choose-plan="${esc(x.tier)}"><span class="mod-ico">${icon(x.icon)}</span><b>${esc(L(x.label))}</b><small>${esc(L(x.tagline))}</small>${modChips(x.modules, true)}<em>${L('dès {p} / mois', { p: euro(x.annual.price / 12) })}</em></button>`).join('')}</div>
 
       <div class="section-label"><h3>${esc(t('hubQuiz'))}</h3></div>
       <p class="screen-sub guide-sub">${esc(t('hubQuizSub'))}</p>
@@ -3574,29 +3711,97 @@ function weekStrip() {
 }
 
 function hasTrainingPlan() { return Boolean(state.workoutProgram && findProgram(state.workoutProgram)); }
-function trainingStart() {
-  const reco = findProgram(recommendedProgramId()) || WORKOUT_PROGRAMS[0];
+// ---- Training v4: quick quiz → matching programmes ------------------------------
+const TQ = [
+  ['goal', 'Votre objectif', [['fat', 'Perdre du gras', 'flame'], ['muscle', 'Prendre du muscle', 'dumbbell'], ['strength', 'Devenir plus fort(e)', 'trophy'], ['fitness', 'Remise en forme', 'heart'], ['gentle', 'Reprendre en douceur', 'leaf']]],
+  ['place', 'Où vous entraînez-vous ?', [['gym', 'Salle de sport', 'dumbbell'], ['home', 'À la maison', 'home'], ['outdoor', 'Dehors', 'sun']]],
+  ['level', 'Votre niveau', [['beginner', 'Débutant', ''], ['intermediate', 'Intermédiaire', ''], ['advanced', 'Confirmé', '']]],
+  ['days', 'Jours par semaine', [['2', '2', ''], ['3', '3', ''], ['4', '4', ''], ['5', '5+', '']]],
+  ['time', 'Temps par séance', [['20', '15–20 min', ''], ['30', '30 min', ''], ['45', '45 min', ''], ['60', '60 min +', '']]],
+];
+function trainQuiz() {
+  const p = state.profile || {};
+  const d = {
+    goal: p.track === 'menopause' ? 'gentle' : p.track === 'muscle' ? 'muscle' : p.goal === 'lose' ? 'fat' : 'fitness',
+    place: p.trainPlace === 'home' ? 'home' : p.trainPlace === 'outdoor' ? 'outdoor' : 'gym',
+    level: ['beginner', 'intermediate', 'advanced'].includes(p.trainLevel) ? p.trainLevel : 'beginner',
+    days: String(Math.min(5, Math.max(2, Number(p.trainDays) || 3))),
+    time: String([20, 30, 45, 60].find((n) => n >= Number(p.sessionLength || 45)) || 45),
+  };
+  return { ...d, ...(state.trainQuiz || {}) };
+}
+const PROGRAM_GROUPS = [
+  ['gym', 'Salle de sport · muscle & force', 'dumbbell'],
+  ['glutes', 'Fessiers & bas du corps', 'flame'],
+  ['home', 'À la maison', 'home'],
+  ['cardio', 'Cardio & HIIT', 'heart'],
+  ['gentle', 'Faible impact & plein air', 'leaf'],
+  ['meno', 'Ménopause 40+ · force & os', 'flower'],
+  ['custom', 'Mes programmes', 'user'],
+];
+function programGroup(x) {
+  if (x.custom) return 'custom';
+  if ((x.focus || []).includes('menopause') || /^meno-/.test(x.id)) return 'meno';
+  if (x.style === 'gentle' || x.place === 'outdoor') return 'gentle';
+  if (x.cardio) return 'cardio';
+  if ((x.focus || []).includes('glutes')) return 'glutes';
+  return x.place === 'home' ? 'home' : 'gym';
+}
+const LEVEL_KEY = { 'Débutant': 'beginner', 'Intermédiaire': 'intermediate', 'Confirmé': 'advanced', 'Tous niveaux': 'all' };
+function programMatch(x, q) {
+  const f = x.focus || [];
+  const g = programGroup(x);
+  let score = 0;
+  const why = [];
+  const placeOk = x.place === q.place || (q.place === 'outdoor' && x.place === 'home' && !x.cardio && x.style === 'gentle');
+  if (x.place === q.place) { score += 35; why.push(q.place === 'gym' ? 'Salle' : q.place === 'home' ? 'Maison' : 'Extérieur'); } else if (placeOk || (q.place === 'outdoor' && x.place === 'home')) score += 15; else score -= 25;
+  const goalOk = {
+    fat: f.includes('fat') || x.cardio || x.style === 'fatloss',
+    muscle: f.includes('muscle') || x.style === 'hypertrophy' || g === 'glutes',
+    strength: f.includes('strength') || x.style === 'strength',
+    fitness: f.includes('fitness') || x.cardio || g === 'home',
+    gentle: g === 'gentle' || g === 'meno' || x.style === 'gentle',
+  }[q.goal];
+  if (goalOk) { score += 30; why.push(TQ[0][2].find((o) => o[0] === q.goal)[1]); }
+  const lv = LEVEL_KEY[x.level] || 'all';
+  if (lv === q.level || lv === 'all') { score += 15; why.push(x.level); } else if (q.level === 'beginner' && lv === 'advanced') score -= 25; else if (q.level === 'advanced' && lv === 'beginner') score -= 5; else score += 5;
+  const days = Number(x.days || x.sessions.length);
+  score += Math.max(0, 12 - 5 * Math.abs(days - Number(q.days)));
+  if (Math.abs(days - Number(q.days)) <= 1) why.push(L('{n} j / sem.', { n: days }));
+  const t = Number(q.time);
+  if (t <= 20 && (x.id === 'hiit-15' || x.cardio)) score += 8;
+  if (t >= 60 && (x.style === 'strength' || x.style === 'hypertrophy')) score += 5;
+  if (state.profile?.track === 'menopause' && g === 'meno') score += 10;
+  return { score: Math.max(5, Math.min(99, Math.round(score))), why };
+}
+function trainingQuiz() {
+  const q = trainQuiz();
+  const ranked = [...WORKOUT_PROGRAMS, ...MENO_PROGRAMS].map((x) => ({ x, ...programMatch(x, q) })).sort((a, b) => b.score - a.score);
+  const [top, ...rest] = ranked;
+  const current = hasTrainingPlan() ? currentProgram() : {};
   const opt = (attr, ico, title, sub) => `<button class="ts-opt" ${attr}>${icon(ico)}<span><b>${L(title)}</b><small>${L(sub)}</small></span>${icon('chevron')}</button>`;
-  return `<section class="ts-hero"><h2>${L('Comment voulez-vous vous entraîner ?')}</h2><p>${L('Choisissez votre façon de faire. Aucun programme n’est créé sans votre accord.')}</p></section>
-    <div class="ts-reco"><small>${L('Proposé d’après vos réponses')}</small><h3>${esc(L(reco.name))}</h3><p>${esc(L(reco.desc || ''))}</p>
-      <div class="pc-top"><span class="pill">${esc(L(reco.level))}</span><span class="pill">${L('{n} j / sem.', { n: reco.days || reco.sessions.length })}</span><span class="pill">${L(reco.place === 'home' ? 'Maison' : reco.place === 'outdoor' ? 'Extérieur' : 'Salle')}</span></div>
-      <div class="ts-sessions">${reco.sessions.map((x) => `<button data-session="${esc(x.id)}" data-program="${esc(reco.id)}"><b>${esc(L(x.name))}</b><small>${esc(L(x.focus))}</small></button>`).join('')}</div>
-      <button class="btn btn-lime btn-wide" data-workout-program="${esc(reco.id)}">${L('Commencer ce programme')}</button></div>
-    <div class="section-label"><h3>${L('Ou choisissez une autre façon')}</h3></div>
+  return `<section class="tq">
+      <div class="tq-head"><h2>${L('Trouvons votre programme')}</h2><p>${L('5 réponses, les résultats changent à chaque choix. Rien n’est créé sans votre accord.')}</p></div>
+      ${TQ.map(([key, label, opts], i) => `<div class="tq-q"><span class="tq-n">${i + 1}</span><div><b>${L(label)}</b><div class="tq-opts" role="radiogroup">${opts.map(([v, txt, ico]) => `<button class="${q[key] === v ? 'on' : ''}" role="radio" aria-checked="${q[key] === v}" data-tq="${key}:${v}">${ico ? icon(ico) : ''}${L(txt)}</button>`).join('')}</div></div></div>`).join('')}
+    </section>
+    <div class="section-label"><h3>${L('Votre meilleur choix')}</h3><span class="fine">${L('{n} programmes comparés', { n: ranked.length })}</span></div>
+    <article class="tq-top">
+      <div class="tq-score"><b>${top.score}%</b><small>${L('compatible')}</small></div>
+      <small class="tq-group">${icon((PROGRAM_GROUPS.find((g) => g[0] === programGroup(top.x)) || PROGRAM_GROUPS[0])[2])} ${L((PROGRAM_GROUPS.find((g) => g[0] === programGroup(top.x)) || PROGRAM_GROUPS[0])[1])}</small>
+      <h3>${esc(L(top.x.name))}</h3><p>${esc(L(top.x.desc || ''))}</p>
+      <div class="tq-why">${top.why.map((w) => `<span>${icon('check')}${esc(L(w, null, false))}</span>`).join('')}</div>
+      <div class="ts-sessions">${top.x.sessions.map((se) => `<button data-session="${esc(se.id)}" data-program="${esc(top.x.id)}"><b>${esc(L(se.name))}</b><small>${esc(L(se.focus))} · ${L('{n} exercices', { n: se.ex.length })}</small></button>`).join('')}</div>
+      ${top.x.id === current.id ? `<span class="pc-current">✓ ${L('Programme actuel')}</span>` : `<button class="btn btn-lime btn-wide btn-xl" data-workout-program="${esc(top.x.id)}">${L('Commencer ce programme')}</button>`}
+    </article>
+    <div class="section-label"><h3>${L('Aussi adaptés à vous')}</h3></div>
+    <div class="tq-alt">${rest.slice(0, 3).map((r) => `<div class="tq-alt-card"><span class="tq-mini-score">${r.score}%</span><span><b>${esc(L(r.x.name))}</b><small>${esc(L(r.x.level))} · ${L('{n} j / sem.', { n: r.x.days || r.x.sessions.length })}</small></span>${r.x.id === current.id ? `<em>✓</em>` : `<button class="btn btn-primary" data-workout-program="${esc(r.x.id)}">${L('Choisir')}</button>`}</div>`).join('')}</div>
+    <button class="btn btn-ghost btn-wide" data-train-tab="programs">${icon('list')} ${L('Voir tous les programmes ({n})', { n: allPrograms().length })}</button>
+    <div class="section-label"><h3>${L('Ou créez le vôtre')}</h3></div>
     <div class="ts-list">
-      ${opt('data-train-tab="programs"', 'list', 'Choisir un programme prêt', 'Salle, maison, force, fessiers… filtrés par objectif')}
       ${opt('data-train-create="grid"', 'calendar', 'Construire ma grille', 'Je choisis mes jours et mes exercices un par un')}
       ${opt('data-train-create="auto"', 'sparkle', 'Programme sur mesure', 'Je donne mes préférences, NutriPilot crée les séances')}
       ${opt('data-train-create="import"', 'book', 'Importer le programme de mon coach', 'Je colle mon programme, il devient mon agenda')}
-      ${opt('data-train-tab="cardio"', 'heart', 'Cardio, HIIT et extérieur', 'Séances courtes, faible impact ou en plein air')}
     </div>`;
-}
-function trainingCardio() {
-  const list = WORKOUT_PROGRAMS.filter((x) => x.cardio);
-  const current = hasTrainingPlan() ? currentProgram() : {};
-  return `<p class="screen-sub">${L('Améliorez votre souffle et votre cœur : choisissez un format qui vous convient.')}</p>
-    <div class="program-list">${list.map((x) => programCard(x, current)).join('')}</div>
-    <div class="insight"><strong>${L('Repère')}</strong>${L('L’OMS recommande 150 à 300 minutes d’activité modérée par semaine, ou 75 à 150 minutes d’activité intense, plus 2 séances de renforcement.')}</div>`;
 }
 function trainingHistory() {
   const log = (state.workoutLog || []).slice().sort((a, b) => String(b.day).localeCompare(String(a.day)));
@@ -3620,10 +3825,13 @@ function trainingScreen() {
   const planned = hasTrainingPlan();
   const program = currentProgram();
   const today = planned ? todaySession() : null;
-  const tabs = [['mine', planned ? 'Ma semaine' : 'Commencer'], ['programs', 'Programmes'], ['create', 'Créer'], ['cardio', 'Cardio & HIIT'], ['library', 'Exercices'], ['history', 'Historique'], ['lessons', 'Leçons']];
+  // Order: choose (quiz) or my week first, then every programme, tools, and lessons last.
+  if (trainTab === 'cardio') { trainTab = 'programs'; trainGroup = 'cardio'; }
+  if (trainTab === 'mine' && !planned) trainTab = 'quiz';
+  const tabs = [...(planned ? [['mine', 'Ma semaine']] : []), ['quiz', planned ? 'Changer de programme' : 'Trouver mon programme'], ['programs', 'Tous les programmes'], ['create', 'Créer'], ['library', 'Exercices'], ['history', 'Historique'], ['lessons', 'Leçons']];
   let body = '';
-  if (trainTab === 'mine') body = planned ? trainingMine(program) : trainingStart();
-  else if (trainTab === 'cardio') body = trainingCardio();
+  if (trainTab === 'mine') body = trainingMine(program);
+  else if (trainTab === 'quiz') body = trainingQuiz();
   else if (trainTab === 'history') body = trainingHistory();
   else if (trainTab === 'programs') body = trainingPrograms(program);
   else if (trainTab === 'create') body = trainingCreate();
@@ -3671,14 +3879,37 @@ function programCard(x, current) {
   </article>`;
 }
 
+let trainGroup = 'all';
+let trainPlace = 'all';
+function programRow(x, current, reco) {
+  const isCur = x.id === current.id;
+  return `<article class="pr-card ${isCur ? 'current' : ''}">
+    <div class="pr-main">
+      <div class="pc-top">${x.id === reco ? `<span class="pill reco">${icon('star')} ${L('Recommandé')}</span>` : ''}<span class="pill">${esc(L(x.level))}</span><span class="pill">${L('{n} j / sem.', { n: x.days || x.sessions.length })}</span><span class="pill">${L(x.place === 'home' ? 'Maison' : x.place === 'outdoor' ? 'Extérieur' : 'Salle')}</span></div>
+      <h3>${esc(L(x.name))}</h3>
+      ${x.desc ? `<p>${esc(L(x.desc))}</p>` : ''}
+    </div>
+    <details><summary>${L('Voir les {n} séances', { n: x.sessions.length })}</summary>
+      <div class="ts-sessions">${x.sessions.map((se) => `<button data-session="${esc(se.id)}" data-program="${esc(x.id)}"><b>${esc(L(se.name))}</b><small>${esc(L(se.focus))} · ${L('{n} exercices', { n: se.ex.length })}</small></button>`).join('')}</div>
+    </details>
+    ${isCur ? `<span class="pc-current">✓ ${L('Programme actuel')}</span>` : `<button class="btn btn-primary btn-wide" data-workout-program="${esc(x.id)}">${L('Choisir ce programme')}</button>`}
+  </article>`;
+}
 function trainingPrograms(current) {
-  const list = [...WORKOUT_PROGRAMS, ...(state.customPrograms || [])].filter((x) => trainFocus === 'all' || (x.focus || []).includes(trainFocus));
   const reco = recommendedProgramId();
+  const all = allPrograms().filter((x) => trainPlace === 'all' || x.place === trainPlace);
+  const groups = PROGRAM_GROUPS.map(([id, label, ico]) => [id, label, ico, all.filter((x) => programGroup(x) === id)]).filter((g) => g[3].length);
+  const shown = trainGroup === 'all' ? groups : groups.filter((g) => g[0] === trainGroup);
   return `
-    <div class="chip-row">${TRAIN_FOCUS.map(([k, label]) => `<button class="mini-choice ${trainFocus === k ? 'selected' : ''}" data-train-focus="${k}">${L(label)}</button>`).join('')}</div>
-    ${list.some((x) => x.id === reco) ? `<div class="section-label"><h3>${L('Recommandé pour vous')}</h3></div>${programCard(findProgram(reco), current)}` : ''}
-    <div class="section-label"><h3>${L('Tous les programmes')}</h3><span class="fine">${list.length}</span></div>
-    <div class="program-list">${list.filter((x) => x.id !== reco).map((x) => programCard(x, current)).join('') || `<div class="empty">${L('Aucun programme pour ce filtre.')}</div>`}</div>
+    <div class="pg-filter">
+      <div class="chip-row">${[['all', 'Partout'], ['gym', 'Salle'], ['home', 'Maison'], ['outdoor', 'Extérieur']].map(([k, label]) => `<button class="mini-choice ${trainPlace === k ? 'selected' : ''}" data-train-place="${k}">${L(label)}</button>`).join('')}</div>
+      <div class="pg-cats">${[['all', 'Toutes les catégories', 'grid', all.length], ...groups.map((g) => [g[0], g[1], g[2], g[3].length])].map(([k, label, ico, n]) => `<button class="pg-cat ${trainGroup === k ? 'on' : ''}" data-train-group="${k}">${icon(ico)}<span>${L(label)}</span><em>${n}</em></button>`).join('')}</div>
+    </div>
+    ${shown.map(([id, label, ico, list]) => `<section class="pg-section" id="pg-${id}">
+      <div class="section-label"><h3>${icon(ico)} ${L(label)}</h3><span class="fine">${list.length}</span></div>
+      ${id === 'cardio' ? `<p class="fine">${L('L’OMS recommande 150 à 300 minutes d’activité modérée par semaine, ou 75 à 150 minutes d’activité intense, plus 2 séances de renforcement.')}</p>` : ''}
+      <div class="program-list">${list.sort((a, b) => (b.id === reco) - (a.id === reco)).map((x) => programRow(x, current, reco)).join('')}</div>
+    </section>`).join('') || `<div class="empty">${L('Aucun programme pour ce filtre.')}</div>`}
     <div class="section-label"><h3>${L('Styles de coaching')}</h3></div>
     <p class="screen-sub">${L('Chaque style correspond à une méthode d’entraînement. Choisissez-en un dans « Créer » pour générer un programme sur mesure.')}</p>
     <div class="style-grid">${COACH_STYLES.map((c) => `<button class="style-card" data-builder-style="${c.id}"><b>${esc(L(c.name))}</b><small>${esc(L(c.desc))}</small></button>`).join('')}</div>`;
@@ -5158,7 +5389,7 @@ function legal() {
 
 function access() {
   return `<div class="mobile-app access-shell">
-    <div class="app-head"><div class="app-head-row">${logo()}<span class="pill">${L('Espace privé')}</span></div></div>
+    <div class="app-head"><div class="app-head-row">${logo()}<div class="head-actions"><span class="pill">${L('Espace privé')}</span>${langChip()}</div></div></div>
     <div class="screen">
       <div class="access-hero"><span class="tag">${L('NUTRIPILOT PREMIUM')}</span><h1>${L('Votre programme est réservé aux clients.')}</h1><p>${L('Utilisez l’e-mail de votre achat pour recevoir votre code d’accès sécurisé.')}</p></div>
       <div class="access-benefits"><div>📸 <b>${L('Scanner IA')}</b><span>${L('photo, texte, étiquette et code-barres')}</span></div><div>▦ <b>${L('Plan personnalisé')}</b><span>${L('7 jours, recettes et liste de courses')}</span></div><div>✦ <b>${L('Décisions intelligentes')}</b><span>${L('prochain repas, frigo, restaurant, coach')}</span></div><div>↗ <b>${L('Progression')}</b><span>${L('poids, tendances et bilan hebdomadaire')}</span></div></div>
@@ -5401,7 +5632,7 @@ async function doCompose(button) {
     box.innerHTML = suggestionHtml(data.options || []);
     track('MealComposerUsed');
   } catch (error) {
-    box.innerHTML = `<div class="warn">${esc(error.message)}</div>`;
+    box.innerHTML = `<div class="warn">${esc(L(error.message || ''))}</div>`;
   }
 }
 
@@ -5414,7 +5645,7 @@ async function doFridge(button) {
     if (!response.ok) throw new Error(data.error);
     box.innerHTML = suggestionHtml(data.options || []);
     track('FridgeModeUsed');
-  } catch (error) { box.innerHTML = `<div class="warn">${esc(error.message)}</div>`; }
+  } catch (error) { box.innerHTML = `<div class="warn">${esc(L(error.message || ''))}</div>`; }
 }
 
 async function doRestaurant(button) {
@@ -5426,7 +5657,7 @@ async function doRestaurant(button) {
     if (!response.ok) throw new Error(data.error);
     box.innerHTML = `<div class="suggestion-list"><div class="insight"><strong>${esc(data.headline || 'Au restaurant')}</strong>${L('Choisissez une stratégie qui vous paraît naturelle.')}</div>${(data.options || []).map((x) => `<article class="suggestion"><h3>${esc(x.choice)}</h3><p>${esc(x.why)}</p><div class="fine">${esc(x.tip)}</div></article>`).join('')}</div>`;
     track('RestaurantModeUsed');
-  } catch (error) { box.innerHTML = `<div class="warn">${esc(error.message)}</div>`; }
+  } catch (error) { box.innerHTML = `<div class="warn">${esc(L(error.message || ''))}</div>`; }
 }
 
 async function doSmartSwap(button) {
@@ -5441,7 +5672,7 @@ async function doSmartSwap(button) {
     const options = data.options || [];
     if (pendingPlanSwap) pendingPlanSwap.options = options;
     box.innerHTML = `<div class="suggestion-list">${options.map((x, index) => `<article class="suggestion"><div class="suggestion-top"><h3>${esc(x.name)}</h3><span class="pill">${fmt(x.kcal)} kcal</span></div><p>${esc(x.tip || '')}</p>${x.ingredients?.length ? `<div class="ingredients">${x.ingredients.map((i) => `<span class="chip">${esc(typeof i === 'string' ? i : i.name)}${typeof i === 'object' && i.grams ? ` · ${fmt(i.grams)} g` : ''}</span>`).join('')}</div>` : ''}<div class="nutrition-line"><div><b>${fmt(x.kcal)}</b>kcal</div><div><b>${fmt(x.protein)}</b>${L('prot.')}</div><div><b>${fmt(x.carbs)}</b>${L('gluc.')}</div><div><b>${fmt(x.fiber)}</b>${L('fibres')}</div></div>${pendingPlanSwap ? `<button class="btn btn-lime btn-wide" data-replace-option="${index}">${L('Remplacer dans mon plan →')}</button>` : `<button class="btn btn-ghost btn-wide" data-add-suggestion='${esc(JSON.stringify(x))}'>${L('Ajouter au journal')}</button>`}</article>`).join('')}</div>`;
-  } catch (error) { box.innerHTML = `<div class="warn">${esc(error.message)}</div>`; }
+  } catch (error) { box.innerHTML = `<div class="warn">${esc(L(error.message || ''))}</div>`; }
 }
 
 async function generateWeeklyReview(button) {
@@ -5507,7 +5738,7 @@ async function requestCode() {
     $('#code-area').style.display = 'block';
     message.innerHTML = `<div class="warn success"><b>${L('Code envoyé.')}</b><br>${data.mailed ? 'Consultez votre boîte e-mail et vos spams.' : ''}${data.devCode ? ` Code de développement : <b>${esc(data.devCode)}</b>` : ''}</div>`;
   } catch (error) {
-    message.innerHTML = `<div class="warn">${esc(error.message)}</div>`;
+    message.innerHTML = `<div class="warn">${esc(L(error.message || ''))}</div>`;
   }
 }
 
@@ -5548,7 +5779,7 @@ async function openPlanRecipe(dayIndex, mealIndex) {
     renderModal();
   } catch (error) {
     modal.loading = false;
-    modal.error = error.message;
+    modal.error = L(error.message || '');
     renderModal();
   }
 }
@@ -5695,17 +5926,35 @@ function bind() {
       return renderModal();
     }
     if (button.dataset.lang) {
-      pendingLang = button.dataset.lang;
+      // Applies immediately: the whole screen switches language on the tap.
+      const code = button.dataset.lang;
+      pendingLang = code;
+      document.querySelectorAll('[data-lang]').forEach((x) => { x.classList.toggle('selected', x === button); x.setAttribute('aria-pressed', String(x === button)); });
+      document.querySelectorAll('[data-lang-ok]').forEach((x) => x.setAttribute('data-lang-ok', code));
+      const ok = await loadDict(code);
+      if (pendingLang !== code) return; // another language was tapped meanwhile
+      if (!ok) { pendingLang = ''; return toast('Connexion nécessaire pour télécharger cette langue.'); }
+      state.lang = code;
+      saveState();
+      track('SelectLanguage', { lang: code });
       return render();
     }
     if (button.dataset.langOk) {
+      // The last tapped language wins, even if its file is still downloading.
+      const code = pendingLang || button.dataset.langOk;
       button.disabled = true;
-      await loadDict(button.dataset.langOk);
-      state.lang = button.dataset.langOk;
+      if (state.lang !== code) {
+        if (!(await loadDict(code))) { button.disabled = false; return toast('Connexion nécessaire pour télécharger cette langue.'); }
+        state.lang = code;
+        saveState();
+        track('SelectLanguage', { lang: code });
+      }
       pendingLang = '';
-      saveState();
-      track('SelectLanguage', { lang: state.lang });
-      return nav(state.basicsDone || state.premium ? 'app' : 'basics');
+      const next = langNext && !['lang', 'basics', 'saving'].includes(langNext) ? langNext : '';
+      langNext = '';
+      if (state.premium) return nav(next || (state.onboarding ? 'app' : 'onboarding'));
+      if (next === 'access') return nav('access');
+      return nav(state.basicsDone ? (next || 'app') : 'basics');
     }
     if (button.dataset.basicsOk !== undefined) {
       const name = $('#b-name').value.trim().slice(0, 40);
@@ -5928,7 +6177,7 @@ function bind() {
       return nav('upgrade');
     }
     if (button.dataset.buy !== undefined) {
-      const plan = Billing.plans().find((x) => x.tier === (selectedTier || defaultTier())) || Billing.plans()[0];
+      const plan = findPlan(defaultTier()) || Billing.plans()[0];
       button.disabled = true;
       try { await Billing.purchase(plan, selectedPeriod); } catch (error) { toast(error?.message || 'Paiement interrompu.'); }
       button.disabled = false;
@@ -5942,6 +6191,9 @@ function bind() {
       return renderModal();
     }
     if (button.dataset.trainTab) { trainTab = button.dataset.trainTab; return render(); }
+    if (button.dataset.tq) { const [k, v] = button.dataset.tq.split(':'); state.trainQuiz = { ...trainQuiz(), [k]: v }; saveState(); return render(); }
+    if (button.dataset.trainGroup) { trainGroup = button.dataset.trainGroup; return render(); }
+    if (button.dataset.trainPlace) { trainPlace = button.dataset.trainPlace; trainGroup = 'all'; return render(); }
     if (button.dataset.menoTab) { menoTab = button.dataset.menoTab; return render(); }
     if (button.dataset.menoChart) { menoChartKey = button.dataset.menoChart; return render(); }
     if (button.dataset.menoRange) { menoRange = Number(button.dataset.menoRange); return render(); }
@@ -6002,6 +6254,13 @@ function bind() {
       if (set.has(k) && set.size > 1) set.delete(k); else set.add(k);
       state.profile.cuisines = [...set]; saveState(); return render();
     }
+    if (button.dataset.plansTab) { plansTab = button.dataset.plansTab; track('PlansTab', { tab: plansTab }); return render(); }
+    if (button.dataset.buildMod) {
+      const id = button.dataset.buildMod;
+      buildSel = buildSel.includes(id) ? buildSel.filter((x) => x !== id) : [...buildSel, id];
+      return render();
+    }
+    if (button.dataset.goBuilder !== undefined) { plansTab = 'builder'; buildSel = [...(findPlan(defaultTier())?.modules || [])]; return nav('plans'); }
     if (button.dataset.choosePlan) { selectedTier = button.dataset.choosePlan; selectedPeriod = 'annual'; track('PlanChosen', { plan: selectedTier }); return nav(state.premium ? 'upgrade' : 'paywall'); }
     if (button.dataset.scroll) { document.getElementById(button.dataset.scroll)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (button.dataset.progRange !== undefined) { progressRange = Number(button.dataset.progRange); return render(); }
