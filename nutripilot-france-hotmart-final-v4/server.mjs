@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
+import { legalPage, pickLegalLang, deletePage, pickDeleteLang, supportPage } from './legal.mjs';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -40,6 +41,8 @@ const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@atlasevermore.com';
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || (process.env.NODE_ENV === 'development' ? 'dev-only-change-me' : '');
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const USERS_DIR = path.join(DATA_DIR, 'users');
+const REVENUECAT_SECRET_KEY = process.env.REVENUECAT_SECRET_KEY || '';
+const REVENUECAT_WEBHOOK_AUTH = process.env.REVENUECAT_WEBHOOK_AUTH || '';
 const ENTITLEMENTS_FILE = path.join(DATA_DIR, 'entitlements.json');
 const LAST_WEBHOOK_FILE = path.join(DATA_DIR, 'last-webhook.json');
 const MAX_JSON_BYTES = 14_000_000;
@@ -82,6 +85,8 @@ const STATIC_FILES = new Set([
   '/icon.svg',
   '/icon-192.png',
   '/icon-512.png',
+  '/icon-maskable-512.png',
+  '/apple-touch-icon.png',
   '/product-cover-600x600.png',
   '/fonts/bricolage.woff',
   '/fonts/figtree.woff',
@@ -103,7 +108,8 @@ function securityHeaders(type = 'application/json; charset=utf-8') {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(self), microphone=(self), geolocation=()',
     'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
-    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; media-src 'self' blob: data:; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://pay.hotmart.com",
+    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; media-src 'self' blob: data:; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'",
+    ...(process.env.NODE_ENV === 'production' ? { 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' } : {}),
   };
 }
 
@@ -1282,10 +1288,13 @@ async function sendAccessEmail(email, code) {
   return response.ok;
 }
 
-async function requestAccessCode(email) {
+async function requestAccessCode(email, purpose = 'login') {
+  if (REVIEW_EMAIL && email === REVIEW_EMAIL && /^\d{6}$/.test(REVIEW_CODE)) return { ok: true, mailed: true };
   const result = await mutateEntitlements(async (entitlements) => {
-    const entry = entitlements[email];
-    if (!entry || entry.status !== 'active') return { ok: false };
+    let entry = entitlements[email];
+    // "signup": confirm the e-mail before an in-app purchase, so the subscription is tied to a proven address.
+    if (purpose === 'signup' && !entry) entry = entitlements[email] = { status: 'none', source: 'signup', createdAt: new Date().toISOString() };
+    if (!entry || (purpose === 'login' && entry.status !== 'active')) return { ok: false };
     const code = String(crypto.randomInt(100000, 1000000));
     entry.codeHash = crypto.createHash('sha256').update(code).digest('hex');
     entry.codeExpiresAt = Date.now() + 15 * 60 * 1000;
@@ -1301,10 +1310,22 @@ async function requestAccessCode(email) {
   return { ok: true, mailed, devCode: process.env.NODE_ENV === 'development' && !mailed ? result.code : undefined };
 }
 
+// App Review account: Apple / Google reviewers cannot read an inbox, so REVIEW_EMAIL + REVIEW_CODE
+// (6 digits, set only in Railway) open a full-access account. Remove both variables after approval.
+const REVIEW_EMAIL = String(process.env.REVIEW_EMAIL || '').trim().toLowerCase();
+const REVIEW_CODE = String(process.env.REVIEW_CODE || '').trim();
+const isReviewLogin = (email, code) => Boolean(REVIEW_EMAIL && /^\d{6}$/.test(REVIEW_CODE) && email === REVIEW_EMAIL && safeTokenEqual(String(code), REVIEW_CODE));
+
 async function verifyAccessCode(email, code) {
+  if (isReviewLogin(email, code)) {
+    return mutateEntitlements((entitlements) => {
+      entitlements[email] = { ...(entitlements[email] || {}), status: 'active', source: 'review', plan: 'complete_annual', accessUntil: Date.now() + 90 * 86_400_000, updatedAt: new Date().toISOString() };
+      return true;
+    });
+  }
   return mutateEntitlements((entitlements) => {
     const entry = entitlements[email];
-    if (!entry || entry.status !== 'active' || !entry.codeHash || Date.now() > Number(entry.codeExpiresAt || 0)) return false;
+    if (!entry || !entry.codeHash || Date.now() > Number(entry.codeExpiresAt || 0)) return false;
     entry.codeAttempts = Number(entry.codeAttempts || 0) + 1;
     if (entry.codeAttempts > 8) {
       delete entry.codeHash;
@@ -1324,6 +1345,63 @@ async function verifyAccessCode(email, code) {
 function aiRateOk(req, email) {
   return rateLimit(`ai:${email}:${clientIp(req)}`, 80, 60 * 60 * 1000);
 }
+
+// ---- App Store / Google Play subscriptions (through RevenueCat) ---------------------------
+// The app buys with the store; the server asks RevenueCat which subscriptions are active
+// before granting access. Product ids: np_<plan>_<monthly|annual> (or np_<plan>:<base plan> on Google Play).
+function storeTier(productId = '') {
+  const [base, basePlan] = String(productId).toLowerCase().trim().split(':');
+  let id = base.replace(/^np_/, '');
+  if (basePlan && !/_(monthly|annual)$/.test(id)) id = `${id}_${/ann|year|p1y|12/.test(basePlan) ? 'annual' : 'monthly'}`;
+  return /^[a-z0-9_]{2,40}_(monthly|annual)$/.test(id) ? id : '';
+}
+async function revenueCatSubscriber(appUserId) {
+  if (!REVENUECAT_SECRET_KEY) throw publicError('Les achats dans l’application ne sont pas encore configurés.', 503);
+  const { response, data } = await fetchJson(`${process.env.REVENUECAT_API_BASE || 'https://api.revenuecat.com'}/v1/subscribers/${encodeURIComponent(appUserId)}`, { headers: { Authorization: `Bearer ${REVENUECAT_SECRET_KEY}`, Accept: 'application/json' } }, 15_000);
+  if (!response.ok) throw publicError('Vérification de l’achat impossible pour le moment. Réessayez.', 502);
+  return data?.subscriber || {};
+}
+function activeStorePlans(subscriber = {}) {
+  const now = Date.now();
+  const plans = new Set();
+  let until = 0;
+  let store = '';
+  for (const [productId, sub] of Object.entries(subscriber.subscriptions || {})) {
+    const expires = sub?.expires_date ? Date.parse(sub.expires_date) : now + 3650 * 86_400_000;
+    if (!(expires > now) || sub?.refunded_at) continue;
+    const tier = storeTier(productId);
+    if (!tier) continue;
+    plans.add(tier);
+    until = Math.max(until, expires);
+    store = sub?.store || store;
+  }
+  return { plans: [...plans], until, store };
+}
+// Recompute an e-mail's access from every store account linked to it (several phones, iOS + Android).
+function applyStoreAccess(entry) {
+  const now = Date.now();
+  const live = Object.values(entry.storeAccounts || {}).filter((a) => a.until > now && a.plans?.length);
+  if (live.length) {
+    entry.status = 'active';
+    entry.source = 'store';
+    entry.plan = [...new Set(live.flatMap((a) => a.plans))].join(',');
+    entry.accessUntil = Math.max(...live.map((a) => a.until)) + 86_400_000; // 1 day grace for renewals
+  } else if (entry.source === 'store' && entry.status === 'active') {
+    entry.status = 'revoked';
+    entry.event = 'STORE_SUBSCRIPTION_ENDED';
+  }
+  entry.updatedAt = new Date().toISOString();
+}
+async function syncStoreAccount(email, appUserId) {
+  const result = activeStorePlans(await revenueCatSubscriber(appUserId));
+  return mutateEntitlements((all) => {
+    const entry = all[email] || (all[email] = { status: 'none', createdAt: new Date().toISOString() });
+    entry.storeAccounts = { ...(entry.storeAccounts || {}), [appUserId]: { ...result, syncedAt: new Date().toISOString() } };
+    applyStoreAccess(entry);
+    return { active: entry.status === 'active', plan: entry.plan || '' };
+  });
+}
+const validAppUserId = (id) => /^[\w$:.@-]{1,120}$/.test(String(id || ''));
 
 async function handleHotmart(req, res) {
   if (!verifyHotmartWebhook(req)) return send(res, 401, { error: 'Hottok Hotmart invalide.' });
@@ -1427,7 +1505,9 @@ const server = http.createServer(async (req, res) => {
         locale: 'fr-FR',
         ai: Boolean(OPENAI_API_KEY && OPENAI_MODEL),
         supportEmail: SUPPORT_EMAIL,
-        manageSubscriptionUrl: process.env.HOTMART_MANAGE_SUBSCRIPTION_URL || 'https://consumer.hotmart.com/',
+        manageSubscriptionUrl: process.env.MANAGE_SUBSCRIPTION_URL || '',
+        revenuecat: { ios: process.env.REVENUECAT_IOS_KEY || '', android: process.env.REVENUECAT_ANDROID_KEY || '' },
+        privacyUrl: '/privacy', termsUrl: '/terms',
         salesUrl: process.env.SALES_URL || 'https://atlasevermore.com/#tarifs',
         appStoreUrl: process.env.APP_STORE_URL || '',
         playStoreUrl: process.env.PLAY_STORE_URL || '',
@@ -1443,22 +1523,64 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // Account deletion on the web (Google Play): e-mail → 6-digit code → deletion. No JavaScript needed.
+    if (url.pathname.startsWith('/delete-account')) {
+      const lang = pickDeleteLang(url.searchParams.get('lang'), req.headers['accept-language']);
+      const page = (opts, status = 200) => { res.writeHead(status, { ...securityHeaders('text/html; charset=utf-8'), 'Cache-Control': 'no-store' }); return res.end(deletePage(lang, { brand: BRAND_NAME, ...opts })); };
+      const form = async () => Object.fromEntries(new URLSearchParams(await readRaw(req, 4096)));
+      if (url.pathname === '/delete-account' && req.method === 'GET') return page({});
+      if (url.pathname === '/delete-account/request' && req.method === 'POST') {
+        const email = safeEmail((await form()).email);
+        if (!email) return page({ message: 'bad' }, 400);
+        if (rateLimit(`del:${clientIp(req)}:${email}`, 5, 15 * 60 * 1000)) await requestAccessCode(email, 'delete').catch(() => {});
+        // Same answer whether or not the account exists (no account discovery).
+        return page({ step: 'code', email, message: 'sent' });
+      }
+      if (url.pathname === '/delete-account/confirm' && req.method === 'POST') {
+        const body = await form();
+        const email = safeEmail(body.email);
+        const code = String(body.code || '').trim();
+        if (!email || !/^\d{6}$/.test(code) || !rateLimit(`delv:${clientIp(req)}:${email}`, 10, 15 * 60 * 1000) || !(await verifyAccessCode(email, code))) return page({ step: 'code', email, message: 'bad' }, 400);
+        await deleteUserState(email);
+        await mutateEntitlements((all) => { delete all[email]; });
+        return page({ step: 'done' });
+      }
+    }
+
+    if (url.pathname === '/support' && req.method === 'GET') {
+      res.writeHead(200, { ...securityHeaders('text/html; charset=utf-8'), 'Cache-Control': 'public, max-age=3600' });
+      return res.end(supportPage(pickLegalLang(url.searchParams.get('lang'), req.headers['accept-language']), { brand: BRAND_NAME, email: SUPPORT_EMAIL }));
+    }
+
+    // Public legal pages (URLs required by the App Store and Google Play).
+    if ((url.pathname === '/privacy' || url.pathname === '/terms') && req.method === 'GET') {
+      const html = legalPage(url.pathname.slice(1), pickLegalLang(url.searchParams.get('lang'), req.headers['accept-language']), {
+        brand: BRAND_NAME, company: process.env.LEGAL_COMPANY_NAME || '', address: process.env.LEGAL_COMPANY_ADDRESS || '', id: process.env.LEGAL_COMPANY_ID || '', email: SUPPORT_EMAIL,
+      });
+      res.writeHead(200, { ...securityHeaders('text/html; charset=utf-8'), 'Cache-Control': 'public, max-age=3600' });
+      return res.end(html);
+    }
+
     if (url.pathname === '/api/health') {
       const dataWritable = await dataDirectoryWritable();
-      const hotmart = Boolean(process.env.HOTMART_HOTTOK);
       const email = Boolean(RESEND_API_KEY && RESEND_FROM);
       const accessSecret = Boolean(ACCESS_TOKEN_SECRET && ACCESS_TOKEN_SECRET.length >= 24);
       const ai = Boolean(OPENAI_API_KEY && OPENAI_MODEL);
       const persistentPath = path.resolve(DATA_DIR) === '/data';
+      const storeBilling = { serverKey: Boolean(REVENUECAT_SECRET_KEY), webhook: Boolean(REVENUECAT_WEBHOOK_AUTH), ios: Boolean(process.env.REVENUECAT_IOS_KEY), android: Boolean(process.env.REVENUECAT_ANDROID_KEY) };
+      const legal = Boolean(process.env.LEGAL_COMPANY_NAME && process.env.LEGAL_COMPANY_ADDRESS);
+      const stores = { appStoreUrl: Boolean(process.env.APP_STORE_URL), playStoreUrl: Boolean(process.env.PLAY_STORE_URL) };
       return send(res, 200, {
         ok: true,
-        ready: hotmart && email && accessSecret && ai && persistentPath && dataWritable,
-        version: '7.0.0',
+        ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
+        version: '8.0.0',
         brand: BRAND_NAME,
         ai,
-        hotmart,
         email,
         accessSecret,
+        storeBilling,
+        legal,
+        stores,
         dataDir: DATA_DIR,
         persistence: { configured: persistentPath, writable: dataWritable },
       });
@@ -1471,7 +1593,7 @@ const server = http.createServer(async (req, res) => {
       const email = safeEmail(body.email);
       if (!email) return send(res, 400, { error: 'Email invalide' });
       if (!rateLimit(`code:${clientIp(req)}:${email}`, 5, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
-      const result = await requestAccessCode(email);
+      const result = await requestAccessCode(email, body.purpose === 'signup' ? 'signup' : 'login');
       if (!result.ok) return send(res, 404, { error: 'Aucun achat actif trouvé pour cet e-mail.' });
       if (result.emailUnavailable) return send(res, 503, { error: `L’envoi d’e-mail n’est pas encore configuré. Contactez ${SUPPORT_EMAIL}.` });
       return send(res, 200, { ok: true, mailed: result.mailed, devCode: result.devCode });
@@ -1486,13 +1608,52 @@ const server = http.createServer(async (req, res) => {
       const ok = await verifyAccessCode(email, code);
       if (!ok) return send(res, 401, { error: 'Code invalide ou expiré' });
       const entitlements = await loadEntitlements();
+      const active = entitlements[email]?.status === 'active';
       return send(res, 200, {
         ok: true,
-        premium: true,
+        premium: active,
         email,
-        plan: entitlements[email]?.plan || 'premium',
+        plan: active ? entitlements[email]?.plan || 'premium' : '',
         token: signAccessToken(email),
       });
+    }
+
+    // In-app purchase done: the e-mail is proven by its token; RevenueCat confirms the subscription.
+    if (url.pathname === '/api/iap/verify' && req.method === 'POST') {
+      const payload = verifyAccessToken(bearer(req));
+      if (!payload) return send(res, 401, { error: 'Confirmez d’abord votre e-mail.' });
+      const body = await readJson(req);
+      if (!validAppUserId(body.appUserId)) return send(res, 400, { error: 'Données invalides' });
+      if (!rateLimit(`iap:${clientIp(req)}:${payload.email}`, 30, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
+      const result = await syncStoreAccount(payload.email, String(body.appUserId));
+      return send(res, 200, { ok: true, premium: result.active, email: payload.email, plan: result.plan, token: result.active ? signAccessToken(payload.email) : undefined });
+    }
+
+    // RevenueCat notifies renewals, cancellations, expirations and refunds.
+    if (url.pathname === '/api/revenuecat/webhook' && req.method === 'POST') {
+      if (!REVENUECAT_WEBHOOK_AUTH || !safeTokenEqual(String(req.headers.authorization || '').replace(/^Bearer\s+/i, ''), REVENUECAT_WEBHOOK_AUTH)) return send(res, 401, { error: 'unauthorized' });
+      const body = await readJson(req);
+      const event = body?.event || {};
+      const ids = new Set([event.app_user_id, event.original_app_user_id, ...(event.aliases || [])].filter(validAppUserId).map(String));
+      const entitlements = await loadEntitlements();
+      const targets = [];
+      for (const [email, entry] of Object.entries(entitlements)) for (const id of Object.keys(entry.storeAccounts || {})) if (ids.has(id)) targets.push([email, id]);
+      for (const [email, id] of targets) { try { await syncStoreAccount(email, id); } catch (error) { console.error('revenuecat sync', error.message); } }
+      return send(res, 200, { ok: true, updated: targets.length });
+    }
+
+    // Account deletion (App Store 5.1.1(v), Google Play): removes the account and all its data from the server.
+    if (url.pathname === '/api/account' && req.method === 'DELETE') {
+      const payload = verifyAccessToken(bearer(req));
+      if (!payload) return send(res, 401, { error: 'Session invalide. Connectez-vous à nouveau.' });
+      await deleteUserState(payload.email);
+      await mutateEntitlements((all) => { delete all[payload.email]; });
+      try {
+        const file = path.join(DATA_DIR, 'waitlist.json');
+        const list = JSON.parse(await fs.readFile(file, 'utf8'));
+        if (list[payload.email]) { delete list[payload.email]; await atomicWriteJson(file, list); }
+      } catch { /* no waitlist file */ }
+      return send(res, 200, { ok: true });
     }
 
     if (url.pathname === '/api/access/status' && req.method === 'POST') {

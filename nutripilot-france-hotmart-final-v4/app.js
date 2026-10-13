@@ -16,7 +16,7 @@ let config = {
   ai: false,
   supportEmail: 'support@atlasevermore.com',
   salesUrl: 'https://atlasevermore.com/#tarifs',
-  manageSubscriptionUrl: 'https://consumer.hotmart.com/',
+  manageSubscriptionUrl: '',
   locked: true,
   legal: {},
 };
@@ -828,6 +828,7 @@ async function apiFetch(url, options = {}) {
 function syncSafeState() {
   const clean = clone(state);
   delete clean.accessToken;
+  delete clean.accountToken;
   delete clean.premium;
   delete clean.premiumEmail;
   return clean;
@@ -1041,6 +1042,7 @@ async function init() {
     const response = await fetch('/api/config');
     if (response.ok) config = { ...config, ...await response.json() };
   } catch {}
+  NativeBilling.start();
 
   let valid = false;
   if (state.accessToken) {
@@ -1925,7 +1927,7 @@ const PROGRAM_FEATURES = [
 // ---- Billing ---------------------------------------------------------------
 // Store builds (App Store / Google Play): the native shell exposes
 // window.NutriPilotNative (RevenueCat) and handles the free trial.
-// Web: only plans with a Hotmart `offer` can be bought (legacy).
+// Web: subscriptions are taken in the iPhone / Android app (App Store / Google Play).
 // ---- v13: modules --------------------------------------------------------------
 // Each area of NutriPilot is a separate module with its own space, colour and subscription
 // (3-day free trial in the iPhone and Android apps). The Complete kit unlocks every module.
@@ -1957,6 +1959,159 @@ const MODULE_ROUTES = {
 };
 const moduleById = (id) => MODULES.find((m) => m.id === id);
 const moduleForRoute = (r = route) => moduleById(MODULE_ROUTES[r]);
+
+// ---- Store billing inside the iPhone / Android app (Capacitor + RevenueCat) ----------------
+// The web app is loaded in the native shell; when RevenueCat is present, purchases go through
+// Apple / Google and the server confirms them (/api/iap/verify) before unlocking anything.
+const NativeBilling = {
+  started: false,
+  pending: null,
+  products: {},
+  plugin() {
+    const cap = window.Capacitor;
+    if (!cap?.isNativePlatform?.()) return null;
+    return cap.Plugins?.Purchases || (cap.registerPlugin ? cap.registerPlugin('Purchases') : null);
+  },
+  platform() { return window.Capacitor?.getPlatform?.() || ''; },
+  async appUserIdFor(email) {
+    const data = new TextEncoder().encode(`nutripilot:${email.toLowerCase()}`);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return 'np-' + [...new Uint8Array(hash)].slice(0, 16).map((b) => b.toString(16).padStart(2, '0')).join('');
+  },
+  token() { return state.accessToken || state.accountToken || ''; },
+  email() { return state.premiumEmail || state.accountEmail || ''; },
+  async start() {
+    if (this.started) return;
+    const P = this.plugin();
+    const key = this.platform() === 'ios' ? config.revenuecat?.ios : config.revenuecat?.android;
+    if (!P || !key) return;
+    this.started = true;
+    try {
+      await P.configure({ apiKey: key });
+      if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
+      const ids = [...new Set(storeCatalog().map((x) => x.id))];
+      const res = await P.getProducts({ productIdentifiers: ids, type: 'SUBSCRIPTION' }).catch(() => P.getProducts({ productIdentifiers: ids }));
+      const list = res?.products || [];
+      for (const prod of list) {
+        const base = String(prod.identifier || '').split(':')[0];
+        this.products[base] = { price: Number(prod.price), priceString: prod.priceString, currency: prod.currencyCode, raw: prod };
+      }
+      window.NutriPilotNative = {
+        store: this.platform() === 'ios' ? 'App Store' : 'Google Play',
+        currency: list[0]?.currencyCode || '',
+        products: this.products,
+        purchase: (storeId, intent) => this.purchase(storeId, intent),
+        restore: () => this.restore(),
+      };
+      render();
+    } catch (error) { console.error('billing start', error); this.started = false; }
+  },
+  // The subscription belongs to a confirmed e-mail, so it follows the person to any phone.
+  needAccount(intent) {
+    if (this.token()) return false;
+    this.pending = intent || null;
+    modal = { type: 'account', step: 'email', email: state.accountEmail || '' };
+    renderModal();
+    return true;
+  },
+  async verify() {
+    const P = this.plugin();
+    const { appUserID } = await P.getAppUserID();
+    const response = await fetch('/api/iap/verify', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.token()}` }, body: JSON.stringify({ appUserId: appUserID }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Vérification de l’achat impossible pour le moment. Réessayez.');
+    return data;
+  },
+  async purchase(storeId, intent) {
+    if (this.needAccount(intent)) return null;
+    const P = this.plugin();
+    const product = this.products[storeId]?.raw;
+    if (!product) throw new Error(L('Cette formule n’est pas encore disponible dans la boutique.'));
+    await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
+    try {
+      await P.purchaseStoreProduct({ product });
+    } catch (error) {
+      if (error?.userCancelled || /cancel/i.test(String(error?.code || error?.message || ''))) return null;
+      throw error;
+    }
+    let data = await this.verify();
+    // The store can take a few seconds to report a new purchase: try again before giving up.
+    for (let i = 0; i < 3 && !data.premium; i++) { await new Promise((r) => setTimeout(r, 2000)); data = await this.verify(); }
+    if (!data.premium) { toast(L('Paiement reçu, confirmation en cours. Touchez « Restaurer mes achats » dans un instant.')); return null; }
+    return { token: data.token, email: data.email, plan: data.plan };
+  },
+  async restore() {
+    if (this.needAccount(null)) return null;
+    const P = this.plugin();
+    await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
+    await P.restorePurchases();
+    const data = await this.verify();
+    return data.premium ? { token: data.token, email: data.email, plan: data.plan } : null;
+  },
+};
+// In the store app, legal / support pages open in a sheet inside the app (no dead "new tab" links).
+document.addEventListener('click', (event) => {
+  const a = event.target.closest?.('a[href^="/privacy"], a[href^="/terms"], a[href^="/support"], a[href^="/delete-account"]');
+  if (!a || !window.Capacitor?.isNativePlatform?.()) return;
+  event.preventDefault();
+  modal = { type: 'page', src: a.getAttribute('href') };
+  renderModal();
+}, true);
+function pageSheet() {
+  return `<div class="sheet-head"><span></span><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
+    <iframe class="page-frame" src="${esc(modal.src)}" title="${esc(modal.src.split('?')[0].slice(1))}"></iframe>`;
+}
+// Store subscription settings, opened from Settings › Manage my subscription.
+function manageSubscriptionUrl() {
+  if (config.manageSubscriptionUrl) return config.manageSubscriptionUrl;
+  const store = window.NutriPilotNative?.store || (/iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) ? 'App Store' : 'Google Play');
+  return store === 'App Store' ? 'https://apps.apple.com/account/subscriptions' : 'https://play.google.com/store/account/subscriptions';
+}
+// Account sheet: confirm an e-mail with a 6-digit code before buying in the app.
+function accountSheet() {
+  const step = modal.step || 'email';
+  return `<div class="sheet-head"><h2>${L('Votre compte NutriPilot')}</h2><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
+    <p class="screen-sub">${L('Votre abonnement sera lié à cet e-mail : vous retrouvez votre plan et votre historique sur n’importe quel téléphone.')}</p>
+    <div class="field"><label for="acc-email">${L('E-mail')}</label><input id="acc-email" type="email" autocomplete="email" inputmode="email" value="${esc(modal.email || '')}" ${step === 'code' ? 'readonly' : ''}></div>
+    ${step === 'code' ? `<div class="field"><label for="acc-code">${L('Code à 6 chiffres')}</label><input id="acc-code" class="code-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div>
+      <button class="btn btn-lime btn-wide" data-acc-verify>${L('Confirmer et continuer')}</button>
+      <button class="link-btn center-fine" data-acc-back>${L('Changer d’e-mail')}</button>`
+    : `<button class="btn btn-primary btn-wide" data-acc-send>${L('Recevoir mon code')}</button>`}
+    ${modal.msg ? `<div class="warn ${modal.ok ? 'success' : ''}">${esc(modal.msg)}</div>` : ''}
+    <p class="fine center-fine">${L('En continuant, vous acceptez les <a href="{terms}" target="_blank" rel="noopener">conditions d’utilisation</a> et la <a href="{privacy}" target="_blank" rel="noopener">politique de confidentialité</a>.', { terms: `/terms?lang=${lang()}`, privacy: `/privacy?lang=${lang()}` })}</p>`;
+}
+async function accountSend() {
+  const email = ($('#acc-email')?.value || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { modal.msg = L('Saisissez un e-mail valide.'); modal.ok = false; return renderModal(); }
+  modal.email = email; modal.msg = L('Envoi…'); renderModal();
+  try {
+    const response = await fetch('/api/access/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, purpose: 'signup' }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(L(data.error || ''));
+    modal.step = 'code'; modal.ok = true;
+    modal.msg = data.devCode ? `${L('Code envoyé.')} (${data.devCode})` : L('Code envoyé. Consultez votre boîte e-mail et vos spams.');
+  } catch (error) { modal.ok = false; modal.msg = error.message || L('Réessayez dans un instant.'); }
+  renderModal();
+}
+async function accountVerify() {
+  const code = ($('#acc-code')?.value || '').trim();
+  if (!/^\d{6}$/.test(code)) { modal.msg = L('Saisissez le code à 6 chiffres.'); modal.ok = false; return renderModal(); }
+  try {
+    const response = await fetch('/api/access/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: modal.email, code }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(L(data.error || ''));
+    state.accountEmail = modal.email;
+    state.accountToken = data.token;
+    if (data.premium) { state.premium = true; state.accessToken = data.token; state.premiumEmail = modal.email; state.subscriptionPlan = data.plan || state.subscriptionPlan; }
+    saveState(false);
+    modal = null; document.querySelector('.modal-wrap')?.remove();
+    track('Lead', { source: 'account' });
+    if (data.premium) { toast(L('Accès Premium activé ✓')); return nav(state.onboarding ? 'app' : 'onboarding'); }
+    const intent = NativeBilling.pending; NativeBilling.pending = null;
+    if (intent) { const plan = findPlan(intent.tier); if (plan) return Billing.purchase(plan, intent.period).catch((e) => toast(e?.message || L('Paiement interrompu.'))); }
+    render();
+  } catch (error) { modal.msg = error.message; modal.ok = false; renderModal(); }
+}
 
 // ---- Pricing -------------------------------------------------------------------
 // Prices are set in US dollars and converted exactly (day's rate) to the buyer's currency.
@@ -2047,8 +2202,15 @@ function customPlan(parts) {
 }
 const modsFromMix = (tier) => String(tier).replace(/^mix_/, '').split('').map((c) => CODE_MOD[c]).filter(Boolean);
 // The plan for exactly the chosen modules (a module, a themed combination, a composed one or the kit).
+// In the store app, only plans created in App Store Connect / Play Console can be sold: when the exact
+// selection has no product, offer the cheapest available plan that contains every chosen module.
+const sellable = (plan) => !Billing.native() || Boolean(window.NutriPilotNative?.products?.[plan?.monthly?.storeId]);
 function bestOffer(modules) {
-  return modules.length ? customPlan(modules) : null;
+  if (!modules.length) return null;
+  const exact = customPlan(modules);
+  if (sellable(exact)) return exact;
+  const covering = DEFAULT_PLANS.filter((p) => modules.every((id) => p.modules.includes(id)) && sellable(p));
+  return covering.sort((a, b) => a.monthly.price - b.monthly.price)[0] || exact;
 }
 // Every product to create in App Store Connect / Google Play Console.
 function storeCatalog() {
@@ -2207,43 +2369,40 @@ function moduleLockedScreen(id) {
 const Billing = {
   native() { return Boolean(window.NutriPilotNative?.purchase); },
   store() { return window.NutriPilotNative?.store || 'App Store / Google Play'; },
-  plans() { return (Array.isArray(config.plans) && config.plans.length ? config.plans : DEFAULT_PLANS); },
+  plans() {
+    const all = Array.isArray(config.plans) && config.plans.length ? config.plans : DEFAULT_PLANS;
+    // In the store app, list only what the store actually sells.
+    const sold = this.native() && Object.keys(window.NutriPilotNative?.products || {}).length ? all.filter((p) => sellable(p)) : all;
+    return sold.length ? sold : all;
+  },
   trialDays() { return Number(config.trialDays || 3); },
   async purchase(plan, period) {
     const option = plan[period];
     const id = `${plan.tier}_${period}`;
     track('InitiateCheckout', { plan: id, value: lp(plan, period), currency: currency() });
     if (this.native()) {
-      // Every plan, composed ones included, is a single store subscription.
-      const parts = [plan];
-      const bought = [];
-      for (const part of parts) {
-        const result = await window.NutriPilotNative.purchase(part[period].storeId);
-        if (!result?.token) break;
-        state.premium = true;
-        state.accessToken = result.token;
-        state.premiumEmail = result.email || state.premiumEmail;
-        bought.push(`${part.tier}_${period}`);
-      }
-      if (!bought.length) return;
-      // Adding a module keeps the ones already owned (the Complete kit replaces everything).
-      const previous = String(state.subscriptionPlan || '').split(',').map((x) => x.trim()).filter(Boolean);
-      state.subscriptionPlan = (plan.tier === 'complete' ? bought : [...new Set([...previous, ...bought])]).join(',');
+      // Every plan, composed ones included, is a single store subscription, confirmed by the server.
+      const result = await window.NutriPilotNative.purchase(option.storeId, { tier: plan.tier, period });
+      if (!result?.token) return;
+      state.premium = true;
+      state.accessToken = result.token;
+      state.premiumEmail = result.email || state.premiumEmail;
+      state.subscriptionPlan = result.plan || `${plan.tier}_${period}`;
       saveState();
-      track('StartTrial', { plan: bought.join(',') });
-      toast(bought.length > 1 ? L('{n} modules activés ✓', { n: bought.length }) : L('Formule activée ✓'));
+      track('StartTrial', { plan: id });
+      celebrate();
+      toast(L('Formule activée ✓'));
       return nav(state.onboarding ? 'app' : 'onboarding');
     }
     // On the web, subscriptions are taken in the iPhone / Android app.
-    if (!option.offer) { modal = { type: 'store', plan: plan.tier, period }; return renderModal(); }
-    const url = new URL(config.checkoutUrl || 'https://pay.hotmart.com/R107884011S');
-    url.searchParams.set('off', option.offer);
-    for (const [key, value] of Object.entries(state.utms || {})) if (value) url.searchParams.set(key, value);
-    location.href = url.toString();
+    modal = { type: 'store', plan: plan.tier, period };
+    return renderModal();
   },
   async restore() {
     if (!this.native() || !window.NutriPilotNative.restore) return nav('access');
-    const result = await window.NutriPilotNative.restore();
+    let result = null;
+    try { result = await window.NutriPilotNative.restore(); } catch (error) { return toast(error?.message || L('Réessayez dans un instant.')); }
+    if (result === null && !NativeBilling.token()) return;
     if (result?.token) {
       state.premium = true;
       state.accessToken = result.token;
@@ -2441,6 +2600,7 @@ function paywall() {
       <div class="sticky-cta">
         <button class="btn btn-lime btn-wide btn-xl" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
         <p class="pw-terms">${terms}</p>
+        <p class="pw-legal"><a href="/terms?lang=${lang()}" target="_blank" rel="noopener">${L('Conditions d’utilisation')}</a> · <a href="/privacy?lang=${lang()}" target="_blank" rel="noopener">${L('Politique de confidentialité')}</a></p>
       </div>
       <div class="pw-links">
         ${Billing.native() ? `<button class="link-btn" data-restore>${L('Restaurer mes achats')}</button>` : `<button class="link-btn" data-go="access">${L('Déjà client ? Se connecter')}</button>`}
@@ -6102,25 +6262,28 @@ function settings() {
       <div class="settings-two"><button class="btn btn-primary" data-open-profile>${icon('user')}<span>${L('Mon profil')}</span></button><button class="btn btn-lime" data-open-goal>${icon('scale')}<span>${L('Mon objectif')}</span></button></div>
       <button class="btn btn-ghost btn-wide" data-start>${L('Refaire le questionnaire complet')}</button>
       <div class="section-label"><h3>${L('Abonnement')}</h3></div>
-      ${config.manageSubscriptionUrl ? `<a class="btn btn-ghost btn-wide" href="${esc(config.manageSubscriptionUrl)}" target="_blank" rel="noopener">${L('Gérer mon abonnement')}</a>` : ''}
+      ${state.premium ? `<a class="btn btn-ghost btn-wide" href="${esc(manageSubscriptionUrl())}" ${window.Capacitor?.isNativePlatform?.() ? '' : 'target="_blank" rel="noopener"'}>${L('Gérer mon abonnement')}</a>` : ''}
+      ${Billing.native() ? `<button class="btn btn-ghost btn-wide" data-restore>${L('Restaurer mes achats')}</button>` : ''}
       <div class="fine center-fine">${L('Formule actuelle : {plan}', { plan: esc(planLabel()) })}</div>
       <button class="btn ${planTier() !== 'complete' ? 'btn-lime' : 'btn-ghost'} btn-wide" data-go="plans">${L('Voir les formules')}</button>
       <div class="section-label"><h3>${L('Données & appareil')}</h3></div>
       <button class="btn btn-ghost btn-wide" data-export>${L('Exporter mes données (.json)')}</button>
-      <button class="btn btn-ghost btn-wide" data-install>${L('Ajouter NutriPilot à l’écran d’accueil')}</button>
+      ${window.Capacitor?.isNativePlatform?.() ? '' : `<button class="btn btn-ghost btn-wide" data-install>${L('Ajouter NutriPilot à l’écran d’accueil')}</button>`}
       <button class="btn btn-ghost btn-wide" data-go="support">${L('Aide & support')}</button>
       <button class="btn btn-ghost btn-wide" data-go="tour">${L('Découvrir l’application')}</button>
       <button class="btn btn-ghost btn-wide" data-go="legal">${L('Confidentialité & informations')}</button>
       <button class="btn btn-ghost btn-wide" data-logout>${L('Se déconnecter')}</button>
       <button class="btn btn-danger-soft btn-wide" data-delete-data>${L('Supprimer mes données NutriPilot')}</button>
-      <div class="fine center-fine">${L('La suppression des données NutriPilot ne résilie pas votre abonnement : gérez-le depuis votre compte.')}</div>
+      ${state.accessToken || state.accountToken ? `<button class="btn btn-danger-soft btn-wide" data-delete-account>${L('Supprimer mon compte')}</button>` : ''}
+      <div class="fine center-fine">${L('La suppression du compte ou des données ne résilie pas l’abonnement : annulez-le dans les réglages de votre compte App Store ou Google Play.')}</div>
+      <div class="fine center-fine legal-links"><a href="/terms?lang=${lang()}" target="_blank" rel="noopener">${L('Conditions d’utilisation')}</a> · <a href="/privacy?lang=${lang()}" target="_blank" rel="noopener">${L('Politique de confidentialité')}</a></div>
     </div>
   </div>`;
 }
 
 function legal() {
   const legalInfo = config.legal || {};
-  return `<div class="mobile-app"><div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Informations')}</h2><span></span></div></div><div class="screen"><h1 class="screen-title">${L('Transparence')}</h1><div class="day-card"><h3>${L('Nature du service')}</h3><p class="screen-sub">${L('{brand} est un outil général de suivi nutritionnel et de bien-être. Les calories, grammes, portions et macros restent des estimations lorsqu’ils ne proviennent pas de données mesurées.', { brand: esc(config.brand) })}</p></div><div class="day-card"><h3>${L('Scanner photo')}</h3><p class="screen-sub">${L('Une photo ne pèse pas un aliment. NutriPilot affiche des estimations et vous permet de corriger les grammes avant enregistrement.')}</p></div><div class="day-card"><h3>${L('Vos données')}</h3><p class="screen-sub">${L('Vos repas, mesures et journaux servent uniquement à votre suivi. Les photos de progression restent sur votre appareil. Pour améliorer l’application, nous comptons de façon anonyme quelques étapes (par exemple « page des formules vue »), sans identifiant ni contenu personnel.')}</p></div><div class="day-card"><h3>${L('Limites de l’IA')}</h3><p class="screen-sub">${L('Le coach et l’analyse photo utilisent une IA qui peut se tromper. Ils ne posent pas de diagnostic et ne prescrivent ni médicament ni traitement hormonal.')}</p></div><div class="day-card"><h3>${L('Abonnement')}</h3><p class="screen-sub">${L('La durée, le prix, le renouvellement et les conditions d’annulation sont présentés avant tout paiement.')}</p></div><div class="day-card"><h3>${L('Éditeur')}</h3><p class="screen-sub"><b>${esc(legalInfo.company || L('À compléter'))}</b><br>${esc(legalInfo.address || L('Adresse à compléter'))}<br>${esc(legalInfo.id || L('Identifiant à compléter'))}<br>${L('Support : {email}', { email: esc(config.supportEmail) })}</p></div></div></div>`;
+  return `<div class="mobile-app"><div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Informations')}</h2><span></span></div></div><div class="screen"><h1 class="screen-title">${L('Transparence')}</h1><div class="legal-docs"><a class="btn btn-ghost btn-wide" href="/privacy?lang=${lang()}" target="_blank" rel="noopener">${L('Politique de confidentialité')}</a><a class="btn btn-ghost btn-wide" href="/terms?lang=${lang()}" target="_blank" rel="noopener">${L('Conditions d’utilisation')}</a></div><div class="day-card"><h3>${L('Nature du service')}</h3><p class="screen-sub">${L('{brand} est un outil général de suivi nutritionnel et de bien-être. Les calories, grammes, portions et macros restent des estimations lorsqu’ils ne proviennent pas de données mesurées.', { brand: esc(config.brand) })}</p></div><div class="day-card"><h3>${L('Scanner photo')}</h3><p class="screen-sub">${L('Une photo ne pèse pas un aliment. NutriPilot affiche des estimations et vous permet de corriger les grammes avant enregistrement.')}</p></div><div class="day-card"><h3>${L('Vos données')}</h3><p class="screen-sub">${L('Vos repas, mesures et journaux servent uniquement à votre suivi. Les photos de progression restent sur votre appareil. Pour améliorer l’application, nous comptons de façon anonyme quelques étapes (par exemple « page des formules vue »), sans identifiant ni contenu personnel.')}</p></div><div class="day-card"><h3>${L('Limites de l’IA')}</h3><p class="screen-sub">${L('Le coach et l’analyse photo utilisent une IA qui peut se tromper. Ils ne posent pas de diagnostic et ne prescrivent ni médicament ni traitement hormonal.')}</p></div><div class="day-card"><h3>${L('Abonnement')}</h3><p class="screen-sub">${L('La durée, le prix, le renouvellement et les conditions d’annulation sont présentés avant tout paiement.')}</p></div><div class="day-card"><h3>${L('Éditeur')}</h3><p class="screen-sub"><b>${esc(legalInfo.company || L('À compléter'))}</b><br>${esc(legalInfo.address || L('Adresse à compléter'))}<br>${esc(legalInfo.id || L('Identifiant à compléter'))}<br>${L('Support : {email}', { email: esc(config.supportEmail) })}</p></div></div></div>`;
 }
 
 // Login for existing customers only (no marketing "private area"): reached from "Already a customer?".
@@ -6167,7 +6330,7 @@ function renderModal() {
   if (!modal) return;
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
@@ -6507,6 +6670,10 @@ async function verifyCode() {
     const response = await fetch('/api/access/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, code }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
+    if (!data.premium) {
+      state.accountEmail = email; state.accountToken = data.token || ''; saveState(false);
+      return toast(L('Aucun abonnement actif trouvé.'));
+    }
     state.premium = true;
     state.premiumEmail = email;
     state.accessToken = data.token || '';
@@ -7409,8 +7576,21 @@ function bind() {
       else toast('Utilisez « Ajouter à l’écran d’accueil » dans votre navigateur.');
       return;
     }
+    if (button.dataset.deleteAccount !== undefined) {
+      if (!confirm(L('Supprimer définitivement votre compte et toutes vos données ? L’abonnement App Store ou Google Play n’est pas résilié automatiquement : annulez-le dans les réglages de la boutique.'))) return;
+      try {
+        const response = await fetch('/api/account', { method: 'DELETE', headers: { Authorization: `Bearer ${state.accessToken || state.accountToken}` } });
+        if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || '');
+      } catch (error) { return toast(L(error.message || 'Réessayez dans un instant.')); }
+      const keepLang = state.lang;
+      state = clone(defaultState);
+      state.lang = keepLang;
+      localStorage.setItem('nutripilot_v7', JSON.stringify(state));
+      toast(L('Compte supprimé.'));
+      return nav('hello');
+    }
     if (button.dataset.deleteData !== undefined) {
-      if (!confirm('Supprimer votre journal, votre programme et vos données NutriPilot ? Cette action ne résilie pas Hotmart.')) return;
+      if (!confirm(L('Supprimer votre journal, votre programme et vos données NutriPilot ? Votre abonnement n’est pas résilié.'))) return;
       try {
         if (state.accessToken) await apiFetch('/api/user/state', { method: 'DELETE' });
       } catch {}
@@ -7450,6 +7630,9 @@ function bindModal(root) {
       if (refresh) render();
       return;
     }
+    if (button.dataset.accSend !== undefined) return accountSend();
+    if (button.dataset.accVerify !== undefined) return accountVerify();
+    if (button.dataset.accBack !== undefined) { modal.step = 'email'; modal.msg = ''; return renderModal(); }
     if (button.dataset.guide) { root.remove(); return openLesson(button.dataset.guide); }
     if (button.dataset.moduleBuy) { modal = null; root.remove(); selectedTier = button.dataset.moduleBuy; return nav(state.premium ? 'upgrade' : 'paywall'); }
     if (button.dataset.barcodeCam !== undefined) return startBarcodeCamera(root);

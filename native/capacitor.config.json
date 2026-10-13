@@ -1,0 +1,24 @@
+{
+  "appId": "com.atlasevermore.nutripilot",
+  "appName": "NutriPilot",
+  "webDir": "www",
+  "server": {
+    "url": "https://app.atlasevermore.com/",
+    "cleartext": false,
+    "allowNavigation": ["app.atlasevermore.com"],
+    "errorPath": "index.html"
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#F6F4EC",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "android": {
+    "backgroundColor": "#F6F4EC",
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 600, "backgroundColor": "#0E2A1F", "showSpinner": false },
+    "StatusBar": { "style": "LIGHT", "backgroundColor": "#F6F4EC", "overlaysWebView": false }
+  }
+}

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NutriPilot</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0E2A1F;color:#F6F4EC;font:16px/1.5 system-ui,-apple-system,sans-serif;text-align:center;padding:24px}
+b{display:block;font-size:22px;margin:16px 0 6px}button{margin-top:20px;border:0;border-radius:14px;padding:14px 22px;font:inherit;font-weight:800;background:#CDF26B;color:#0E2A1F}</style></head>
+<body><div><svg width="72" height="72" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="128" fill="#11251b"/><path d="M136 286c0-84 54-150 120-150s120 66 120 150c0 46-18 84-52 111-26 20-58 31-68 31s-42-11-68-31c-34-27-52-65-52-111Z" fill="#d6ff69"/></svg>
+<b id="t">No connection</b><span id="s">Check your internet connection and try again.</span><br><button onclick="location.href='https://app.atlasevermore.com/'" id="r">Try again</button></div>
+<script>
+var m={pt:['Sem conexão','Verifique sua internet e tente de novo.','Tentar de novo'],fr:['Pas de connexion','Vérifiez votre connexion et réessayez.','Réessayer'],es:['Sin conexión','Revisa tu conexión e inténtalo de nuevo.','Reintentar']}[(navigator.language||'en').slice(0,2)];
+if(m){t.textContent=m[0];s.textContent=m[1];r.textContent=m[2];}
+</script></body></html>

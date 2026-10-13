@@ -1,0 +1,78 @@
+# Cloud builds for the NutriPilot store apps (no Mac needed). Starting point: connect the code-signing
+# identities (Android keystore, App Store Connect API key) in the Codemagic dashboard before the first run.
+workflows:
+  android-release:
+    name: NutriPilot Android
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    working_directory: native
+    environment:
+      node: 20
+      java: 17
+      android_signing:
+        - nutripilot_keystore
+      groups:
+        - google_play # GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+    scripts:
+      - name: Install Capacitor + RevenueCat
+        script: npm run setup
+      - name: Android project
+        script: test -d android || npx cap add android
+      - name: Icons and splash
+        script: npm run assets
+      - name: Sync
+        script: npx cap sync android
+      - name: Signing config
+        script: |
+          cat >> android/app/build.gradle <<'EOF'
+          android {
+            signingConfigs { release { if (System.getenv("CM_KEYSTORE_PATH")) { storeFile file(System.getenv("CM_KEYSTORE_PATH")); storePassword System.getenv("CM_KEYSTORE_PASSWORD"); keyAlias System.getenv("CM_KEY_ALIAS"); keyPassword System.getenv("CM_KEY_PASSWORD") } } }
+            buildTypes { release { signingConfig signingConfigs.release } }
+          }
+          EOF
+      - name: Build app bundle
+        script: cd android && ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+
+  ios-release:
+    name: NutriPilot iOS
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    working_directory: native
+    integrations:
+      app_store_connect: NutriPilot ASC key
+    environment:
+      node: 20
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.atlasevermore.nutripilot
+    scripts:
+      - name: Install Capacitor + RevenueCat
+        script: npm run setup
+      - name: iOS project
+        script: test -d ios || npx cap add ios
+      - name: Icons and splash
+        script: npm run assets
+      - name: Sync
+        script: npx cap sync ios
+      - name: Code signing
+        script: xcode-project use-profiles
+      - name: Build ipa
+        script: |
+          if [ -d ios/App/App.xcworkspace ]; then
+            xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
+          else
+            xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+          fi
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
