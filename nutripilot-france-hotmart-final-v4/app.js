@@ -848,6 +848,7 @@ window.__npCollect = () => {
   TOUR.forEach((x) => { touch(x[1]); touch(x[2]); });
   COACH_STYLES.forEach((c) => { touch(c.name); touch(c.desc); });
   WORLD_RECIPES.forEach((r) => { [r.name, r.category, r.difficulty, ...r.steps].forEach(touch); });
+  Object.values(APP_SHELL).forEach((x) => { const saved = [trainTab]; x.tabs().forEach(([, label, , sub]) => { touch(label); touch(sub); }); trainTab = saved[0]; }); Object.values(APP_SHORT).forEach(touch);
   RECIPE_GOALS.forEach((g) => { touch(g.name); touch(g.rule); }); RECIPE_REGIONS.forEach((x) => touch(x[1])); ALLERGENS.forEach((x) => touch(x[1]));
   ['Monde', 'Sans gluten', 'Sans lactose', 'Végétarienne', '100 % végétal', 'Sans allergène majeur', 'pesé cru', 'pesé cuit', 'tel quel', 'cru', 'cuit'].forEach(touch);
   Object.keys(INGREDIENTS).forEach(touch); CUISINES.forEach((c) => touch(c[1]));
@@ -2357,7 +2358,62 @@ function moduleBar(id) {
   const m = moduleById(id);
   if (!m) return '';
   const owned = hasModule(id);
-  return `<div class="mod-bar ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><span class="mod-name"><b>${L(m.name)}</b><small>${owned ? L('Module activé') : L('Aperçu du module')}</small></span>${owned ? `<button class="mod-all" data-go="modules">${L('Modules')}</button>` : m.free ? `<button class="mod-cta" data-go="plans">${L('Offert avec toute formule')}</button>` : `<button class="mod-cta" data-module-buy="${m.id}">${Billing.trialDays() ? L('Essai gratuit') : L('Débloquer')}</button>`}</div>`;
+  return `<div class="mod-bar ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><span class="mod-name"><b>${L(m.name)}</b><small>${owned ? L('Module activé') : L('Aperçu du module')}</small></span>${owned ? `<button class="mod-all" data-go="modules">${L('Apps')}</button>` : m.free ? `<button class="mod-cta" data-go="plans">${L('Offert avec toute formule')}</button>` : `<button class="mod-cta" data-module-buy="${m.id}">${Billing.trialDays() ? L('Essai gratuit') : L('Débloquer')}</button>`}</div>`;
+}
+// ---- App complex: each module opens as its own app --------------------------------
+// An owned module gets its own header identity and its own tab bar (3 main sections + "More"),
+// so every screen shows one thing at a time. "Apps" goes back to the launcher.
+const APP_SHELL = {
+  nutrition: { route: 'program', get: () => route, set: (k) => nav(k), tabs: () => [['program', 'Plan 7 jours', 'calendar', 'Vos repas de la semaine, ajustés à vos calories'], ['diary', 'Journal', 'list', 'Ce que vous avez mangé, jour et semaine'], ['shopping', 'Courses', 'check', 'La liste générée depuis votre plan'], ['targets', 'Objectifs', 'scale', 'Calories, protéines, glucides et lipides'], ['planner', 'Hors maison', 'sparkle', '« Que manger ensuite ? », restaurant et voyages'], ['guides', 'Leçons', 'book', 'Cours courts de nutrition']] },
+  recipes: { route: 'recipes', get: () => recipeView, set: (k) => { recipeView = k; }, tabs: () => [['explore', 'Explorer', 'search', 'Par objectif, région et ingrédient'], ['fav', 'Favoris', 'heart', 'Les recettes que vous avez gardées'], ['create', 'Créer avec l’IA', 'sparkle', 'Des recettes avec ce que vous avez'], ['made', 'Déjà préparées', 'check', 'Les recettes ajoutées à votre journal']] },
+  training: { route: 'training', get: () => trainTab, set: (k) => { trainTab = k; }, tabs: () => [hasTrainingPlan() ? ['mine', 'Ma semaine', 'calendar', 'Vos séances de la semaine'] : ['plan', 'Planifier', 'calendar', 'Vos jours, votre objectif, votre niveau'], ['programs', 'Programmes', 'list', 'Tous les programmes prêts à suivre'], ['library', 'Exercices', 'dumbbell', 'Plus de 100 mouvements animés'], ...(hasTrainingPlan() ? [['plan', 'Planifier', 'calendar', 'Changer vos jours et votre objectif']] : []), ['create', 'Créer', 'plus', 'Votre propre programme, exercice par exercice'], ['history', 'Historique', 'progress', 'Séances faites et charges'], ['lessons', 'Leçons', 'book', 'Technique, progression et récupération']] },
+  menopause: { route: 'menopause', get: () => menoTab, set: (k) => { menoTab = k; }, tabs: () => [['today', 'Aujourd’hui', 'flower', 'Journal des symptômes du jour'], ['program', 'Programme', 'calendar', '8 semaines guidées'], ['workouts', 'Séances', 'dumbbell', 'Force, os et équilibre'], ['lessons', 'Cours', 'book', 'Comprendre chaque étape']] },
+  nutrients: { route: 'nutrients', get: () => nutrientTab, set: (k) => { nutrientTab = k; }, tabs: () => [['guide', 'Guide', 'leaf', 'Rôle de chaque vitamine et minéral'], ['sources', 'Sources', 'fork', 'Les aliments les plus riches'], ['gaps', 'Mon journal', 'list', 'Ce qui manque peut-être dans vos repas']] },
+  supplements: { route: 'supplements', get: () => suppTab, set: (k) => { suppTab = k; suppDraft = null; }, tabs: () => [['mine', 'Mes compléments', 'pill', 'Vos compléments et doses déclarées'], ['scan', 'Scanner', 'camera', 'Lire une étiquette de complément'], ['alerts', 'Alertes', 'bell', 'Ingrédients en double et précautions'], ['info', 'Fiches', 'book', 'Niveau de preuve et précautions']] },
+  sleep: { route: 'sleep', get: () => sleepTab, set: (k) => { sleepTab = k; }, tabs: () => [['today', 'Aujourd’hui', 'moon', 'Votre nuit et votre journée'], ['sleep', 'Journal', 'list', 'Notez chaque nuit'], ['relax', 'Respirer', 'wave', 'Respirations et relaxations guidées'], ['sounds', 'Sons apaisants', 'drop', 'Pluie, vagues, feu…'], ['program', 'Programme 7 nuits', 'calendar', 'Une étape par nuit'], ['mind', 'Stress & pensées', 'book', 'Vider sa tête avant de dormir'], ['hunger', 'Faim ou envie ?', 'fork', 'Reconnaître une envie de manger'], ['routine', 'Rituel du soir', 'check', 'Les gestes qui aident à s’endormir'], ['learn', 'Leçons', 'book', 'Comprendre le sommeil'], ['restart', 'Reprendre la routine', 'sparkle', 'Après un écart, sans tout recommencer']] },
+};
+// The module shown as an app: only modules the person owns (previews keep the plans bar and the main navigation).
+function appShellId(r = route) {
+  const m = moduleForRoute(r);
+  return m && APP_SHELL[m.id] && state.premium && hasModule(m.id) ? m.id : '';
+}
+function openAppTab(id, key) {
+  const shell = APP_SHELL[id];
+  if (!shell) return;
+  if (id === 'nutrition') return nav(key);
+  shell.set(key);
+  if (route !== shell.route) return nav(shell.route);
+  render();
+  window.scrollTo({ top: 0 });
+}
+function appTabBar(id) {
+  const shell = APP_SHELL[id];
+  const tabs = shell.tabs();
+  const cur = shell.get();
+  const main = tabs.slice(0, 3);
+  const more = tabs.slice(3);
+  const moreActive = more.some(([k]) => k === cur);
+  const btn = (k, label, ico) => `<button class="nav-btn ${k === cur ? 'active' : ''}" data-app-tab="${id}:${k}" aria-current="${k === cur ? 'page' : 'false'}"><span>${icon(ico)}</span>${L(label)}</button>`;
+  return `<nav class="bottom-nav app-nav ${moduleById(id).tone}" aria-label="${esc(L(moduleById(id).name))}">
+    <button class="nav-btn apps-btn" data-go="modules" aria-label="${L('Toutes mes apps')}"><span>${icon('grid')}</span>${L('Apps')}</button>
+    ${main.map(([k, label, ico]) => btn(k, label, ico)).join('')}
+    ${more.length ? `<button class="nav-btn ${moreActive ? 'active' : ''}" data-app-more="${id}"><span>${icon('menu')}</span>${L('Plus')}</button>` : ''}
+  </nav>`;
+}
+function appMoreSheet(id) {
+  const m = moduleById(id);
+  const shell = APP_SHELL[id];
+  const cur = shell.get();
+  return `<div class="sheet-head"><div><span class="tag">${esc(L(m.name))}</span><h2>${L('Toutes les rubriques')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">×</button></div>
+    <div class="app-more ${m.tone}">${shell.tabs().map(([k, label, ico, sub]) => `<button class="am-row ${k === cur ? 'on' : ''}" data-app-tab="${id}:${k}"><span class="mod-ico">${icon(ico)}</span><span><b>${L(label)}</b><small>${L(sub)}</small></span>${icon('chevron')}</button>`).join('')}</div>`;
+}
+function appHead(id, titleHtml) {
+  const m = moduleById(id);
+  return `<header class="app-head app-head-mod ${m.tone}"><div class="app-head-row">
+    <div class="head-left"><button class="icon-btn apps-ico" data-go="modules" aria-label="${L('Toutes mes apps')}">${icon('grid')}</button></div>
+    <div class="head-titles"><small class="head-app"><span class="mod-ico">${icon(m.icon)}</span>NutriPilot</small><h2>${titleHtml}</h2></div>
+    <div class="head-actions"><button class="icon-btn coach-btn" data-go="coach" aria-label="${L('Coach')}">${icon('coach')}</button></div>
+  </div></header>`;
 }
 function globalSearch(q) {
   q = q.trim().toLowerCase();
@@ -2388,24 +2444,35 @@ function memberCard() {
     <i class="vip-shine"></i>
   </div></div>`;
 }
+// Launcher: every module is an app on a home screen. The person's apps first, the others to discover.
+const APP_SHORT = { nutrients: 'Vitamines', supplements: 'Compléments', sleep: 'Sommeil' };
+function appIcon(m, owned) {
+  const lock = !owned && !m.free;
+  return `<button class="app-icon ${m.tone} ${lock ? 'locked' : ''}" data-go="${m.route}" aria-label="${esc(L(m.name))}${lock ? ` · ${esc(L('Aperçu'))}` : ''}">
+    <span class="ai-tile">${icon(m.icon)}${lock ? `<em class="ai-lock">${icon('lock')}</em>` : ''}</span><b>${L(APP_SHORT[m.id] || m.name)}</b></button>`;
+}
 function modulesScreen() {
   const owned = ownedModules();
   const plans = Billing.plans();
   const kit = plans.find((x) => x.tier === 'complete');
-  return `<div class="mobile-app">
-    ${appHeader('Modules')}
+  const mine = MODULES.filter((m) => owned.includes(m.id) || (m.free && state.premium));
+  const others = MODULES.filter((m) => !mine.includes(m));
+  const t = totals(); const p = state.profile || {};
+  const left = Math.max(0, (p.dailyKcal || 0) - t.kcal);
+  return `<div class="mobile-app launcher">
+    ${appHeader('Mes apps')}
     <div class="screen">
-      ${memberCard()}
+      <button class="today-strip" data-go="app"><span class="ts-ico">${icon('home')}</span><span><small>${L('Aujourd’hui')}</small><b>${L('{n} kcal restantes', { n: fmt(left) })}</b></span><span class="ts-meta">${icon('drop')}${fmt(waterToday() / 1000, 1)} L<i></i>${icon('flame')}${L('{n} j', { n: streak() })}</span></button>
       <label class="search-box">${icon('search')}<input id="global-search" type="search" placeholder="${L('Rechercher une recette, un exercice, un nutriment…')}" autocomplete="off"></label>
       <div id="gs-results"></div>
-      <p class="screen-sub">${L('Chaque module est un espace complet. Activez seulement ce dont vous avez besoin, ou tout avec le Kit complet.')}</p>
       ${owned.length ? '' : freeBanner(true)}
-      <div class="mod-grid">${MODULES.map((m) => `<button class="mod-card ${m.tone} ${owned.includes(m.id) ? 'owned' : ''}" data-go="${m.route}">
-        <span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b><small>${L(m.sub)}</small>${moduleBadge(m.id)}</button>`).join('')}</div>
-      <button class="plans-link" data-go="plans">${icon('star')}<span><b>${L('Nos formules')}</b><small>${L('Modules, combinaisons et Kit complet')}</small></span>${icon('chevron')}</button>
+      ${mine.length ? `<div class="section-label"><h3>${L(others.length ? 'Mes apps' : 'Toutes vos apps')}</h3></div><div class="app-grid">${mine.map((m) => appIcon(m, true)).join('')}</div>` : ''}
+      ${others.length ? `<div class="section-label"><h3>${L(mine.length ? 'À découvrir' : 'Les apps NutriPilot')}</h3><button class="link-btn" data-go="plans">${L('Formules')}</button></div><div class="app-grid">${others.map((m) => appIcon(m, owned.includes(m.id))).join('')}</div>` : ''}
       ${!PAID_MODULES.every((m) => owned.includes(m.id)) && kit ? `<button class="kit-card" data-module-buy="complete"><span><small>${L('Kit complet')}</small><b>${L('Les 9 modules pour {price} / mois', { price: money(lp(kit, 'monthly')) })}</b><em>${L('Économisez {n} % par rapport aux modules séparés', { n: planSaving(kit, 'monthly') })}</em></span>${icon('chevron')}</button>` : ''}
+      ${memberCard()}
       <div class="section-label"><h3>${L('Inclus pour tous')}</h3></div>
       <div class="free-row"><button data-go="app">${icon('home')}<span>${L('Aujourd’hui')}</span></button><button data-go="progress">${icon('progress')}<span>${L('Progrès')}</span></button><button data-open-goal>${icon('scale')}<span>${L('Objectif')}</span></button><button data-open-profile>${icon('user')}<span>${L('Profil')}</span></button></div>
+      <button class="plans-link" data-go="plans">${icon('star')}<span><b>${L('Nos formules')}</b><small>${L('Modules, combinaisons et Kit complet')}</small></span>${icon('chevron')}</button>
     </div>
     ${bottom('modules')}
   </div>`;
@@ -2781,7 +2848,7 @@ function menoFocus() {
 function bottom(active) {
   const tabs = [
     ['app', 'home', 'Aujourd’hui'],
-    ['modules', 'grid', 'Modules'],
+    ['modules', 'grid', 'Apps'],
     ['add', 'scan', 'Scanner'],
     state.premium ? ['coach', 'coach', 'Coach'] : ['plans', 'star', 'Formules'],
     ['progress', 'progress', 'Progrès'],
@@ -2874,7 +2941,7 @@ function weekDots() {
   }).join('')}</div>`;
 }
 
-function dailyMissions() {
+function missionList() {
   const t = totals();
   const p = state.profile;
   const list = [
@@ -2885,6 +2952,11 @@ function dailyMissions() {
   if (hasFeature('training') && todaySession()) list.push(['dumbbell', 'Faire ma séance du jour', doneOn(todayKey()), 'training']);
   if (hasFeature('menopause') && (p.track === 'menopause' || (p.menopause && p.menopause !== 'no'))) list.push(['flower', 'Remplir mon journal ménopause', Boolean(state.menoLog?.[todayKey()] && Object.keys(state.menoLog[todayKey()]).length), 'menopause']);
   list.push(['check', 'Faire mon check-in', Boolean(state.checkins[todayKey()]?.energy), 'checkin']);
+  return list;
+}
+function missionsDone() { const list = missionList(); return [list.filter((x) => x[2]).length, list.length]; }
+function dailyMissions() {
+  const list = missionList();
   const done = list.filter((x) => x[2]).length;
   const c = 2 * Math.PI * 20;
   return `<section class="missions">
@@ -2976,6 +3048,13 @@ function relogMeal(m, type) {
   state.meals.push({ ...clone(m), id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, day: todayKey(), type: type || m.type || mealTypeFromHour() });
 }
 
+// Today in three tabs: the day's numbers, the day's missions, and suggestions. Nothing removed, one view at a time.
+let todayTab = 'summary';
+function todayTabsHtml() {
+  const done = missionsDone();
+  const tabs = [['summary', 'Résumé', ''], ['missions', 'Missions', `${done[0]}/${done[1]}`], ['foryou', 'Pour vous', '']];
+  return `<div class="today-tabs" role="tablist">${tabs.map(([k, label, badge]) => `<button role="tab" aria-selected="${todayTab === k}" class="${todayTab === k ? 'active' : ''}" data-today-tab="${k}">${L(label)}${badge ? `<em>${badge}</em>` : ''}</button>`).join('')}</div>`;
+}
 function dashboard() {
   const t = totals();
   const p = state.profile;
@@ -3005,6 +3084,8 @@ function dashboard() {
     ${appHeader(p.name ? L('Bonjour {name} 👋', { name: p.name }) : L('Bonjour 👋'))}
     <div class="screen">
       ${weekDots()}
+      ${todayTabsHtml()}
+      ${todayTab === 'summary' ? `
       ${welcomeBackCard()}
       <section class="hero-ring-card">
         <div class="ring-wrap">
@@ -3043,33 +3124,44 @@ function dashboard() {
       </div>
 
       ${journeyCard()}
+      ` : ''}
+      ${todayTab === 'missions' ? `
       ${dailyMissions()}
       ${sosCard()}
-
+      ` : ''}
+      ${todayTab === 'foryou' ? `
       <div class="quick-grid">
         <button data-go="planner">${icon('sparkle')}<span>${L('Que manger ensuite ?')}</span></button>
         <button data-go="program">${icon('calendar')}<span>${L('Plan 7 jours')}</span></button>
         <button data-go="recipes">${icon('fork')}<span>${L('Recettes')}</span></button>
         <button data-go="coach">${icon('coach')}<span>${L('Coach')}</span></button>
       </div>
-
+      ` : ''}
+      ${todayTab === 'summary' ? `
       ${session ? `<button class="today-train" data-session="${esc(session.id)}" data-program="${esc(currentProgram().id)}">${exAnim(session.ex[0][0], 'sm')}<span><small>${L('Séance du jour')}</small><b>${esc(L(session.name))}</b><em>${esc(L(session.focus))} · ${L('{n} exercices', { n: session.ex.length })}</em></span><span class="tt-go">${doneOn(todayKey()) ? icon('check') : icon('chevron')}</span></button>${trainingDayTip(session)}` : ''}
 
+      ` : ''}
+      ${todayTab === 'foryou' ? `
       ${dayPlan.length ? `<div class="section-label"><h3>${L('Votre plan aujourd’hui')}</h3><button class="link-btn" data-go="program">${L('7 jours →')}</button></div><div class="plan-today">${dayPlan.map((meal) => { const idx = state.weekPlan.indexOf(todayPlan); const mi = dayPlan.indexOf(meal); return `<div class="pt-row"><span class="pm-flag">${CUISINE_FLAG[meal.cuisine] || '🍽️'}</span><span><small>${esc(L(meal.type))}</small><b>${esc(L(meal.name))}</b></span><button class="pill pill-button" data-add-plan-meal data-day="${idx}" data-meal="${mi}">${fmt(meal.kcal)} kcal ${icon('plus')}</button></div>`; }).join('')}</div>` : `<button class="cta-card" data-go="program">${icon('calendar')}<span><b>${L('Créez votre plan de la semaine')}</b><small>${L('Repas, recettes et liste de courses en un clic.')}</small></span>${icon('chevron')}</button>`}
 
       ${recipeIdeas()}
+      ` : ''}
+      ${todayTab === 'summary' ? `
 
       <div class="section-label"><h3>${L('Repas aujourd’hui')}</h3><span class="streak">${icon('flame')} ${L('{n} j', { n: streak() })}</span></div>
       ${mealsHtml(todayMeals)}
       <div class="section-label"><h3>${L('Votre prochaine décision')}</h3></div>
       ${dashboardInsight(t, p)}
 
+      ` : ''}
+      ${todayTab === 'missions' ? `
       <div class="section-label" id="checkin"><h3>${L('Check-in rapide')}</h3><span class="fine">${L('aide le bilan hebdo')}</span></div>
       <div class="checkin-card">
         <div><b>${L('Faim')}</b><div class="checkin-buttons">${[['low','Faible'],['normal','Normale'],['high','Forte']].map(([v,l]) => `<button class="mini-choice ${checkin.hunger === v ? 'selected' : ''}" data-checkin="hunger" data-value="${v}">${L(l)}</button>`).join('')}</div></div>
         <div><b>${L('Énergie')}</b><div class="checkin-buttons">${[['low','Basse'],['normal','OK'],['high','Haute']].map(([v,l]) => `<button class="mini-choice ${checkin.energy === v ? 'selected' : ''}" data-checkin="energy" data-value="${v}">${L(l)}</button>`).join('')}</div></div>
         <div><b>${L('Sommeil')}</b><div class="checkin-buttons">${[['bad','Mauvais'],['ok','Correct'],['good','Bon']].map(([v,l]) => `<button class="mini-choice ${checkin.sleep === v ? 'selected' : ''}" data-checkin="sleep" data-value="${v}">${L(l)}</button>`).join('')}</div></div>
       </div>
+      ` : ''}
     </div>
     ${bottom('app')}
   </div>`;
@@ -4533,7 +4625,7 @@ function trainingScreen() {
         ${weekStrip()}
         ${today ? `<button class="btn btn-lime btn-wide" data-session="${esc(today.id)}" data-program="${esc(program.id)}">${L('Commencer la séance')}</button>` : `<button class="btn btn-ghost-dark btn-wide" data-session="${esc(nextSession(program).id)}" data-program="${esc(program.id)}">${L('Faire quand même : {name}', { name: esc(L(nextSession(program).name)) })}</button>`}
       </section>` : ''}
-      <div class="tab-scroll">${tabs.map(([k, label]) => `<button class="${trainTab === k ? 'active' : ''}" data-train-tab="${k}">${L(label)}</button>`).join('')}</div>
+      <div class="tab-scroll mod-tabs">${tabs.map(([k, label]) => `<button class="${trainTab === k ? 'active' : ''}" data-train-tab="${k}">${L(label)}</button>`).join('')}</div>
       ${body}
     </div>
     ${bottom('training')}
@@ -5124,7 +5216,7 @@ function menopauseScreen() {
         <span class="meno-badge">${icon('flower')}</span>
         <div class="meno-weeks">${MENO_WEEKS.map((_, i) => `<i class="${i < week ? 'past' : i === week ? 'now' : ''}"></i>`).join('')}</div>
       </section>
-      <div class="segmented seg-4">${tabs.map(([k, label]) => `<button class="${menoTab === k ? 'active' : ''}" data-meno-tab="${k}">${L(label)}</button>`).join('')}</div>
+      <div class="segmented seg-4 mod-tabs">${tabs.map(([k, label]) => `<button class="${menoTab === k ? 'active' : ''}" data-meno-tab="${k}">${L(label)}</button>`).join('')}</div>
       ${body}
       <div class="fine center-fine">${L('Contenus d’information générale. Ils ne remplacent pas l’avis d’un médecin.')}</div>
     </div>
@@ -6393,7 +6485,7 @@ function renderModal() {
   if (!modal) return;
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
@@ -6839,7 +6931,13 @@ function render() {
     html = `<main class="screen app-screen"><section class="error-state"><div class="error-ico">${icon('sparkle')}</div><h1>${L('Cet écran n’a pas pu s’afficher')}</h1><p>${L('Vos données sont intactes. Revenez à l’accueil ou réessayez.')}</p><div class="error-actions"><button class="btn" data-retry-render>${L('Réessayer')}</button><button class="btn btn-ghost" data-go="app">${L('Accueil')}</button></div></section></main>`;
   }
   const modHere = moduleForRoute();
-  if (modHere && html.includes('</header>')) html = html.replace(/<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, `</header>${moduleBar(modHere.id)}`);
+  const shellId = appShellId();
+  if (shellId && html.includes('</header>')) {
+    const title = (html.match(/<h2>([\s\S]*?)<\/h2>/) || [])[1] || '';
+    html = html.replace(/<header class="app-head">[\s\S]*?<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, () => appHead(shellId, title))
+      .replace(/<nav class="bottom-nav">[\s\S]*?<\/nav>/, () => appTabBar(shellId))
+      .replace('<div class="mobile-app', '<div class="in-app mobile-app');
+  } else if (modHere && html.includes('</header>')) html = html.replace(/<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, `</header>${moduleBar(modHere.id)}`);
   const noFab = state.premium || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
   a11yPass(app);
@@ -7002,6 +7100,9 @@ function bind() {
       return sendCoach(L('Cette réponse ne me convient pas. Propose une alternative plus adaptée à ma situation.'));
     }
     if (button.dataset.goNutrient) { nutrientTab = 'guide'; nutrientOpen = button.dataset.goNutrient; return nav('nutrients'); }
+    if (button.dataset.appTab) { const [id, key] = button.dataset.appTab.split(':'); return openAppTab(id, key); }
+    if (button.dataset.todayTab) { todayTab = button.dataset.todayTab; return render(); }
+    if (button.dataset.appMore) { modal = { type: 'appmore', app: button.dataset.appMore }; return renderModal(); }
     if (button.dataset.recipeView) { recipeView = button.dataset.recipeView; return render(); }
     // Scanner module
     if (button.dataset.scanOpen) { const item = (state.scanHistory || []).find((x) => x.id === button.dataset.scanOpen); if (item) { modal = { type: 'scan', item }; renderModal(); } return; }
@@ -7383,7 +7484,12 @@ function bind() {
     }
     if (button.dataset.goBuilder !== undefined) { plansTab = 'builder'; buildSel = [...(findPlan(defaultTier())?.modules || [])]; return nav('plans'); }
     if (button.dataset.choosePlan) { selectedTier = button.dataset.choosePlan; selectedPeriod = 'annual'; track('PlanChosen', { plan: selectedTier }); return nav(state.premium ? 'upgrade' : 'paywall'); }
-    if (button.dataset.scroll) { document.getElementById(button.dataset.scroll)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (button.dataset.scroll) {
+      const id = button.dataset.scroll;
+      if (id === 'checkin' && !document.getElementById(id)) { todayTab = 'missions'; render(); }
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     if (button.dataset.progRange !== undefined) { progressRange = Number(button.dataset.progRange); return render(); }
     if (button.dataset.weightStep) { const input = $('#weight-now'); if (input) input.value = (Math.round((Number(input.value || lastWeight()) + Number(button.dataset.weightStep)) * 10) / 10).toFixed(1); return; }
     if (button.dataset.photoRemove) { await PhotoStore.remove(button.dataset.photoRemove); return renderPhotos(); }
@@ -7687,6 +7793,7 @@ function bindModal(root) {
     const button = event.target.closest('button');
     if (!button) return;
 
+    if (button.dataset.appTab) { const [id, key] = button.dataset.appTab.split(':'); modal = null; root.remove(); return openAppTab(id, key); }
     if (button.dataset.close !== undefined) {
       const refresh = modal?.refresh;
       modal = null;

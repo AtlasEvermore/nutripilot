@@ -1709,3 +1709,52 @@ a.btn{text-decoration:none;color:var(--ink)}a.btn-lime,a.btn-ghost{color:var(--i
 @media (max-width:380px){.ing-row{grid-template-columns:minmax(0,1fr) 54px 40px 50px;padding:8px;font-size:12px}.region-chip{font-size:10px;padding:7px 2px}}
 @media (max-width:330px){.region-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
 [dir=rtl] .ing-row>*:not(:first-child){text-align:start}
+/* v25 app complex: launcher, per-app shell, Today tabs */
+.today-strip{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;width:100%;text-align:start;background:var(--ink);color:#fff;border:0;border-radius:20px;padding:12px 14px;margin-bottom:12px}
+.today-strip .ts-ico{width:40px;height:40px;border-radius:13px;background:rgba(215,255,106,.14);color:var(--lime);display:grid;place-items:center}
+.today-strip small{display:block;font-size:11px;color:#b9c9be;font-weight:700}.today-strip b{font-size:16px;font-family:var(--display)}
+.today-strip .ts-meta{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:#dfe8e2;white-space:nowrap}
+.today-strip .ts-meta .ico{width:14px;height:14px;color:var(--lime)}.today-strip .ts-meta i{width:1px;height:14px;background:rgba(255,255,255,.2);margin:0 3px}
+.app-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 8px;padding:4px 2px 6px}
+.app-icon{display:grid;justify-items:center;gap:7px;border:0;background:none;padding:0;min-width:0;color:var(--ink)}
+.app-icon .ai-tile{position:relative;width:62px;height:62px;border-radius:19px;display:grid;place-items:center;color:#fff;background:linear-gradient(155deg,color-mix(in srgb,var(--mc) 78%,#fff) 0%,var(--mc) 55%,color-mix(in srgb,var(--mc) 80%,#000) 100%);box-shadow:0 10px 18px -12px color-mix(in srgb,var(--mc) 90%,#000),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .16s var(--ease)}
+.app-icon .ai-tile .ico{width:27px;height:27px}
+.app-icon b{font-size:11.5px;font-weight:750;line-height:1.2;text-align:center;max-width:100%;overflow-wrap:anywhere;hyphens:auto}
+.app-icon:active .ai-tile{transform:scale(.92)}
+.app-icon.locked .ai-tile{filter:saturate(.55);opacity:.82}
+.ai-lock{position:absolute;right:-5px;top:-5px;width:22px;height:22px;border-radius:50%;background:#fff;color:var(--ink);display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.ai-lock .ico{width:12px!important;height:12px!important}
+.app-icon:focus-visible{outline:none}.app-icon:focus-visible .ai-tile{outline:3px solid var(--lime);outline-offset:3px}
+.launcher .vip-wrap{margin-top:18px}
+@media (max-width:350px){.app-grid{gap:14px 4px}.app-icon .ai-tile{width:54px;height:54px;border-radius:17px}.app-icon b{font-size:10.5px}}
+/* per-app header and tab bar */
+.app-head-mod .head-app{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--mc)}
+.app-head-mod .head-app .mod-ico{width:20px;height:20px;border-radius:7px;background:var(--mc);color:#fff;display:grid;place-items:center}
+.app-head-mod .head-app .mod-ico .ico{width:12px;height:12px}
+.app-head-mod .apps-ico{background:var(--mt);border-color:color-mix(in srgb,var(--mc) 25%,transparent);color:var(--mc)}
+.app-head-mod{box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--mc) 18%,transparent)}
+.in-app .mod-tabs{display:none!important}
+.app-nav .nav-btn{min-width:0;font-size:10px;line-height:1.15;text-align:center;padding:0 2px;overflow-wrap:anywhere}
+.app-nav .nav-btn.active{color:var(--mc)}
+.app-nav .nav-btn.active:not(.center):after{background:var(--mc)}
+.app-nav .apps-btn span{width:34px;height:34px;border-radius:11px;background:var(--ink);color:var(--lime);display:grid;place-items:center}
+.app-nav .apps-btn span .ico{width:18px;height:18px}
+.in-app.route-in .screen{animation:appOpen .36s var(--ease) both;transform-origin:50% 0}
+.in-app.route-in .screen>*{animation:none}
+@keyframes appOpen{from{opacity:0;transform:translateY(10px) scale(.975)}to{opacity:1;transform:none}}
+.app-more{display:grid;gap:8px;margin-top:6px}
+.am-row{display:grid;grid-template-columns:40px 1fr 18px;gap:12px;align-items:center;text-align:start;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 12px;color:var(--ink)}
+.am-row .mod-ico{width:40px;height:40px;border-radius:12px;background:var(--mt);color:var(--mc);display:grid;place-items:center}
+.am-row b{display:block;font-size:14px}.am-row small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:2px}
+.am-row.on{border-color:var(--mc);box-shadow:0 0 0 1px var(--mc) inset}
+.am-row>.ico:last-child{color:var(--muted)}
+[dir=rtl] .am-row>.ico:last-child{transform:scaleX(-1)}
+/* Today tabs */
+.today-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:#ecebe2;border-radius:14px;padding:4px;margin:4px 0 14px}
+.today-tabs button{border:0;background:none;border-radius:11px;padding:9px 4px;font-size:13px;font-weight:800;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;min-width:0}
+.today-tabs button.active{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(16,36,25,.08)}
+.today-tabs em{font-style:normal;font-size:10.5px;background:var(--lime);color:var(--ink);border-radius:999px;padding:1px 6px}
+@media (prefers-reduced-motion:reduce){.in-app.route-in .screen{animation:none}}
+.day-picker,.day-picker.big{grid-template-columns:repeat(7,minmax(0,1fr))}
+.day-picker button{min-width:0;padding-inline:1px;overflow-wrap:anywhere;line-height:1.15}
+[lang=ar] .day-picker button,[lang=ja] .day-picker button,[lang=ko] .day-picker button{font-size:10.5px}
