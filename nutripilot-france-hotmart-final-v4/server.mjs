@@ -1413,6 +1413,8 @@ const server = http.createServer(async (req, res) => {
         appStoreUrl: process.env.APP_STORE_URL || '',
         playStoreUrl: process.env.PLAY_STORE_URL || '',
         trialDays: Number(process.env.TRIAL_DAYS || 3),
+        // Visitor country when the edge provides it (Cloudflare, Vercel, Fastly…); the app falls back to the device time zone.
+        country: String(req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || req.headers['x-country-code'] || req.headers['fastly-geo-country'] || '').slice(0, 2).toUpperCase().replace(/[^A-Z]/g, ''),
         locked: true,
         legal: {
           company: process.env.LEGAL_COMPANY_NAME || '',

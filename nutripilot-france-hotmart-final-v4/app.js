@@ -1834,23 +1834,39 @@ const MODULE_ROUTES = {
 const moduleById = (id) => MODULES.find((m) => m.id === id);
 const moduleForRoute = (r = route) => moduleById(MODULE_ROUTES[r]);
 
-// Monthly / annual prices (EUR). Scanner, Supplements and the Coach are free with any paid plan.
-// Annual ≈ 50 % off 12 monthly payments. Complete kit: −21 % monthly, −35 % yearly vs. the six modules bought separately.
-const MODULE_PRICES = {
-  complete: [39.99, 199.99],
-  nutrition: [9.99, 59.99], recipes: [4.99, 29.99], training: [14.99, 89.99],
-  menopause: [12.99, 79.99], nutrients: [2.99, 17.99], sleep: [4.99, 29.99],
-};
+// ---- Pricing -------------------------------------------------------------------
+// Monthly prices, identical figures in every store currency (BRL, EUR, USD, GBP).
+// Any combination costs its modules' sum minus a small, readable discount, rounded to ,90.
+// Annual = 10 × monthly (2 months free). The Complete kit is the top price and the best value.
+const r2 = (v) => Math.round(v * 100) / 100;
+const MONTHLY_PRICE = { nutrition: 9.99, recipes: 4.99, training: 14.99, menopause: 12.99, nutrients: 2.99, sleep: 4.99 };
+const KIT_MONTHLY = 39.9;
+const COMBO_OFF = { 2: 0.15, 3: 0.18, 4: 0.2, 5: 0.22 };
+const annualOf = (monthly) => r2(monthly * 10);
 const PAID_MODULES = MODULES.filter((m) => !m.free);
 const FREE_MODULES = MODULES.filter((m) => m.free);
-// Themed bundles: each costs clearly less than its modules bought separately.
+const PAID_IDS = PAID_MODULES.map((m) => m.id);
+// Short codes keep combination product ids short in the stores: np_mix_rt_monthly = Training + Recipes.
+const MOD_CODE = { nutrition: 'n', recipes: 'r', training: 't', menopause: 'm', nutrients: 'v', sleep: 's' };
+const CODE_MOD = Object.fromEntries(Object.entries(MOD_CODE).map(([k, v]) => [v, k]));
+const sortMods = (mods) => PAID_IDS.filter((id) => mods.includes(id));
+function comboMonthly(mods) {
+  const list = sortMods(mods);
+  if (list.length === 1) return MONTHLY_PRICE[list[0]];
+  if (list.length >= PAID_IDS.length) return KIT_MONTHLY;
+  const sum = list.reduce((t, id) => t + MONTHLY_PRICE[id], 0);
+  const price = Math.ceil(sum * (1 - (COMBO_OFF[list.length] || 0.22))) - 0.1;
+  return r2(Math.min(price, sum - 0.5, KIT_MONTHLY - 1));
+}
+const MODULE_PRICES = Object.fromEntries([...PAID_IDS.map((id) => [id, [MONTHLY_PRICE[id], annualOf(MONTHLY_PRICE[id])]]), ['complete', [KIT_MONTHLY, annualOf(KIT_MONTHLY)]]]);
+// Themed combinations, priced with the same rule as any combination the person composes.
 const BUNDLES = [
-  { id: 'body', name: 'Corps en forme', sub: 'Entraînement + Nutrition', tagline: 'Perdre du gras et prendre du muscle, repas et séances accordés.', icon: 'dumbbell', tone: 'm-train', modules: ['training', 'nutrition'], price: [19.99, 119.99], badge: 'Le plus choisi' },
-  { id: 'women40', name: 'Femme 40+', sub: 'Ménopause + Nutrition + Sommeil + Vitamines', tagline: 'L’accompagnement complet de la (pré)ménopause.', icon: 'flower', tone: 'm-meno', modules: ['menopause', 'nutrition', 'sleep', 'nutrients'], price: [24.99, 149.99], badge: 'Spécial 40+' },
-  { id: 'kitchen', name: 'Cuisine saine', sub: 'Nutrition + Recettes', tagline: 'Bien manger chaque jour, sans y passer des heures.', icon: 'fork', tone: 'm-rec', modules: ['nutrition', 'recipes'], price: [11.99, 69.99] },
-  { id: 'performance', name: 'Performance', sub: 'Entraînement + Nutrition + Vitamines', tagline: 'S’entraîner fort et récupérer, avec la nutrition qui suit.', icon: 'heart', tone: 'm-sup', modules: ['training', 'nutrition', 'nutrients'], price: [22.99, 129.99] },
-  { id: 'wellness', name: 'Bien-être', sub: 'Sommeil + Vitamines', tagline: 'Mieux dormir, moins de stress, compléments sous contrôle.', icon: 'moon', tone: 'm-sleep', modules: ['sleep', 'nutrients'], price: [6.49, 37.99] },
-];
+  { id: 'body', name: 'Corps en forme', sub: 'Entraînement + Nutrition', tagline: 'Perdre du gras et prendre du muscle, repas et séances accordés.', icon: 'dumbbell', tone: 'm-train', modules: ['training', 'nutrition'], badge: 'Le plus choisi' },
+  { id: 'women40', name: 'Femme 40+', sub: 'Ménopause + Nutrition + Sommeil + Vitamines', tagline: 'L’accompagnement complet de la (pré)ménopause.', icon: 'flower', tone: 'm-meno', modules: ['menopause', 'nutrition', 'sleep', 'nutrients'], badge: 'Spécial 40+' },
+  { id: 'kitchen', name: 'Cuisine saine', sub: 'Nutrition + Recettes', tagline: 'Bien manger chaque jour, sans y passer des heures.', icon: 'fork', tone: 'm-rec', modules: ['nutrition', 'recipes'] },
+  { id: 'performance', name: 'Performance', sub: 'Entraînement + Nutrition + Vitamines', tagline: 'S’entraîner fort et récupérer, avec la nutrition qui suit.', icon: 'heart', tone: 'm-sup', modules: ['training', 'nutrition', 'nutrients'] },
+  { id: 'wellness', name: 'Bien-être', sub: 'Sommeil + Vitamines', tagline: 'Mieux dormir, moins de stress, compléments sous contrôle.', icon: 'moon', tone: 'm-sleep', modules: ['sleep', 'nutrients'] },
+].map((b) => ({ ...b, price: [comboMonthly(b.modules), annualOf(comboMonthly(b.modules))] }));
 const bundleById = (id) => BUNDLES.find((b) => b.id === id);
 const DEFAULT_PLANS = [
   { tier: 'complete', kind: 'complete', label: 'Kit complet', sub: 'Tous les modules NutriPilot', tagline: 'Tout NutriPilot, sans limite.', icon: 'star', tone: 'm-kit', badge: 'Meilleure offre', modules: MODULES.map((m) => m.id),
@@ -1862,35 +1878,49 @@ const DEFAULT_PLANS = [
   ...PAID_MODULES.map((m) => ({ tier: m.id, kind: 'module', label: m.name, sub: m.sub, tagline: m.sub, icon: m.icon, tone: m.tone, modules: [m.id], features: [...m.features.slice(0, 3), 'Scanner, Compléments et Coach offerts'],
     monthly: { price: MODULE_PRICES[m.id][0], storeId: `np_${m.id}_monthly` }, annual: { price: MODULE_PRICES[m.id][1], storeId: `np_${m.id}_annual` } })),
 ];
-// Price of buying these modules one by one.
+// Price of buying these modules one by one, for the same billing period.
 function separatePrice(modules, period) {
   const i = period === 'annual' ? 1 : 0;
-  return modules.reduce((sum, id) => sum + (MODULE_PRICES[id]?.[i] || 0), 0);
+  return r2(modules.reduce((sum, id) => sum + (MODULE_PRICES[id]?.[i] || 0), 0));
 }
+// What the same access would cost without any discount: modules bought one by one, paid monthly.
+function refPrice(plan, period) {
+  const monthly = plan.kind === 'module' ? plan.monthly.price : separatePrice(sortMods(plan.modules || []), 'monthly');
+  return r2(period === 'annual' ? monthly * 12 : monthly);
+}
+function saveAmount(plan, period) { return Math.max(0, r2(refPrice(plan, period) - plan[period].price)); }
 function planSaving(plan, period) {
-  const sep = separatePrice(plan.modules || [], period);
-  return sep && plan.kind !== 'module' ? Math.max(0, Math.round((1 - plan[period].price / sep) * 100)) : 0;
+  const ref = refPrice(plan, period);
+  return ref ? Math.max(0, Math.round((1 - plan[period].price / ref) * 100)) : 0;
 }
-// "Compose my plan": several subscriptions bought together (single modules and/or one bundle).
+// "Compose my plan": any set of modules becomes one subscription at the combination price.
 function customPlan(parts) {
+  const mods = sortMods(parts.flatMap((t) => (MOD_CODE[t] ? [t] : bundleById(t)?.modules || (t === 'complete' ? PAID_IDS : []))));
+  if (!mods.length) return null;
   const plans = DEFAULT_PLANS;
-  const items = parts.map((t) => plans.find((p) => p.tier === t)).filter((p) => p && p.kind !== 'complete');
-  const mods = PAID_MODULES.map((m) => m.id).filter((id) => items.some((p) => p.modules.includes(id)));
-  const sum = (k) => Math.round(items.reduce((t, p) => t + p[k].price, 0) * 100) / 100;
-  return { tier: 'custom:' + items.map((p) => p.tier).join('+'), kind: 'custom', parts: items.map((p) => p.tier), label: '', sub: 'Ma sélection', icon: 'grid', tone: 'm-kit', modules: mods, features: [],
-    monthly: { price: sum('monthly'), storeId: '' }, annual: { price: sum('annual'), storeId: '' } };
+  if (mods.length === 1) return plans.find((p) => p.tier === mods[0]);
+  if (mods.length === PAID_IDS.length) return plans.find((p) => p.tier === 'complete');
+  const same = plans.find((p) => p.kind === 'bundle' && sortMods(p.modules).join() === mods.join());
+  if (same) return same;
+  const code = mods.map((id) => MOD_CODE[id]).join('');
+  const m = comboMonthly(mods);
+  return { tier: 'mix_' + code, kind: 'custom', parts: mods, label: '', sub: 'Ma sélection', icon: 'grid', tone: 'm-kit', modules: mods, features: [...mods.map((id) => moduleById(id).name), 'Scanner, Compléments et Coach offerts'],
+    monthly: { price: m, storeId: `np_mix_${code}_monthly` }, annual: { price: annualOf(m), storeId: `np_mix_${code}_annual` } };
 }
-// Cheapest way to get at least the chosen modules: separate modules, a bundle (+ the missing modules) or the kit.
-function bestOffer(modules, period) {
-  if (!modules.length) return null;
-  const plans = Billing.plans();
-  const options = [modules.length === 1 ? plans.find((p) => p.tier === modules[0]) : customPlan(modules)];
-  for (const p of plans.filter((x) => x.kind !== 'module')) {
-    const missing = modules.filter((id) => !p.modules.includes(id));
-    if (!missing.length) options.push(p);
-    else if (p.kind === 'bundle' && missing.length < modules.length) options.push(customPlan([p.tier, ...missing]));
+const modsFromMix = (tier) => String(tier).replace(/^mix_/, '').split('').map((c) => CODE_MOD[c]).filter(Boolean);
+// The plan for exactly the chosen modules (a module, a themed combination, a composed one or the kit).
+function bestOffer(modules) {
+  return modules.length ? customPlan(modules) : null;
+}
+// Every product to create in App Store Connect / Google Play Console.
+function storeCatalog() {
+  const out = [];
+  for (let mask = 1; mask < 1 << PAID_IDS.length; mask++) {
+    const mods = PAID_IDS.filter((_, i) => mask & (1 << i));
+    const p = customPlan(mods);
+    if (!out.some((x) => x.tier === p.tier)) out.push(p);
   }
-  return options.filter(Boolean).sort((a, b) => a[period].price - b[period].price || b.modules.length - a.modules.length)[0];
+  return out.flatMap((p) => ['monthly', 'annual'].map((k) => ({ id: p[k].storeId, name: planName(p), modules: sortMods(p.modules).length, period: k, price: p[k].price })));
 }
 function recommendedTier() {
   const track = state.profile?.track;
@@ -1898,6 +1928,7 @@ function recommendedTier() {
 }
 function findPlan(tier) {
   if (String(tier).startsWith('custom:')) return customPlan(String(tier).slice(7).split('+'));
+  if (/^mix_[a-z]+$/.test(String(tier))) return customPlan(modsFromMix(tier));
   return Billing.plans().find((x) => x.tier === tier);
 }
 let selectedTier = '';
@@ -1915,8 +1946,9 @@ function ownedModules() {
   for (const id of ids) {
     const tier = id.replace(/_(monthly|annual|yearly|trial)$/, '');
     if (bundleById(tier)) { bundleById(tier).modules.forEach((x) => set.add(x)); continue; }
+    if (/^mix_[a-z]+$/.test(tier)) { modsFromMix(tier).forEach((x) => set.add(x)); continue; }
     if (tier === 'complete' || !(moduleById(tier) || LEGACY_PLAN_MODULES[tier])) { all.forEach((x) => set.add(x)); continue; }
-    const legacy = !/(recipes|scanner|nutrients|supplements|sleep|coach|body|women40|kitchen|performance|wellness)/.test(String(state.subscriptionPlan)) && LEGACY_PLAN_MODULES[tier];
+    const legacy = !/(recipes|scanner|nutrients|supplements|sleep|coach|body|women40|kitchen|performance|wellness|mix_)/.test(String(state.subscriptionPlan)) && LEGACY_PLAN_MODULES[tier];
     (legacy || [tier]).forEach((x) => set.add(x));
   }
   // Scanner, Supplements and the Coach come free with any paid plan.
@@ -1992,7 +2024,7 @@ function modulesScreen() {
       <div class="mod-grid">${MODULES.map((m) => `<button class="mod-card ${m.tone} ${owned.includes(m.id) ? 'owned' : ''}" data-go="${m.route}">
         <span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b><small>${L(m.sub)}</small>${moduleBadge(m.id)}</button>`).join('')}</div>
       <button class="plans-link" data-go="plans">${icon('star')}<span><b>${L('Nos formules')}</b><small>${L('Modules, combinaisons et Kit complet')}</small></span>${icon('chevron')}</button>
-      ${!PAID_MODULES.every((m) => owned.includes(m.id)) && kit ? `<button class="kit-card" data-module-buy="complete"><span><small>${L('Kit complet')}</small><b>${L('Les 9 modules pour {price} / mois', { price: euro(kit.annual.price / 12) })}</b><em>${L('Économisez {n} % par rapport aux modules séparés', { n: comboSaving(plans, 'annual') })}</em></span>${icon('chevron')}</button>` : ''}
+      ${!PAID_MODULES.every((m) => owned.includes(m.id)) && kit ? `<button class="kit-card" data-module-buy="complete"><span><small>${L('Kit complet')}</small><b>${L('Les 9 modules pour {price} / mois', { price: money(kit.monthly.price) })}</b><em>${L('Économisez {n} % par rapport aux modules séparés', { n: planSaving(kit, 'monthly') })}</em></span>${icon('chevron')}</button>` : ''}
       <div class="section-label"><h3>${L('Inclus pour tous')}</h3></div>
       <div class="free-row"><button data-go="app">${icon('home')}<span>${L('Aujourd’hui')}</span></button><button data-go="progress">${icon('progress')}<span>${L('Progrès')}</span></button><button data-open-goal>${icon('scale')}<span>${L('Objectif')}</span></button><button data-open-profile>${icon('user')}<span>${L('Profil')}</span></button></div>
     </div>
@@ -2009,7 +2041,7 @@ function moduleLockedScreen(id) {
     <div class="screen">
       <section class="mod-hero ${m.tone}"><span class="mod-ico big">${icon(m.icon)}</span><h1>${L(m.name)}</h1><p>${L(m.sub)}</p>
         <ul>${m.features.map((f) => `<li>${icon('check')}<span>${L(f, { n: CUISINES.length })}</span></li>`).join('')}</ul>
-        ${plan ? `<div class="mod-price"><b>${euro(plan.annual.price / 12)}</b><small>${L('/ mois, facturé {price} par an', { price: euro(plan.annual.price) })}</small></div>` : ''}
+        ${plan ? `<div class="mod-price"><b>${money(plan.monthly.price)}</b><small>${L('/ mois · ou {price} par an, 2 mois offerts', { price: money(plan.annual.price) })}</small></div>` : ''}
         <button class="btn btn-lime btn-wide btn-xl" data-module-buy="${m.id}">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Activer ce module')}</button>
         <button class="link-btn" data-module-buy="complete">${L('Ou tous les modules avec le Kit complet')}</button>
       </section>
@@ -2026,10 +2058,10 @@ const Billing = {
   async purchase(plan, period) {
     const option = plan[period];
     const id = `${plan.tier}_${period}`;
-    track('InitiateCheckout', { plan: id, value: option.price, currency: 'EUR' });
+    track('InitiateCheckout', { plan: id, value: option.price, currency: currency() });
     if (this.native()) {
-      // A custom selection is bought module by module; each one is confirmed in the store.
-      const parts = plan.kind === 'custom' ? plan.parts.map((t) => findPlan(t)) : [plan];
+      // Every plan, composed ones included, is a single store subscription.
+      const parts = [plan];
       const bought = [];
       for (const part of parts) {
         const result = await window.NutriPilotNative.purchase(part[period].storeId);
@@ -2069,8 +2101,43 @@ const Billing = {
   },
 };
 
-function euro(value) {
-  return new Intl.NumberFormat(locale(), { style: 'currency', currency: 'EUR' }).format(Number(value));
+// ---- Currency: follows the buyer's country (time zone first, then browser region) ----
+const CURRENCIES = { BRL: 'R$ · Real', EUR: '€ · Euro', USD: '$ · US Dollar', GBP: '£ · Pound' };
+const EURO_ZONE = ['AT', 'BE', 'CY', 'DE', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PT', 'SI', 'SK', 'MC', 'AD', 'SM', 'VA', 'ME', 'XK'];
+const EURO_TZ = ['Paris', 'Berlin', 'Madrid', 'Rome', 'Amsterdam', 'Brussels', 'Vienna', 'Lisbon', 'Dublin', 'Helsinki', 'Athens', 'Luxembourg', 'Monaco', 'Andorra', 'Tallinn', 'Riga', 'Vilnius', 'Bratislava', 'Ljubljana', 'Zagreb', 'Malta', 'Nicosia', 'Busingen', 'San_Marino', 'Vatican', 'Podgorica'];
+function countryCurrency(cc) {
+  cc = String(cc || '').toUpperCase();
+  return cc === 'BR' ? 'BRL' : cc === 'GB' || cc === 'GG' || cc === 'JE' || cc === 'IM' ? 'GBP' : EURO_ZONE.includes(cc) ? 'EUR' : cc === 'US' || cc === 'PR' ? 'USD' : '';
+}
+function detectCurrency() {
+  let tz = '';
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch {}
+  if (/^America\/(Sao_Paulo|Fortaleza|Recife|Bahia|Belem|Maceio|Manaus|Cuiaba|Campo_Grande|Porto_Velho|Boa_Vista|Rio_Branco|Araguaina|Santarem|Noronha|Eirunepe)$/.test(tz)) return 'BRL';
+  if (/^Europe\/(London|Guernsey|Jersey|Isle_of_Man)$/.test(tz)) return 'GBP';
+  if (/^(Europe|Atlantic)\/(.+)$/.test(tz) && EURO_TZ.includes(tz.split('/')[1]) || /^Atlantic\/(Madeira|Azores|Canary)$/.test(tz)) return 'EUR';
+  if (/^(America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage|Detroit|Boise|Juneau|Sitka|Nome|Adak|Metlakatla|Yakutat|Menominee|Indiana\/.+|Kentucky\/.+|North_Dakota\/.+|Puerto_Rico)|Pacific\/Honolulu)$/.test(tz)) return 'USD';
+  for (const l of navigator.languages || [navigator.language || '']) { const c = countryCurrency(String(l).split('-')[1]); if (c) return c; }
+  return 'USD';
+}
+function currency() { return CURRENCIES[state?.currency] ? state.currency : countryCurrency(config.country) || detectCurrency(); }
+function money(value) {
+  return new Intl.NumberFormat(locale(), { style: 'currency', currency: currency(), currencyDisplay: 'narrowSymbol' }).format(Number(value));
+}
+const euro = money;
+// Read-only pricing hook for QA and for the store setup list.
+window.__npPricing = { currency: () => currency(), money: (v) => money(v), catalog: () => storeCatalog(), plans: () => DEFAULT_PLANS.map((p) => ({ tier: p.tier, monthly: p.monthly.price, annual: p.annual.price, save: planSaving(p, 'monthly'), ref: refPrice(p, 'monthly') })) };
+function currencyPicker() {
+  const cur = currency();
+  return `<label class="cur-pick">${icon('globe')}<span>${L('Prix en')}</span><select data-currency aria-label="${L('Devise')}">${Object.entries(CURRENCIES).map(([k, v]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>`;
+}
+// Final price as charged: "R$ 149,90 / an" — never a per-month equivalent on its own.
+const unitOf = (period) => (period === 'annual' ? L('/ an') : L('/ mois'));
+function finalPrice(plan, period) { return `${money(plan[period].price)} ${unitOf(period)}`; }
+// Small comparison line: crossed reference price + the amount saved.
+function compareHtml(plan, period) {
+  const save = saveAmount(plan, period);
+  if (save < 0.5) return period === 'annual' ? `<i class="cmpx">${L('soit {p} / mois', { p: money(plan.annual.price / 12) })}</i>` : '';
+  return `<i class="cmpx"><s>${money(refPrice(plan, period))}</s> ${L('économisez {p}', { p: money(save) })}</i>`;
 }
 
 function comboSaving(plans, period) {
@@ -2105,18 +2172,13 @@ function defaultTier() {
 // One selectable plan row (paywall).
 function planOptionHtml(x, current) {
   const o = x[selectedPeriod];
-  const perMonth = selectedPeriod === 'annual' ? o.price / 12 : o.price;
-  const yearly = selectedPeriod === 'annual' ? Math.round((1 - o.price / (x.monthly.price * 12)) * 100) : 0;
-  const sep = x.kind === 'bundle' || x.kind === 'complete' ? separatePrice(x.modules, selectedPeriod) : 0;
-  const sepMonth = selectedPeriod === 'annual' ? sep / 12 : sep;
   const reco = x.tier === recommendedTier() && state.onboarding;
   return `<button class="plan-option ${x.tone || ''} ${x.tier === current ? 'selected' : ''}" role="radio" aria-checked="${x.tier === current}" data-tier="${esc(x.tier)}">
     ${reco ? `<span class="plan-badge reco">${esc(L('Recommandé pour vous'))}</span>` : x.badge ? `<span class="plan-badge">${esc(L(x.badge))}</span>` : ''}
     <span class="plan-radio"></span>
     <span class="plan-main"><b>${esc(planName(x))}</b><small>${esc(x.kind === 'bundle' ? x.modules.map((id) => L(moduleById(id).name)).join(' · ') : L(x.sub))}</small>
       ${x.kind !== 'custom' && x.tier === current ? `<span class="plan-feats">${x.features.slice(0, 3).map((f) => `<i>✓ ${esc(L(f, { n: CUISINES.length }))}</i>`).join('')}</span>` : ''}</span>
-    <span class="plan-per">${sep ? `<s>${euro(sepMonth)}</s>` : ''}<b>${euro(perMonth)}</b><small>${L('/ mois')}</small>${yearly > 0 ? `<em>−${yearly} %</em>` : ''}</span>
-    ${sep && x.tier === current ? `<span class="plan-combo">${L('{n} % moins cher que les modules séparés', { n: planSaving(x, selectedPeriod) })}</span>` : ''}
+    <span class="plan-per"><b>${money(o.price)}</b><small>${unitOf(selectedPeriod)}</small>${compareHtml(x, selectedPeriod)}</span>
   </button>`;
 }
 
@@ -2134,17 +2196,17 @@ function paywall() {
     : selectedPeriod === 'annual'
       ? L('Soit {month} / mois, facturé {price} par an. Renouvellement automatique, annulable à tout moment.', { month: euro(option.price / 12), price })
       : L('{price} / {period}. Renouvellement automatique, annulable à tout moment.', { price, period: periodLabel });
-  const maxSaving = Math.max(...plans.map((x) => Math.round((1 - x.annual.price / (x.monthly.price * 12)) * 100)));
   return `<div class="mobile-app no-nav paywall">
     <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button>${logo()}<button class="link-btn" data-go="access">${L('Se connecter')}</button></div></div>
     <div class="screen">
       <h1 class="screen-title">${p.name ? L('{name}, choisissez votre formule.', { name: esc(p.name) }) : L('Choisissez votre formule.')}</h1>
       ${proj ? `<div class="pw-goal">${icon('progress')}<span>${L('Objectif {target} · estimé le {date}', { target: `<b>${kgFmt(p.target)} kg</b>`, date: `<b>${esc(dateFr(proj.end))}</b>` })}</span></div>` : ''}
       <div class="period-toggle" role="tablist">
-        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>${L('jusqu’à −{n} %', { n: maxSaving })}</span></button>
+        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>${L('2 mois offerts')}</span></button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
       </div>
       ${freeBanner(true)}
+      ${currencyPicker()}
       <div class="plan-list" role="radiogroup">
         ${(() => {
           const kit = plans.find((x) => x.tier === 'complete');
@@ -2152,7 +2214,7 @@ function paywall() {
           const bundles = plans.filter((x) => x.kind === 'bundle' && !first.includes(x));
           const mods = plans.filter((x) => x.kind === 'module' && !first.includes(x));
           return first.map((x) => planOptionHtml(x, plan.tier)).join('')
-            + `<details class="more-plans" ${plan.kind === 'bundle' ? '' : ''}><summary>${L('Combinaisons')} <span>${L('jusqu’à −{n} %', { n: Math.max(...BUNDLES.map((b) => planSaving(findPlan(b.id), selectedPeriod))) })}</span></summary>${bundles.map((x) => planOptionHtml(x, plan.tier)).join('')}</details>`
+            + `<details class="more-plans" ${plan.kind === 'bundle' ? '' : ''}><summary>${L('Combinaisons')} <span>${L('jusqu’à −{n} %', { n: Math.max(...BUNDLES.map((b) => planSaving(findPlan(b.id), 'monthly'))) })}</span></summary>${bundles.map((x) => planOptionHtml(x, plan.tier)).join('')}</details>`
             + `<details class="more-plans"><summary>${L('Modules individuels')} <span>${mods.length}</span></summary>${mods.map((x) => planOptionHtml(x, plan.tier)).join('')}</details>`
             + `<button class="link-btn pw-builder" data-go-builder>${icon('grid')} ${L('Composer ma formule module par module')}</button>`;
         })()}
@@ -2813,17 +2875,13 @@ async function compressImage(file, maxSide) {
 let plansTab = 'bundles';
 let buildSel = null;
 function planName(x) {
-  return x.kind === 'custom' ? x.parts.map((t) => L(findPlan(t)?.label || t)).join(' + ') : L(x.label);
+  return x.kind === 'custom' ? x.parts.map((t) => L(moduleById(t)?.name || findPlan(t)?.label || t)).join(' + ') : L(x.label);
 }
 function modChips(mods, small = false) {
   return `<span class="mchips ${small ? 'small' : ''}">${mods.map((id) => { const m = moduleById(id); return `<span class="mchip ${m.tone}">${icon(m.icon)}${small ? '' : `<i>${esc(L(m.name))}</i>`}</span>`; }).join('')}</span>`;
 }
 function priceBlock(x, period = selectedPeriod) {
-  const o = x[period];
-  const perMonth = period === 'annual' ? o.price / 12 : o.price;
-  const sep = x.kind !== 'module' ? separatePrice(x.modules, period) : 0;
-  const sepMonth = period === 'annual' ? sep / 12 : sep;
-  return `<div class="pp-price">${sep > o.price ? `<s>${euro(sepMonth)}</s>` : ''}<b>${euro(perMonth)}</b><small>${L('/ mois')}${period === 'annual' ? ` · ${L('{price} par an', { price: euro(o.price) })}` : ''}</small></div>`;
+  return `<div class="pp-price"><b>${money(x[period].price)}</b><small>${unitOf(period)}</small>${compareHtml(x, period)}</div>`;
 }
 function choosePlanBtn(x, mine) {
   if (mine) return `<span class="pc-mine">${icon('check')} ${L('Votre formule')}</span>`;
@@ -2839,9 +2897,9 @@ function plansScreen() {
   const mods = plans.filter((x) => x.kind === 'module');
   const isMine = (x) => state.premium && x.modules.every((id) => owned.includes(id));
   if (!buildSel) buildSel = [...(findPlan(recommendedTier())?.modules || ['nutrition', 'training'])];
-  const best = bestOffer(buildSel, selectedPeriod);
-  const sepTotal = separatePrice(buildSel, selectedPeriod);
-  const per = (v) => euro(selectedPeriod === 'annual' ? v / 12 : v);
+  const best = bestOffer(buildSel);
+  const per = (v) => money(v);
+  const unit = unitOf(selectedPeriod);
   const reco = recommendedTier();
   const tab = (id, label) => `<button class="${plansTab === id ? 'active' : ''}" data-plans-tab="${id}" role="tab" aria-selected="${plansTab === id}">${L(label)}</button>`;
   // One compact, fully tappable row per plan.
@@ -2851,15 +2909,16 @@ function plansScreen() {
     return `<button class="pl-row ${x.tone} ${mine ? 'mine' : ''}" ${mine ? 'disabled' : `data-choose-plan="${esc(x.tier)}"`}>
       <span class="mod-ico">${icon(x.icon)}</span>
       <span class="pl-txt"><b>${esc(L(x.label))}${x.tier === reco && !mine ? ` <i class="pl-reco">${L('Recommandé')}</i>` : ''}</b>${x.kind === 'module' ? `<small>${esc(L(x.sub))}</small>` : modChips(x.modules, true)}</span>
-      <span class="pl-price">${mine ? `<em class="pl-mine">${icon('check')} ${L('Activé')}</em>` : `<b>${per(x[selectedPeriod].price)}</b><small>${L('/ mois')}</small>${save ? `<i>−${save} %</i>` : ''}`}</span>
+      <span class="pl-price">${mine ? `<em class="pl-mine">${icon('check')} ${L('Activé')}</em>` : `<b>${per(x[selectedPeriod].price)}</b><small>${unit}</small>${compareHtml(x, selectedPeriod)}`}</span>
     </button>`;
   };
   const body = plansTab === 'modules'
     ? `<div class="pl-list">${mods.map(row).join('')}</div>`
     : plansTab === 'builder'
       ? `<div class="bd-grid">${PAID_MODULES.map((m) => `<button class="bd-mod ${m.tone} ${buildSel.includes(m.id) ? 'on' : ''}" data-build-mod="${m.id}" aria-pressed="${buildSel.includes(m.id)}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.name))}</b><i class="bd-check">${icon('check')}</i></button>`).join('')}</div>
-        ${best ? `<div class="bd-best compact"><small>${L('Le moins cher pour votre sélection')}</small><b>${esc(planName(best))}</b>
-          <div class="bd-price">${sepTotal - best[selectedPeriod].price > 0.5 ? `<s>${per(sepTotal)}</s>` : ''}<b>${per(best[selectedPeriod].price)}</b><small>${L('/ mois')}</small></div>
+        ${best ? `<div class="bd-best compact"><small>${L('Le prix de votre sélection')}</small><b>${esc(planName(best))}</b>
+          <div class="bd-price"><b>${per(best[selectedPeriod].price)}</b><small>${unit}</small>${compareHtml(best, selectedPeriod)}</div>
+          ${best.kind !== 'complete' && kit ? `<p class="bd-up">${L('Pour {p} de plus, prenez le Kit complet : les 9 modules.', { p: `${per(r2(kit[selectedPeriod].price - best[selectedPeriod].price))} ${unit}` })}</p>` : ''}
           <button class="btn btn-lime btn-wide" data-choose-plan="${esc(best.tier)}">${Billing.trialDays() ? L('Essayer {n} jours gratuits', { n: Billing.trialDays() }) : L('Choisir cette formule')}</button></div>` : `<div class="empty">${L('Choisissez au moins un module.')}</div>`}`
       : `<div class="pl-list">${bundles.map(row).join('')}</div>`;
   return `<div class="mobile-app plans-page">
@@ -2868,13 +2927,14 @@ function plansScreen() {
       <p class="pl-sub">${L('Un module, une combinaison ou tout. {n} jours gratuits, sans engagement.', { n: 3 })}</p>
       ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
       ${freeBanner(true)}
+      ${currencyPicker()}
       <div class="period-toggle slim" role="tablist">
-        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>−${Math.round((1 - kit.annual.price / (kit.monthly.price * 12)) * 100)} %</span></button>
+        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>${L('2 mois offerts')}</span></button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
       </div>
       ${kit ? `<button class="kit-row" ${ownsAll ? 'disabled' : `data-choose-plan="complete"`}>
         <span class="kr-txt"><small>${L('Kit complet')} · ${esc(L(kit.badge))}</small><b>${L('Les 9 modules et le coach')}</b></span>
-        <span class="kr-price">${ownsAll ? `<em>${icon('check')} ${L('Activé')}</em>` : `<s>${per(separatePrice(kit.modules, selectedPeriod))}</s><b>${per(kit[selectedPeriod].price)}</b><small>${L('/ mois')}</small>`}</span>
+        <span class="kr-price">${ownsAll ? `<em>${icon('check')} ${L('Activé')}</em>` : `<s>${per(refPrice(kit, selectedPeriod))}</s><b>${per(kit[selectedPeriod].price)}</b><small>${unit}</small>`}</span>
       </button>` : ''}
       <div class="plans-tabs" role="tablist">${tab('bundles', 'Combinaisons')}${tab('modules', 'Modules')}${tab('builder', 'Composer')}</div>
       ${body}
@@ -2923,7 +2983,7 @@ function hubScreen() {
         <button data-open-goal>${icon('scale')}<span><small>${L('Objectif de poids')}</small><b>${goalSet() ? `${fmt(lastWeight(), 1)} → ${fmt(p.target, 1)} kg` : L('Définir mon objectif')}</b></span>${icon('chevron')}</button>
       </div>
       <div class="section-label"><h3>${L('Nos formules')}</h3><button class="link-btn" data-go="plans">${L('Comparer →')}</button></div>
-      <div class="plan-strip">${plans.filter((x) => x.kind !== 'module').map((x) => `<button class="plan-mini ${x.tone}" data-choose-plan="${esc(x.tier)}"><span class="mod-ico">${icon(x.icon)}</span><b>${esc(L(x.label))}</b><small>${esc(L(x.tagline))}</small>${modChips(x.modules, true)}<em>${L('dès {p} / mois', { p: euro(x.annual.price / 12) })}</em></button>`).join('')}</div>
+      <div class="plan-strip">${plans.filter((x) => x.kind !== 'module').map((x) => `<button class="plan-mini ${x.tone}" data-choose-plan="${esc(x.tier)}"><span class="mod-ico">${icon(x.icon)}</span><b>${esc(L(x.label))}</b><small>${esc(L(x.tagline))}</small>${modChips(x.modules, true)}<em>${L('dès {p} / mois', { p: money(x.monthly.price) })}</em></button>`).join('')}</div>
 
       <div class="section-label"><h3>${esc(t('hubQuiz'))}</h3></div>
       <p class="screen-sub guide-sub">${esc(t('hubQuizSub'))}</p>
@@ -5843,7 +5903,7 @@ function storeSheet() {
   const play = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 2.8v18.4c0 .4.4.6.7.4l10.2-9.2c.2-.2.2-.6 0-.8L4.7 2.4c-.3-.2-.7 0-.7.4zm12.4 7.6 2.7-2.4c.3-.3.2-.7-.1-.9L7.2 1.2l9.2 9.2zm0 3.2-9.2 9.2 11.8-5.9c.3-.2.4-.6.1-.9l-2.7-2.4z"/></svg>';
   return `<div class="sheet-head"><h2>${L('Abonnez-vous dans l’application')}</h2><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
     <p class="screen-sub">${L('NutriPilot est disponible sur l’App Store et Google Play. Vos {n} jours gratuits commencent dans l’application ; le paiement est géré par Apple ou Google, annulable à tout moment.', { n: Billing.trialDays() })}</p>
-    <div class="store-plan"><span class="mod-ico ${plan.tone}">${icon(plan.icon)}</span><span><small>${L('Formule choisie')}</small><b>${esc(planName(plan))}</b></span><em>${euro(modal.period === 'annual' ? plan.annual.price / 12 : plan.monthly.price)} ${L('/ mois')}</em></div>
+    <div class="store-plan"><span class="mod-ico ${plan.tone}">${icon(plan.icon)}</span><span><small>${L('Formule choisie')}</small><b>${esc(planName(plan))}</b></span><em>${finalPrice(plan, modal.period)}</em></div>
     <div class="store-btns">${[btn(config.appStoreUrl, 'App Store', 'Télécharger sur', apple), btn(config.playStoreUrl, 'Google Play', 'Disponible sur', play)].sort((x) => (android && x.includes('Google') ? -1 : ios && x.includes('App Store') ? -1 : 0)).join('')}</div>
     <p class="fine center-fine">${L('Connectez-vous dans l’application avec le même e-mail : votre profil, vos repas et vos séances vous suivent.')}</p>`;
 }
@@ -6332,6 +6392,7 @@ function a11yPass(root) {
 function bind() {
   app.onchange = (event) => {
     const el = event.target;
+    if (el.matches('[data-currency]')) { state.currency = CURRENCIES[el.value] ? el.value : ''; saveState(); return render(); }
     if (el.matches('[data-plan-focus]')) {
       const tp = trainPlan();
       state.trainPlan = { days: tp.days, focus: { ...tp.focus, [el.dataset.planFocus]: el.value }, edited: { ...tp.edited, [el.dataset.planFocus]: true } };

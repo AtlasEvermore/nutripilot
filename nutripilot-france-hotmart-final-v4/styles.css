@@ -1539,3 +1539,15 @@ html[lang=ko] body{word-break:keep-all}
 .tq-fold[open]>summary{margin-bottom:10px}
 .tq-fold>summary:focus-visible{outline:3px solid var(--lime);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.tq-fold>summary svg:last-child{transition:none}}
+
+/* v17 — final prices, comparison and currency */
+.cmpx{display:block;font-style:normal;font-size:10.5px;font-weight:800;color:#2f7a22;margin-top:3px;white-space:nowrap}
+.cmpx s{color:var(--muted);font-weight:700;margin-inline-end:3px}
+.pl-price .cmpx{font-size:10px}
+.bd-best .cmpx,.kit-hero .cmpx{color:var(--lime)}.bd-best .cmpx s,.kit-hero .cmpx s{color:#a9bdb0}
+.bd-price .cmpx{flex-basis:100%;margin-top:0}
+.bd-up{margin:2px 0 0;font-size:12.5px;line-height:1.4;color:#d9e5dc}
+.cur-pick{display:flex;align-items:center;gap:8px;justify-content:flex-end;font-size:12px;font-weight:700;color:var(--muted);margin:2px 0 8px}
+.cur-pick svg{width:15px;height:15px}
+.cur-pick select{font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;min-height:32px}
+.cur-pick select:focus-visible{outline:3px solid var(--lime);outline-offset:1px}
