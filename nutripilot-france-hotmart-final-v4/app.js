@@ -260,6 +260,19 @@ const ALLERGY_RULES = [
 let recipeCuisine = 'all';
 let recipeType = 'all';
 let recipeFilter = 'all';
+// Recipe collections by goal. Each one states its criterion: a single recipe does not make anyone
+// lose weight or build muscle; it fits a goal through its calories and macros.
+const RECIPE_GOALS = [
+  { id: 'lose', ico: 'flame', tone: 'm-nut', name: 'Pour maigrir', rule: '≤ 450 kcal et rassasiantes : ≥ 20 g de protéines ou ≥ 6 g de fibres', test: (r) => r.kcal <= 450 && (r.protein >= 20 || r.fiber >= 6) },
+  { id: 'muscle', ico: 'dumbbell', tone: 'm-train', name: 'Prise de muscle', rule: '≥ 30 g de protéines par portion', test: (r) => r.protein >= 30 },
+  { id: 'meno', ico: 'flower', tone: 'm-meno', name: 'Ménopause 40+', rule: '≥ 20 g de protéines et ≥ 5 g de fibres, pour les besoins après 40 ans', test: (r) => r.protein >= 20 && r.fiber >= 5 },
+  { id: 'post', ico: 'heart', tone: 'm-sup', name: 'Après l’entraînement', rule: '≥ 25 g de protéines et ≥ 30 g de glucides', test: (r) => r.protein >= 25 && r.carbs >= 30 },
+  { id: 'lowcarb', ico: 'leaf', tone: 'm-vit', name: 'Pauvres en glucides', rule: '≤ 20 g de glucides par portion', test: (r) => r.carbs <= 20 },
+  { id: 'quick', ico: 'timer', tone: 'm-rec', name: 'Prêtes en 15 min', rule: '15 minutes ou moins', test: (r) => r.prepMin <= 15 },
+  { id: 'veg', ico: 'leaf', tone: 'm-sleep', name: 'Végétariennes', rule: 'Sans viande ni poisson', test: (r) => !r.meat && !r.fish },
+  { id: 'light', ico: 'fork', tone: 'm-scan', name: 'Collations légères', rule: 'Collations de 250 kcal ou moins', test: (r) => r.type === 's' && r.kcal <= 250 },
+];
+let recipeGoal = '';
 let recipeQuery = '';
 
 function planCuisines() {
@@ -445,6 +458,7 @@ function recipeList() {
   const q = foldText(recipeQuery);
   return ALL_RECIPES.filter((r) => (recipeCuisine === 'all' || r.cuisine === recipeCuisine)
     && (recipeType === 'all' || r.type === recipeType)
+    && (!recipeGoal || RECIPE_GOALS.find((g) => g.id === recipeGoal)?.test(r))
     && (recipeFilter === 'all' || (recipeFilter === 'quick' && r.prepMin <= 15) || (recipeFilter === 'protein' && r.protein >= 30) || (recipeFilter === 'veg' && !r.meat && !r.fish) || (recipeFilter === 'fav' && favs.has(r.id)) || (recipeFilter === 'budget' && !r.fish && (r.ingredients || []).length <= 6) || (recipeFilter === 'fit' && recipeAllowed(r)))
     && (!q || foldText(L(r.name, null, false)).includes(q) || foldText(r.name).includes(q) || r.ingredients.some(([n]) => foldText(L(n, null, false)).includes(q))));
 }
@@ -487,7 +501,10 @@ function recipesScreen() {
     ${appHeader('Recettes')}
     <div class="screen">
       ${recipeTabs()}
-      <div class="recipes-hero"><b>${L('{n} recettes du monde entier', { n: ALL_RECIPES.length })}</b><span>${L('Grammes, calories et macros calculés pour chaque portion.')}</span></div>
+      <div class="recipes-hero"><b>${L('{n} recettes du monde entier', { n: ALL_RECIPES.length })}</b><span>${L('Pour maigrir, prendre du muscle, la ménopause ou manger mieux : grammes, calories et macros calculés pour chaque portion.')}</span></div>
+      <div class="section-label"><h3>${L('Par objectif')}</h3>${recipeGoal ? `<button class="link-btn" data-recipe-goal="">${L('Tout voir')}</button>` : ''}</div>
+      <div class="rg-row scroll">${RECIPE_GOALS.map((g) => `<button class="rg-card ${g.tone} ${recipeGoal === g.id ? 'on' : ''}" data-recipe-goal="${g.id}" aria-pressed="${recipeGoal === g.id}"><span class="mod-ico">${icon(g.ico)}</span><b>${L(g.name)}</b><em>${L('{n} recettes', { n: ALL_RECIPES.filter(g.test).length })}</em></button>`).join('')}</div>
+      ${recipeGoal ? `<p class="rg-rule">${icon('check')}<span>${L(RECIPE_GOALS.find((g) => g.id === recipeGoal).rule)}</span></p>` : ''}
       <label class="search-box">${icon('search')}<input id="recipe-search" type="search" value="${esc(recipeQuery)}" placeholder="${L('Rechercher un plat ou un ingrédient')}"></label>
       <div class="cuisine-row scroll"><button class="cuisine-chip ${recipeCuisine === 'all' ? 'on' : ''}" data-recipe-cuisine="all"><span>🌍</span>${L('Toutes')}</button>${CUISINES.map(([k, name, flag]) => `<button class="cuisine-chip ${recipeCuisine === k ? 'on' : ''}" data-recipe-cuisine="${k}"><span>${flag}</span>${L(name)}</button>`).join('')}</div>
       <div class="segmented seg-4 slim">${types.map(([k, label]) => `<button class="${recipeType === k ? 'active' : ''}" data-recipe-type="${k}">${L(label)}</button>`).join('')}</div>
@@ -628,6 +645,8 @@ const defaultState = {
   guidesRead: [],
   lang: '',
   basicsDone: false,
+  helloSeen: false,
+  focus: '',
   basicsFilled: {},
   workoutLog: [],
   workoutProgram: '',
@@ -903,6 +922,9 @@ function captureUtms() {
     if (params.get(key)) state.utms[key] = params.get(key);
   }
   if (params.get('paid') === '1') route = 'access';
+  // Ad links open the app on one niche: ?foco=emagrecimento | menopausa | receitas | treino (any language).
+  const f = focusFromSlug(params.get('foco') || params.get('focus') || params.get('f') || '');
+  if (f) { state.focus = f; if (!state.profile.track || !state.basicsDone) state.profile.track = FOCI[f].track; selectedTier = ''; }
   saveState(false);
 }
 
@@ -991,7 +1013,11 @@ function guardRoute() {
   if (!state.lang && !['lang', 'legal'].includes(route)) { langNext = route; route = 'lang'; return; }
   if (!state.premium) {
     if (['access', 'legal'].includes(route)) return;
-    if (!state.basicsDone) { if (!['lang', 'basics', 'saving'].includes(route)) route = 'basics'; return; }
+    if (!state.basicsDone) {
+      if (!state.helloSeen) { if (!['lang', 'hello'].includes(route)) route = 'hello'; return; }
+      if (!['lang', 'basics', 'saving', 'hello'].includes(route)) route = 'basics';
+      return;
+    }
     if (route === 'upgrade') route = 'paywall';
     if (route === 'hub') route = 'app';
     if (route === 'plan' && !state.onboarding && !onboardingState.data.weight) route = 'app';
@@ -1004,7 +1030,7 @@ function guardRoute() {
 }
 
 function routeAllowed() {
-  return ['app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support', 'menopause', 'plans', 'goal', 'profile', 'modules', 'scanner', 'nutrients', 'supplements', 'sleep', 'diary', 'targets'].includes(route);
+  return ['hello', 'app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support', 'menopause', 'plans', 'goal', 'profile', 'modules', 'scanner', 'nutrients', 'supplements', 'sleep', 'diary', 'targets'].includes(route);
 }
 
 async function init() {
@@ -1190,6 +1216,34 @@ function onboarding() {
     </main>
   </div>`;
 }
+
+// ---- Niches: one app, four entries (one per ad campaign) ----------------------------
+const FOCI = {
+  lose: { slugs: ['emagrecimento', 'emagrecer', 'perder-peso', 'perte-de-poids', 'maigrir', 'mincir', 'weight-loss', 'weightloss', 'lose', 'adelgazar', 'perder-peso', 'abnehmen', 'dimagrire', 'afvallen', 'odchudzanie', 'kilo-verme', 'diet', 'dieta'],
+    track: 'lose', tier: 'body', tone: 'm-nut', ico: 'flame', mod: 'nutrition', kicker: 'Perte de poids',
+    title: 'Mincir en mangeant ce que vous aimez.', sub: 'Vos calories calculées pour vous, des recettes pour maigrir, un scanner de repas et des séances guidées. Sans régime extrême.',
+    points: [['scan', 'Photographiez votre assiette', 'Calories et macros en quelques secondes'], ['fork', 'Recettes pour maigrir', 'Rassasiantes, ≤ 450 kcal, de votre cuisine'], ['calendar', 'Plan 7 jours + courses', 'Ajusté à votre objectif, liste prête'], ['dumbbell', 'Séances qui brûlent', 'À la maison ou en salle, avec démonstrations']] },
+  meno: { slugs: ['menopausa', 'menopause', 'ménopause', 'menopausia', 'menopauze', 'menopauza', 'menopoz', 'menopausa-40', 'women40', '40'],
+    track: 'menopause', tier: 'women40', tone: 'm-meno', ico: 'flower', mod: 'menopause', kicker: 'Ménopause & 40+',
+    title: 'La ménopause, avec un vrai plan.', sub: 'Journal des symptômes, alimentation adaptée, sommeil et renforcement musculaire pensés pour les femmes de 40 ans et plus.',
+    points: [['flower', 'Journal des symptômes', 'Bouffées de chaleur, sommeil, humeur : voyez ce qui aide'], ['calendar', 'Programme de 8 semaines', 'Une étape par semaine, à votre rythme'], ['moon', 'Sommeil & stress', 'Sons, relaxations et programme de 7 nuits'], ['fork', 'Assiettes 40+', 'Protéines et fibres, sans privation']] },
+  recipes: { slugs: ['receitas', 'receita', 'recettes', 'recipes', 'recetas', 'rezepte', 'ricette', 'recepten', 'przepisy', 'tarifler', 'cozinha', 'cuisine', 'kitchen'],
+    track: 'eat', tier: 'kitchen', tone: 'm-rec', ico: 'fork', mod: 'recipes', kicker: 'Recettes',
+    title: 'Des recettes pour chaque objectif.', sub: 'Pour maigrir, prendre du muscle, la ménopause, végétariennes ou prêtes en 15 minutes : chaque recette calculée en grammes, calories et macros.',
+    points: [['flame', 'Pour maigrir', 'Rassasiantes et légères, critère affiché'], ['dumbbell', 'Prise de muscle', '30 g de protéines et plus par portion'], ['flower', 'Ménopause 40+', 'Riches en protéines et en fibres'], ['timer', 'Prêtes en 15 min', 'Courses automatiques et portions ajustables']] },
+  training: { slugs: ['treino', 'treinos', 'academia', 'musculacao', 'entrainement', 'entraînement', 'training', 'workout', 'gym', 'entrenamiento', 'allenamento', 'trening', 'antrenman', 'fitness'],
+    track: 'muscle', tier: 'performance', tone: 'm-train', ico: 'dumbbell', mod: 'training', kicker: 'Entraînement',
+    title: 'Votre entraînement, construit à votre façon.', sub: 'Choisissez vos jours et ce que vous travaillez chaque jour. Démonstrations animées, charges suivies et la nutrition qui suit.',
+    points: [['calendar', 'Vos jours, vos muscles', 'Jambes 2 fois ? Haut du corps lundi ? Vous décidez'], ['dumbbell', 'Démonstrations animées', 'Chaque mouvement expliqué'], ['progress', 'Charges et records', 'Progression suggérée séance après séance'], ['fork', 'Nutrition sportive', 'Protéines et calories alignées sur vos séances']] },
+};
+function focusFromSlug(raw) {
+  const v = String(raw || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  if (!v) return '';
+  if (FOCI[v]) return v;
+  return Object.keys(FOCI).find((k) => FOCI[k].slugs.some((x) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === v)) || '';
+}
+const TRACK_FOCUS = { lose: 'lose', menopause: 'meno', eat: 'recipes', muscle: 'training' };
+const currentFocus = () => (FOCI[state.focus] ? state.focus : TRACK_FOCUS[state.profile?.track] || '');
 
 const TRACKS = [
   ['lose', 'Perdre du poids', 'Mincir sans régime extrême', '🔥'],
@@ -1433,11 +1487,70 @@ function langScreen() {
   </div>`;
 }
 
+// ---- Showcase: 3D phone with the niche's real screens, floating cards that follow the finger / tilt ----
+function showcase(focus) {
+  const f = FOCI[focus] || null;
+  const name = esc(state.profile?.name || '');
+  const ring = (pct, big, small) => `<div class="sc-ring" style="--p:${pct}"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" class="sc-ring-bg"/><circle cx="60" cy="60" r="50" class="sc-ring-fg" pathLength="100"/></svg><span><b>${big}</b><small>${small}</small></span></div>`;
+  const screens = {
+    lose: `<div class="sc-top"><small>${L('Aujourd’hui')}</small><b>${name ? L('Bonjour {name}', { name }) : L('Ma journée')}</b></div>
+      ${ring(68, '1 240', L('kcal restantes'))}
+      <div class="sc-macros"><i style="--w:72%"><b>${L('Protéines')}</b></i><i style="--w:54%"><b>${L('Glucides')}</b></i><i style="--w:40%"><b>${L('Lipides')}</b></i></div>
+      <div class="sc-meal">${icon('scan')}<span><b>${L('Bowl saumon & quinoa')}</b><small>520 kcal · 34 g ${L('prot.')}</small></span></div>`,
+    meno: `<div class="sc-top"><small>${L('Ménopause 40+')}</small><b>${L('Semaine {n} sur 8', { n: 3 })}</b></div>
+      <div class="sc-week">${[1, 2, 3, 4, 5, 6, 7, 8].map((n) => `<i class="${n < 3 ? 'done' : n === 3 ? 'now' : ''}">${n}</i>`).join('')}</div>
+      <div class="sc-sym">${[[L('Bouffées de chaleur'), 30], [L('Sommeil'), 78], [L('Énergie'), 64]].map(([l, v]) => `<div><span>${l}</span><i style="--w:${v}%"></i></div>`).join('')}</div>
+      <div class="sc-meal">${icon('moon')}<span><b>${L('Relaxation du soir')}</b><small>8 min · ${L('Sommeil & stress')}</small></span></div>`,
+    recipes: `<div class="sc-top"><small>${L('Recettes')}</small><b>${L('Pour maigrir')}</b></div>
+      <div class="sc-chips"><i class="on">${L('Pour maigrir')}</i><i>${L('Prise de muscle')}</i><i>${L('15 min')}</i></div>
+      <div class="sc-dish"><span class="sc-plate"><i></i><i></i><i></i></span><b>${L('Poulet citron, légumes rôtis')}</b><small>430 kcal · 38 g ${L('prot.')} · 25 min</small></div>
+      <div class="sc-meal">${icon('list')}<span><b>${L('Liste de courses')}</b><small>${L('{n} ingrédients ajoutés', { n: 7 })}</small></span></div>`,
+    training: `<div class="sc-top"><small>${L('Mon planning')}</small><b>${L('Jambes')} · ${esc(new Date(2026, 0, 7).toLocaleDateString(locale(), { weekday: 'long' }))}</b></div>
+      <div class="sc-days">${[1, 0, 2, 0, 1, 0, 0].map((on, i) => `<i class="${on ? 'on' : ''}">${esc(new Date(2026, 0, 5 + i).toLocaleDateString(locale(), { weekday: 'narrow' }))}</i>`).join('')}</div>
+      <div class="sc-ex">${exAnim('squat', 'sm')}<span><b>${L('Squat')}</b><small>4 × 10 · 40 kg</small></span></div>
+      <div class="sc-meal">${icon('progress')}<span><b>${L('Nouveau record')}</b><small>+2,5 kg</small></span></div>`,
+  };
+  const k = f ? focus : 'lose';
+  const chips = {
+    lose: [['scan', L('Assiette scannée'), '520 kcal'], ['flame', L('Recette pour maigrir'), '≤ 450 kcal'], ['progress', L('Poids'), '−0,4 kg']],
+    meno: [['flower', L('Symptômes'), L('en baisse')], ['moon', L('Sommeil'), '7 h 10'], ['dumbbell', L('Renforcement'), '20 min']],
+    recipes: [['dumbbell', L('Prise de muscle'), '42 g prot.'], ['timer', L('Prête en'), '15 min'], ['leaf', L('Végétarienne'), '360 kcal']],
+    training: [['calendar', L('Jambes'), '2 × / sem.'], ['timer', L('Repos'), '1:30'], ['fork', L('Après séance'), '35 g prot.']],
+  }[k];
+  return `<div class="sc-stage ${f ? f.tone : 'm-kit'}" data-tilt aria-hidden="true">
+    <div class="sc-glow"></div>
+    <div class="sc-phone"><div class="sc-notch"></div><div class="sc-screen">${screens[k]}</div></div>
+    ${chips.map(([ico, a, b], i) => `<div class="sc-float f${i + 1}"><span class="mod-ico">${icon(ico)}</span><span><small>${a}</small><b>${b}</b></span></div>`).join('')}
+  </div>`;
+}
+function helloScreen() {
+  const fk = currentFocus();
+  const f = FOCI[fk];
+  const title = f ? f.title : 'Mincir, s’entraîner, bien manger et vivre la ménopause sereinement.';
+  const sub = f ? f.sub : 'Une seule app pour la nutrition, les recettes, l’entraînement, la ménopause 40+ et le sommeil. Choisissez ce qui compte pour vous.';
+  return `<div class="hello ${f ? f.tone : ''}">
+    <div class="hello-top">${logo()}<button class="link-btn" data-go="access">${L('Se connecter')}</button></div>
+    <div class="hello-copy">
+      ${f ? `<span class="hello-kicker">${icon(f.ico)} ${L(f.kicker)}</span>` : ''}
+      <h1>${L(title)}</h1>
+      <p>${L(sub)}</p>
+    </div>
+    ${showcase(fk)}
+    <div class="hello-pick" role="radiogroup" aria-label="${L('Votre objectif')}">${Object.entries(FOCI).map(([id, x]) => `<button class="${x.tone} ${fk === id ? 'on' : ''}" role="radio" aria-checked="${fk === id}" data-focus="${id}"><span class="mod-ico">${icon(x.ico)}</span>${L(x.kicker)}</button>`).join('')}</div>
+    ${f ? `<ul class="hello-points">${f.points.map(([ico, a, b]) => `<li><span class="mod-ico">${icon(ico)}</span><span><b>${L(a)}</b><small>${L(b)}</small></span></li>`).join('')}</ul>` : ''}
+    <div class="hello-cta">
+      <button class="btn btn-lime btn-wide btn-xl" data-hello-start>${L('Créer mon plan gratuit')}</button>
+      <p>${L('Gratuit pour découvrir · {n} jours d’essai sur les formules · sans engagement', { n: Billing.trialDays() })}</p>
+    </div>
+    <div class="hello-trust">${[['fork', `${ALL_RECIPES.length}`, L('recettes')], ['dumbbell', `${Object.keys(EXERCISES).length}`, L('exercices')], ['globe', `${LANGS.length}`, L('langues')]].map(([ico, n, l]) => `<div>${icon(ico)}<b>${n}</b><span>${l}</span></div>`).join('')}</div>
+  </div>`;
+}
+
 function basicsScreen() {
   const d = state.profile || {};
   return `<div class="welcome light">
     <div class="welcome-inner">
-      <div class="ob-top"><button class="back" data-go="lang" aria-label="←">←</button>${logo()}</div>
+      <div class="ob-top"><button class="back" data-go="hello" aria-label="←">←</button>${logo()}</div>
       <div class="welcome-copy"><h1>${esc(t('basicsTitle'))}</h1><p>${esc(t('basicsSub'))}</p></div>
       <div class="basics-form">
         <label class="field"><span>${esc(t('name'))}</span><input id="b-name" type="text" autocomplete="given-name" placeholder="${esc(t('namePh'))}" value="${esc(d.name || '')}"></label>
@@ -1835,7 +1948,7 @@ const moduleById = (id) => MODULES.find((m) => m.id === id);
 const moduleForRoute = (r = route) => moduleById(MODULE_ROUTES[r]);
 
 // ---- Pricing -------------------------------------------------------------------
-// Monthly prices, identical figures in every store currency (BRL, EUR, USD, GBP).
+// Monthly prices in US dollars (base); every other currency is converted at the day's rate.
 // Any combination costs its modules' sum minus a small, readable discount, rounded to ,90.
 // Annual = 10 × monthly (2 months free). The Complete kit is the top price and the best value.
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -1923,7 +2036,7 @@ function storeCatalog() {
     if (!out.some((x) => x.tier === p.tier)) out.push(p);
   }
   return out.flatMap((p) => ['monthly', 'annual'].map((k) => ({ id: p[k].storeId, name: planName(p), modules: sortMods(p.modules).length, period: k, price: p[k].price,
-    local: Object.fromEntries(['USD', 'EUR', 'GBP', 'MXN', 'JPY'].map((c) => [c, lp(p, k, c)])) })));
+    local: Object.fromEntries(['BRL', 'EUR', 'GBP', 'MXN', 'JPY'].map((c) => [c, lp(p, k, c)])) })));
 }
 function recommendedTier() {
   const track = state.profile?.track;
@@ -2013,6 +2126,20 @@ function globalSearch(q) {
     + group('Leçons', lessons.map((g) => `<button class="gs-item" data-guide="${esc(g.id)}">${icon('book')} <span>${esc(L(g.title))}</span></button>`));
   return out ? `<div class="gs-box">${out}</div>` : `<div class="gs-box"><p class="fine">${L('Aucun résultat pour « {q} ».', { q: esc(q) })}</p></div>`;
 }
+// VIP member card: subscribers' plan, unlocked modules and membership date, with 3D depth.
+function memberCard() {
+  if (!state.premium) return '';
+  if (!state.memberSince) { state.memberSince = todayKey(); saveState(false); }
+  const owned = ownedModules();
+  const all = PAID_MODULES.every((m) => owned.includes(m.id));
+  return `<div class="vip-wrap" data-tilt><div class="vip-card ${all ? 'gold' : ''}">
+    <div class="vip-row">${logo()}<span class="vip-badge">${icon('star')} ${L(all ? 'Membre VIP' : 'Membre')}</span></div>
+    <div class="vip-name"><small>${L('Carte membre')}</small><b>${esc(state.profile?.name || L('Membre NutriPilot'))}</b></div>
+    <div class="vip-mods">${MODULES.filter((m) => owned.includes(m.id)).map((m) => `<span class="mod-ico ${m.tone}" title="${esc(L(m.name))}">${icon(m.icon)}</span>`).join('')}</div>
+    <div class="vip-row vip-foot"><span><small>${L('Formule')}</small><b>${esc(planLabel())}</b></span><span><small>${L('Depuis')}</small><b>${esc(dateFr(new Date(`${state.memberSince}T12:00:00`), true))}</b></span></div>
+    <i class="vip-shine"></i>
+  </div></div>`;
+}
 function modulesScreen() {
   const owned = ownedModules();
   const plans = Billing.plans();
@@ -2020,6 +2147,7 @@ function modulesScreen() {
   return `<div class="mobile-app">
     ${appHeader('Modules')}
     <div class="screen">
+      ${memberCard()}
       <label class="search-box">${icon('search')}<input id="global-search" type="search" placeholder="${L('Rechercher une recette, un exercice, un nutriment…')}" autocomplete="off"></label>
       <div id="gs-results"></div>
       <p class="screen-sub">${L('Chaque module est un espace complet. Activez seulement ce dont vous avez besoin, ou tout avec le Kit complet.')}</p>
@@ -2104,16 +2232,16 @@ const Billing = {
   },
 };
 
-// ---- Currency: every price is set in BRL (base) and shown converted to the buyer's currency ----
+// ---- Currency: every price is set in USD (base) and converted at today's rate to the buyer's currency ----
 // In the iPhone / Android app the store's own localized price wins (window.NutriPilotNative.products).
-// On the web: today's exchange rate from the server (config.rates, per 1 BRL), else the fallback below,
+// On the web: today's exchange rate from the server (config.rates, per 1 USD), else the fallback below,
 // rounded like store price points (x,49 / x,99; whole numbers for currencies without cents).
-const BASE_CURRENCY = 'BRL';
-// Units of each currency per 1 BRL, 12 Oct 2026 (fallback only; the server refreshes real rates every 12 h).
+const BASE_CURRENCY = 'USD';
+// Units of each currency per 1 USD, 12 Oct 2026 (fallback only; the server refreshes real rates every 12 h).
 const FALLBACK_RATES = {
-  BRL: 1, USD: 0.2004, EUR: 0.1791, GBP: 0.1514, CAD: 0.2783, AUD: 0.3117, NZD: 0.3451, CHF: 0.167, JPY: 31.78, KRW: 278.3, INR: 19.2, IDR: 3588, MXN: 3.671, ARS: 233.8, CLP: 191.5, COP: 818.3, PEN: 0.7459,
-  UYU: 8.127, PYG: 1559, BOB: 1.392, TRY: 8.239, PLN: 0.7682, SEK: 1.948, NOK: 2.06, DKK: 1.336, CZK: 4.565, HUF: 70.14, RON: 0.8907, BGN: 0.3451, ZAR: 3.618, AED: 0.7348, SAR: 0.7571, QAR: 0.7348,
-  EGP: 9.797, MAD: 1.837, ILS: 0.7348, THB: 6.569, VND: 5233, PHP: 11.47, MYR: 0.8573, SGD: 0.2561, HKD: 1.559, TWD: 6.235, NGN: 300.6, KES: 25.61, PKR: 55.67, BDT: 23.94, UAH: 8.239, KZT: 102.4, GEL: 0.5455, RSD: 20.93,
+  BRL: 4.99, USD: 1, EUR: 0.8937, GBP: 0.7555, CAD: 1.389, AUD: 1.555, NZD: 1.722, CHF: 0.8333, JPY: 158.6, KRW: 1389, INR: 95.81, IDR: 17900, MXN: 18.32, ARS: 1167, CLP: 955.6, COP: 4083, PEN: 3.722,
+  UYU: 40.55, PYG: 7779, BOB: 6.946, TRY: 41.11, PLN: 3.833, SEK: 9.721, NOK: 10.28, DKK: 6.667, CZK: 22.78, HUF: 350, RON: 4.445, BGN: 1.722, ZAR: 18.05, AED: 3.667, SAR: 3.778, QAR: 3.667,
+  EGP: 48.89, MAD: 9.167, ILS: 3.667, THB: 32.78, VND: 26110, PHP: 57.24, MYR: 4.278, SGD: 1.278, HKD: 7.779, TWD: 31.11, NGN: 1500, KES: 127.8, PKR: 277.8, BDT: 119.5, UAH: 41.11, KZT: 511, GEL: 2.722, RSD: 104.4,
 };
 const ZERO_DEC = ['JPY', 'KRW', 'IDR', 'CLP', 'COP', 'PYG', 'VND', 'HUF', 'ARS', 'NGN', 'KES', 'PKR', 'TWD', 'KZT', 'UGX', 'TZS', 'BDT', 'RSD', 'ISK'];
 const CUR_NAMES = { BRL: 'Real', USD: 'US Dollar', EUR: 'Euro', GBP: 'Pound', CAD: 'Canadian Dollar', AUD: 'Australian Dollar', NZD: 'NZ Dollar', CHF: 'Franc suisse', JPY: '日本円', KRW: '원', INR: 'Rupee', IDR: 'Rupiah', MXN: 'Peso MX', ARS: 'Peso AR', CLP: 'Peso CL', COP: 'Peso CO', PEN: 'Sol', UYU: 'Peso UY', PYG: 'Guaraní', BOB: 'Boliviano', TRY: 'Lira', PLN: 'Złoty', SEK: 'Krona SE', NOK: 'Krone NO', DKK: 'Krone DK', CZK: 'Koruna', HUF: 'Forint', RON: 'Leu', BGN: 'Lev', ZAR: 'Rand', AED: 'Dirham AE', SAR: 'Riyal SA', QAR: 'Riyal QA', EGP: 'Pound EG', MAD: 'Dirham MA', ILS: 'Shekel', THB: 'Baht', VND: 'Đồng', PHP: 'Peso PH', MYR: 'Ringgit', SGD: 'Dollar SG', HKD: 'Dollar HK', TWD: 'Dollar TW', NGN: 'Naira', KES: 'Shilling KE', PKR: 'Rupee PK', BDT: 'Taka', UAH: 'Hryvnia', KZT: 'Tenge', GEL: 'Lari', RSD: 'Dinar' };
@@ -2144,7 +2272,7 @@ function detectCountry() {
   return '';
 }
 function detectCurrency() { return countryCurrency(config.country) || countryCurrency(detectCountry()) || 'USD'; }
-function rates() { return config.rates && typeof config.rates === 'object' ? { ...FALLBACK_RATES, ...config.rates, BRL: 1 } : FALLBACK_RATES; }
+function rates() { return config.rates && typeof config.rates === 'object' && config.ratesBase === 'USD' ? { ...FALLBACK_RATES, ...config.rates, USD: 1 } : FALLBACK_RATES; }
 function currency() {
   const native = window.NutriPilotNative?.currency;
   if (native) return native;
@@ -3059,15 +3187,18 @@ function hubScreen() {
   const hasPlan = state.onboarding && p.dailyKcal;
   const proj = hasPlan ? projection(p) : null;
   const plans = Billing.plans();
-  const explore = [['recipes', 'fork', 'Recettes du monde', '{n} recettes', ALL_RECIPES.length], ['training', 'dumbbell', 'Exercices animés', '{n} mouvements', Object.keys(EXERCISES).length], ['menopause', 'flower', 'Espace Ménopause 40+', 'Journal, programme, séances', 0], ['guides', 'book', 'Cours', 'Première leçon offerte', 0]];
+  const explore = [['recipes', 'fork', 'Recettes par objectif', '{n} recettes', ALL_RECIPES.length], ['training', 'dumbbell', 'Exercices animés', '{n} mouvements', Object.keys(EXERCISES).length], ['menopause', 'flower', 'Espace Ménopause 40+', 'Journal, programme, séances', 0], ['guides', 'book', 'Cours', 'Première leçon offerte', 0]];
+  const fFirst = { recipes: 'recipes', training: 'training', meno: 'menopause' }[currentFocus()];
+  if (fFirst) explore.sort((a, b) => (b[0] === fFirst) - (a[0] === fFirst));
   return `<div class="mobile-app hub">
     <header class="app-head"><div class="app-head-row"><button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${LANGS.find((x) => x[0] === lang())?.[2] || '🌐'}</button></div></div></header>
     <div class="screen">
       <section class="hub-hero">
         <small>${esc(t('hello'))}${p.name ? ` ${esc(p.name)}` : ''} 👋</small>
-        <h1>${L('Nutrition, entraînement et bien-être, dans une seule app.')}</h1>
+        ${FOCI[currentFocus()] ? `<span class="hello-kicker ${FOCI[currentFocus()].tone}">${icon(FOCI[currentFocus()].ico)} ${L(FOCI[currentFocus()].kicker)}</span>` : ''}
+        <h1>${L(FOCI[currentFocus()]?.title || 'Nutrition, entraînement et bien-être, dans une seule app.')}</h1>
         <div class="hh-stats"><div><b>${ALL_RECIPES.length}</b><span>${L('recettes')}</span></div><div><b>${Object.keys(EXERCISES).length}</b><span>${L('exercices')}</span></div><div><b>${allPrograms().filter((x) => !x.custom).length}</b><span>${L('programmes')}</span></div><div><b>${LANGS.length}</b><span>${L('langues')}</span></div></div>
-        <button class="btn btn-lime btn-wide" data-go="plans">${L('Voir les formules')}</button>
+        ${FOCI[currentFocus()] ? `<button class="btn btn-lime btn-wide" data-choose-plan="${FOCI[currentFocus()].tier}">${L('Essayer {n} jours gratuits', { n: Billing.trialDays() })}</button><button class="link-btn hub-all" data-go="plans">${L('Voir les formules')}</button>` : `<button class="btn btn-lime btn-wide" data-go="plans">${L('Voir les formules')}</button>`}
       </section>
       ${hasPlan ? `<button class="today-card hub-plan" data-go="plan"><small>${esc(t('myProgram'))}</small><b>${fmt(p.dailyKcal)} kcal · ${p.protein} g prot.</b>${proj ? `<span>${kgFmt(p.weight)} → ${kgFmt(p.target)} kg · ${esc(dateFr(proj.end))}</span>` : ''}<em>${esc(t('seePlan'))} →</em></button>` : ''}
 
@@ -3101,6 +3232,23 @@ function hubScreen() {
   </div>`;
 }
 
+// 3D depth on showcases and the member card: follows the finger / mouse, and the phone's tilt when allowed.
+let tiltBound = false;
+function bindTilt() {
+  if (tiltBound || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  tiltBound = true;
+  const apply = (x, y) => document.querySelectorAll('[data-tilt]').forEach((el) => { el.style.setProperty('--ry', `${(x * 14).toFixed(2)}deg`); el.style.setProperty('--rx', `${(-y * 10).toFixed(2)}deg`); });
+  window.addEventListener('pointermove', (e) => {
+    const el = e.target.closest?.('[data-tilt]'); if (!el) return;
+    const r = el.getBoundingClientRect();
+    apply(((e.clientX - r.left) / r.width - 0.5) * 2, ((e.clientY - r.top) / r.height - 0.5) * 2);
+  }, { passive: true });
+  window.addEventListener('pointerleave', () => apply(0, 0));
+  window.addEventListener('deviceorientation', (e) => {
+    if (e.gamma == null) return;
+    apply(Math.max(-1, Math.min(1, e.gamma / 30)), Math.max(-1, Math.min(1, (e.beta - 45) / 30)));
+  }, { passive: true });
+}
 function runCountUps() {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   document.querySelectorAll('[data-count]').forEach((el) => {
@@ -5942,6 +6090,7 @@ function settings() {
     <div class="screen">
       ${state.premium ? '' : `<button class="explore-banner" data-go="paywall">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button><button class="btn btn-ghost btn-wide" data-go="access">${icon('user')} ${L('Déjà client ? Se connecter')}</button>`}
       <button class="btn btn-ghost btn-wide" data-go="lang">${icon('globe')} ${L('Langue')} · ${esc(LANGS.find((x) => x[0] === lang())?.[1] || 'Français')}</button>
+      ${memberCard()}
       <div class="success warn" ${state.premium ? '' : 'hidden'}><b>${L('NutriPilot Premium actif ✓')}</b><br>${esc(state.premiumEmail || L('Accès activé'))}</div>
       <div class="kpi settings-goal"><small>${L('Votre objectif quotidien')}</small><b>${fmt(state.profile.dailyKcal)} kcal</b><div class="fine">P ${state.profile.protein} g · G ${state.profile.carbs} g · L ${state.profile.fat} g · Fibres ${state.profile.fiber} g</div></div>
       <div class="settings-two"><button class="btn btn-primary" data-open-profile>${icon('user')}<span>${L('Mon profil')}</span></button><button class="btn btn-lime" data-open-goal>${icon('scale')}<span>${L('Mon objectif')}</span></button></div>
@@ -6413,6 +6562,7 @@ function render() {
   let html;
   try {
   if (route === 'lang') html = langScreen();
+  else if (route === 'hello') html = helloScreen();
   else if (route === 'basics') html = basicsScreen();
   else if (route === 'saving') html = savingScreen();
   else if (route === 'tour') html = tourScreen();
@@ -6454,7 +6604,7 @@ function render() {
   }
   const modHere = moduleForRoute();
   if (modHere && html.includes('</header>')) html = html.replace(/<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, `</header>${moduleBar(modHere.id)}`);
-  const noFab = state.premium || ['goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
+  const noFab = state.premium || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
   a11yPass(app);
   const entered = window.__npLastRoute !== route;
@@ -6468,6 +6618,7 @@ function render() {
   bind();
   if (route === 'analyzing' && !analyzingTimer) startAnalyzing();
   if (entered || (route === 'app' && state.premium && !window.__npCounted)) { runCountUps(); window.__npCounted = true; }
+  if (document.querySelector('[data-tilt]')) bindTilt();
   if (route === 'progress') renderPhotos();
   if (route === 'saving' && !savingTimer) startSaving();
 }
@@ -6571,7 +6722,22 @@ function bind() {
       langNext = '';
       if (state.premium) return nav(next || (state.onboarding ? 'app' : 'onboarding'));
       if (next === 'access') return nav('access');
-      return nav(state.basicsDone ? (next || 'app') : 'basics');
+      return nav(state.basicsDone ? (next || 'app') : state.helloSeen ? 'basics' : 'hello');
+    }
+    if (button.dataset.focus) {
+      state.focus = button.dataset.focus;
+      state.profile.track = FOCI[state.focus].track;
+      selectedTier = '';
+      saveState(false);
+      track('SelectFocus', { focus: state.focus });
+      return render();
+    }
+    if (button.dataset.helloStart !== undefined) {
+      state.helloSeen = true;
+      if (FOCI[state.focus]) state.profile.track = FOCI[state.focus].track;
+      saveState(false);
+      track('StartFunnel', { focus: state.focus || 'all' });
+      return nav('basics');
     }
     if (button.dataset.basicsOk !== undefined) {
       const name = $('#b-name').value.trim().slice(0, 40);
@@ -7164,6 +7330,7 @@ function bind() {
       else render();
       return;
     }
+    if (button.dataset.recipeGoal !== undefined) { recipeGoal = recipeGoal === button.dataset.recipeGoal ? '' : button.dataset.recipeGoal; recipeView = 'explore'; return render(); }
     if (button.dataset.recipeFilter) { recipeFilter = button.dataset.recipeFilter; return render(); }
 
     if (button.dataset.quickCoach) return sendCoach(button.dataset.quickCoach);

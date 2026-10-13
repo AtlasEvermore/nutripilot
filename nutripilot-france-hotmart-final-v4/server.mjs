@@ -17,8 +17,8 @@ const OPENAI_BASE_URL = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/
 // Reasoning models (o1/o3/o4, gpt-5…) count hidden reasoning in max_output_tokens: they need more room and a low effort.
 const REASONING_MODEL = /^(o\d|gpt-5)/i.test(OPENAI_MODEL);
 let reasoningParamOk = true;
-// Exchange rates per 1 BRL for showing prices in each buyer's currency (stores charge in local currency).
-const FX_URL = process.env.FX_URL || 'https://open.er-api.com/v6/latest/BRL';
+// Exchange rates per 1 USD for showing prices in each buyer's currency (stores charge in local currency).
+const FX_URL = process.env.FX_URL || 'https://open.er-api.com/v6/latest/USD';
 let fx = { rates: null, date: '', fetchedAt: 0 };
 async function refreshRates() {
   if (fx.rates && Date.now() - fx.fetchedAt < 12 * 3600 * 1000) return fx;
@@ -1422,7 +1422,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/config' && req.method === 'GET') {
       await Promise.race([refreshRates(), new Promise((r) => setTimeout(r, 2500))]);
       return send(res, 200, {
-        rates: fx.rates, ratesDate: fx.date,
+        rates: fx.rates, ratesBase: 'USD', ratesDate: fx.date,
         brand: BRAND_NAME,
         locale: 'fr-FR',
         ai: Boolean(OPENAI_API_KEY && OPENAI_MODEL),
