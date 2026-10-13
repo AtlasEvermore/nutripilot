@@ -17,6 +17,23 @@ const OPENAI_BASE_URL = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/
 // Reasoning models (o1/o3/o4, gpt-5…) count hidden reasoning in max_output_tokens: they need more room and a low effort.
 const REASONING_MODEL = /^(o\d|gpt-5)/i.test(OPENAI_MODEL);
 let reasoningParamOk = true;
+// Exchange rates per 1 BRL for showing prices in each buyer's currency (stores charge in local currency).
+const FX_URL = process.env.FX_URL || 'https://open.er-api.com/v6/latest/BRL';
+let fx = { rates: null, date: '', fetchedAt: 0 };
+async function refreshRates() {
+  if (fx.rates && Date.now() - fx.fetchedAt < 12 * 3600 * 1000) return fx;
+  try {
+    const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(FX_URL, { signal: ctrl.signal }); clearTimeout(timer);
+    const data = await r.json();
+    if (data?.rates && Number(data.rates.USD) > 0) {
+      const rates = {};
+      for (const [k, v] of Object.entries(data.rates)) if (/^[A-Z]{3}$/.test(k) && Number(v) > 0) rates[k] = Number(v);
+      fx = { rates, date: String(data.time_last_update_utc || new Date().toUTCString()), fetchedAt: Date.now() };
+    } else fx.fetchedAt = Date.now() - 11 * 3600 * 1000;
+  } catch { fx.fetchedAt = Date.now() - 11 * 3600 * 1000; }
+  return fx;
+}
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const RESEND_FROM = process.env.RESEND_FROM || '';
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@atlasevermore.com';
@@ -1403,7 +1420,9 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, APP_URL);
 
     if (url.pathname === '/api/config' && req.method === 'GET') {
+      await Promise.race([refreshRates(), new Promise((r) => setTimeout(r, 2500))]);
       return send(res, 200, {
+        rates: fx.rates, ratesDate: fx.date,
         brand: BRAND_NAME,
         locale: 'fr-FR',
         ai: Boolean(OPENAI_API_KEY && OPENAI_MODEL),
@@ -1639,4 +1658,4 @@ await ensureData();
 if (process.env.NODE_ENV === 'production' && (!ACCESS_TOKEN_SECRET || ACCESS_TOKEN_SECRET.length < 24)) {
   console.warn('[NutriPilot] ACCESS_TOKEN_SECRET est absent ou trop court. Les connexions Premium ne pourront pas être créées.');
 }
-server.listen(PORT, '0.0.0.0', () => console.log(`${BRAND_NAME} v7 Premium — ${APP_URL}`));
+server.listen(PORT, '0.0.0.0', () => { console.log(`${BRAND_NAME} v7 Premium — ${APP_URL}`); refreshRates(); });
