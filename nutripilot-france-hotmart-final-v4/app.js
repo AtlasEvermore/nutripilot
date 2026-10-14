@@ -848,6 +848,7 @@ window.__npCollect = () => {
   TOUR.forEach((x) => { touch(x[1]); touch(x[2]); });
   COACH_STYLES.forEach((c) => { touch(c.name); touch(c.desc); });
   WORLD_RECIPES.forEach((r) => { [r.name, r.category, r.difficulty, ...r.steps].forEach(touch); });
+  trialSteps().forEach((x) => { touch(x[2]); touch(x[3]); });
   Object.values(APP_SHELL).forEach((x) => { const saved = [trainTab]; x.tabs().forEach(([, label, , sub]) => { touch(label); touch(sub); }); trainTab = saved[0]; }); Object.values(APP_SHORT).forEach(touch);
   RECIPE_GOALS.forEach((g) => { touch(g.name); touch(g.rule); }); RECIPE_REGIONS.forEach((x) => touch(x[1])); ALLERGENS.forEach((x) => touch(x[1]));
   ['Monde', 'Sans gluten', 'Sans lactose', 'Végétarienne', '100 % végétal', 'Sans allergène majeur', 'pesé cru', 'pesé cuit', 'tel quel', 'cru', 'cuit'].forEach(touch);
@@ -951,6 +952,8 @@ function toast(message) {
 }
 
 function track(name, params = {}) {
+  const found = { MealAnalyzed: 'scan', MealSaved: 'scan', WeekPlanGenerated: 'plan', CoachAnswer: 'coach', WorkoutDone: 'workout', QuickWorkout: 'workout' }[name];
+  if (found && typeof trialFound === 'function') trialFound(found);
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event: name, ...params });
   try { window.fbq?.('trackCustom', name, params); } catch {}
@@ -2363,7 +2366,7 @@ async function syncTrial(start = false) {
   if (!res.ok) throw new Error(L(data.error || 'Réessayez dans un instant.'));
   if (data.premium) { state.premium = true; state.accessToken = token; state.premiumEmail = data.email || state.accountEmail; saveState(false); return data; }
   if (Number.isFinite(Number(data.now))) clockOffset = Number(data.now) - Date.now();
-  state.trial = data.used ? { used: true, startedAt: data.startedAt, endsAt: data.endsAt } : null;
+  state.trial = data.used ? { found: [], ...(state.trial || {}), used: true, startedAt: data.startedAt, endsAt: data.endsAt } : null;
   saveState(false);
   trialClock();
   return data;
@@ -2379,6 +2382,53 @@ async function beginTrial() {
     modal = data?.active ? { type: 'trial-started' } : { type: 'trial-ended' };
     render(); renderModal();
   } catch (error) { toast(error.message); }
+}
+// The trial's guided tour: the moments that show what NutriPilot does, checked off as she tries them.
+function trialSteps() {
+  const meno = state.profile?.track === 'menopause';
+  return [
+    ['scan', 'scan', 'Scanner un repas', 'Photo de l’assiette : calories et macros en secondes', 'add'],
+    ['plan', 'calendar', 'Créer mon plan de 7 jours', 'Repas de votre cuisine, ajustés à vos calories', 'program'],
+    ['recipe', 'fork', 'Ouvrir une recette pour mon objectif', 'Grammes, protéines et étapes', 'recipes'],
+    meno ? ['meno', 'flower', 'Découvrir l’espace Ménopause 40+', 'Journal des symptômes et programme', 'menopause'] : ['workout', 'dumbbell', 'Voir une séance guidée', 'Exercices animés, séries et repos', 'training'],
+    ['coach', 'coach', 'Poser une question au coach', 'Une réponse adaptée à votre journée', 'coach'],
+  ];
+}
+function trialFound(key) {
+  if (!trialActive()) return;
+  const t = state.trial;
+  t.found = Array.isArray(t.found) ? t.found : [];
+  if (t.found.includes(key) || !trialSteps().some((x) => x[0] === key)) return;
+  t.found.push(key);
+  saveState(false);
+  const step = trialSteps().find((x) => x[0] === key);
+  toast(L('Découverte {n}/{t} : {name} ✓', { n: t.found.length, t: trialSteps().length, name: L(step[2]) }));
+  trialClock();
+}
+function trialStepsHtml(withGo = true) {
+  const found = state.trial?.found || [];
+  return `<ol class="trial-steps">${trialSteps().map(([key, ico, title, sub, go]) => {
+    const ok = found.includes(key);
+    return `<li class="${ok ? 'ok' : ''}"><span class="ts-ico">${icon(ok ? 'check' : ico)}</span><span><b>${L(title)}</b><small>${L(sub)}</small></span>${withGo && !ok ? `<button class="ts-go" data-trial-step="${go}" aria-label="${esc(L(title))}">${icon('chevron')}</button>` : ''}</li>`;
+  }).join('')}</ol>`;
+}
+function goTrialStep(go) {
+  modal = null; document.querySelector('.modal-wrap')?.remove();
+  if (go === 'add') return openAdd('photo');
+  return nav(go);
+}
+// What she gets back when the minutes end: what she tried, what is kept, and the plan that fits her.
+function trialRecap() {
+  const p = state.profile || {};
+  const found = state.trial?.found || [];
+  const plan = Billing.plans().find((x) => x.tier === recommendedTier()) || Billing.plans().find((x) => x.tier === 'complete');
+  const done = trialSteps().filter(([k]) => found.includes(k));
+  return `<div class="trial-recap">
+    ${done.length ? `<h4>${L('En {n} minutes, vous avez :', { n: trialMinutes() })}</h4><ul>${done.map(([, , title]) => `<li>${icon('check')}<span>${L(title)}</span></li>`).join('')}</ul>` : ''}
+    <h4>${L('Gardé pour vous')}</h4>
+    <ul class="kept"><li>${icon('user')}<span>${L('Votre profil et vos objectifs : {k} kcal et {p} g de protéines par jour', { k: fmt(p.dailyKcal || 0), p: fmt(p.protein || 0) })}</span></li>${state.weekPlan?.length ? `<li>${icon('calendar')}<span>${L('Votre plan de repas de 7 jours')}</span></li>` : ''}${state.meals?.length ? `<li>${icon('list')}<span>${L('Vos repas enregistrés')}</span></li>` : ''}</ul>
+    ${plan ? `<div class="recap-plan ${plan.tone || ''}"><small>${L('La formule qui vous correspond')}</small><b>${esc(L(plan.label))}</b><span>${L('{price} / mois', { price: money(lp(plan, 'monthly')) })} · ${L('ou {price} par an', { price: money(lp(plan, 'annual')) })}</span></div>` : ''}
+  </div>`;
 }
 let trialTimer = null;
 let trialWasActive = false;
@@ -2400,14 +2450,26 @@ function trialClock() {
     bar.id = 'trial-bar';
     bar.setAttribute('role', 'timer');
     document.body.prepend(bar);
-    bar.addEventListener('click', (e) => { if (e.target.closest('[data-trial-plans]')) { selectedTier = recommendedTier(); nav('plans'); } });
+    bar.addEventListener('click', (e) => {
+      if (e.target.closest('[data-trial-plans]')) { selectedTier = recommendedTier(); nav('plans'); }
+      if (e.target.closest('[data-trial-guide]')) { modal = { type: 'trial-guide' }; renderModal(); }
+    });
   }
   const left = trialLeftMs();
   const total = trialMinutes() * 60000;
   bar.className = left < 60000 ? 'tb-last' : left < 5 * 60000 ? 'tb-low' : '';
-  bar.innerHTML = `<span class="tb-ico">${icon('timer')}</span><span class="tb-text"><b>${mmss(left)}</b> ${L('de test gratuit')}</span><button class="tb-cta" data-trial-plans>${L('Voir les formules')}</button><i class="tb-progress" style="width:${Math.max(0, Math.min(100, left / total * 100))}%"></i>`;
+  const nFound = (state.trial?.found || []).length;
+  bar.innerHTML = `<span class="tb-ico">${icon('timer')}</span><span class="tb-text"><b>${mmss(left)}</b> ${L('de test gratuit')}</span><button class="tb-steps" data-trial-guide aria-label="${esc(L('Mon parcours découverte'))}">${icon('star')}${nFound}/${trialSteps().length}</button><button class="tb-cta" data-trial-plans>${L('Voir les formules')}</button><i class="tb-progress" style="width:${Math.max(0, Math.min(100, left / total * 100))}%"></i>`;
   bar.setAttribute('aria-label', L('Test gratuit : {t} restantes', { t: mmss(left) }));
   if (!trialTimer) trialTimer = setInterval(trialClock, 1000);
+  // Five minutes left: one reminder, never on top of another sheet or a purchase.
+  if (left <= 5 * 60000 && left > 60000 && !state.trial.warned && trialMinutes() > 5) {
+    setTimeout(() => {
+      if (state.trial?.warned || !trialActive() || document.querySelector('.modal-wrap') || ['paywall', 'plans', 'upgrade'].includes(route)) return;
+      state.trial.warned = true; saveState(false);
+      modal = { type: 'trial-5min' }; renderModal();
+    }, 300);
+  }
 }
 let afterSignIn = '';
 // Signed in with Apple, Google or the e-mail code.
@@ -2494,17 +2556,24 @@ function trialPitch(kind = 'card') {
     <button class="link-btn" data-go="plans">${L('Voir les formules')}</button></div>`;
 }
 function trialSheet(type) {
+  if (type === 'trial-guide' || type === 'trial-5min') {
+    const left = trialLeftMs();
+    return `<div class="sheet-head"><div><span class="tag">${type === 'trial-5min' ? L('Plus que {t}', { t: mmss(left) }) : L('Test gratuit · {t}', { t: mmss(left) })}</span><h2>${type === 'trial-5min' ? L('Il vous reste 5 minutes') : L('Mon parcours découverte')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
+      ${type === 'trial-5min' ? `<p class="screen-sub">${L('Gardez votre plan et tout NutriPilot : avec la formule, vous avez {d} jours gratuits et rien n’est débité avant la fin de l’essai.', { d: Billing.trialDays() || 3 })}</p>` : ''}
+      ${trialStepsHtml()}
+      <button class="btn btn-lime btn-wide" data-module-buy="${recommendedTier()}">${L('Choisir ma formule · {d} jours gratuits', { d: Billing.trialDays() || 3 })}</button>
+      ${type === 'trial-5min' ? `<button class="link-btn center-fine" data-close>${L('Continuer à explorer')}</button>` : ''}`;
+  }
   if (type === 'trial-started') {
     const name = state.profile?.name ? esc(state.profile.name) : '';
     return `<div class="sheet-head"><div><span class="tag">${L('Test gratuit')}</span><h2>${name ? L('C’est parti, {name} !', { name }) : L('C’est parti !')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
-      <ul class="trial-list">
-        <li>${icon('check')}<span>${L('Tout est ouvert pendant {n} minutes : recettes, entraînements, ménopause, sommeil, scanner et coach.', { n: trialMinutes() })}</span></li>
-        <li>${icon('timer')}<span>${L('L’horloge en haut de l’écran montre le temps qui reste.')}</span></li>
-        <li>${icon('star')}<span>${L('À la fin, choisissez votre formule avec {d} jours gratuits pour continuer.', { d: Billing.trialDays() || 3 })}</span></li>
-      </ul>
-      <button class="btn btn-lime btn-wide btn-xl" data-trial-go>${L('Explorer les apps')}</button>`;
+      <p class="screen-sub">${L('Tout est ouvert pendant {n} minutes : recettes, entraînements, ménopause, sommeil, scanner et coach.', { n: trialMinutes() })} ${L('L’horloge en haut de l’écran montre le temps qui reste.')}</p>
+      <h4 class="ts-title">${L('Votre parcours en {n} étapes', { n: trialSteps().length })}</h4>
+      ${trialStepsHtml()}
+      <button class="btn btn-lime btn-wide btn-xl" data-trial-step="${trialSteps().find(([k]) => !(state.trial?.found || []).includes(k))?.[4] || 'modules'}">${L('Commencer par la première')}</button>
+      <button class="link-btn center-fine" data-trial-go>${L('Explorer librement')}</button>`;
   }
-  if (trialEnded()) return `<div class="sheet-head"><div><span class="tag">${L('Vos {n} minutes sont terminées', { n: trialMinutes() })}</span></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>${trialPitch('sheet')}`;
+  if (trialEnded()) return `<div class="sheet-head"><div><span class="tag">${L('Vos {n} minutes sont terminées', { n: trialMinutes() })}</span></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>${type === 'trial-ended' ? trialRecap() : ''}${trialPitch('sheet')}`;
   return `<div class="sheet-head"><div><span class="tag">${L('Test gratuit')}</span><h2>${L('Cette partie est réservée aux abonnés')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
     ${trialPitch('sheet')}`;
 }
@@ -6715,9 +6784,10 @@ function renderModal() {
   if (!modal) return;
   // Recipes, exercises and lessons opened from anywhere stay locked outside the free minutes.
   if (!fullAccess() && ['recipe', 'exercise', 'guide', 'lesson'].includes(modal.type) && !modal.recipe?.custom) modal = { type: 'trial' };
+  if (trialActive()) { if (modal.type === 'recipe') trialFound('recipe'); if (['session', 'exercise'].includes(modal.type)) trialFound('workout'); }
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'signin' ? signInSheet() : ['trial', 'trial-started', 'trial-ended'].includes(modal.type) ? trialSheet(modal.type) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'signin' ? signInSheet() : ['trial', 'trial-started', 'trial-ended', 'trial-guide', 'trial-5min'].includes(modal.type) ? trialSheet(modal.type) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
@@ -7190,6 +7260,7 @@ function render() {
   if (document.querySelector('[data-tilt]')) bindTilt();
   if (route === 'progress') renderPhotos();
   if (route === 'saving' && !savingTimer) startSaving();
+  if (route === 'menopause' && trialActive()) trialFound('meno');
   trialClock();
 }
 
@@ -8034,6 +8105,7 @@ function bindModal(root) {
     if (button.dataset.appTab) { const [id, key] = button.dataset.appTab.split(':'); modal = null; root.remove(); return openAppTab(id, key); }
     if (button.dataset.trialStart !== undefined) { modal = null; root.remove(); return beginTrial(); }
     if (button.dataset.trialGo !== undefined) { modal = null; root.remove(); return nav('modules'); }
+    if (button.dataset.trialStep) { root.remove(); return goTrialStep(button.dataset.trialStep); }
     if (button.dataset.signin) {
       if (button.dataset.signin === 'email') { modal = { type: 'account', step: 'email', email: state.accountEmail || '' }; return renderModal(); }
       return signInWith(button.dataset.signin);
