@@ -1758,3 +1758,97 @@ a.btn{text-decoration:none;color:var(--ink)}a.btn-lime,a.btn-ghost{color:var(--i
 .day-picker,.day-picker.big{grid-template-columns:repeat(7,minmax(0,1fr))}
 .day-picker button{min-width:0;padding-inline:1px;overflow-wrap:anywhere;line-height:1.15}
 [lang=ar] .day-picker button,[lang=ja] .day-picker button,[lang=ko] .day-picker button{font-size:10.5px}
+/* v26 profile card */
+.pf-hero{position:relative;overflow:hidden;background:var(--ink);color:#fff;border-radius:28px;padding:20px 18px 18px;margin-bottom:12px;isolation:isolate}
+.pf-hero:before{content:"";position:absolute;inset:-40% -30% auto auto;width:300px;height:300px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--mc) 70%,transparent),transparent);opacity:.55;z-index:-1}
+.pf-id{display:grid;grid-template-columns:72px 1fr;gap:14px;align-items:center}
+.pf-avatar{width:72px;height:72px;border-radius:50%;padding:3px;background:conic-gradient(from 210deg,var(--lime),color-mix(in srgb,var(--mc) 60%,#fff),var(--lime));display:grid}
+.pf-avatar b{display:grid;place-items:center;border-radius:50%;background:#183427;font-family:var(--display);font-size:26px;letter-spacing:-.02em;color:#fff}
+.pf-id h1{margin:0;font-size:26px;line-height:1.05;letter-spacing:-.03em;overflow-wrap:anywhere}
+.pf-id p{margin:4px 0 8px;color:#c4d3c9;font-size:13px;font-weight:600}
+.pf-focus{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:5px 10px 5px 8px;font-size:12px;font-weight:800}
+.pf-focus .ico{width:14px;height:14px;color:var(--lime)}
+.pf-member{grid-column:1/-1;justify-self:start;display:inline-flex;align-items:center;gap:6px;background:var(--lime);color:var(--ink);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}
+.pf-member .ico{width:13px;height:13px}
+.pf-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:16px}
+.pf-stats div{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 6px;text-align:center;min-width:0}
+.pf-stats b{display:block;font-family:var(--display);font-size:17px;letter-spacing:-.02em;white-space:nowrap}
+.pf-stats small{display:block;margin-top:2px;color:#b9c9be;font-size:10.5px;font-weight:700;line-height:1.2;overflow-wrap:anywhere}
+.pf-plan{background:#fff;color:var(--ink);border-radius:20px;padding:16px;margin-top:14px}
+.pf-plan h2{margin:0 0 10px;font-size:17px;letter-spacing:-.01em}
+.pf-plan ul{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:8px}
+.pf-plan li{display:grid;grid-template-columns:32px 1fr 16px;gap:10px;align-items:center;font-size:13.5px;font-weight:650;line-height:1.3}
+.pf-plan .pp-ico{width:32px;height:32px;border-radius:10px;background:var(--mt);color:var(--mc);display:grid;place-items:center}
+.pf-plan .pp-ico .ico{width:16px;height:16px}
+.pf-plan li>.ico:last-child{width:16px;height:16px;color:#9aa69f}
+.pf-plan li.ok>.ico:last-child{color:#0d7f47}
+.pf-fine{margin:8px 0 0;text-align:center;font-size:11.5px;color:var(--muted)}
+.pf-answers{margin-top:20px}.pf-note{margin:-4px 2px 6px}
+details.pf-sec{padding:0}
+details.pf-sec>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:1fr 18px;gap:10px;align-items:center;padding:14px}
+details.pf-sec>summary::-webkit-details-marker{display:none}
+details.pf-sec>summary h3{margin:0;font-size:16px}
+details.pf-sec>summary small{display:block;margin-top:3px;color:var(--muted);font-size:12px;font-weight:600;line-height:1.35}
+details.pf-sec>summary>.ico{transform:rotate(90deg);transition:transform .2s var(--ease);color:var(--muted)}
+details.pf-sec[open]>summary>.ico{transform:rotate(-90deg)}
+details.pf-sec .pf-body{padding:0 14px 14px}
+details.pf-sec>summary:focus-visible{outline:3px solid var(--lime);outline-offset:-3px;border-radius:22px}
+@media (max-width:360px){.pf-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.pf-id{grid-template-columns:60px 1fr}.pf-avatar{width:60px;height:60px}.pf-id h1{font-size:22px}}
+/* v26 computer and tablet: side rail instead of the bottom bar, wider grids */
+.rail-brand{display:none}
+@media (min-width:1024px){
+  body{background:#efeee6}
+  .bottom-nav{left:0;top:0;bottom:0;transform:none;width:248px;height:100vh;display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:22px 14px;border-top:0;border-right:1px solid var(--line);background:#fbfaf5;backdrop-filter:none}
+  .rail-brand{display:grid;gap:4px;padding:4px 10px 22px}.rail-brand .logo{font-size:19px}.rail-brand small{font-size:12px;font-weight:800;color:var(--mc,var(--muted))}
+  .nav-btn{grid-auto-flow:column;grid-template-columns:24px 1fr;justify-items:start;justify-content:stretch;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;font-size:14.5px;font-weight:750;text-align:start;min-height:46px}
+  .nav-btn span{width:24px;height:24px;display:grid;place-items:center}
+  .nav-btn:hover{background:#f0efe7;color:var(--ink)}
+  .nav-btn.active{background:#e9eee4;color:var(--ink)}
+  .nav-btn.active:not(.center):after{top:12px;bottom:12px;left:0;width:3px;height:auto;border-radius:0 3px 3px 0}
+  .nav-btn.center{order:-1;background:var(--ink);color:#fff;margin-bottom:12px}
+  .nav-btn.center:hover{background:#1b3a2b;color:#fff}
+  .nav-btn.center span{width:24px;height:24px;margin:0;background:none;color:var(--lime);box-shadow:none;border-radius:0}
+  .app-nav .apps-btn{order:-1;margin-bottom:10px;border:1px solid var(--line);background:#fff}
+  .app-nav .apps-btn span{width:24px;height:24px;border-radius:8px}
+  .app-nav .nav-btn.active{background:var(--mt);color:var(--mc)}
+  .mobile-app:has(>.bottom-nav){margin-left:248px;max-width:none;padding-bottom:48px;box-shadow:none;min-height:100vh}
+  .mobile-app:has(>.bottom-nav) .app-head-row,.mobile-app:has(>.bottom-nav) .screen{max-width:1040px;margin-inline:auto}
+  .mobile-app:has(>.bottom-nav) .app-head{padding:18px 32px 12px}
+  .mobile-app:has(>.bottom-nav) .screen{padding:12px 32px 40px}
+  .mobile-app:not(:has(>.bottom-nav)){max-width:800px}
+  .screen.pf{max-width:760px!important}
+  .app-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:22px 14px}
+  .app-icon .ai-tile{width:72px;height:72px;border-radius:22px}.app-icon .ai-tile .ico{width:30px;height:30px}.app-icon b{font-size:13px}
+  .recipe-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .plan-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}
+  .plan-mini{max-width:none}
+  .today .screen{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);column-gap:16px;align-items:start}
+  .today .screen>*{grid-column:1/-1}
+  .today .screen>.hero-ring-card{grid-column:1}
+  .today .screen>.duo{grid-column:2;margin-top:0;grid-template-columns:1fr 1fr;height:100%}
+  .modal-wrap{align-items:center;padding:24px}
+  .sheet{border-radius:28px}
+  .pf-hero{padding:26px}
+  .pf-hero .pf-plan{max-width:none}
+}
+@media (min-width:1024px) and (max-width:1180px){.app-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.recipe-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1400px){.mobile-app:has(>.bottom-nav) .app-head-row,.mobile-app:has(>.bottom-nav) .screen{max-width:1120px}}
+/* tablets: a little more room for grids */
+@media (min-width:700px) and (max-width:1023px){.app-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.recipe-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1024px){
+  .bottom-nav .rail-brand{order:-2}
+  .bottom-nav .nav-btn,.app-nav .nav-btn{font-size:14.5px;line-height:1.2;padding:11px 14px;text-align:start;overflow-wrap:normal}
+  .app-nav .apps-btn{font-size:13.5px}
+}
+.app-nav .rail-only{display:none}
+@media (min-width:1024px){.app-nav .rail-only{display:grid}.app-nav .more-btn{display:none}}
+/* v26 welcome page on a computer: copy and choices on the left, the live app preview on the right */
+@media (min-width:1024px){
+  .hello{max-width:1200px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);column-gap:64px;align-content:start;padding:28px 56px 48px}
+  .hello>*{grid-column:1}
+  .hello>.hello-top{grid-column:1/-1}
+  .hello>.sc-stage{grid-column:2;grid-row:2/span 6;align-self:center;height:600px;margin:0}
+  .hello-copy{margin-top:40px}
+  .hello-copy h1{font-size:clamp(46px,4.4vw,64px)}
+  .hello-pick{margin-top:22px}
+}

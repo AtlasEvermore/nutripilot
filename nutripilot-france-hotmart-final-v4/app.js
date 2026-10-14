@@ -2372,10 +2372,10 @@ const APP_SHELL = {
   supplements: { route: 'supplements', get: () => suppTab, set: (k) => { suppTab = k; suppDraft = null; }, tabs: () => [['mine', 'Mes compléments', 'pill', 'Vos compléments et doses déclarées'], ['scan', 'Scanner', 'camera', 'Lire une étiquette de complément'], ['alerts', 'Alertes', 'bell', 'Ingrédients en double et précautions'], ['info', 'Fiches', 'book', 'Niveau de preuve et précautions']] },
   sleep: { route: 'sleep', get: () => sleepTab, set: (k) => { sleepTab = k; }, tabs: () => [['today', 'Aujourd’hui', 'moon', 'Votre nuit et votre journée'], ['sleep', 'Journal', 'list', 'Notez chaque nuit'], ['relax', 'Respirer', 'wave', 'Respirations et relaxations guidées'], ['sounds', 'Sons apaisants', 'drop', 'Pluie, vagues, feu…'], ['program', 'Programme 7 nuits', 'calendar', 'Une étape par nuit'], ['mind', 'Stress & pensées', 'book', 'Vider sa tête avant de dormir'], ['hunger', 'Faim ou envie ?', 'fork', 'Reconnaître une envie de manger'], ['routine', 'Rituel du soir', 'check', 'Les gestes qui aident à s’endormir'], ['learn', 'Leçons', 'book', 'Comprendre le sommeil'], ['restart', 'Reprendre la routine', 'sparkle', 'Après un écart, sans tout recommencer']] },
 };
-// The module shown as an app: only modules the person owns (previews keep the plans bar and the main navigation).
+// The module shown as an app: modules the person owns, and every module for visitors (preview, with the unlock bar).
 function appShellId(r = route) {
   const m = moduleForRoute(r);
-  return m && APP_SHELL[m.id] && state.premium && hasModule(m.id) ? m.id : '';
+  return m && APP_SHELL[m.id] && (!state.premium || hasModule(m.id)) ? m.id : '';
 }
 function openAppTab(id, key) {
   const shell = APP_SHELL[id];
@@ -2393,11 +2393,13 @@ function appTabBar(id) {
   const main = tabs.slice(0, 3);
   const more = tabs.slice(3);
   const moreActive = more.some(([k]) => k === cur);
-  const btn = (k, label, ico) => `<button class="nav-btn ${k === cur ? 'active' : ''}" data-app-tab="${id}:${k}" aria-current="${k === cur ? 'page' : 'false'}"><span>${icon(ico)}</span>${L(label)}</button>`;
+  const btn = (k, label, ico, extra = '') => `<button class="nav-btn ${extra} ${k === cur ? 'active' : ''}" data-app-tab="${id}:${k}" aria-current="${k === cur ? 'page' : 'false'}"><span>${icon(ico)}</span>${L(label)}</button>`;
   return `<nav class="bottom-nav app-nav ${moduleById(id).tone}" aria-label="${esc(L(moduleById(id).name))}">
+    <span class="rail-brand" aria-hidden="true">${logo()}<small>${esc(L(moduleById(id).name))}</small></span>
     <button class="nav-btn apps-btn" data-go="modules" aria-label="${L('Toutes mes apps')}"><span>${icon('grid')}</span>${L('Apps')}</button>
     ${main.map(([k, label, ico]) => btn(k, label, ico)).join('')}
-    ${more.length ? `<button class="nav-btn ${moreActive ? 'active' : ''}" data-app-more="${id}"><span>${icon('menu')}</span>${L('Plus')}</button>` : ''}
+    ${more.length ? `<button class="nav-btn more-btn ${moreActive ? 'active' : ''}" data-app-more="${id}"><span>${icon('menu')}</span>${L('Plus')}</button>` : ''}
+    ${more.map(([k, label, ico]) => btn(k, label, ico, 'rail-only')).join('')}
   </nav>`;
 }
 function appMoreSheet(id) {
@@ -2412,7 +2414,7 @@ function appHead(id, titleHtml) {
   return `<header class="app-head app-head-mod ${m.tone}"><div class="app-head-row">
     <div class="head-left"><button class="icon-btn apps-ico" data-go="modules" aria-label="${L('Toutes mes apps')}">${icon('grid')}</button></div>
     <div class="head-titles"><small class="head-app"><span class="mod-ico">${icon(m.icon)}</span>NutriPilot</small><h2>${titleHtml}</h2></div>
-    <div class="head-actions"><button class="icon-btn coach-btn" data-go="coach" aria-label="${L('Coach')}">${icon('coach')}</button></div>
+    <div class="head-actions"><button class="icon-btn scan-btn" data-open-add aria-label="${L('Scanner un repas')}">${icon('scan')}</button><button class="icon-btn coach-btn" data-go="coach" aria-label="${L('Coach')}">${icon('coach')}</button></div>
   </div></header>`;
 }
 function globalSearch(q) {
@@ -2855,7 +2857,7 @@ function bottom(active) {
   ];
   const mod = MODULE_ROUTES[active];
   if (mod && !['coach'].includes(active)) active = 'modules';
-  return `<nav class="bottom-nav">${tabs.map(([r, ico, label]) => `<button class="nav-btn ${r === active ? 'active' : ''} ${r === 'add' ? 'center' : ''}" ${r === 'add' ? 'data-open-add' : `data-go="${r}"`} aria-label="${L(label)}"><span>${icon(ico)}</span>${L(label)}</button>`).join('')}</nav>`;
+  return `<nav class="bottom-nav"><span class="rail-brand" aria-hidden="true">${logo()}</span>${tabs.map(([r, ico, label]) => `<button class="nav-btn ${r === active ? 'active' : ''} ${r === 'add' ? 'center' : ''}" ${r === 'add' ? 'data-open-add' : `data-go="${r}"`} aria-label="${L(label)}"><span>${icon(ico)}</span>${L(label)}</button>`).join('')}</nav>`;
 }
 
 function macroStat(name, value, target) {
@@ -5678,27 +5680,73 @@ function pfChips(key, opts, numeric = false) {
   const cur = profileDraft[key];
   return `<div class="pf-chips">${opts.map(([v, label, sub]) => `<button class="pf-chip ${String(cur) === String(v) ? 'on' : ''}" data-pf="${key}" data-pf-value="${esc(String(v))}" ${numeric ? 'data-pf-num' : ''}><b>${L(label)}</b>${sub ? `<small>${L(sub)}</small>` : ''}</button>`).join('')}</div>`;
 }
+let pfOpen = new Set();
+// Profile card: who the person is, the numbers NutriPilot calculated, and the plan prepared for them.
+function profileHero() {
+  const p = state.profile || {};
+  const initials = (p.name || 'NP').trim().split(/\s+/).map((x) => x[0]).join('').slice(0, 2).toUpperCase();
+  const tr = PF_TRACKS.find((x) => x[0] === p.track) || PF_TRACKS[0];
+  const tone = { lose: 'm-nut', menopause: 'm-meno', muscle: 'm-train', eat: 'm-rec' }[tr[0]] || 'm-kit';
+  const w = weightKnown() ? lastWeight() : Number(p.weight) || 0;
+  const proj = goalSet() ? projection({ ...p, weight: w }) : null;
+  const fits = ALL_RECIPES.filter((r) => recipeAllowed(r)).length;
+  const place = { gym: 'en salle', home: 'à la maison' }[p.trainPlace];
+  const plan = [
+    ['calendar', L('Plan de repas 7 jours à {n} kcal par jour', { n: fmt(p.dailyKcal || 0) }), 'nutrition'],
+    ['book', L('{n} recettes adaptées à votre profil', { n: fits }), 'recipes'],
+    ...(place ? [['dumbbell', L('Programme d’entraînement {place}, {n} séances par semaine', { place: L(place), n: p.trainDays || 3 }), 'training']] : []),
+    ...(p.track === 'menopause' ? [['flower', L('Espace Ménopause 40+ : journal et programme de 8 semaines'), 'menopause']] : []),
+    ['coach', L('Coach, scanner de repas et suivi des progrès'), 'coach'],
+  ];
+  const owned = (id) => state.premium && (id === 'coach' || hasModule(id));
+  const trial = Billing.trialDays();
+  return `<section class="pf-hero ${tone}">
+    <div class="pf-id">
+      <span class="pf-avatar"><b>${esc(initials)}</b></span>
+      <div><h1>${esc(p.name || L('Votre profil'))}</h1>
+        <p>${[p.age ? L('{n} ans', { n: p.age }) : '', p.height ? `${fmt(p.height)} cm` : '', w ? `${fmt(w, 1)} kg` : ''].filter(Boolean).join(' · ')}</p>
+        <span class="pf-focus">${icon(tr[3])}${L(tr[1])}</span></div>
+      ${state.premium ? `<span class="pf-member">${icon('star')}${esc(planLabel())}</span>` : ''}
+    </div>
+    <div class="pf-stats">
+      <div><b>${fmt(p.dailyKcal || 0)}</b><small>${L('kcal par jour')}</small></div>
+      <div><b>${fmt(p.protein || 0)} g</b><small>${L('protéines')}</small></div>
+      <div><b>${fmt(waterGoal() / 1000, 1)} L</b><small>${L('d’eau')}</small></div>
+      <div><b>${goalSet() ? `${fmt(p.target, 1)} kg` : '—'}</b><small>${proj ? L('vers le {date}', { date: dateFr(proj.end) }) : L('objectif')}</small></div>
+    </div>
+    <div class="pf-plan">
+      <h2>${L('Votre plan NutriPilot')}</h2>
+      <ul>${plan.map(([ico, text, id]) => `<li class="${owned(id) ? 'ok' : ''}"><span class="pp-ico">${icon(ico)}</span><span>${esc(text)}</span>${owned(id) ? icon('check') : icon('lock')}</li>`).join('')}</ul>
+      ${state.premium ? `<button class="btn btn-lime btn-wide" data-go="app">${L('Voir ma journée')}</button>` : `<button class="btn btn-lime btn-wide btn-xl" data-module-buy="${recommendedTier()}">${trial ? L('Débloquer mon plan · {n} jours gratuits', { n: trial }) : L('Débloquer mon plan')}</button><p class="pf-fine">${L('Sans engagement : annulez quand vous voulez.')}</p>`}
+    </div>
+  </section>`;
+}
 function profileScreen() {
   if (!profileDraft) profileDraft = clone(state.profile || {});
   const d = profileDraft;
   const base = LANG_CUISINE[lang()] || 'fr';
   const home = CUISINES.find((c) => c[0] === base);
-  const section = (title, body, sub = '') => `<section class="pf-sec"><h3>${L(title)}</h3>${sub ? `<p class="fine">${L(sub)}</p>` : ''}${body}</section>`;
+  // Answers are grouped in folding sections, so the profile reads as a card, not as a long form.
+  let secN = 0;
+  const section = (title, body, sub = '', summary = '') => { const k = `s${secN++}`; return `<details class="pf-sec" data-pf-sec="${k}" ${pfOpen.has(k) ? 'open' : ''}><summary><span><h3>${L(title)}</h3>${summary || sub ? `<small>${summary || L(sub)}</small>` : ''}</span>${icon('chevron')}</summary><div class="pf-body">${body}</div></details>`; };
+  const trackRow = PF_TRACKS.find((x) => x[0] === d.track);
   return `<div class="mobile-app">
     <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Mon profil')}</h2><span></span></div></div>
     <div class="screen pf">
-      <p class="screen-sub">${L('Modifiez n’importe quelle réponse : votre plan, vos recettes et vos séances sont recalculés dès que vous enregistrez.')}</p>
+      ${profileHero()}
       <button class="pf-goal" data-open-goal>${icon('scale')}<span><small>${L('Objectif de poids')}</small><b>${goalSet() ? `${fmt(lastWeight(), 1)} → ${fmt(state.profile.target, 1)} kg` : L('Définir mon objectif')}</b></span>${icon('chevron')}</button>
+      <div class="section-label pf-answers"><h3>${L('Mes réponses')}</h3></div>
+      <p class="fine pf-note">${L('Modifiez n’importe quelle réponse : votre plan, vos recettes et vos séances sont recalculés dès que vous enregistrez.')}</p>
       ${section('Vous', `<div class="pf-grid">
         <label class="pf-field wide"><span>${L('Prénom')}</span><input id="pf-name" type="text" autocomplete="given-name" maxlength="40" value="${esc(d.name || '')}" placeholder="${L('Votre prénom')}"></label>
         <label class="pf-field"><span>${L('Âge')}</span><input id="pf-age" type="number" inputmode="numeric" min="18" max="90" value="${esc(d.age || '')}"></label>
         <label class="pf-field"><span>${L('Taille')} (cm)</span><input id="pf-height" type="number" inputmode="numeric" min="130" max="220" value="${esc(d.height || '')}"></label>
       </div>
-      ${pfChips('sex', [['female', 'Une femme'], ['male', 'Un homme'], ['other', 'Je préfère ne pas répondre']])}`)}
+      ${pfChips('sex', [['female', 'Une femme'], ['male', 'Un homme'], ['other', 'Je préfère ne pas répondre']])}`, '', [d.name, d.age ? L('{n} ans', { n: d.age }) : '', d.height ? `${d.height} cm` : ''].filter(Boolean).map(esc).join(' · '))}
       ${section('Mon focus', `<div class="pf-tracks">${PF_TRACKS.map(([v, label, sub, ico]) => `<button class="pf-track ${d.track === v ? 'on' : ''}" data-pf="track" data-pf-value="${v}">${icon(ico)}<b>${L(label)}</b><small>${L(sub)}</small></button>`).join('')}</div>
         ${d.track === 'menopause' ? `${pfChips('menopause', [['peri', 'Préménopause'], ['post', 'Ménopause'], ['unsure', 'À préciser']])}<h4>${L('Ce qui me gêne le plus')}</h4>${pfChips('menoFocus', [['hot', 'Les bouffées de chaleur'], ['sleep', 'Le sommeil'], ['belly', 'Le ventre qui s’arrondit'], ['mood', 'L’humeur et le stress'], ['joints', 'Les articulations'], ['fatigue', 'La fatigue']])}` : ''}
         ${d.track === 'muscle' ? `<h4>${L('Zone prioritaire')}</h4>${pfChips('muscleFocus', [['full', 'Tout le corps'], ['upper', 'Le haut du corps'], ['lower', 'Le bas du corps']])}` : ''}
-        ${d.track === 'eat' ? `<h4>${L('Ce que je veux améliorer')}</h4>${pfChips('eatFocus', [['energy', 'Mon énergie'], ['sugar', 'Moins de sucre'], ['veg', 'Plus de légumes'], ['cook', 'Cuisiner plus'], ['digestion', 'Ma digestion']])}` : ''}`, 'Ce qui guide vos conseils, vos recettes et vos séances.')}
+        ${d.track === 'eat' ? `<h4>${L('Ce que je veux améliorer')}</h4>${pfChips('eatFocus', [['energy', 'Mon énergie'], ['sugar', 'Moins de sucre'], ['veg', 'Plus de légumes'], ['cook', 'Cuisiner plus'], ['digestion', 'Ma digestion']])}` : ''}`, 'Ce qui guide vos conseils, vos recettes et vos séances.', trackRow ? L(trackRow[1]) : '')}
       ${section('Mon quotidien', `<h4>${L('Moment où j’ai le plus faim')}</h4>${pfChips('hungerTime', [['morning', 'Le matin'], ['afternoon', 'L’après-midi'], ['evening', 'Le soir'], ['steady', 'Pas de moment précis']])}<h4>${L('Mes journées')}</h4>${pfChips('schedule', [['office', 'Horaires réguliers'], ['shift', 'Horaires décalés'], ['home', 'À la maison'], ['move', 'Toujours en déplacement']])}`)}
       ${section('Activité au quotidien', pfChips('activity', [[1.2, 'Plutôt assise', 'Bureau, voiture, peu de sport'], [1.375, 'Un peu active', '1 à 3 séances ou longues marches'], [1.55, 'Active', '3 à 5 séances par semaine'], [1.725, 'Très active', 'Sport ou métier physique au quotidien']], true))}
       ${section('Alimentation', `${pfChips('diet', [['balanced', 'De tout'], ['mediterranean', 'Méditerranéen'], ['high-protein', 'Riche en protéines'], ['pescatarian', 'Pescétarien'], ['vegetarian', 'Végétarien']])}
@@ -6934,7 +6982,7 @@ function render() {
   const shellId = appShellId();
   if (shellId && html.includes('</header>')) {
     const title = (html.match(/<h2>([\s\S]*?)<\/h2>/) || [])[1] || '';
-    html = html.replace(/<header class="app-head">[\s\S]*?<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, () => appHead(shellId, title))
+    html = html.replace(/<header class="app-head">[\s\S]*?<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, () => appHead(shellId, title) + (hasModule(shellId) ? '' : moduleBar(shellId)))
       .replace(/<nav class="bottom-nav">[\s\S]*?<\/nav>/, () => appTabBar(shellId))
       .replace('<div class="mobile-app', '<div class="in-app mobile-app');
   } else if (modHere && html.includes('</header>')) html = html.replace(/<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, `</header>${moduleBar(modHere.id)}`);
@@ -6968,6 +7016,7 @@ function a11yPass(root) {
 }
 
 function bind() {
+  app.querySelectorAll('details[data-pf-sec]').forEach((el) => el.addEventListener('toggle', () => { if (el.open) pfOpen.add(el.dataset.pfSec); else pfOpen.delete(el.dataset.pfSec); }));
   app.onchange = (event) => {
     const el = event.target;
     if (el.matches('[data-currency]')) { state.currency = rates()[el.value] ? el.value : ''; saveState(); track('SelectCurrency', { source: state.currency || 'auto' }); return render(); }
