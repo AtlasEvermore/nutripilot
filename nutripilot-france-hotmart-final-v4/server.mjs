@@ -6,6 +6,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { legalPage, pickLegalLang, deletePage, pickDeleteLang, supportPage } from './legal.mjs';
+import { verifyIdToken, accountEmail, providerEnabled, appleAuthorizeUrl, googleAuthorizeUrl, googleExchangeCode, webFlowEnabled } from './auth.mjs';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -136,7 +137,7 @@ function clientIp(req) {
   return fwd || req.socket?.remoteAddress || 'unknown';
 }
 
-const FUNNEL_EVENTS = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus']);
+const FUNNEL_EVENTS = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus', 'TrialStart', 'TrialEnded', 'TrialSignIn']);
 let funnelBuffer = {};
 let funnelTimer = null;
 function scheduleFunnelFlush() { if (!funnelTimer) funnelTimer = setTimeout(() => { funnelTimer = null; flushFunnel().catch(() => {}); }, 30_000); }
@@ -267,6 +268,79 @@ async function loadEntitlements() {
   } catch {
     return {};
   }
+}
+
+// ---- Free trial: full access for TRIAL_MINUTES, once per account and once per device ----------
+const TRIALS_FILE = path.join(DATA_DIR, 'trials.json');
+const TRIAL_MINUTES = Math.max(1, Number(process.env.TRIAL_MINUTES || 20));
+let trialQueue = Promise.resolve();
+const hashKey = (v) => crypto.createHash('sha256').update(String(v)).digest('hex');
+async function loadTrials() {
+  await ensureData();
+  try {
+    const data = JSON.parse(await fs.readFile(TRIALS_FILE, 'utf8'));
+    return { accounts: data.accounts || {}, devices: data.devices || {} };
+  } catch {
+    return { accounts: {}, devices: {} };
+  }
+}
+function mutateTrials(fn) {
+  const job = trialQueue.then(async () => {
+    const data = await loadTrials();
+    const result = await fn(data);
+    await atomicWriteJson(TRIALS_FILE, data);
+    return result;
+  });
+  trialQueue = job.catch(() => {});
+  return job;
+}
+function trialView(t) {
+  const now = Date.now();
+  return t ? { used: true, startedAt: t.startedAt, endsAt: t.endsAt, now, active: now < t.endsAt, minutes: TRIAL_MINUTES } : { used: false, now, active: false, minutes: TRIAL_MINUTES };
+}
+async function activeTrial(email) {
+  const t = (await loadTrials()).accounts[hashKey(email)];
+  return t && Date.now() < t.endsAt ? t : null;
+}
+// Starts the trial, or returns the one already used by this account or on this device (never restarted).
+function startTrial(email, device = '') {
+  return mutateTrials((all) => {
+    const key = hashKey(email);
+    const dev = device ? hashKey(`device:${device}`) : '';
+    if (!all.accounts[key]) {
+      const now = Date.now();
+      all.accounts[key] = dev && all.devices[dev] ? { ...all.devices[dev], sharedDevice: true } : { startedAt: now, endsAt: now + TRIAL_MINUTES * 60 * 1000 };
+    }
+    if (dev && !all.devices[dev]) all.devices[dev] = { startedAt: all.accounts[key].startedAt, endsAt: all.accounts[key].endsAt };
+    return all.accounts[key];
+  });
+}
+
+// Pending web sign-ins (state → nonce), kept 10 minutes.
+const authStates = new Map();
+function newAuthState() {
+  const state = crypto.randomBytes(18).toString('base64url');
+  const nonce = crypto.randomBytes(18).toString('base64url');
+  authStates.set(state, { nonce, at: Date.now() });
+  for (const [k, v] of authStates) if (Date.now() - v.at > 10 * 60 * 1000) authStates.delete(k);
+  return { state, nonce };
+}
+function takeAuthState(state) {
+  const v = authStates.get(String(state || ''));
+  authStates.delete(String(state || ''));
+  return v && Date.now() - v.at < 10 * 60 * 1000 ? v : null;
+}
+// Account session after Apple or Google: same token as the e-mail code sign-in.
+async function signInResult(provider, claims) {
+  const email = accountEmail(provider, claims);
+  const entitlements = await loadEntitlements();
+  const active = entitlements[email]?.status === 'active';
+  return { ok: true, email, provider, premium: active, plan: active ? entitlements[email]?.plan || 'premium' : '', token: signAccessToken(email) };
+}
+function authRedirect(res, payload) {
+  const frag = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  res.writeHead(302, { Location: `/#np-auth=${frag}`, 'Cache-Control': 'no-store' });
+  res.end();
 }
 
 async function mutateEntitlements(fn) {
@@ -1231,7 +1305,10 @@ async function premiumIdentity(req) {
     });
     return null;
   }
-  if (!entitlement || entitlement.status !== 'active') return null;
+  if (!entitlement || entitlement.status !== 'active') {
+    const trial = await activeTrial(payload.email);
+    return trial ? { email: payload.email, plan: 'trial', trial: true, endsAt: trial.endsAt } : null;
+  }
   return { email: payload.email, plan: entitlement.plan || 'premium', entitlement };
 }
 
@@ -1497,6 +1574,31 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, APP_URL);
 
+    // Sign in with Apple / Google on the web: redirect, then callback back to the app.
+    if (/^\/auth\/(apple|google)\/start$/.test(url.pathname) && req.method === 'GET') {
+      const provider = url.pathname.split('/')[2];
+      if (!webFlowEnabled[provider]()) { res.writeHead(302, { Location: '/#app' }); return res.end(); }
+      const { state, nonce } = newAuthState();
+      const redirectUri = `${APP_URL}/auth/${provider}/callback`;
+      res.writeHead(302, { Location: provider === 'apple' ? appleAuthorizeUrl({ redirectUri, state, nonce }) : googleAuthorizeUrl({ redirectUri, state, nonce }), 'Cache-Control': 'no-store' });
+      return res.end();
+    }
+    if (/^\/auth\/(apple|google)\/callback$/.test(url.pathname) && (req.method === 'POST' || req.method === 'GET')) {
+      const provider = url.pathname.split('/')[2];
+      try {
+        const params = req.method === 'POST' ? new URLSearchParams(await readRaw(req)) : url.searchParams;
+        if (params.get('error')) return authRedirect(res, { ok: false, error: 'cancelled' });
+        const pending = takeAuthState(params.get('state'));
+        if (!pending) throw new Error('state');
+        const idToken = provider === 'apple' ? params.get('id_token') : await googleExchangeCode({ code: params.get('code') || '', redirectUri: `${APP_URL}/auth/google/callback` });
+        const claims = await verifyIdToken(provider, idToken, { nonce: pending.nonce });
+        return authRedirect(res, await signInResult(provider, claims));
+      } catch (error) {
+        console.warn('[auth web]', provider, error.message);
+        return authRedirect(res, { ok: false, error: 'failed' });
+      }
+    }
+
     if (url.pathname === '/api/config' && req.method === 'GET') {
       await Promise.race([refreshRates(), new Promise((r) => setTimeout(r, 2500))]);
       return send(res, 200, {
@@ -1512,6 +1614,13 @@ const server = http.createServer(async (req, res) => {
         appStoreUrl: process.env.APP_STORE_URL || '',
         playStoreUrl: process.env.PLAY_STORE_URL || '',
         trialDays: Number(process.env.TRIAL_DAYS || 3),
+        trialMinutes: TRIAL_MINUTES,
+        auth: {
+          apple: providerEnabled('apple'), google: providerEnabled('google'),
+          appleWeb: webFlowEnabled.apple(), googleWeb: webFlowEnabled.google(),
+          googleClientId: String(process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_IDS || '').split(',')[0].trim(),
+          appleClientId: String(process.env.APPLE_CLIENT_IDS || '').split(',')[0].trim() || 'com.atlasevermore.nutripilot',
+        },
         // Visitor country when the edge provides it (Cloudflare, Vercel, Fastly…); the app falls back to the device time zone.
         country: String(req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || req.headers['x-country-code'] || req.headers['fastly-geo-country'] || '').slice(0, 2).toUpperCase().replace(/[^A-Z]/g, ''),
         locked: true,
@@ -1587,6 +1696,36 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/hotmart/webhook' && req.method === 'POST') return handleHotmart(req, res);
+
+    // Free trial (account session required).
+    if ((url.pathname === '/api/trial/status' || url.pathname === '/api/trial/start') && req.method === 'POST') {
+      const payload = verifyAccessToken(bearer(req));
+      if (!payload) return send(res, 401, { error: 'Connectez-vous pour commencer l’essai gratuit.' });
+      const entitlements = await loadEntitlements();
+      if (entitlements[payload.email]?.status === 'active') return send(res, 200, { premium: true, email: payload.email });
+      if (url.pathname === '/api/trial/status') return send(res, 200, trialView((await loadTrials()).accounts[hashKey(payload.email)]));
+      if (!rateLimit(`trial:${clientIp(req)}`, 10, 60 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
+      const body = await readJson(req);
+      const device = String(body.device || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
+      const t = await startTrial(payload.email, device);
+      if (!t.sharedDevice && Date.now() - t.startedAt < 5000) { funnelBuffer.TrialStart = (funnelBuffer.TrialStart || 0) + 1; scheduleFunnelFlush(); }
+      return send(res, 200, trialView(t));
+    }
+
+    // Sign in with Apple / Google from the native apps: the identity token is verified here.
+    if (/^\/api\/auth\/(apple|google)$/.test(url.pathname) && req.method === 'POST') {
+      const provider = url.pathname.split('/').pop();
+      if (!providerEnabled(provider)) return send(res, 503, { error: 'Connexion indisponible pour le moment.' });
+      if (!rateLimit(`auth:${clientIp(req)}`, 20, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de tentatives. Réessayez dans quelques minutes.' });
+      const body = await readJson(req);
+      try {
+        const claims = await verifyIdToken(provider, body.idToken, { nonce: body.nonce });
+        return send(res, 200, await signInResult(provider, claims));
+      } catch (error) {
+        console.warn('[auth]', provider, error.message);
+        return send(res, 401, { error: 'Connexion refusée. Réessayez.' });
+      }
+    }
 
     if (url.pathname === '/api/access/request' && req.method === 'POST') {
       const body = await readJson(req);
@@ -1748,6 +1887,7 @@ const server = http.createServer(async (req, res) => {
 
       if (['/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/barcode', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan'].includes(url.pathname)) {
         if (!aiRateOk(req, identity.email)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
+        if (identity.trial && !rateLimit(`trialai:${identity.email}`, Number(process.env.TRIAL_AI_CALLS || 25), 2 * 60 * 60 * 1000)) return send(res, 429, { error: 'Limite de l’essai gratuit atteinte. Choisissez une formule pour continuer.' });
       }
 
       if (url.pathname === '/api/analyze' && req.method === 'POST') return send(res, 200, await aiAnalyze(await readJson(req)));

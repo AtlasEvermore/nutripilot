@@ -1852,3 +1852,49 @@ details.pf-sec>summary:focus-visible{outline:3px solid var(--lime);outline-offse
   .hello-copy h1{font-size:clamp(46px,4.4vw,64px)}
   .hello-pick{margin-top:22px}
 }
+/* v27 free trial: clock bar, trial box, locked apps, sign-in */
+#trial-bar{position:fixed;top:0;left:0;right:0;z-index:90;height:calc(38px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 12px 0;display:flex;align-items:center;gap:8px;background:var(--ink);color:#fff;font-size:13px;font-weight:700;overflow:hidden}
+#trial-bar .tb-ico{color:var(--lime);display:grid}#trial-bar .tb-ico .ico{width:16px;height:16px}
+#trial-bar .tb-text{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#trial-bar .tb-text b{font-family:var(--display);font-size:15px;font-variant-numeric:tabular-nums;color:var(--lime);margin-inline-end:3px}
+#trial-bar .tb-cta{flex:none;border:0;border-radius:999px;background:var(--lime);color:var(--ink);font-size:12px;font-weight:900;padding:6px 11px}
+#trial-bar .tb-progress{position:absolute;left:0;bottom:0;height:3px;background:var(--lime);transition:width 1s linear}
+#trial-bar.tb-low{background:#5a3a07}#trial-bar.tb-low .tb-text b,#trial-bar.tb-low .tb-ico{color:#ffd166}#trial-bar.tb-low .tb-progress{background:#ffd166}
+#trial-bar.tb-last{background:#6d1f1f;animation:tbPulse 1s ease-in-out infinite}#trial-bar.tb-last .tb-text b,#trial-bar.tb-last .tb-ico{color:#ffb4a8}#trial-bar.tb-last .tb-progress{background:#ffb4a8}
+@keyframes tbPulse{50%{background:#8a2a2a}}
+body.has-trial{padding-top:calc(38px + env(safe-area-inset-top))}
+body.has-trial .app-head{top:calc(38px + env(safe-area-inset-top))}
+body.has-trial .drawer{top:calc(38px + env(safe-area-inset-top))}
+.trial-box{position:relative;background:linear-gradient(150deg,#123a28,var(--ink) 60%);color:#fff;border-radius:24px;padding:18px;margin-bottom:12px;display:grid;gap:8px;overflow:hidden}
+.trial-box:after{content:"";position:absolute;right:-50px;top:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(closest-side,rgba(215,255,106,.28),transparent);pointer-events:none}
+.trial-box .trial-ico{width:42px;height:42px;border-radius:14px;background:var(--lime);color:var(--ink);display:grid;place-items:center}
+.trial-box .trial-ico .ico{width:22px;height:22px}
+.trial-box h3{margin:4px 0 0;font-size:20px;line-height:1.15;letter-spacing:-.02em}
+.trial-box p{margin:0;color:#cbd8cf;font-size:13.5px;line-height:1.5}
+.trial-box .btn{margin-top:6px}
+.trial-box .link-btn{color:#e8f2ea;justify-self:center;font-size:13px}
+.trial-box.ended{background:linear-gradient(150deg,#2b2340,#16122a 65%)}
+.trial-box.ended .trial-ico{background:#fff}
+.trial-box.sheet{margin:8px 0 0}
+.locked-app .screen.locked-blur{filter:blur(7px) saturate(.8);opacity:.7;pointer-events:none;user-select:none;max-height:calc(100vh - 120px);overflow:hidden}
+.lock-overlay{position:fixed;left:0;right:0;top:110px;bottom:calc(84px + var(--safe));z-index:30;display:grid;place-items:center;padding:12px;pointer-events:none}
+body.has-trial .lock-overlay{top:150px}
+.lock-card{pointer-events:auto;width:min(420px,100%);display:grid;gap:8px;justify-items:center;text-align:center}
+.lock-card>.mod-ico{width:54px;height:54px;border-radius:17px;background:var(--mc);color:#fff;display:grid;place-items:center;box-shadow:0 12px 24px -12px var(--mc)}
+.lock-card>.mod-ico .ico{width:26px;height:26px}
+.lock-card>b{font-size:15px;color:var(--ink)}
+.lock-card .trial-box{text-align:start;width:100%;box-shadow:0 24px 50px -20px rgba(10,27,17,.6)}
+.trial-list{list-style:none;margin:6px 0 16px;padding:0;display:grid;gap:12px}
+.trial-list li{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:14.5px;line-height:1.45}
+.trial-list .ico{width:20px;height:20px;color:#0d7f47;margin-top:1px}
+.signin-list{display:grid;gap:10px;margin:14px 0}
+.signin-btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;border-radius:14px;font-size:16px;font-weight:700;border:1px solid var(--line);background:#fff;color:#1f1f1f;padding:0 16px}
+.signin-btn .ico{width:20px;height:20px}
+.signin-btn.apple{background:#000;color:#fff;border-color:#000}
+.signin-btn.email{background:var(--paper)}
+@media (min-width:1024px){
+  body.has-trial .bottom-nav{top:calc(38px + env(safe-area-inset-top));height:calc(100vh - 38px)}
+  .lock-overlay{left:248px;top:90px;bottom:24px}
+  body.has-trial .lock-overlay{top:130px}
+  #trial-bar{justify-content:center;font-size:14px}#trial-bar .tb-text{flex:none}
+}

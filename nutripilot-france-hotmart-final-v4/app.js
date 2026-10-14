@@ -879,7 +879,8 @@ window.__npCollect = () => {
 };
 
 function authHeaders(extra = {}) {
-  return { ...extra, 'X-NP-Lang': state?.lang || 'fr', ...(state.accessToken ? { Authorization: `Bearer ${state.accessToken}` } : {}) };
+  const token = state.accessToken || (trialActive() ? state.accountToken : '');
+  return { ...extra, 'X-NP-Lang': state?.lang || 'fr', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 
 async function apiFetch(url, options = {}) {
@@ -960,7 +961,7 @@ function track(name, params = {}) {
     } catch { /* analytics must never break the app */ }
   }
 }
-const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus']);
+const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus', 'TrialStart', 'TrialEnded', 'TrialSignIn']);
 
 function logo() {
   return `<div class="logo"><span class="logo-mark"></span>${esc(config.brand)}</div>`;
@@ -1099,6 +1100,12 @@ function routeAllowed() {
 
 async function init() {
   captureUtms();
+  let webAuth = null;
+  if (location.hash.startsWith('#np-auth=')) {
+    try { webAuth = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(9).replace(/-/g, '+').replace(/_/g, '/'))))); } catch {}
+    history.replaceState(null, '', `${location.pathname}#app`);
+    route = 'app';
+  }
   try {
     const response = await fetch('/api/config');
     if (response.ok) config = { ...config, ...await response.json() };
@@ -1153,6 +1160,9 @@ async function init() {
   state.lastOpen = today;
   saveState(false);
   await loadDict(lang());
+  if (webAuth?.ok && webAuth.token) { completeSignIn(webAuth); if (state.premium) guardRoute(); }
+  else if (webAuth) toast(L('Connexion annulée.'));
+  if (state.accountToken && !state.premium) await syncTrial(false).catch(() => {});
   render();
   if ('serviceWorker' in navigator) {
     const hadController = Boolean(navigator.serviceWorker.controller);
@@ -1674,7 +1684,7 @@ function startSaving() {
 
 
 function exploreBanner() {
-  if (state.premium) return '';
+  if (fullAccess() || route === 'modules') return '';
   return `<button class="explore-banner" data-go="paywall">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button>`;
 }
 
@@ -2168,6 +2178,7 @@ async function accountVerify() {
     modal = null; document.querySelector('.modal-wrap')?.remove();
     track('Lead', { source: 'account' });
     if (data.premium) { toast(L('Accès Premium activé ✓')); return nav(state.onboarding ? 'app' : 'onboarding'); }
+    if (afterSignIn === 'trial') { afterSignIn = ''; return beginTrial(); }
     const intent = NativeBilling.pending; NativeBilling.pending = null;
     if (intent) { const plan = findPlan(intent.tier); if (plan) return Billing.purchase(plan, intent.period).catch((e) => toast(e?.message || L('Paiement interrompu.'))); }
     render();
@@ -2303,7 +2314,7 @@ let selectedPeriod = 'annual';
 // Legacy single plans keep what they used to include; unknown ids (older customers) keep full access.
 const LEGACY_PLAN_MODULES = { nutrition: ['nutrition', 'recipes', 'scanner'], training: ['training', 'scanner'], menopause: ['menopause', 'nutrition', 'recipes', 'scanner'] };
 function ownedModules() {
-  if (!state.premium) return [];
+  if (!state.premium) return trialActive() ? MODULES.map((m) => m.id) : [];
   const ids = String(state.subscriptionPlan || '').split(',').map((x) => x.trim()).filter(Boolean);
   const all = MODULES.map((m) => m.id);
   if (!ids.length) return all;
@@ -2333,8 +2344,177 @@ function planLabel() {
   if (owned.length && PAID_MODULES.every((m) => owned.includes(m.id))) return L('Kit complet');
   return PAID_MODULES.filter((m) => owned.includes(m.id)).map((m) => L(m.name)).join(' + ') || L('Découverte');
 }
+// ---- Free trial: everything locked for visitors, full access for TRIAL_MINUTES once signed in ----
+let clockOffset = 0;
+const serverNow = () => Date.now() + clockOffset;
+function trialActive() { return !state.premium && Number(state.trial?.endsAt || 0) > serverNow(); }
+function trialEnded() { return !state.premium && Boolean(state.trial?.used) && !trialActive(); }
+function fullAccess() { return state.premium || trialActive(); }
+function trialLeftMs() { return Math.max(0, Number(state.trial?.endsAt || 0) - serverNow()); }
+function trialMinutes() { return Number(config.trialMinutes || 20); }
+function deviceId() {
+  try { let id = localStorage.getItem('np_device'); if (!id) { id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`); localStorage.setItem('np_device', id); } return id; } catch { return ''; }
+}
+async function syncTrial(start = false) {
+  const token = state.accountToken || '';
+  if (!token || state.premium) return null;
+  const res = await fetch(start ? '/api/trial/start' : '/api/trial/status', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ device: deviceId() }) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(L(data.error || 'Réessayez dans un instant.'));
+  if (data.premium) { state.premium = true; state.accessToken = token; state.premiumEmail = data.email || state.accountEmail; saveState(false); return data; }
+  if (Number.isFinite(Number(data.now))) clockOffset = Number(data.now) - Date.now();
+  state.trial = data.used ? { used: true, startedAt: data.startedAt, endsAt: data.endsAt } : null;
+  saveState(false);
+  trialClock();
+  return data;
+}
+// "Start my free minutes": sign in first if needed, then start the clock on the server.
+async function beginTrial() {
+  if (state.premium) return nav('app');
+  if (!state.accountToken) { afterSignIn = 'trial'; modal = { type: 'signin' }; return renderModal(); }
+  try {
+    const data = await syncTrial(true);
+    if (state.premium) { toast(L('Accès Premium activé ✓')); return nav(state.onboarding ? 'app' : 'onboarding'); }
+    track(data?.active ? 'TrialStart' : 'TrialEnded');
+    modal = data?.active ? { type: 'trial-started' } : { type: 'trial-ended' };
+    render(); renderModal();
+  } catch (error) { toast(error.message); }
+}
+let trialTimer = null;
+let trialWasActive = false;
+const mmss = (ms) => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+// The clock bar on top of every screen while the trial runs; at zero, everything locks and the plans open.
+function trialClock() {
+  const active = trialActive();
+  let bar = document.getElementById('trial-bar');
+  document.body.classList.toggle('has-trial', active);
+  if (!active) {
+    bar?.remove();
+    if (trialTimer) { clearInterval(trialTimer); trialTimer = null; }
+    if (trialWasActive) { trialWasActive = false; track('TrialEnded'); render(); modal = { type: 'trial-ended' }; renderModal(); }
+    return;
+  }
+  trialWasActive = true;
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'trial-bar';
+    bar.setAttribute('role', 'timer');
+    document.body.prepend(bar);
+    bar.addEventListener('click', (e) => { if (e.target.closest('[data-trial-plans]')) { selectedTier = recommendedTier(); nav('plans'); } });
+  }
+  const left = trialLeftMs();
+  const total = trialMinutes() * 60000;
+  bar.className = left < 60000 ? 'tb-last' : left < 5 * 60000 ? 'tb-low' : '';
+  bar.innerHTML = `<span class="tb-ico">${icon('timer')}</span><span class="tb-text"><b>${mmss(left)}</b> ${L('de test gratuit')}</span><button class="tb-cta" data-trial-plans>${L('Voir les formules')}</button><i class="tb-progress" style="width:${Math.max(0, Math.min(100, left / total * 100))}%"></i>`;
+  bar.setAttribute('aria-label', L('Test gratuit : {t} restantes', { t: mmss(left) }));
+  if (!trialTimer) trialTimer = setInterval(trialClock, 1000);
+}
+let afterSignIn = '';
+// Signed in with Apple, Google or the e-mail code.
+function completeSignIn(data) {
+  state.accountEmail = data.email || state.accountEmail;
+  state.accountToken = data.token || state.accountToken;
+  if (data.premium) { state.premium = true; state.accessToken = data.token; state.premiumEmail = data.email; state.subscriptionPlan = data.plan || state.subscriptionPlan; }
+  saveState(false);
+  track('TrialSignIn', { source: data.provider || 'email' });
+  modal = null; document.querySelector('.modal-wrap')?.remove();
+  if (data.premium) { toast(L('Accès Premium activé ✓')); return nav(state.onboarding ? 'app' : 'onboarding'); }
+  const next = afterSignIn || (() => { try { return sessionStorage.getItem('np_after_signin') || ''; } catch { return ''; } })();
+  afterSignIn = ''; try { sessionStorage.removeItem('np_after_signin'); } catch {}
+  if (next === 'trial') return beginTrial();
+  render();
+}
+const nativePlatform = () => (window.Capacitor?.isNativePlatform?.() ? window.Capacitor.getPlatform?.() : '');
+function signInOptions() {
+  const a = config.auth || {};
+  const plat = nativePlatform();
+  const apple = a.apple && (plat === 'ios' ? Boolean(window.Capacitor?.Plugins?.SignInWithApple) : !plat && a.appleWeb);
+  // iPhone: Apple + e-mail · Android: Google + e-mail · web: both when configured.
+  const google = a.google && (plat === 'android' ? Boolean(window.Capacitor?.Plugins?.GoogleAuth) : !plat && a.googleWeb);
+  return { apple, google };
+}
+async function signInWith(provider) {
+  const plat = nativePlatform();
+  try {
+    if (!plat) {
+      try { sessionStorage.setItem('np_after_signin', afterSignIn || ''); } catch {}
+      location.href = `/auth/${provider}/start`;
+      return;
+    }
+    const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    let idToken = '';
+    if (provider === 'apple') {
+      const r = await window.Capacitor.Plugins.SignInWithApple.authorize({ clientId: config.auth.appleClientId, redirectURI: `${location.origin}/auth/apple/callback`, scopes: 'email name', state: nonce, nonce });
+      idToken = r?.response?.identityToken || '';
+    } else {
+      const G = window.Capacitor.Plugins.GoogleAuth;
+      await G.initialize?.({ clientId: config.auth.googleClientId, scopes: ['profile', 'email'], grantOfflineAccess: false }).catch(() => {});
+      const u = await G.signIn();
+      idToken = u?.authentication?.idToken || u?.idToken || '';
+    }
+    if (!idToken) throw new Error(L('Connexion annulée.'));
+    const res = await fetch(`/api/auth/${provider}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken, nonce }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(L(data.error || 'Connexion refusée. Réessayez.'));
+    completeSignIn({ ...data, provider });
+  } catch (error) {
+    if (/cancel|1001|12501/i.test(String(error?.message || error?.code || ''))) return;
+    toast(error.message || L('Connexion refusée. Réessayez.'));
+  }
+}
+const APPLE_LOGO = '<svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path fill="currentColor" d="M16.37 12.6c-.02-2.16 1.77-3.2 1.85-3.25-1.01-1.47-2.58-1.67-3.13-1.7-1.33-.13-2.6.79-3.28.79-.68 0-1.72-.77-2.83-.75-1.45.02-2.8.85-3.55 2.15-1.52 2.63-.39 6.52 1.09 8.66.72 1.04 1.58 2.22 2.71 2.17 1.09-.04 1.5-.7 2.82-.7 1.31 0 1.69.7 2.83.68 1.17-.02 1.91-1.06 2.62-2.11.83-1.21 1.17-2.38 1.19-2.44-.03-.01-2.28-.88-2.32-3.48zM14.21 6.27c.6-.73 1.01-1.74.9-2.75-.87.04-1.92.58-2.54 1.31-.56.64-1.05 1.67-.92 2.66.97.08 1.96-.49 2.56-1.22z"/></svg>';
+const GOOGLE_LOGO = '<svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path fill="#4285F4" d="M22.5 12.27c0-.79-.07-1.54-.2-2.27H12v4.29h5.9a5.04 5.04 0 0 1-2.19 3.31v2.75h3.54c2.07-1.91 3.25-4.72 3.25-8.08z"/><path fill="#34A853" d="M12 23c2.96 0 5.45-.98 7.26-2.65l-3.54-2.75c-.98.66-2.24 1.05-3.72 1.05-2.86 0-5.28-1.93-6.15-4.53H2.2v2.84A10.99 10.99 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.85 14.12A6.6 6.6 0 0 1 5.5 12c0-.74.13-1.45.35-2.12V7.04H2.2A11 11 0 0 0 1 12c0 1.78.43 3.46 1.2 4.96l3.65-2.84z"/><path fill="#EA4335" d="M12 5.38c1.61 0 3.06.55 4.2 1.64l3.14-3.14C17.45 2.09 14.96 1 12 1 7.7 1 3.99 3.47 2.2 7.04l3.65 2.84C6.72 7.3 9.14 5.38 12 5.38z"/></svg>';
+function signInSheet() {
+  const o = signInOptions();
+  return `<div class="sheet-head"><div><span class="tag">${L('Test gratuit')}</span><h2>${L('Entrez pour lancer vos {n} minutes', { n: trialMinutes() })}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
+    <p class="screen-sub">${L('Votre compte garde votre profil et votre progression. Aucun paiement maintenant.')}</p>
+    <div class="signin-list">
+      ${o.apple ? `<button class="signin-btn apple" data-signin="apple">${APPLE_LOGO}<span>${L('Continuer avec Apple')}</span></button>` : ''}
+      ${o.google ? `<button class="signin-btn google" data-signin="google">${GOOGLE_LOGO}<span>${L('Continuer avec Google')}</span></button>` : ''}
+      <button class="signin-btn email" data-signin="email">${icon('user')}<span>${L('Continuer avec mon e-mail')}</span></button>
+    </div>
+    <p class="fine center-fine">${L('En continuant, vous acceptez les <a href="{terms}" target="_blank" rel="noopener">conditions d’utilisation</a> et la <a href="{privacy}" target="_blank" rel="noopener">politique de confidentialité</a>.', { terms: `/terms?lang=${lang()}`, privacy: `/privacy?lang=${lang()}` })}</p>`;
+}
+// The box that explains the free minutes, used on the home screen, in the sheets and on locked apps.
+function trialPitch(kind = 'card') {
+  const ended = trialEnded();
+  const n = trialMinutes();
+  const trialDays = Billing.trialDays();
+  if (ended) {
+    return `<div class="trial-box ended ${kind}"><span class="trial-ico">${icon('lock')}</span>
+      <h3>${L('Votre test gratuit est terminé')}</h3>
+      <p>${trialDays ? L('Continuez avec tout NutriPilot : choisissez une formule et profitez de {d} jours gratuits. Rien n’est débité avant la fin de l’essai, et vous pouvez annuler avant.', { d: trialDays }) : L('Continuez avec tout NutriPilot en choisissant une formule.')}</p>
+      <button class="btn btn-lime btn-wide" data-module-buy="${recommendedTier()}">${trialDays ? L('Choisir ma formule · {d} jours gratuits', { d: trialDays }) : L('Choisir ma formule')}</button>
+      <button class="link-btn" data-go="plans">${L('Voir toutes les formules')}</button></div>`;
+  }
+  return `<div class="trial-box ${kind}"><span class="trial-ico">${icon('timer')}</span>
+    <h3>${L('Testez tout gratuitement pendant {n} minutes', { n })}</h3>
+    <p>${L('Recettes, entraînements, ménopause, sommeil, scanner et coach : tout est ouvert. Sans carte bancaire. À la fin, choisissez votre formule avec {d} jours gratuits.', { d: trialDays || 3 })}</p>
+    <button class="btn btn-lime btn-wide" data-trial-start>${L('Lancer mes {n} minutes gratuites', { n })}</button>
+    <button class="link-btn" data-go="plans">${L('Voir les formules')}</button></div>`;
+}
+function trialSheet(type) {
+  if (type === 'trial-started') {
+    const name = state.profile?.name ? esc(state.profile.name) : '';
+    return `<div class="sheet-head"><div><span class="tag">${L('Test gratuit')}</span><h2>${name ? L('C’est parti, {name} !', { name }) : L('C’est parti !')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
+      <ul class="trial-list">
+        <li>${icon('check')}<span>${L('Tout est ouvert pendant {n} minutes : recettes, entraînements, ménopause, sommeil, scanner et coach.', { n: trialMinutes() })}</span></li>
+        <li>${icon('timer')}<span>${L('L’horloge en haut de l’écran montre le temps qui reste.')}</span></li>
+        <li>${icon('star')}<span>${L('À la fin, choisissez votre formule avec {d} jours gratuits pour continuer.', { d: Billing.trialDays() || 3 })}</span></li>
+      </ul>
+      <button class="btn btn-lime btn-wide btn-xl" data-trial-go>${L('Explorer les apps')}</button>`;
+  }
+  if (trialEnded()) return `<div class="sheet-head"><div><span class="tag">${L('Vos {n} minutes sont terminées', { n: trialMinutes() })}</span></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>${trialPitch('sheet')}`;
+  return `<div class="sheet-head"><div><span class="tag">${L('Test gratuit')}</span><h2>${L('Cette partie est réservée aux abonnés')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
+    ${trialPitch('sheet')}`;
+}
+// Locked app: the real screen stays visible behind a blur, with the trial box on top.
+function lockOverlay(m) {
+  return `<div class="lock-overlay" role="dialog" aria-label="${esc(L(m.name))}"><div class="lock-card ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b>${trialPitch('overlay')}</div></div>`;
+}
+
 function hasFeature(feature) {
-  if (!state.premium) return false;
+  if (!state.premium) return trialActive();
   if (feature === 'coach') return ownedModules().length > 0;
   return hasModule(feature);
 }
@@ -2467,7 +2647,7 @@ function modulesScreen() {
       <button class="today-strip" data-go="app"><span class="ts-ico">${icon('home')}</span><span><small>${L('Aujourd’hui')}</small><b>${L('{n} kcal restantes', { n: fmt(left) })}</b></span><span class="ts-meta">${icon('drop')}${fmt(waterToday() / 1000, 1)} L<i></i>${icon('flame')}${L('{n} j', { n: streak() })}</span></button>
       <label class="search-box">${icon('search')}<input id="global-search" type="search" placeholder="${L('Rechercher une recette, un exercice, un nutriment…')}" autocomplete="off"></label>
       <div id="gs-results"></div>
-      ${owned.length ? '' : freeBanner(true)}
+      ${state.premium ? (owned.length ? '' : freeBanner(true)) : trialActive() ? '' : trialPitch('hub')}
       ${mine.length ? `<div class="section-label"><h3>${L(others.length ? 'Mes apps' : 'Toutes vos apps')}</h3></div><div class="app-grid">${mine.map((m) => appIcon(m, true)).join('')}</div>` : ''}
       ${others.length ? `<div class="section-label"><h3>${L(mine.length ? 'À découvrir' : 'Les apps NutriPilot')}</h3><button class="link-btn" data-go="plans">${L('Formules')}</button></div><div class="app-grid">${others.map((m) => appIcon(m, owned.includes(m.id))).join('')}</div>` : ''}
       ${!PAID_MODULES.every((m) => owned.includes(m.id)) && kit ? `<button class="kit-card" data-module-buy="complete"><span><small>${L('Kit complet')}</small><b>${L('Les 9 modules pour {price} / mois', { price: money(lp(kit, 'monthly')) })}</b><em>${L('Économisez {n} % par rapport aux modules séparés', { n: planSaving(kit, 'monthly') })}</em></span>${icon('chevron')}</button>` : ''}
@@ -2825,7 +3005,7 @@ function openDrawer() {
     if (event.target === el || (btn && btn.dataset.drawerClose !== undefined)) return closeDrawer();
     if (!btn) return;
     closeDrawer(true);
-    if (btn.dataset.openAdd !== undefined) return state.premium ? openAdd('photo') : nav('paywall');
+    if (btn.dataset.openAdd !== undefined) return fullAccess() ? openAdd('photo') : (modal = { type: 'trial' }, renderModal());
     if (btn.dataset.reminders !== undefined) { modal = { type: 'reminders' }; return renderModal(); }
     if (btn.dataset.go) return nav(btn.dataset.go);
   });
@@ -3513,9 +3693,11 @@ function hubScreen() {
   const explore = [['recipes', 'fork', 'Recettes par objectif', '{n} recettes', ALL_RECIPES.length], ['training', 'dumbbell', 'Exercices animés', '{n} mouvements', Object.keys(EXERCISES).length], ['menopause', 'flower', 'Espace Ménopause 40+', 'Journal, programme, séances', 0], ['guides', 'book', 'Cours', 'Première leçon offerte', 0]];
   const fFirst = { recipes: 'recipes', training: 'training', meno: 'menopause' }[currentFocus()];
   if (fFirst) explore.sort((a, b) => (b[0] === fFirst) - (a[0] === fFirst));
+  const trialBox = state.premium ? '' : trialPitch('hub');
   return `<div class="mobile-app hub">
     <header class="app-head"><div class="app-head-row"><button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${LANGS.find((x) => x[0] === lang())?.[2] || '🌐'}</button></div></div></header>
     <div class="screen">
+      ${trialBox}
       <section class="hub-hero">
         <small>${esc(t('hello'))}${p.name ? ` ${esc(p.name)}` : ''} 👋</small>
         ${FOCI[currentFocus()] ? `<span class="hello-kicker ${FOCI[currentFocus()].tone}">${icon(FOCI[currentFocus()].ico)} ${L(FOCI[currentFocus()].kicker)}</span>` : ''}
@@ -3955,7 +4137,7 @@ function openLesson(id) {
   if (!guide) return;
   const access = lessonAccess(guide);
   modal = null;
-  if (access === 'paywall') { track('PaywallFromLesson', { lesson: guide.id }); return nav('paywall'); }
+  if (access === 'paywall') { track('PaywallFromLesson', { lesson: guide.id }); modal = { type: 'trial' }; return renderModal(); }
   if (access === 'upgrade') { selectedTier = 'complete'; return nav('upgrade'); }
   state.guidesRead = [...new Set([...(state.guidesRead || []), guide.id])];
   saveState();
@@ -3965,7 +4147,7 @@ function openLesson(id) {
 }
 
 function lessonAccess(guide) {
-  if (!state.premium) return guide.index === 0 ? 'free' : 'paywall';
+  if (!fullAccess()) return 'paywall';
   if (guide.tier === 'all' || hasFeature(guide.tier) || (guide.tier === 'nutrition' && hasFeature('menopause'))) return 'open';
   return 'upgrade';
 }
@@ -6531,9 +6713,11 @@ function renderModal() {
   stopBarcodeCamera();
   document.querySelector('.modal-wrap')?.remove();
   if (!modal) return;
+  // Recipes, exercises and lessons opened from anywhere stay locked outside the free minutes.
+  if (!fullAccess() && ['recipe', 'exercise', 'guide', 'lesson'].includes(modal.type) && !modal.recipe?.custom) modal = { type: 'trial' };
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'signin' ? signInSheet() : ['trial', 'trial-started', 'trial-ended'].includes(modal.type) ? trialSheet(modal.type) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
@@ -6943,7 +7127,7 @@ function render() {
   else if (route === 'saving') html = savingScreen();
   else if (route === 'tour') html = tourScreen();
   else if (route === 'support') html = supportScreen();
-  else if (route === 'app' && !state.premium) html = hubScreen();
+  else if (route === 'app' && !fullAccess()) html = hubScreen();
   else if (route === 'onboarding') html = onboarding();
   else if (route === 'analyzing') html = analyzing();
   else if (route === 'paywall' || route === 'upgrade') html = paywall();
@@ -6982,11 +7166,14 @@ function render() {
   const shellId = appShellId();
   if (shellId && html.includes('</header>')) {
     const title = (html.match(/<h2>([\s\S]*?)<\/h2>/) || [])[1] || '';
-    html = html.replace(/<header class="app-head">[\s\S]*?<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, () => appHead(shellId, title) + (hasModule(shellId) ? '' : moduleBar(shellId)))
+    html = html.replace(/<header class="app-head">[\s\S]*?<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, () => appHead(shellId, title))
       .replace(/<nav class="bottom-nav">[\s\S]*?<\/nav>/, () => appTabBar(shellId))
       .replace('<div class="mobile-app', '<div class="in-app mobile-app');
   } else if (modHere && html.includes('</header>')) html = html.replace(/<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, `</header>${moduleBar(modHere.id)}`);
-  const noFab = state.premium || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
+  // Visitors without free minutes left see each app behind a blur, with the trial box on top.
+  const locked = !fullAccess() && modHere && !['plans', 'paywall', 'upgrade'].includes(route);
+  if (locked) html = html.replace('<div class="screen', '<div inert aria-hidden="true" class="locked-blur screen').replace('<div class="in-app mobile-app', '<div class="in-app locked-app mobile-app') + lockOverlay(modHere);
+  const noFab = state.premium || locked || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
   a11yPass(app);
   const entered = window.__npLastRoute !== route;
@@ -7003,6 +7190,7 @@ function render() {
   if (document.querySelector('[data-tilt]')) bindTilt();
   if (route === 'progress') renderPhotos();
   if (route === 'saving' && !savingTimer) startSaving();
+  trialClock();
 }
 
 // Gives every icon-only button an accessible name.
@@ -7061,10 +7249,10 @@ function bind() {
     const button = event.target.closest('button, [role="button"]');
     if (!button) return;
 
-    if (!state.premium && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
+    if (!fullAccess() && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
       track('PaywallFromFeature', { feature: PREMIUM_ACTIONS.find((key) => button.dataset[key] !== undefined) });
       selectedTier = moduleForRoute()?.id || (button.dataset.openAdd !== undefined || button.dataset.addTab ? 'scanner' : 'complete');
-      return nav('paywall');
+      modal = { type: 'trial' }; return renderModal();
     }
     if (button.dataset.drawer !== undefined) return openDrawer();
     if (button.dataset.navBack !== undefined) {
@@ -7151,6 +7339,7 @@ function bind() {
     if (button.dataset.goNutrient) { nutrientTab = 'guide'; nutrientOpen = button.dataset.goNutrient; return nav('nutrients'); }
     if (button.dataset.appTab) { const [id, key] = button.dataset.appTab.split(':'); return openAppTab(id, key); }
     if (button.dataset.todayTab) { todayTab = button.dataset.todayTab; return render(); }
+    if (button.dataset.trialStart !== undefined) return beginTrial();
     if (button.dataset.appMore) { modal = { type: 'appmore', app: button.dataset.appMore }; return renderModal(); }
     if (button.dataset.recipeView) { recipeView = button.dataset.recipeView; return render(); }
     // Scanner module
@@ -7163,11 +7352,11 @@ function bind() {
     if (button.dataset.nutrientSrc) { nutrientOpen = button.dataset.nutrientSrc; return render(); }
     // Supplements
     if (button.dataset.suppTab) { suppTab = button.dataset.suppTab; suppDraft = null; return render(); }
-    if (button.dataset.spNew !== undefined) { if (!state.premium) return nav('paywall'); suppDraft = { name: '', brand: '', perDay: 1, ingredients: [], warnings: [] }; return render(); }
+    if (button.dataset.spNew !== undefined) { if (!fullAccess()) return nav('paywall'); suppDraft = { name: '', brand: '', perDay: 1, ingredients: [], warnings: [] }; return render(); }
     if (button.dataset.spEdit !== undefined) { suppDraft = { ...clone(state.supplements[Number(button.dataset.spEdit)]), index: Number(button.dataset.spEdit) }; return render(); }
     if (button.dataset.spPause !== undefined) { const x = state.supplements[Number(button.dataset.spPause)]; if (x) { x.paused = !x.paused; saveState(); } return render(); }
     if (button.dataset.spCancel !== undefined) { suppDraft = null; return render(); }
-    if (button.dataset.spPreset) { if (!state.premium) return nav('paywall'); suppDraft = presetDraft(button.dataset.spPreset); return render(); }
+    if (button.dataset.spPreset) { if (!fullAccess()) return nav('paywall'); suppDraft = presetDraft(button.dataset.spPreset); return render(); }
     if (button.dataset.spTake !== undefined) {
       const i = Number(button.dataset.spTake); const d = todayKey();
       state.suppTaken = state.suppTaken || {};
@@ -7208,7 +7397,7 @@ function bind() {
       return render();
     }
     if (button.dataset.suppRead !== undefined) {
-      if (!state.premium) return nav('paywall');
+      if (!fullAccess()) return nav('paywall');
       const text = $('#supp-text')?.value.trim() || '';
       if (!text && !suppImage) return toast('Ajoutez une photo ou le texte de l’étiquette.');
       button.disabled = true; button.textContent = L('Lecture en cours…');
@@ -7469,7 +7658,7 @@ function bind() {
     if (button.dataset.menoRange) { menoRange = Number(button.dataset.menoRange); return render(); }
     if (button.dataset.menoReport !== undefined) return openMenoReport();
     if (button.dataset.menoFactor) {
-      if (!state.premium) { nav('paywall'); return; }
+      if (!fullAccess()) { nav('paywall'); return; }
       const day = todayKey();
       state.menoFactors = state.menoFactors || {};
       const f = { ...(state.menoFactors[day] || {}) };
@@ -7479,7 +7668,7 @@ function bind() {
       return render();
     }
     if (button.dataset.menoLog) {
-      if (!state.premium) { nav('paywall'); return; }
+      if (!fullAccess()) { nav('paywall'); return; }
       const day = todayKey();
       state.menoLog = state.menoLog || {};
       state.menoLog[day] = { ...(state.menoLog[day] || {}) };
@@ -7491,7 +7680,7 @@ function bind() {
       return render();
     }
     if (button.dataset.menoTask !== undefined) {
-      if (!state.premium) { nav('paywall'); return; }
+      if (!fullAccess()) { nav('paywall'); return; }
       const i = Number(button.dataset.menoTask); const j = Number(button.dataset.task); menoOpenWeek = i;
       state.menoTasks = state.menoTasks || {};
       const list = [...(state.menoTasks[i] || [])];
@@ -7516,7 +7705,7 @@ function bind() {
     if (button.dataset.gridMove) { const [d, e] = button.dataset.gridMove.split(':').map(Number); const list = gridDraft().days[d].ex; if (e > 0) [list[e - 1], list[e]] = [list[e], list[e - 1]]; saveState(false); return render(); }
     if (button.dataset.gridRemove) { const [d, e] = button.dataset.gridRemove.split(':').map(Number); gridDraft().days[d].ex.splice(e, 1); saveState(false); return render(); }
     if (button.dataset.gridPick !== undefined) { pickerState = { day: Number(button.dataset.gridPick), group: 'all', equip: 'all', query: '' }; modal = { type: 'ex-picker' }; return renderModal(); }
-    if (button.dataset.gridSave !== undefined) { if (!state.premium) return nav('paywall'); return saveGrid(); }
+    if (button.dataset.gridSave !== undefined) { if (!fullAccess()) return nav('paywall'); return saveGrid(); }
     if (button.dataset.recipeCuisine) { recipeCuisine = button.dataset.recipeCuisine; return render(); }
     if (button.dataset.recipeRegion) { recipeRegion = button.dataset.recipeRegion; recipeCuisine = 'all'; return render(); }
     if (button.dataset.recipeType) { recipeType = button.dataset.recipeType; return render(); }
@@ -7551,7 +7740,7 @@ function bind() {
       try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Liste copiée ✓'); } } catch {}
       return;
     }
-    if (button.dataset.planAddRecipe) { if (!state.premium) return nav('paywall'); modal = { type: 'plan-pick', recipeId: button.dataset.planAddRecipe }; return renderModal(); }
+    if (button.dataset.planAddRecipe) { if (!fullAccess()) return nav('paywall'); modal = { type: 'plan-pick', recipeId: button.dataset.planAddRecipe }; return renderModal(); }
     if (button.dataset.trainFocus) { trainFocus = button.dataset.trainFocus; return render(); }
     if (button.dataset.libGroup) { libGroup = button.dataset.libGroup; return render(); }
     if (button.dataset.exercise) { modal = { type: 'exercise', id: button.dataset.exercise }; return renderModal(); }
@@ -7589,7 +7778,7 @@ function bind() {
       return render();
     }
     if (button.dataset.importPlan) {
-      if (!state.premium) return nav('paywall');
+      if (!fullAccess()) return nav('paywall');
       return importPlan(button.dataset.importPlan, button);
     }
     if (button.dataset.workoutProgram) {
@@ -7843,6 +8032,12 @@ function bindModal(root) {
     if (!button) return;
 
     if (button.dataset.appTab) { const [id, key] = button.dataset.appTab.split(':'); modal = null; root.remove(); return openAppTab(id, key); }
+    if (button.dataset.trialStart !== undefined) { modal = null; root.remove(); return beginTrial(); }
+    if (button.dataset.trialGo !== undefined) { modal = null; root.remove(); return nav('modules'); }
+    if (button.dataset.signin) {
+      if (button.dataset.signin === 'email') { modal = { type: 'account', step: 'email', email: state.accountEmail || '' }; return renderModal(); }
+      return signInWith(button.dataset.signin);
+    }
     if (button.dataset.close !== undefined) {
       const refresh = modal?.refresh;
       modal = null;
@@ -7893,7 +8088,7 @@ function bindModal(root) {
     if (button.dataset.supportSend !== undefined) return sendSupport($('#support-input', root)?.value);
     if (button.dataset.supportQuick) return sendSupport(button.dataset.supportQuick);
     if (button.dataset.swapEx !== undefined) {
-      if (!state.premium) { modal = null; root.remove(); return nav('paywall'); }
+      if (!fullAccess()) { modal = null; root.remove(); return nav('paywall'); }
       const program = findProgram(button.dataset.program);
       const session = program?.sessions.find((x) => x.id === button.dataset.sessionId);
       if (!program || !session) return;
@@ -7911,7 +8106,7 @@ function bindModal(root) {
       toast(L('Remplacé par : {name}', { name: L(exName(next)) }));
       return renderModal();
     }
-    if (button.dataset.finishSession && !state.premium) {
+    if (button.dataset.finishSession && !fullAccess()) {
       modal = null;
       root.remove();
       return nav('paywall');
@@ -8004,7 +8199,7 @@ function bindModal(root) {
       return;
     }
     if (button.dataset.addCurated) return addCuratedRecipe(button.dataset.addCurated, modal?.type === 'recipe' && modal.recipe?.id === button.dataset.addCurated ? modal.recipe : null);
-    if (button.dataset.planAddRecipe) { if (!state.premium) { modal = null; root.remove(); return nav('paywall'); } modal = { type: 'plan-pick', recipeId: button.dataset.planAddRecipe }; return renderModal(); }
+    if (button.dataset.planAddRecipe) { if (!fullAccess()) { modal = null; root.remove(); return nav('paywall'); } modal = { type: 'plan-pick', recipeId: button.dataset.planAddRecipe }; return renderModal(); }
     if (button.dataset.planPickDay !== undefined) { addRecipeToPlan(modal.recipeId, Number(button.dataset.planPickDay)); modal = null; root.remove(); return render(); }
     if (button.dataset.swapChoose) {
       const { dayIndex, mealIndex } = modal;

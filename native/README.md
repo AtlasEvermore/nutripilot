@@ -41,6 +41,30 @@ Crie as assinaturas com **exatamente** estes IDs (lista completa e preços em `N
    - `REVENUECAT_WEBHOOK_AUTH` — uma senha longa que você inventa
 4. Em Integrations › Webhooks: URL `https://app.atlasevermore.com/api/revenuecat/webhook` e cabeçalho Authorization = o mesmo valor de `REVENUECAT_WEBHOOK_AUTH`.
 
+## 3b. Entrar com Apple e Google + teste grátis de 20 minutos
+Quem baixa o app vê tudo bloqueado. Ao tocar em "Começar meus 20 minutos grátis", a pessoa entra com Apple (iPhone), Google (Android) ou e-mail, e o servidor libera tudo por 20 minutos — uma vez por conta e uma vez por aparelho. No fim, o app bloqueia de novo e oferece os planos com 3 dias grátis da loja.
+
+**Apple (Sign in with Apple)**
+1. developer.apple.com › Identifiers › `com.atlasevermore.nutripilot` › ative **Sign In with Apple**.
+2. Para o login no site: crie um **Services ID** (ex.: `com.atlasevermore.nutripilot.web`), ative Sign In with Apple, domínio `app.atlasevermore.com` e retorno `https://app.atlasevermore.com/auth/apple/callback`.
+3. No Xcode: Signing & Capabilities › **+ Sign In with Apple**.
+
+**Google**
+1. console.cloud.google.com › APIs e serviços › Credenciais › Criar ID do cliente OAuth:
+   - **Aplicativo da Web**: origem `https://app.atlasevermore.com`, redirecionamento `https://app.atlasevermore.com/auth/google/callback` (guarde o ID e a chave secreta).
+   - **Android**: pacote `com.atlasevermore.nutripilot` + SHA-1 da chave de assinatura (Play Console › Integridade do app).
+   - **iOS** (opcional): bundle `com.atlasevermore.nutripilot`.
+2. Em `capacitor.config.json`, troque `serverClientId` pelo ID do cliente **Web**.
+
+**No Railway (variáveis)**
+- `APPLE_CLIENT_IDS` = `com.atlasevermore.nutripilot,com.atlasevermore.nutripilot.web`
+- `APPLE_SERVICE_ID` = `com.atlasevermore.nutripilot.web`
+- `GOOGLE_CLIENT_IDS` = ID Web, ID Android e ID iOS separados por vírgula (o Web primeiro)
+- `GOOGLE_CLIENT_SECRET` = chave secreta do cliente Web
+- `TRIAL_MINUTES` = `20` (padrão) · `TRIAL_AI_CALLS` = `25` (limite de usos de IA durante o teste)
+
+Sem essas variáveis, os botões Apple/Google não aparecem e o teste funciona com o login por e-mail.
+
 ## 4. Gerar os projetos nativos
 Num computador com Node 20+ (Mac para iOS):
 ```

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "iPhone and Android shell for NutriPilot (Capacitor). The app content is served by app.atlasevermore.com.",
   "scripts": {
-    "setup": "npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/ios@latest @capacitor/android@latest @capacitor/splash-screen@latest @capacitor/status-bar@latest @revenuecat/purchases-capacitor@latest && npm install -D @capacitor/assets@latest",
+    "setup": "npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/ios@latest @capacitor/android@latest @capacitor/splash-screen@latest @capacitor/status-bar@latest @revenuecat/purchases-capacitor@latest @capacitor-community/apple-sign-in@latest @codetrix-studio/capacitor-google-auth@latest && npm install -D @capacitor/assets@latest",
     "add:android": "npx cap add android",
     "add:ios": "npx cap add ios",
     "assets": "npx capacitor-assets generate --iconBackgroundColor '#11251b' --splashBackgroundColor '#0E2A1F'",
