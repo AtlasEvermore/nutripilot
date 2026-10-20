@@ -12,22 +12,22 @@
   },
   "ios": {
     "contentInset": "never",
-    "backgroundColor": "#F6F4EC",
+    "backgroundColor": "#F3F4F1",
     "limitsNavigationsToAppBoundDomains": false
   },
   "android": {
-    "backgroundColor": "#F6F4EC",
+    "backgroundColor": "#F3F4F1",
     "allowMixedContent": false
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 600,
-      "backgroundColor": "#0E2A1F",
+      "backgroundColor": "#0A100D",
       "showSpinner": false
     },
     "StatusBar": {
       "style": "LIGHT",
-      "backgroundColor": "#F6F4EC",
+      "backgroundColor": "#F3F4F1",
       "overlaysWebView": false
     },
     "GoogleAuth": {

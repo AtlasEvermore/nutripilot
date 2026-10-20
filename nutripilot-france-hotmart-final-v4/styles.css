@@ -1923,3 +1923,119 @@ body.has-trial .lock-overlay{top:150px}
 .recap-plan{margin-top:8px;border-radius:16px;padding:12px 14px;background:var(--mt,#eef4e6);border:1px solid color-mix(in srgb,var(--mc,#2e7d32) 30%,transparent);display:grid;gap:2px}
 .recap-plan small{font-size:11.5px;font-weight:800;color:var(--muted)}.recap-plan b{font-size:17px;color:var(--mc,var(--ink))}.recap-plan span{font-size:13px;font-weight:700}
 .sheet .link-btn.center-fine{display:block;margin-inline:auto;text-align:center}
+
+/* ==========================================================================================
+   v9 · AURORA — Apple-grade visual layer (SF typography, Liquid-Glass materials, aurora cards,
+   floating tab bar, tactile feedback). Appended last so it refines every screen without
+   touching the structure above.
+   ========================================================================================== */
+:root{
+  --ink:#0A100D;--ink2:#1D2622;--paper:#F3F4F1;--card:#fff;--line:rgba(10,16,13,.09);--muted:#69736D;
+  --lime:#C9FF3B;--lime2:#9DEB1E;--mint:#E8F7EC;
+  --em:#18E08A;--cy:#16C6F0;--vi:#7D5CFF;
+  --display:-apple-system,"SF Pro Display",BlinkMacSystemFont,"Figtree",system-ui,sans-serif;
+  --text:-apple-system,"SF Pro Text",BlinkMacSystemFont,"Figtree",system-ui,"Segoe UI",Roboto,sans-serif;
+  --glass:rgba(255,255,255,.72);--glass-line:rgba(255,255,255,.65);
+  --aurora:radial-gradient(120% 85% at 100% 0%,rgba(24,224,138,.38),transparent 55%),radial-gradient(90% 75% at 0% 100%,rgba(22,198,240,.26),transparent 60%),radial-gradient(70% 55% at 85% 105%,rgba(125,92,255,.28),transparent 60%);
+  --lift:0 1px 0 rgba(10,16,13,.03),0 10px 30px -18px rgba(10,16,13,.28);
+  --radius:24px;--ease:cubic-bezier(.22,1,.36,1);--spring:cubic-bezier(.34,1.56,.64,1)
+}
+body{font-family:var(--text);background:var(--paper);letter-spacing:-.011em;text-rendering:optimizeLegibility;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+h1,h2,h3,.screen-title,.mini-card b{font-family:var(--display);letter-spacing:-.03em}
+.screen-title{font-weight:800;letter-spacing:-.045em}
+b,strong{font-weight:700}
+.mobile-app{background:var(--paper);box-shadow:none}
+[class*="stat"] b,.hh-stats b,.plan-per b,.mod-price b,.big-num,.ring-num{font-variant-numeric:tabular-nums}
+
+/* Glass materials — header, tab bar, sheets */
+.app-head{background:color-mix(in srgb,var(--paper) 72%,transparent);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border-bottom:.5px solid transparent;transition:border-color .3s}
+.icon-btn{background:rgba(255,255,255,.8);border:.5px solid var(--line);border-radius:50%;box-shadow:0 1px 2px rgba(10,16,13,.06);transition:transform .2s var(--spring),background .2s}
+.menu-btn{background:var(--ink);color:var(--lime);border-radius:50%}
+.modal-wrap{background:rgba(5,10,8,.42);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.sheet{background:color-mix(in srgb,var(--paper) 94%,transparent);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);border:.5px solid var(--glass-line);box-shadow:0 -10px 60px -10px rgba(0,0,0,.28)}
+.sheet-grip{background:rgba(10,16,13,.18);width:40px}
+
+/* Floating Liquid-Glass tab bar (phones & tablets) */
+@media (max-width:1023px){
+  .mobile-app{padding-bottom:calc(104px + var(--safe))}
+  .bottom-nav{left:50%;transform:translateX(-50%);bottom:calc(10px + var(--safe));width:min(540px,calc(100% - 24px));height:66px;padding:6px 6px;border-radius:30px;border:.5px solid var(--glass-line);border-top:.5px solid var(--glass-line);
+    background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.66));-webkit-backdrop-filter:saturate(200%) blur(26px);backdrop-filter:saturate(200%) blur(26px);
+    box-shadow:0 18px 40px -16px rgba(10,16,13,.35),0 2px 6px rgba(10,16,13,.06),inset 0 1px 0 rgba(255,255,255,.9)}
+  .nav-btn{border-radius:22px;font-size:10px;font-weight:650;color:#7B847F;transition:color .2s,background .25s var(--ease),transform .2s var(--spring)}
+  .nav-btn.active{color:var(--ink);background:rgba(10,16,13,.06)}
+  .nav-btn.active:not(.center):after{display:none}
+  .nav-btn.center span{width:52px;height:52px;margin-top:-4px;border-radius:50%;color:var(--ink);background:conic-gradient(from 210deg,var(--lime),#7DF9C2,var(--cy),var(--lime));
+    box-shadow:0 10px 24px -8px rgba(24,224,138,.75),inset 0 1px 0 rgba(255,255,255,.7),0 0 0 3px rgba(255,255,255,.85)}
+  .nav-btn.center{font-size:0;gap:0}
+  .support-fab{bottom:calc(88px + var(--safe))}
+  .toast{bottom:calc(92px + var(--safe))}
+  .rest-pill{bottom:calc(92px + var(--safe))}
+}
+.app-nav .nav-btn.active{color:var(--mc,var(--ink))}
+
+/* Aurora surfaces: every dark hero card */
+.today-card,.hub-hero,.trial-box,.train-hero,.prog-hero,.recipes-hero,.shop-hero,.hero-ring-card,.journey,.progress-hero,.drawer-stats,.result-total,.plan-card.pl-complete,.plan-mini.pl-complete{
+  background-color:var(--ink);background-image:var(--aurora);background-size:140% 140%;border:.5px solid rgba(255,255,255,.08);
+  box-shadow:0 24px 50px -24px rgba(5,20,12,.65),inset 0 1px 0 rgba(255,255,255,.08);position:relative;isolation:isolate;overflow:hidden;animation:auroraDrift 18s ease-in-out infinite alternate}
+.today-card:before,.hub-hero:before,.trial-box:before,.train-hero:before,.prog-hero:before,.hero-ring-card:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:22px 22px;
+  -webkit-mask-image:radial-gradient(80% 70% at 85% 0%,#000,transparent 75%);mask-image:radial-gradient(80% 70% at 85% 0%,#000,transparent 75%)}
+@keyframes auroraDrift{0%{background-position:0% 0%}100%{background-position:100% 60%}}
+.hub-hero h1{font-size:clamp(28px,7.6vw,40px);line-height:1.04;font-weight:800;letter-spacing:-.045em}
+.hh-stats>div{background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.1);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.hh-stats b{background:linear-gradient(180deg,#fff,#CFF7E2);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* Buttons — tactile, Apple-like */
+.btn{border-radius:16px;font-weight:700;letter-spacing:-.01em;transition:transform .18s var(--spring),box-shadow .25s,filter .2s;min-height:48px}
+.btn:active,.icon-btn:active,.nav-btn:active,.mini-card:active,.guide-card:active,.plan-option:active,.app-icon:active,.track-card:active{transform:scale(.965)}
+.btn-lime{background:linear-gradient(180deg,#D8FF66,var(--lime) 55%,#B6F21F);color:#0A100D;box-shadow:0 10px 24px -12px rgba(140,230,20,.9),inset 0 1px 0 rgba(255,255,255,.65),inset 0 -1px 0 rgba(0,0,0,.06)}
+.btn-lime:hover{filter:brightness(1.03)}
+.btn-primary{background:linear-gradient(180deg,#1E2A25,var(--ink));box-shadow:0 10px 24px -14px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.1)}
+.btn-ghost{background:rgba(255,255,255,.85);border:.5px solid var(--line)}
+.btn-xl{min-height:56px;font-size:17px;border-radius:18px}
+.link-btn{font-weight:650}
+.trial-box .btn-lime,.hub-hero .btn-lime{box-shadow:0 0 0 1px rgba(201,255,59,.35),0 12px 34px -10px rgba(201,255,59,.55),inset 0 1px 0 rgba(255,255,255,.7)}
+
+/* Cards & lists — grouped iOS style */
+.mini-card,.guide-card,.plan-option,.track-card,.today-strip,.kit-card,.plans-link,.free-row button,.hub-me button,.feature-rows>div,.search-box{border:.5px solid var(--line);box-shadow:var(--lift);border-radius:20px}
+.plan-option.selected{border:2px solid var(--ink);background:linear-gradient(180deg,#fff,#F3FBEA);box-shadow:0 18px 40px -22px rgba(24,120,60,.55)}
+.plan-badge{background:linear-gradient(90deg,var(--ink),#16302A);color:var(--lime);border-radius:999px}
+.plan-badge.reco{background:linear-gradient(90deg,var(--em),var(--cy));color:#04130C}
+.period-toggle{background:rgba(10,16,13,.06);border-radius:14px;padding:3px}
+.period-toggle button{border-radius:11px}
+.period-toggle button.active{background:#fff;box-shadow:0 3px 10px -3px rgba(0,0,0,.18)}
+.search-box{background:rgba(118,118,128,.1);border-color:transparent;box-shadow:none}
+.field input,.field select,.field textarea,input[type=email],input[type=text],input[type=number],input[type=search],select{border-radius:14px}
+:focus-visible{outline:3px solid rgba(22,198,240,.55);outline-offset:2px}
+
+/* App launcher — iOS home-screen icons */
+.app-icon .ai-tile{border-radius:22.5%;box-shadow:0 10px 22px -12px rgba(10,16,13,.55),inset 0 1px 0 rgba(255,255,255,.35),inset 0 -8px 16px rgba(0,0,0,.08);transition:transform .25s var(--spring)}
+.app-icon:hover .ai-tile{transform:translateY(-2px)}
+.app-icon b{font-weight:600;letter-spacing:-.01em}
+
+/* Trial box (3 free days in the store) */
+.trial-box h3{font-size:21px;line-height:1.15;font-weight:800;letter-spacing:-.035em;margin:2px 0 0}
+.trial-box p{color:rgba(255,255,255,.78);font-size:14px;line-height:1.45;margin:0}
+.trial-box .trial-ico{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;color:#06140C;background:linear-gradient(135deg,var(--lime),#7DF9C2)}
+.trial-box .trial-fine{display:block;text-align:center;color:rgba(255,255,255,.62);font-size:12px;margin-top:2px}
+.lock-overlay .lock-card{border-radius:28px;background:rgba(255,255,255,.55);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);border:.5px solid var(--glass-line);box-shadow:0 30px 70px -30px rgba(10,16,13,.5)}
+#trial-bar{display:none!important}
+body.has-trial .app-head{top:0}
+
+/* Motion */
+.screen>*{animation:riseIn .5s var(--ease) both}
+.screen>*:nth-child(2){animation-delay:.03s}.screen>*:nth-child(3){animation-delay:.06s}.screen>*:nth-child(4){animation-delay:.09s}.screen>*:nth-child(5){animation-delay:.12s}
+@keyframes riseIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen>*,.today-card,.hub-hero,.trial-box,.train-hero,.prog-hero,.hero-ring-card{animation:none!important}}
+
+/* Responsive safety net: nothing may push the page sideways */
+html,body{max-width:100%;overflow-x:hidden}
+img,svg,video,canvas,iframe{max-width:100%}
+.screen{min-width:0}.screen>*{min-width:0;max-width:100%}
+.app-head-row h2,.app-head-row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:360px){.screen{padding-left:12px;padding-right:12px}.screen-title{font-size:28px}.bottom-nav{width:calc(100% - 16px)}.nav-btn{font-size:9px}}
+@media (min-width:1024px){
+  .bottom-nav{background:rgba(255,255,255,.7);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);border-right:.5px solid var(--line)}
+  .nav-btn{border-radius:12px}
+  .nav-btn.active{background:rgba(10,16,13,.06)}
+}

@@ -41,8 +41,13 @@ Crie as assinaturas com **exatamente** estes IDs (lista completa e preços em `N
    - `REVENUECAT_WEBHOOK_AUTH` — uma senha longa que você inventa
 4. Em Integrations › Webhooks: URL `https://app.atlasevermore.com/api/revenuecat/webhook` e cabeçalho Authorization = o mesmo valor de `REVENUECAT_WEBHOOK_AUTH`.
 
-## 3b. Entrar com Apple e Google + teste grátis de 20 minutos
-Quem baixa o app vê tudo bloqueado. Ao tocar em "Começar meus 20 minutos grátis", a pessoa entra com Apple (iPhone), Google (Android) ou e-mail, e o servidor libera tudo por 20 minutos — uma vez por conta e uma vez por aparelho. No fim, o app bloqueia de novo e oferece os planos com 3 dias grátis da loja.
+## 3b. Sem login, sem senha (v9) + teste grátis de 3 dias da loja
+O teste de 20 minutos foi removido. Agora:
+- Quem baixa o app explora as telas gratuitas e vê os módulos com uma prévia. Um toque em "Começar meus 3 dias grátis" abre a folha de pagamento da Apple (Face ID) ou do Google Play — **sem criar conta, sem e-mail, sem senha**.
+- A assinatura fica ligada ao Apple ID / conta Google. O servidor confirma a compra no RevenueCat (`/api/iap/verify`, sem token) e cria a conta automaticamente (chave = `original_app_user_id` do RevenueCat).
+- Ao reabrir ou reinstalar, o app reconhece o assinante sozinho; em outro aparelho basta "Restaurar compras".
+- O teste de 3 dias é a **oferta introdutória** configurada em cada assinatura na App Store Connect e no Google Play (seção 2).
+- Login com Apple/Google/e-mail continua opcional (clientes antigos da Hotmart e versão web).
 
 **Apple (Sign in with Apple)**
 1. developer.apple.com › Identifiers › `com.atlasevermore.nutripilot` › ative **Sign In with Apple**.

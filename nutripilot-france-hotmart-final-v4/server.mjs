@@ -1469,8 +1469,8 @@ function applyStoreAccess(entry) {
   }
   entry.updatedAt = new Date().toISOString();
 }
-async function syncStoreAccount(email, appUserId) {
-  const result = activeStorePlans(await revenueCatSubscriber(appUserId));
+async function syncStoreAccount(email, appUserId, subscriber = null) {
+  const result = activeStorePlans(subscriber || await revenueCatSubscriber(appUserId));
   return mutateEntitlements((all) => {
     const entry = all[email] || (all[email] = { status: 'none', createdAt: new Date().toISOString() });
     entry.storeAccounts = { ...(entry.storeAccounts || {}), [appUserId]: { ...result, syncedAt: new Date().toISOString() } };
@@ -1682,7 +1682,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
-        version: '8.0.0',
+        version: '9.0.0',
         brand: BRAND_NAME,
         ai,
         email,
@@ -1760,9 +1760,19 @@ const server = http.createServer(async (req, res) => {
     // In-app purchase done: the e-mail is proven by its token; RevenueCat confirms the subscription.
     if (url.pathname === '/api/iap/verify' && req.method === 'POST') {
       const payload = verifyAccessToken(bearer(req));
-      if (!payload) return send(res, 401, { error: 'Confirmez d’abord votre e-mail.' });
       const body = await readJson(req);
       if (!validAppUserId(body.appUserId)) return send(res, 400, { error: 'Données invalides' });
+      // v9 — no e-mail needed: the purchase itself (Apple ID / Google account, confirmed by RevenueCat) is the account.
+      // The account key is RevenueCat's original_app_user_id, which stays the same after "Restore purchases"
+      // on a new phone, so data and access follow the person without any login screen.
+      if (!payload) {
+        if (!rateLimit(`iapanon:${clientIp(req)}`, 40, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
+        const subscriber = await revenueCatSubscriber(String(body.appUserId));
+        const owner = validAppUserId(subscriber?.original_app_user_id) ? String(subscriber.original_app_user_id) : String(body.appUserId);
+        const key = `store:${owner}`;
+        const result = await syncStoreAccount(key, String(body.appUserId), subscriber);
+        return send(res, 200, { ok: true, premium: result.active, email: '', plan: result.plan, token: result.active ? signAccessToken(key) : undefined });
+      }
       if (!rateLimit(`iap:${clientIp(req)}:${payload.email}`, 30, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
       const result = await syncStoreAccount(payload.email, String(body.appUserId));
       return send(res, 200, { ok: true, premium: result.active, email: payload.email, plan: result.plan, token: result.active ? signAccessToken(payload.email) : undefined });
@@ -1814,7 +1824,7 @@ const server = http.createServer(async (req, res) => {
       }
       return send(res, 200, {
         premium: Boolean(entry && entry.status === 'active'),
-        email: payload.email,
+        email: String(payload.email).startsWith('store:') ? '' : payload.email,
         plan: entry?.plan || '',
         status: entry?.status || 'missing',
         cancelAtPeriodEnd: Boolean(entry?.cancelAtPeriodEnd),

@@ -1615,7 +1615,7 @@ function helloScreen() {
   const title = f ? f.title : 'Mincir, s’entraîner, bien manger et vivre la ménopause sereinement.';
   const sub = f ? f.sub : 'Une seule app pour la nutrition, les recettes, l’entraînement, la ménopause 40+ et le sommeil. Choisissez ce qui compte pour vous.';
   return `<div class="hello ${f ? f.tone : ''}">
-    <div class="hello-top">${logo()}<button class="link-btn" data-go="access">${L('Se connecter')}</button></div>
+    <div class="hello-top">${logo()}${loginLink('Se connecter')}</div>
     <div class="hello-copy">
       ${f ? `<span class="hello-kicker">${icon(f.ico)} ${L(f.kicker)}</span>` : ''}
       <h1>${L(title)}</h1>
@@ -2053,7 +2053,7 @@ const NativeBilling = {
     return 'np-' + [...new Uint8Array(hash)].slice(0, 16).map((b) => b.toString(16).padStart(2, '0')).join('');
   },
   token() { return state.accessToken || state.accountToken || ''; },
-  email() { return state.premiumEmail || state.accountEmail || ''; },
+  email() { const e = state.premiumEmail || state.accountEmail || ''; return e.includes('@') ? e : ''; },
   async start() {
     if (this.started) return;
     const P = this.plugin();
@@ -2063,6 +2063,10 @@ const NativeBilling = {
     try {
       await P.configure({ apiKey: key });
       if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
+      // Like Apple's own apps: a subscriber who reopens or reinstalls the app is recognised silently,
+      // with no login screen (RevenueCat knows the Apple ID / Google account behind the purchase).
+      if (!state.premium) this.silentCheck();
+      P.addCustomerInfoUpdateListener?.(() => { if (!state.premium) this.silentCheck(); });
       const ids = [...new Set(storeCatalog().map((x) => x.id))];
       const res = await P.getProducts({ productIdentifiers: ids, type: 'SUBSCRIPTION' }).catch(() => P.getProducts({ productIdentifiers: ids }));
       const list = res?.products || [];
@@ -2080,8 +2084,21 @@ const NativeBilling = {
       render();
     } catch (error) { console.error('billing start', error); this.started = false; }
   },
-  // The subscription belongs to a confirmed e-mail, so it follows the person to any phone.
+  async silentCheck() {
+    try {
+      const data = await this.verify();
+      if (data?.premium && data.token) {
+        Object.assign(state, { premium: true, accessToken: data.token, subscriptionPlan: data.plan || state.subscriptionPlan, premiumEmail: data.email || state.premiumEmail });
+        saveState(false);
+        nav(state.onboarding ? 'app' : 'onboarding');
+      }
+    } catch { /* offline or not configured yet: stay as is */ }
+  },
+  // v9: no account needed to buy. The subscription belongs to the Apple ID / Google account (store
+  // purchase), so it follows the person to any phone with "Restore purchases" — no e-mail, no password.
   needAccount(intent) {
+    return false;
+    // eslint-disable-next-line no-unreachable
     if (this.token()) return false;
     this.pending = intent || null;
     modal = { type: 'account', step: 'email', email: state.accountEmail || '' };
@@ -2091,7 +2108,9 @@ const NativeBilling = {
   async verify() {
     const P = this.plugin();
     const { appUserID } = await P.getAppUserID();
-    const response = await fetch('/api/iap/verify', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.token()}` }, body: JSON.stringify({ appUserId: appUserID }) });
+    const headers = { 'Content-Type': 'application/json' };
+    if (this.token()) headers.Authorization = `Bearer ${this.token()}`;
+    const response = await fetch('/api/iap/verify', { method: 'POST', headers, body: JSON.stringify({ appUserId: appUserID }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Vérification de l’achat impossible pour le moment. Réessayez.');
     return data;
@@ -2101,7 +2120,7 @@ const NativeBilling = {
     const P = this.plugin();
     const product = this.products[storeId]?.raw;
     if (!product) throw new Error(L('Cette formule n’est pas encore disponible dans la boutique.'));
-    await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
+    if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
     try {
       await P.purchaseStoreProduct({ product });
     } catch (error) {
@@ -2117,7 +2136,7 @@ const NativeBilling = {
   async restore() {
     if (this.needAccount(null)) return null;
     const P = this.plugin();
-    await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
+    if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
     await P.restorePurchases();
     const data = await this.verify();
     return data.premium ? { token: data.token, email: data.email, plan: data.plan } : null;
@@ -2350,8 +2369,10 @@ function planLabel() {
 // ---- Free trial: everything locked for visitors, full access for TRIAL_MINUTES once signed in ----
 let clockOffset = 0;
 const serverNow = () => Date.now() + clockOffset;
-function trialActive() { return !state.premium && Number(state.trial?.endsAt || 0) > serverNow(); }
-function trialEnded() { return !state.premium && Boolean(state.trial?.used) && !trialActive(); }
+// v9: the 20-minute timed trial is gone. The free trial is the store's own (3 days, full access, Face ID / Google Play,
+// cancel any time), so nobody is rushed by a clock or asked to create a login first.
+function trialActive() { return false; }
+function trialEnded() { return false; }
 function fullAccess() { return state.premium || trialActive(); }
 function trialLeftMs() { return Math.max(0, Number(state.trial?.endsAt || 0) - serverNow()); }
 function trialMinutes() { return Number(config.trialMinutes || 20); }
@@ -2360,7 +2381,7 @@ function deviceId() {
 }
 async function syncTrial(start = false) {
   const token = state.accountToken || '';
-  if (!token || state.premium) return null;
+  if (!start || !token || state.premium) return null;
   const res = await fetch(start ? '/api/trial/start' : '/api/trial/status', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ device: deviceId() }) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(L(data.error || 'Réessayez dans un instant.'));
@@ -2374,6 +2395,11 @@ async function syncTrial(start = false) {
 // "Start my free minutes": sign in first if needed, then start the clock on the server.
 async function beginTrial() {
   if (state.premium) return nav('app');
+  // Straight to the plan screen: one tap opens the App Store / Google Play sheet (3 days free).
+  modal = null; document.querySelector('.modal-wrap')?.remove();
+  selectedTier = selectedTier || recommendedTier();
+  return nav('paywall');
+  // eslint-disable-next-line no-unreachable
   if (!state.accountToken) { afterSignIn = 'trial'; modal = { type: 'signin' }; return renderModal(); }
   try {
     const data = await syncTrial(true);
@@ -2486,6 +2512,10 @@ function completeSignIn(data) {
   if (next === 'trial') return beginTrial();
   render();
 }
+// In the store app the subscription follows the Apple ID / Google account: "already a customer" = one-tap restore.
+function loginLink(label = 'Déjà client ? Se connecter', cls = 'link-btn') {
+  return Billing.native() ? `<button class="${cls}" data-restore>${L('Restaurer mes achats')}</button>` : `<button class="${cls}" data-go="access">${L(label)}</button>`;
+}
 const nativePlatform = () => (window.Capacitor?.isNativePlatform?.() ? window.Capacitor.getPlatform?.() : '');
 function signInOptions() {
   const a = config.auth || {};
@@ -2538,22 +2568,15 @@ function signInSheet() {
     <p class="fine center-fine">${L('En continuant, vous acceptez les <a href="{terms}" target="_blank" rel="noopener">conditions d’utilisation</a> et la <a href="{privacy}" target="_blank" rel="noopener">politique de confidentialité</a>.', { terms: `/terms?lang=${lang()}`, privacy: `/privacy?lang=${lang()}` })}</p>`;
 }
 // The box that explains the free minutes, used on the home screen, in the sheets and on locked apps.
-function trialPitch(kind = 'card') {
-  const ended = trialEnded();
-  const n = trialMinutes();
-  const trialDays = Billing.trialDays();
-  if (ended) {
-    return `<div class="trial-box ended ${kind}"><span class="trial-ico">${icon('lock')}</span>
-      <h3>${L('Votre test gratuit est terminé')}</h3>
-      <p>${trialDays ? L('Continuez avec tout NutriPilot : choisissez une formule et profitez de {d} jours gratuits. Rien n’est débité avant la fin de l’essai, et vous pouvez annuler avant.', { d: trialDays }) : L('Continuez avec tout NutriPilot en choisissant une formule.')}</p>
-      <button class="btn btn-lime btn-wide" data-module-buy="${recommendedTier()}">${trialDays ? L('Choisir ma formule · {d} jours gratuits', { d: trialDays }) : L('Choisir ma formule')}</button>
-      <button class="link-btn" data-go="plans">${L('Voir toutes les formules')}</button></div>`;
-  }
-  return `<div class="trial-box ${kind}"><span class="trial-ico">${icon('timer')}</span>
-    <h3>${L('Testez tout gratuitement pendant {n} minutes', { n })}</h3>
-    <p>${L('Recettes, entraînements, ménopause, sommeil, scanner et coach : tout est ouvert. Sans carte bancaire. À la fin, choisissez votre formule avec {d} jours gratuits.', { d: trialDays || 3 })}</p>
-    <button class="btn btn-lime btn-wide" data-trial-start>${L('Lancer mes {n} minutes gratuites', { n })}</button>
-    <button class="link-btn" data-go="plans">${L('Voir les formules')}</button></div>`;
+function trialPitch(kind = 'card', tier = '') {
+  const d = Billing.trialDays() || 3;
+  const plan = findPlan(tier || recommendedTier()) || Billing.plans()[0];
+  const price = plan ? money(lp(plan, 'monthly')) : '';
+  return `<div class="trial-box ${kind}"><span class="trial-ico">${icon('star')}</span>
+    <h3>${L('Essayez tout gratuitement pendant {d} jours', { d })}</h3>
+    <p>${L('Accès complet, sans limite de temps pendant l’essai. Paiement sécurisé par l’App Store ou Google Play, sans mot de passe à créer. Annulable en un geste.')}</p>
+    <button class="btn btn-lime btn-wide" data-module-buy="${esc(tier || recommendedTier())}">${L('Commencer mes {n} jours gratuits', { n: d })}</button>
+    ${price ? `<small class="trial-fine">${L('Puis {price} / mois · annulez quand vous voulez', { price })}</small>` : ''}</div>`;
 }
 function trialSheet(type) {
   if (type === 'trial-guide' || type === 'trial-5min') {
@@ -2579,7 +2602,7 @@ function trialSheet(type) {
 }
 // Locked app: the real screen stays visible behind a blur, with the trial box on top.
 function lockOverlay(m) {
-  return `<div class="lock-overlay" role="dialog" aria-label="${esc(L(m.name))}"><div class="lock-card ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b>${trialPitch('overlay')}</div></div>`;
+  return `<div class="lock-overlay" role="dialog" aria-label="${esc(L(m.name))}"><div class="lock-card ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b>${trialPitch('overlay', m.id)}</div></div>`;
 }
 
 function hasFeature(feature) {
@@ -2783,7 +2806,6 @@ const Billing = {
     if (!this.native() || !window.NutriPilotNative.restore) return nav('access');
     let result = null;
     try { result = await window.NutriPilotNative.restore(); } catch (error) { return toast(error?.message || L('Réessayez dans un instant.')); }
-    if (result === null && !NativeBilling.token()) return;
     if (result?.token) {
       state.premium = true;
       state.accessToken = result.token;
@@ -2791,7 +2813,7 @@ const Billing = {
       saveState();
       return nav(state.onboarding ? 'app' : 'onboarding');
     }
-    toast('Aucun abonnement actif trouvé.');
+    toast(L('Aucun abonnement actif trouvé.'));
   },
 };
 
@@ -2951,7 +2973,7 @@ function paywall() {
       ? L('Soit {month} / mois, facturé {price} par an. Renouvellement automatique, annulable à tout moment.', { month: money(lp(plan, 'annual') / 12), price })
       : L('{price} / {period}. Renouvellement automatique, annulable à tout moment.', { price, period: periodLabel });
   return `<div class="mobile-app no-nav paywall">
-    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button>${logo()}<button class="link-btn" data-go="access">${L('Se connecter')}</button></div></div>
+    <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button>${logo()}${loginLink('Se connecter')}</div></div>
     <div class="screen">
       <h1 class="screen-title">${p.name ? L('{name}, choisissez votre formule.', { name: esc(p.name) }) : L('Choisissez votre formule.')}</h1>
       ${proj ? `<div class="pw-goal">${icon('progress')}<span>${L('Objectif {target} · estimé le {date}', { target: `<b>${kgFmt(p.target)} kg</b>`, date: `<b>${esc(dateFr(proj.end))}</b>` })}</span></div>` : ''}
@@ -3746,7 +3768,7 @@ function plansScreen() {
           <p><b>${L('Le coach est-il inclus ?')}</b> ${L('Oui, le coach répond dans chaque module que vous avez activé.')}</p>
         </div>
       </details>
-      ${state.premium ? '' : `<button class="link-btn center-fine pl-login" data-go="access">${L('Déjà client ? Se connecter')}</button>`}
+      ${state.premium ? '' : loginLink(undefined, 'link-btn center-fine pl-login')}
     </div>
     ${bottom('plans')}
   </div>`;
@@ -3762,7 +3784,7 @@ function hubScreen() {
   const explore = [['recipes', 'fork', 'Recettes par objectif', '{n} recettes', ALL_RECIPES.length], ['training', 'dumbbell', 'Exercices animés', '{n} mouvements', Object.keys(EXERCISES).length], ['menopause', 'flower', 'Espace Ménopause 40+', 'Journal, programme, séances', 0], ['guides', 'book', 'Cours', 'Première leçon offerte', 0]];
   const fFirst = { recipes: 'recipes', training: 'training', meno: 'menopause' }[currentFocus()];
   if (fFirst) explore.sort((a, b) => (b[0] === fFirst) - (a[0] === fFirst));
-  const trialBox = state.premium ? '' : trialPitch('hub');
+  const trialBox = '';
   return `<div class="mobile-app hub">
     <header class="app-head"><div class="app-head-row"><button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${LANGS.find((x) => x[0] === lang())?.[2] || '🌐'}</button></div></div></header>
     <div class="screen">
@@ -3800,7 +3822,7 @@ function hubScreen() {
       </div>
       <button class="guide-card hub-link" data-go="tour"><span class="guide-check">${icon('star')}</span><span><b>${esc(t('hubTour'))}</b><small>${esc(t('hubTourSub'))}</small></span><span class="guide-arrow">→</span></button>
       <button class="guide-card hub-link" data-go="support"><span class="guide-check">${icon('help')}</span><span><b>${esc(t('hubSupport'))}</b><small>${esc(t('hubSupportSub'))}</small></span><span class="guide-arrow">→</span></button>
-      <button class="link-btn center-link" data-go="access">${L('Déjà client ? Se connecter')}</button>
+      ${loginLink(undefined, 'link-btn center-link')}
     </div>
     ${bottom('app')}
   </div>`;
@@ -6708,7 +6730,7 @@ function settings() {
   return `<div class="mobile-app">
     <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Réglages')}</h2><span></span></div></div>
     <div class="screen">
-      ${state.premium ? '' : `<button class="explore-banner" data-go="paywall">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button><button class="btn btn-ghost btn-wide" data-go="access">${icon('user')} ${L('Déjà client ? Se connecter')}</button>`}
+      ${state.premium ? '' : `<button class="explore-banner" data-go="paywall">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button>${Billing.native() ? `<button class="btn btn-ghost btn-wide" data-restore>${icon('user')} ${L('Restaurer mes achats')}</button>` : `<button class="btn btn-ghost btn-wide" data-go="access">${icon('user')} ${L('Déjà client ? Se connecter')}</button>`}`}
       <button class="btn btn-ghost btn-wide" data-go="lang">${icon('globe')} ${L('Langue')} · ${esc(LANGS.find((x) => x[0] === lang())?.[1] || 'Français')}</button>
       ${memberCard()}
       <div class="success warn" ${state.premium ? '' : 'hidden'}><b>${L('NutriPilot Premium actif ✓')}</b><br>${esc(state.premiumEmail || L('Accès activé'))}</div>
