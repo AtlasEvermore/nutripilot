@@ -16,7 +16,7 @@ URLs (todas as línguas): Suporte `https://app.atlasevermore.com/support` · Mar
 **Nom (30)** `NutriPilot : Nutrition & Sport`
 **Sous-titre (30)** `Repas, recettes, sport et 40+`
 **Texte promotionnel (170)**
-`Scannez votre assiette, suivez vos calories et suivez un programme fait pour vous. Nouveau : espace Ménopause 40+ et 3 jours gratuits pour tout essayer.`
+`Scannez votre assiette, suivez vos calories et suivez un programme fait pour vous. Nouveau : espace Ménopause 40+ et 7 jours gratuits sur l’abonnement annuel.`
 
 **Mots-clés (100)**
 `calories,régime,maigrir,macros,recettes,menopause,protéines,musculation,jeûne,poids,coach,nutrition`
@@ -53,7 +53,7 @@ ET AUSSI
 • 14 langues
 
 ABONNEMENT
-Kit complet ou formules par thème (Corps en forme, Femme 40+…), mensuelles ou annuelles, avec 3 jours d’essai gratuit pour les nouveaux abonnés. Le paiement est prélevé sur votre compte Apple à la confirmation de l’achat, à la fin de l’essai. L’abonnement se renouvelle automatiquement sauf annulation au moins 24 h avant la fin de la période en cours, depuis les réglages de votre compte Apple. Aucun compte ni mot de passe à créer : vos achats se restaurent avec votre identifiant Apple.
+Kit complet ou formules par thème (Corps en forme, Femme 40+…), mensuelles ou annuelles. L’abonnement annuel inclut 7 jours d’essai gratuit pour les nouveaux abonnés. Le paiement est prélevé sur votre compte Apple à la confirmation de l’achat, à la fin de l’essai. L’abonnement se renouvelle automatiquement sauf annulation au moins 24 h avant la fin de la période en cours, depuis les réglages de votre compte Apple. Aucun compte ni mot de passe à créer : vos achats se restaurent avec votre identifiant Apple.
 
 Conditions d’utilisation : https://app.atlasevermore.com/terms
 Confidentialité : https://app.atlasevermore.com/privacy
@@ -66,7 +66,7 @@ NutriPilot fournit des estimations et des conseils généraux de bien-être. Il 
 **Nome (30)** `NutriPilot: Dieta e Treino`
 **Subtítulo (30)** `Calorias, receitas e treinos`
 **Texto promocional (170)**
-`Fotografe o prato, acompanhe calorias e siga um plano feito para você. Novo: espaço Menopausa 40+ e 3 dias grátis para experimentar tudo.`
+`Fotografe o prato, acompanhe calorias e siga um plano feito para você. Novo: espaço Menopausa 40+ e 7 dias grátis no plano anual.`
 
 **Palavras-chave (100)**
 `calorias,dieta,emagrecer,macros,receitas,menopausa,proteína,academia,jejum,peso,nutricionista,treino`
@@ -103,7 +103,7 @@ E MAIS
 • 14 idiomas
 
 ASSINATURA
-Kit completo ou planos por tema (Corpo em forma, Mulher 40+…), mensais ou anuais, com 3 dias de teste grátis para novos assinantes. O pagamento é cobrado na sua conta Apple na confirmação da compra, ao fim do teste. A assinatura renova automaticamente, a menos que seja cancelada pelo menos 24 h antes do fim do período atual, nos ajustes da sua conta Apple. Sem conta nem senha para criar: suas compras são restauradas com o seu Apple ID.
+Kit completo ou planos por tema (Corpo em forma, Mulher 40+…), mensais ou anuais. O plano anual inclui 7 dias de teste grátis para novos assinantes. O pagamento é cobrado na sua conta Apple na confirmação da compra, ao fim do teste. A assinatura renova automaticamente, a menos que seja cancelada pelo menos 24 h antes do fim do período atual, nos ajustes da sua conta Apple. Sem conta nem senha para criar: suas compras são restauradas com o seu Apple ID.
 
 Termos de uso: https://app.atlasevermore.com/terms
 Privacidade: https://app.atlasevermore.com/privacy
@@ -116,7 +116,7 @@ O NutriPilot oferece estimativas e orientações gerais de bem-estar. Não subst
 **Name (30)** `NutriPilot: Food & Fitness`
 **Subtitle (30)** `Calories, recipes & workouts`
 **Promotional text (170)**
-`Snap your plate, track calories and follow a plan built for you. New: Menopause 40+ space and a 3-day free trial to try everything.`
+`Snap your plate, track calories and follow a plan built for you. New: Menopause 40+ space and a 7-day free trial on the yearly plan.`
 
 **Keywords (100)**
 `calorie counter,diet,weight loss,macros,recipes,menopause,protein,workout,fasting,meal plan,coach`
@@ -153,7 +153,7 @@ AND MORE
 • 14 languages
 
 SUBSCRIPTION
-Complete Kit or themed plans (Body in shape, Women 40+…), monthly or yearly, with a 3-day free trial for new subscribers. Payment is charged to your Apple Account at confirmation of purchase, at the end of the trial. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period, in your Apple Account settings. No account or password to create: purchases are restored with your Apple Account.
+Complete Kit or themed plans (Body in shape, Women 40+…), monthly or yearly. The yearly plan includes a 7-day free trial for new subscribers. Payment is charged to your Apple Account at confirmation of purchase, at the end of the trial. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period, in your Apple Account settings. No account or password to create: purchases are restored with your Apple Account.
 
 Terms of Use: https://app.atlasevermore.com/terms
 Privacy: https://app.atlasevermore.com/privacy
@@ -201,7 +201,7 @@ Fotos de progresso ficam só no aparelho.
 ```
 NutriPilot does not require an account. Open the app, choose a language, answer the short questionnaire and explore.
 
-Subscriptions: tap "Start my 3 free days" on any plan (or Plans tab). Purchases use StoreKit (via RevenueCat) and are verified by our server; no e-mail or password is involved. "Restore purchases" is in Settings and on the plans screen. Sandbox purchases work with any sandbox Apple Account.
+Subscriptions: choose a plan and tap "Start my 7 free days" (yearly) or "Continue" (monthly). Visitors also get 3 free meal analyses before subscribing. Purchases use StoreKit (via RevenueCat) and are verified by our server; no e-mail or password is involved. "Restore purchases" is in Settings and on the plans screen. Sandbox purchases work with any sandbox Apple Account.
 
 AI: the meal scanner, label scanner and coach send the photo/text the user chooses to OpenAI. Before the first request the app shows an explicit consent screen naming OpenAI and the data sent (guideline 5.1.2(i)); it can be turned off in Settings › AI analysis.
 

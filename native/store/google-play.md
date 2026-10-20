@@ -12,7 +12,7 @@ E-mail de contato: `SUPPORT_EMAIL` · Site: `https://atlasevermore.com` · Priva
 - **Description complète:** a mesma de `app-store.md` (FR), substituindo o parágrafo ABONNEMENT por:
 ```
 ABONNEMENT
-Kit complet ou formules par thème, mensuelles ou annuelles, avec 3 jours d’essai gratuit pour les nouveaux abonnés. L’abonnement se renouvelle automatiquement ; annulez à tout moment dans Google Play › Paiements et abonnements. Aucun compte ni mot de passe à créer : vos achats se restaurent avec votre compte Google.
+Kit complet ou formules par thème, mensuelles ou annuelles ; 7 jours d’essai gratuit sur l’abonnement annuel pour les nouveaux abonnés. L’abonnement se renouvelle automatiquement ; annulez à tout moment dans Google Play › Paiements et abonnements. Aucun compte ni mot de passe à créer : vos achats se restaurent avec votre compte Google.
 ```
 
 ### 🇧🇷 Português (Brasil)
@@ -21,7 +21,7 @@ Kit complet ou formules par thème, mensuelles ou annuelles, avec 3 jours d’es
 - **Descrição completa:** a de `app-store.md` (PT), com o parágrafo ASSINATURA:
 ```
 ASSINATURA
-Kit completo ou planos por tema, mensais ou anuais, com 3 dias de teste grátis para novos assinantes. Renova automaticamente; cancele quando quiser em Google Play › Pagamentos e assinaturas. Sem conta nem senha: as compras são restauradas com a sua conta Google.
+Kit completo ou planos por tema, mensais ou anuais; 7 dias de teste grátis no plano anual para novos assinantes. Renova automaticamente; cancele quando quiser em Google Play › Pagamentos e assinaturas. Sem conta nem senha: as compras são restauradas com a sua conta Google.
 ```
 
 ### 🇺🇸 English (US)
@@ -30,7 +30,7 @@ Kit completo ou planos por tema, mensais ou anuais, com 3 dias de teste grátis 
 - **Full description:** the English one from `app-store.md`, with SUBSCRIPTION:
 ```
 SUBSCRIPTION
-Complete Kit or themed plans, monthly or yearly, with a 3-day free trial for new subscribers. Renews automatically; cancel any time in Google Play › Payments & subscriptions. No account or password: purchases are restored with your Google account.
+Complete Kit or themed plans, monthly or yearly; 7-day free trial on the yearly plan for new subscribers. Renews automatically; cancel any time in Google Play › Payments & subscriptions. No account or password: purchases are restored with your Google account.
 ```
 
 ### Recursos gráficos

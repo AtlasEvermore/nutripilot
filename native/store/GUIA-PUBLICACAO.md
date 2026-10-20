@@ -68,12 +68,12 @@ Na Apple escolha o preço base em US$ e "preços automáticos" nos outros paíse
 no Brasil, cerca de R$ 149,90 — a loja arredonda para os seus degraus de preço). Depois, se quiser, acrescente os outros combos
 (`np_kitchen_*` 9,90/99, `np_performance_*` 10,90/109, `np_wellness_*` 5,90/59) e os módulos avulsos — o app passa a mostrá-los sozinho.
 
-- **Apple:** um grupo de assinaturas "NutriPilot" com todos; em cada produto, **Oferta introdutória → Grátis → 3 dias**;
+- **Apple:** um grupo de assinaturas "NutriPilot" com todos; **só nos produtos anuais** (`*_annual`): Oferta introdutória → Grátis → **7 dias**; os mensais ficam **sem teste** (isso empurra para o plano anual, o mais valioso);
   preencha nome e descrição de exibição em FR/PT/EN e envie uma **captura de tela do paywall** (`screenshots/review/`).
   Os produtos precisam ser **enviados junto com a primeira versão** do app (seção "Compras no app" da versão).
 - **Google:** Monetizar › Assinaturas › uma assinatura por ID › plano base (mensal ou anual, renovação automática) ›
-  oferta "Teste sem custo" de 3 dias para novos clientes. (O Google só libera esta tela depois do primeiro `.aab` enviado.)
-- O app lê a oferta da loja: se o teste grátis não estiver configurado, ele **não** promete "3 dias grátis" (regra 3.1.2 da Apple).
+  nos planos **anuais**, oferta "Teste sem custo" de **7 dias** para novos clientes; mensais sem oferta. (O Google só libera esta tela depois do primeiro `.aab` enviado.)
+- O app lê a oferta da loja: se o teste grátis não estiver configurado, ele **não** promete teste grátis (regra 3.1.2 da Apple). O teste aparece só no período que realmente tem (ex.: "7 dias grátis" no anual, "Continuar · R$ X / mês" no mensal).
 
 ## 5. RevenueCat
 
@@ -96,6 +96,20 @@ no Brasil, cerca de R$ 149,90 — a loja arredonda para os seus degraus de preç
 
 Com Mac: `cd native && npm install && npx cap add ios && npx cap add android && npm run assets && npm run sync`.
 
+## 6b. Medir as vendas dos anúncios (Meta / Instagram)
+
+O pixel do site não funciona dentro do app. Para saber quais anúncios geram assinaturas:
+1. **RevenueCat › Integrations › Meta Ads (Facebook)** → conecte a conta de anúncios e o **Pixel/Dataset** (Conversions API).
+   O RevenueCat envia `StartTrial`, `Subscribe` e as renovações (com valor) direto do servidor — sem código no app.
+2. **Meta Events Manager › Apps** → cadastre o app (ID da App Store e pacote `com.atlasevermore.nutripilot`) para usar campanhas de instalação.
+3. **iPhone:** a atribuição por anúncio no iOS é limitada (privacidade da Apple). Para campanhas grandes, a próxima versão nativa pode
+   incluir o SDK da Meta + a pergunta de rastreamento (ATT). Até lá, use campanhas de **site → app** ou meça por cupons/links UTM.
+4. Se ativar o SDK da Meta no futuro: atualizar a Privacidade do app (Apple) e a Segurança dos dados (Google) para "Dados usados para rastreamento".
+
+## 6c. Interruptores no Railway
+- `TRIAL_DAYS=7`, `TRIAL_ON=annual` (o que o **site** mostra; no app vale o que está configurado na loja).
+- `FREE_SCANS=3` — análises de prato grátis antes do paywall (contadas por aparelho no servidor; `0` desliga).
+
 ## 7. Fichas das lojas
 
 Copie de `app-store.md` e `google-play.md`: textos, palavras-chave, classificação etária, privacidade (App Privacy / Segurança dos dados),
@@ -110,7 +124,7 @@ na França você é comerciante: endereço, telefone e e-mail ficam públicos na
 
 - iPhone: TestFlight › instalar › comprar com conta **Sandbox** (Configurações › App Store › Conta Sandbox).
 - Android: faixa de teste › instalar › comprar com um e-mail cadastrado em "Testadores de licença".
-- Roteiro de 5 minutos: abrir pela 1ª vez → idioma → questionário → **Começar meus 3 dias grátis** (Face ID) → todas as apps abrem →
+- Roteiro de 5 minutos: abrir pela 1ª vez → idioma → questionário → 3 análises grátis do prato → "Seu plano está pronto" → **Começar meus 7 dias grátis** no anual (Face ID) → todas as apps abrem →
   scanner (aceitar a IA) → lembretes (aceitar notificações) → apagar o app, reinstalar → abre já como assinante → Configurações › Restaurar compras.
 
 ## 9. Enviar para revisão
@@ -132,3 +146,6 @@ na França você é comerciante: endereço, telefone e e-mail ficam públicos na
 | Botão voltar do Android | fecha janelas, volta telas, sai do app na tela inicial |
 | Primeiro acesso sem erro | testado: web, iPhone e Android simulados, todas as 27 telas, compra, restaurar, reinstalar |
 | Rastreamento | nenhum SDK de anúncios; sem ATT necessário |
+| Conversão (v10) | questionário → "Seu plano está pronto" → planos; 3 análises grátis; planos com 2–3 opções; teste só no anual |
+| Avaliações | pedido nativo de avaliação após uma vitória (7 dias seguidos ou dia dentro da meta), no máximo a cada 4 meses |
+| Abertura rápida / offline | arquivos guardados no celular (ETag/304), service worker com limite de 2,5 s, App-Bound Domains no iPhone |

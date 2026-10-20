@@ -100,9 +100,11 @@ let entitlementQueue = Promise.resolve();
 let lastRateSweep = 0;
 
 function securityHeaders(type = 'application/json; charset=utf-8') {
-  const cache = type.includes('text/html') || type.includes('javascript') || type.includes('css') || type.includes('json')
-    ? 'no-cache, no-store, must-revalidate'
-    : 'public, max-age=86400';
+  // App files: kept on the phone and revalidated with their ETag (304 = nothing to download) → fast start.
+  // API answers (personal data) are never stored.
+  const cache = type.startsWith('application/json') ? 'no-store'
+    : type.includes('text/html') || type.includes('javascript') || type.includes('css') || type.includes('json') ? 'no-cache'
+      : 'public, max-age=86400';
   return {
     'Content-Type': type,
     'Cache-Control': cache,
@@ -272,50 +274,38 @@ async function loadEntitlements() {
   }
 }
 
-// ---- Free trial: full access for TRIAL_MINUTES, once per account and once per device ----------
-const TRIALS_FILE = path.join(DATA_DIR, 'trials.json');
-const TRIAL_MINUTES = Math.max(1, Number(process.env.TRIAL_MINUTES || 20));
-let trialQueue = Promise.resolve();
 const hashKey = (v) => crypto.createHash('sha256').update(String(v)).digest('hex');
-async function loadTrials() {
-  await ensureData();
-  try {
-    const data = JSON.parse(await fs.readFile(TRIALS_FILE, 'utf8'));
-    return { accounts: data.accounts || {}, devices: data.devices || {} };
-  } catch {
-    return { accounts: {}, devices: {} };
-  }
-}
-function mutateTrials(fn) {
-  const job = trialQueue.then(async () => {
-    const data = await loadTrials();
+
+// ---- Free meal analyses for visitors: the "wow" moment before the paywall ---------------------
+// FREE_SCANS per device (default 3), also capped per network per day, counted here so reinstalling does not reset it.
+const FREE_SCANS = Math.max(0, Number(process.env.FREE_SCANS ?? 3));
+const FREE_FILE = path.join(DATA_DIR, 'free-scans.json');
+let freeQueue = Promise.resolve();
+function mutateFree(fn) {
+  const job = freeQueue.then(async () => {
+    await ensureData();
+    let data = { devices: {}, ips: {} };
+    try { data = { devices: {}, ips: {}, ...JSON.parse(await fs.readFile(FREE_FILE, 'utf8')) }; } catch { /* first use */ }
     const result = await fn(data);
-    await atomicWriteJson(TRIALS_FILE, data);
+    await atomicWriteJson(FREE_FILE, data);
     return result;
   });
-  trialQueue = job.catch(() => {});
+  freeQueue = job.catch(() => {});
   return job;
 }
-function trialView(t) {
-  const now = Date.now();
-  return t ? { used: true, startedAt: t.startedAt, endsAt: t.endsAt, now, active: now < t.endsAt, minutes: TRIAL_MINUTES } : { used: false, now, active: false, minutes: TRIAL_MINUTES };
-}
-async function activeTrial(email) {
-  const t = (await loadTrials()).accounts[hashKey(email)];
-  return t && Date.now() < t.endsAt ? t : null;
-}
-// Starts the trial, or returns the one already used by this account or on this device (never restarted).
-function startTrial(email, device = '') {
-  return mutateTrials((all) => {
-    const key = hashKey(email);
-    const dev = device ? hashKey(`device:${device}`) : '';
-    if (!all.accounts[key]) {
-      const now = Date.now();
-      all.accounts[key] = dev && all.devices[dev] ? { ...all.devices[dev], sharedDevice: true } : { startedAt: now, endsAt: now + TRIAL_MINUTES * 60 * 1000 };
-    }
-    if (dev && !all.devices[dev]) all.devices[dev] = { startedAt: all.accounts[key].startedAt, endsAt: all.accounts[key].endsAt };
-    return all.accounts[key];
+function useFreeScan(device, ip) {
+  return mutateFree((all) => {
+    const d = hashKey(`device:${device}`); const day = new Date().toISOString().slice(0, 10); const n = hashKey(`ip:${ip}`);
+    const used = Number(all.devices[d] || 0);
+    const net = all.ips[n]?.day === day ? all.ips[n] : { day, count: 0 };
+    if (used >= FREE_SCANS || net.count >= FREE_SCANS * 10) return { ok: false, left: Math.max(0, FREE_SCANS - used) };
+    all.devices[d] = used + 1; net.count += 1; all.ips[n] = net;
+    for (const [k, v] of Object.entries(all.ips)) if (v.day !== day) delete all.ips[k];
+    return { ok: true, left: FREE_SCANS - used - 1, d };
   });
+}
+function refundFreeScan(d) {
+  return mutateFree((all) => { if (all.devices[d] > 0) all.devices[d] -= 1; });
 }
 
 // Pending web sign-ins (state → nonce), kept 10 minutes.
@@ -1307,10 +1297,7 @@ async function premiumIdentity(req) {
     });
     return null;
   }
-  if (!entitlement || entitlement.status !== 'active') {
-    const trial = await activeTrial(payload.email);
-    return trial ? { email: payload.email, plan: 'trial', trial: true, endsAt: trial.endsAt } : null;
-  }
+  if (!entitlement || entitlement.status !== 'active') return null;
   return { email: payload.email, plan: entitlement.plan || 'premium', entitlement };
 }
 
@@ -1620,8 +1607,9 @@ const server = http.createServer(async (req, res) => {
         salesUrl: process.env.SALES_URL || 'https://atlasevermore.com/#tarifs',
         appStoreUrl: process.env.APP_STORE_URL || '',
         playStoreUrl: process.env.PLAY_STORE_URL || '',
-        trialDays: Number(process.env.TRIAL_DAYS || 3),
-        trialMinutes: TRIAL_MINUTES,
+        trialDays: Number(process.env.TRIAL_DAYS || 7),
+        freeScans: FREE_SCANS,
+        trialOn: process.env.TRIAL_ON || 'annual', // which periods have the free trial (web display; the apps read the stores)
         auth: {
           apple: providerEnabled('apple'), google: providerEnabled('google'),
           appleWeb: webFlowEnabled.apple(), googleWeb: webFlowEnabled.google(),
@@ -1689,7 +1677,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
-        version: '9.1.0',
+        version: '10.0.0',
         brand: BRAND_NAME,
         ai,
         email,
@@ -1704,20 +1692,8 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/hotmart/webhook' && req.method === 'POST') return handleHotmart(req, res);
 
-    // Free trial (account session required).
-    if ((url.pathname === '/api/trial/status' || url.pathname === '/api/trial/start') && req.method === 'POST') {
-      const payload = verifyAccessToken(bearer(req));
-      if (!payload) return send(res, 401, { error: 'Connectez-vous pour commencer l’essai gratuit.' });
-      const entitlements = await loadEntitlements();
-      if (entitlements[payload.email]?.status === 'active') return send(res, 200, { premium: true, email: payload.email });
-      if (url.pathname === '/api/trial/status') return send(res, 200, trialView((await loadTrials()).accounts[hashKey(payload.email)]));
-      if (!rateLimit(`trial:${clientIp(req)}`, 10, 60 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
-      const body = await readJson(req);
-      const device = String(body.device || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
-      const t = await startTrial(payload.email, device);
-      if (!t.sharedDevice && Date.now() - t.startedAt < 5000) { funnelBuffer.TrialStart = (funnelBuffer.TrialStart || 0) + 1; scheduleFunnelFlush(); }
-      return send(res, 200, trialView(t));
-    }
+    // The timed trial was removed (v9): the free trial is the store's introductory offer.
+    if ((url.pathname === '/api/trial/status' || url.pathname === '/api/trial/start') && req.method === 'POST') return send(res, 410, { error: 'gone' });
 
     // Sign in with Apple / Google from the native apps: the identity token is verified here.
     if (/^\/api\/auth\/(apple|google)$/.test(url.pathname) && req.method === 'POST') {
@@ -1905,13 +1881,25 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, await support(await readJson(req)));
     }
 
+    // Visitors: a few free meal analyses (photo or text) before choosing a plan.
+    if (url.pathname === '/api/analyze' && req.method === 'POST' && FREE_SCANS > 0 && !(await premiumIdentity(req))) {
+      const device = String(req.headers['x-np-device'] || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
+      if (device.length < 8) return send(res, 401, { error: 'Accès Premium requis. Connectez-vous avec l’e-mail utilisé lors de votre achat.' });
+      if (!aiRateOk(req, `free:${device}`)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
+      const body = await readJson(req);
+      const q = await useFreeScan(device, clientIp(req));
+      if (!q.ok) return send(res, 402, { error: 'Vos analyses gratuites sont utilisées. Choisissez une formule pour continuer.', code: 'free_limit', freeLeft: 0 });
+      try {
+        return send(res, 200, { ...(await aiAnalyze(body)), freeLeft: q.left });
+      } catch (error) { await refundFreeScan(q.d); throw error; }
+    }
+
     if (url.pathname.startsWith('/api/')) {
       const identity = await requirePremium(req, res);
       if (!identity) return;
 
       if (['/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/barcode', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan'].includes(url.pathname)) {
         if (!aiRateOk(req, identity.email)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
-        if (identity.trial && !rateLimit(`trialai:${identity.email}`, Number(process.env.TRIAL_AI_CALLS || 25), 2 * 60 * 60 * 1000)) return send(res, 429, { error: 'Limite de l’essai gratuit atteinte. Choisissez une formule pour continuer.' });
       }
 
       if (url.pathname === '/api/analyze' && req.method === 'POST') return send(res, 200, await aiAnalyze(await readJson(req)));

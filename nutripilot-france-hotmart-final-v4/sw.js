@@ -1,4 +1,4 @@
-const CACHE = 'nutripilot-v30-20261020-store';
+const CACHE = 'nutripilot-v32-20261020-fast';
 const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {
@@ -20,13 +20,18 @@ self.addEventListener('fetch', (event) => {
   const isAppShell = ['/', '/index.html', '/styles.css', '/app.js', '/food.js', '/exercises.js', '/manifest.webmanifest'].includes(url.pathname) || url.pathname.startsWith('/i18n/');
   if (isAppShell) {
     event.respondWith(
-      fetch(event.request, { cache: 'no-cache' })
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
+      // Fresh files when the network answers quickly (304 thanks to the ETag); the saved copy after 2.5 s or offline.
+      new Promise((resolve) => {
+        let done = false;
+        const fallback = () => caches.match(event.request).then((cached) => cached || caches.match('/index.html'));
+        const timer = setTimeout(() => fallback().then((cached) => { if (cached && !done) { done = true; resolve(cached); } }), 2500);
+        fetch(event.request, { cache: 'no-cache' })
+          .then((response) => {
+            if (response.ok) { const copy = response.clone(); caches.open(CACHE).then((cache) => cache.put(event.request, copy)); }
+            if (!done) { done = true; clearTimeout(timer); resolve(response); }
+          })
+          .catch(() => fallback().then((cached) => { if (!done) { done = true; clearTimeout(timer); resolve(cached || Response.error()); } }));
+      })
     );
     return;
   }
