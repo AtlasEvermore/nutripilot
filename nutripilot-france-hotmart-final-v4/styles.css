@@ -2039,3 +2039,41 @@ img,svg,video,canvas,iframe{max-width:100%}
   .nav-btn{border-radius:12px}
   .nav-btn.active{background:rgba(10,16,13,.06)}
 }
+
+/* v9 · Android 15/16 edge-to-edge (Capacitor 8 injects --safe-area-inset-* for the system bars) */
+.cap-android{--sat:var(--safe-area-inset-top,env(safe-area-inset-top,0px));--safe:var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px))}
+.cap-android body{padding-top:var(--sat)}
+.cap-android body:before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);background:color-mix(in srgb,var(--paper) 86%,transparent);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);z-index:95;pointer-events:none}
+.cap-android .app-head{top:var(--sat)}
+.cap-android .modal-wrap{padding-top:calc(12px + var(--sat))}
+.cap-android .sheet{max-height:calc(100vh - 16px - var(--sat))}
+@media (min-width:1024px){.cap-android .bottom-nav{top:var(--sat);height:calc(100vh - var(--sat))}}
+
+/* v9 · AI consent (App Store 5.1.2(i)) */
+.consent-wrap{position:fixed;inset:0;z-index:300;display:grid;place-items:end center;padding:12px 12px calc(12px + var(--safe));background:rgba(5,10,8,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:fadeIn .2s ease both}
+.consent-card{width:min(520px,100%);max-height:calc(100vh - 24px);overflow:auto;background:var(--paper);border-radius:28px;padding:22px 20px 16px;display:grid;gap:10px;box-shadow:0 30px 80px -20px rgba(0,0,0,.45);animation:sheetUp .32s var(--ease) both}
+.consent-card h2{margin:4px 0 0;font-size:24px;line-height:1.1}
+.consent-card p{margin:0;color:var(--ink2);font-size:14.5px;line-height:1.45}
+.consent-card ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.consent-card li{display:flex;gap:10px;align-items:flex-start;background:#fff;border:.5px solid var(--line);border-radius:16px;padding:10px 12px;font-size:14px;line-height:1.35}
+.consent-card li .ico{flex:none;width:20px;height:20px;color:var(--ink2);margin-top:1px}
+.consent-card .fine{font-size:12.5px;color:var(--muted)}
+.consent-ico{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,var(--lime),#7DF9C2 55%,var(--cy));color:#06140C}
+.consent-ico .ico{width:24px;height:24px}
+.consent-card .center-fine{text-align:center;display:block;font-size:13px}
+@media (min-width:700px){.consent-wrap{place-items:center}}
+.ai-row{margin-bottom:8px}
+.ai-row small{display:block;color:var(--muted);font-size:12px;font-weight:500}
+/* v9 · hydration buttons never clip in a narrow card */
+.water-actions{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.water-actions button{flex:1 1 0;min-width:0;padding-inline:4px;font-size:12.5px;white-space:nowrap}
+.water-actions button:first-child{flex:0 0 32px}
+/* v9 · hydration tile: bottle beside the numbers, buttons across the whole tile (no clipping at any width) */
+.water-tile{display:grid!important;grid-template-columns:52px minmax(0,1fr);column-gap:10px;row-gap:6px;align-items:center}
+.water-tile>:first-child{grid-column:1;grid-row:1/4;align-self:center}
+.water-tile .water-info{display:contents}
+.water-tile .water-info>small{grid-column:2;grid-row:1;align-self:end}
+.water-tile .water-info>b{grid-column:2;grid-row:2}
+.water-tile .water-info>.mm-bar{grid-column:2;grid-row:3;align-self:start}
+.water-tile .water-actions{grid-column:1/-1;grid-row:4;margin-top:4px}
+.water-tile .remind-chip{grid-column:1/-1;grid-row:5;justify-self:start}

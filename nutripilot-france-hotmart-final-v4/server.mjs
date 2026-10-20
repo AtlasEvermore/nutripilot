@@ -63,6 +63,8 @@ const TYPES = {
   '.ico': 'image/x-icon',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
+  '.wasm': 'application/wasm',
+  '.txt': 'text/plain; charset=utf-8',
 };
 
 const HOTMART_OFFER_TO_PLAN = {
@@ -109,7 +111,7 @@ function securityHeaders(type = 'application/json; charset=utf-8') {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(self), microphone=(self), geolocation=()',
     'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
-    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; media-src 'self' blob: data:; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'",
+    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; media-src 'self' blob: data:; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'",
     ...(process.env.NODE_ENV === 'production' ? { 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' } : {}),
   };
 }
@@ -1438,6 +1440,11 @@ async function revenueCatSubscriber(appUserId) {
   if (!response.ok) throw publicError('Vérification de l’achat impossible pour le moment. Réessayez.', 502);
   return data?.subscriber || {};
 }
+// Stable fingerprint of the store purchases (unchanged by renewals, reinstalls and new phones).
+function purchaseSignatures(subscriber = {}) {
+  return Object.entries(subscriber.subscriptions || {}).filter(([, sub]) => sub?.original_purchase_date)
+    .map(([productId, sub]) => hashKey(`${sub.store || ''}:${productId}:${sub.original_purchase_date}`)).sort();
+}
 function activeStorePlans(subscriber = {}) {
   const now = Date.now();
   const plans = new Set();
@@ -1452,7 +1459,7 @@ function activeStorePlans(subscriber = {}) {
     until = Math.max(until, expires);
     store = sub?.store || store;
   }
-  return { plans: [...plans], until, store };
+  return { plans: [...plans], until, store, sigs: purchaseSignatures(subscriber) };
 }
 // Recompute an e-mail's access from every store account linked to it (several phones, iOS + Android).
 function applyStoreAccess(entry) {
@@ -1769,7 +1776,14 @@ const server = http.createServer(async (req, res) => {
         if (!rateLimit(`iapanon:${clientIp(req)}`, 40, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
         const subscriber = await revenueCatSubscriber(String(body.appUserId));
         const owner = validAppUserId(subscriber?.original_app_user_id) ? String(subscriber.original_app_user_id) : String(body.appUserId);
-        const key = `store:${owner}`;
+        // Reinstall or new phone: RevenueCat may hand out a new anonymous id. Find the account that already
+        // holds this app user id, or the same original purchase, so plans, meals and progress come back.
+        const sigs = new Set(purchaseSignatures(subscriber));
+        const all = await loadEntitlements();
+        const known = Object.entries(all).find(([k, e]) => k.startsWith('store:') && Object.entries(e.storeAccounts || {}).some(([id, a]) => id === String(body.appUserId) || (a.sigs || []).some((x) => sigs.has(x))));
+        const key = known ? known[0] : `store:${owner}`;
+        // Visitors without any purchase: nothing is stored on the server.
+        if (!known && !activeStorePlans(subscriber).plans.length) return send(res, 200, { ok: true, premium: false, email: '', plan: '' });
         const result = await syncStoreAccount(key, String(body.appUserId), subscriber);
         return send(res, 200, { ok: true, premium: result.active, email: '', plan: result.plan, token: result.active ? signAccessToken(key) : undefined });
       }

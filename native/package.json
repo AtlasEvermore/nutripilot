@@ -2,14 +2,36 @@
   "name": "nutripilot-native",
   "private": true,
   "version": "1.0.0",
-  "description": "iPhone and Android shell for NutriPilot (Capacitor). The app content is served by app.atlasevermore.com.",
+  "description": "iPhone and Android shell for NutriPilot (Capacitor 8). The app content is served by app.atlasevermore.com.",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "setup": "npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/ios@latest @capacitor/android@latest @capacitor/splash-screen@latest @capacitor/status-bar@latest @revenuecat/purchases-capacitor@latest @capacitor-community/apple-sign-in@latest @codetrix-studio/capacitor-google-auth@latest && npm install -D @capacitor/assets@latest",
+    "setup": "npm install",
     "add:android": "npx cap add android",
     "add:ios": "npx cap add ios",
-    "assets": "npx capacitor-assets generate --iconBackgroundColor '#11251b' --splashBackgroundColor '#0E2A1F'",
-    "sync": "npx cap sync",
+    "assets": "npx capacitor-assets generate --iconBackgroundColor '#0A100D' --iconBackgroundColorDark '#0A100D' --splashBackgroundColor '#0A100D' --splashBackgroundColorDark '#0A100D'",
+    "configure": "node scripts/configure-native.mjs",
+    "sync": "npx cap sync && node scripts/configure-native.mjs",
     "android": "npx cap open android",
-    "ios": "npx cap open ios"
+    "ios": "npx cap open ios",
+    "doctor": "node scripts/configure-native.mjs --check"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.5.3",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/share": "^8.0.3",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
+    "@revenuecat/purchases-capacitor": "^13.7.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.3"
   }
 }

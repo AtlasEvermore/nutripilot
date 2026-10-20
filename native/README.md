@@ -1,101 +1,50 @@
-# NutriPilot — app para iPhone e Android
+# NutriPilot — app para iPhone e Android (Capacitor 8)
 
-Esta pasta transforma o NutriPilot (servido em https://app.atlasevermore.com) em apps da App Store e do Google Play com **Capacitor**. As assinaturas são vendidas pela Apple e pelo Google e controladas pelo **RevenueCat**. O servidor confirma cada compra antes de liberar o acesso.
+Esta pasta transforma o NutriPilot (servido em https://app.atlasevermore.com) nos apps da App Store e do Google Play.
+O conteúdo vem do servidor: **toda atualização feita no site chega ao app sem nova versão**. Só mudanças nativas
+(ícone, nome, permissões, plugins) pedem novo envio às lojas.
 
-O conteúdo do app vem do servidor: depois de publicado nas lojas, toda atualização feita no site chega ao app sem nova versão (só mudanças nativas pedem novo envio).
+👉 **Passo a passo de publicação:** [`store/GUIA-PUBLICACAO.md`](store/GUIA-PUBLICACAO.md)
+· Textos e respostas das lojas: [`store/app-store.md`](store/app-store.md), [`store/google-play.md`](store/google-play.md)
+· Capturas de tela nos tamanhos exigidos: [`store/screenshots/`](store/screenshots/)
 
-## 1. Contas necessárias
-- Apple Developer Program (US$ 99/ano) — https://developer.apple.com/programs/
-- Google Play Console (US$ 25, uma vez) — https://play.google.com/console
-- RevenueCat (gratuito até um limite de faturamento) — https://app.revenuecat.com
+## Como funciona (v9)
+- **Sem login, sem senha.** "Começar meus 3 dias grátis" abre a folha de pagamento da Apple (Face ID) ou do Google Play.
+  O RevenueCat registra a compra; o servidor confirma (`/api/iap/verify`) e cria a conta sozinho, ligada à compra.
+- Ao reabrir, reinstalar ou trocar de celular, o assinante é reconhecido automaticamente (ou com "Restaurar compras"),
+  e o plano, refeições e progresso voltam do servidor.
+- O teste grátis é a **oferta introdutória** de cada assinatura nas lojas. O app só anuncia o teste se a loja o oferecer.
+- Antes do primeiro uso da IA (scanner, coach, planos), o app pede consentimento nomeando a OpenAI (regra 5.1.2(i) da Apple);
+  dá para desligar em Configurações › Análise por IA.
+- Recursos nativos: compras, notificações locais (água, refeições, treino, pesagem), vibração, câmera (foto e código de barras),
+  folha de compartilhar (exportações e relatório da menopausa), botão voltar do Android, tela offline.
 
-## 2. Produtos nas lojas
-Crie as assinaturas com **exatamente** estes IDs (lista completa e preços em `NutriPilot-produtos-lojas.csv`). Para começar, bastam 24:
+## Plugins (versões fixas no `package.json`)
+Capacitor 8.5 (core, ios, android), app, haptics, local-notifications, filesystem, share, splash-screen, status-bar,
+RevenueCat 13. Requisitos: **Node 22+**, Java 21, Xcode 26+. Android: minSdk 24, **targetSdk 36**. iOS: 15.0+ (Swift Package Manager).
 
-| Plano | Mensal | Anual |
-|---|---|---|
-| Kit completo | np_complete_monthly | np_complete_annual |
-| Corpo em forma | np_body_monthly | np_body_annual |
-| Mulher 40+ | np_women40_monthly | np_women40_annual |
-| Cozinha saudável | np_kitchen_monthly | np_kitchen_annual |
-| Performance | np_performance_monthly | np_performance_annual |
-| Bem-estar | np_wellness_monthly | np_wellness_annual |
-| Nutrição | np_nutrition_monthly | np_nutrition_annual |
-| Receitas | np_recipes_monthly | np_recipes_annual |
-| Treino | np_training_monthly | np_training_annual |
-| Menopausa 40+ | np_menopause_monthly | np_menopause_annual |
-| Vitaminas | np_nutrients_monthly | np_nutrients_annual |
-| Sono e estresse | np_sleep_monthly | np_sleep_annual |
-
-- **App Store Connect:** um único grupo de assinaturas "NutriPilot" com todos os produtos; oferta introdutória "teste gratuito de 3 dias" em cada um; preço base em US$ e "preços de outros países automáticos".
-- **Google Play:** uma assinatura por ID, com um plano base (mensal ou anual) e uma oferta de teste gratuito de 3 dias; preço em US$ e "converter preços".
-- O app mostra só o que a loja vende: uma combinação montada que não exista na loja vira automaticamente o plano disponível mais barato que inclui os módulos escolhidos.
-
-## 3. RevenueCat
-1. Crie o projeto e adicione o app iOS (bundle `com.atlasevermore.nutripilot`) e o app Android (mesmo ID).
-2. Conecte as lojas (chave da App Store Connect API e conta de serviço do Google Play) e importe os produtos.
-3. No Railway, defina as variáveis:
-   - `REVENUECAT_IOS_KEY` — chave pública do app iOS (começa com `appl_`)
-   - `REVENUECAT_ANDROID_KEY` — chave pública do app Android (começa com `goog_`)
-   - `REVENUECAT_SECRET_KEY` — chave secreta (API v1, começa com `sk_`)
-   - `REVENUECAT_WEBHOOK_AUTH` — uma senha longa que você inventa
-4. Em Integrations › Webhooks: URL `https://app.atlasevermore.com/api/revenuecat/webhook` e cabeçalho Authorization = o mesmo valor de `REVENUECAT_WEBHOOK_AUTH`.
-
-## 3b. Sem login, sem senha (v9) + teste grátis de 3 dias da loja
-O teste de 20 minutos foi removido. Agora:
-- Quem baixa o app explora as telas gratuitas e vê os módulos com uma prévia. Um toque em "Começar meus 3 dias grátis" abre a folha de pagamento da Apple (Face ID) ou do Google Play — **sem criar conta, sem e-mail, sem senha**.
-- A assinatura fica ligada ao Apple ID / conta Google. O servidor confirma a compra no RevenueCat (`/api/iap/verify`, sem token) e cria a conta automaticamente (chave = `original_app_user_id` do RevenueCat).
-- Ao reabrir ou reinstalar, o app reconhece o assinante sozinho; em outro aparelho basta "Restaurar compras".
-- O teste de 3 dias é a **oferta introdutória** configurada em cada assinatura na App Store Connect e no Google Play (seção 2).
-- Login com Apple/Google/e-mail continua opcional (clientes antigos da Hotmart e versão web).
-
-**Apple (Sign in with Apple)**
-1. developer.apple.com › Identifiers › `com.atlasevermore.nutripilot` › ative **Sign In with Apple**.
-2. Para o login no site: crie um **Services ID** (ex.: `com.atlasevermore.nutripilot.web`), ative Sign In with Apple, domínio `app.atlasevermore.com` e retorno `https://app.atlasevermore.com/auth/apple/callback`.
-3. No Xcode: Signing & Capabilities › **+ Sign In with Apple**.
-
-**Google**
-1. console.cloud.google.com › APIs e serviços › Credenciais › Criar ID do cliente OAuth:
-   - **Aplicativo da Web**: origem `https://app.atlasevermore.com`, redirecionamento `https://app.atlasevermore.com/auth/google/callback` (guarde o ID e a chave secreta).
-   - **Android**: pacote `com.atlasevermore.nutripilot` + SHA-1 da chave de assinatura (Play Console › Integridade do app).
-   - **iOS** (opcional): bundle `com.atlasevermore.nutripilot`.
-2. Em `capacitor.config.json`, troque `serverClientId` pelo ID do cliente **Web**.
-
-**No Railway (variáveis)**
-- `APPLE_CLIENT_IDS` = `com.atlasevermore.nutripilot,com.atlasevermore.nutripilot.web`
-- `APPLE_SERVICE_ID` = `com.atlasevermore.nutripilot.web`
-- `GOOGLE_CLIENT_IDS` = ID Web, ID Android e ID iOS separados por vírgula (o Web primeiro)
-- `GOOGLE_CLIENT_SECRET` = chave secreta do cliente Web
-- `TRIAL_MINUTES` = `20` (padrão) · `TRIAL_AI_CALLS` = `25` (limite de usos de IA durante o teste)
-
-Sem essas variáveis, os botões Apple/Google não aparecem e o teste funciona com o login por e-mail.
-
-## 4. Gerar os projetos nativos
-Num computador com Node 20+ (Mac para iOS):
+## Gerar os projetos
 ```
 cd native
-npm run setup          # instala Capacitor e RevenueCat (versões atuais)
-npm run add:android
-npm run add:ios        # só no Mac
-npm run assets         # ícones e splash a partir de resources/
-npm run sync
-npm run android        # abre no Android Studio → Build › Generate Signed Bundle (.aab)
-npm run ios            # abre no Xcode → Product › Archive → enviar para o App Store Connect
+npm install
+npx cap add android
+npx cap add ios          # pode rodar fora do Mac; compilar exige Mac ou Codemagic
+npm run assets           # ícones e splash a partir de resources/
+npm run sync             # sincroniza e aplica as configurações das lojas
+npm run doctor           # confere se nada ficou faltando (sai com erro se faltar)
 ```
-No Xcode, ative a capability **In-App Purchase**. No Android, a permissão de cobrança é adicionada pelo plugin do RevenueCat.
+`scripts/configure-native.mjs` aplica (e o `--check` confere):
+- iPhone: textos de permissão da câmera e da fototeca (sem eles o app fecha ao abrir a câmera), `ITSAppUsesNonExemptEncryption = NO`,
+  retrato no iPhone, `arm64`, versão (`APP_VERSION`) e build (`BUILD_NUMBER`).
+- Android: permissões de câmera e notificações, câmera opcional, ícone das notificações, `versionName`/`versionCode`.
 
-**Sem Mac:** use um serviço de build na nuvem (Codemagic, Ionic Appflow ou Capawesome Cloud). O arquivo `codemagic.yaml` desta pasta já tem os dois fluxos; falta só conectar as assinaturas de código no painel do serviço.
+**Sem Mac:** `codemagic.yaml` (na raiz) já tem os dois fluxos com tudo isso; falta só conectar as assinaturas de código no painel.
 
-## 5. Páginas públicas (para as fichas das lojas)
-- Privacidade: https://app.atlasevermore.com/privacy
-- Termos: https://app.atlasevermore.com/terms
-- Suporte: https://app.atlasevermore.com/support
-- Exclusão de conta (Google Play): https://app.atlasevermore.com/delete-account
+## Variáveis no Railway
+`REVENUECAT_IOS_KEY`, `REVENUECAT_ANDROID_KEY`, `REVENUECAT_SECRET_KEY`, `REVENUECAT_WEBHOOK_AUTH`, `OPENAI_API_KEY`, `OPENAI_MODEL`,
+`ACCESS_TOKEN_SECRET`, `LEGAL_COMPANY_NAME`, `LEGAL_COMPANY_ADDRESS`, `LEGAL_COMPANY_ID`, `SUPPORT_EMAIL`, `DATA_DIR=/data` (volume persistente).
+Webhook do RevenueCat: `https://app.atlasevermore.com/api/revenuecat/webhook` com `Authorization` = `REVENUECAT_WEBHOOK_AUTH`.
+`https://app.atlasevermore.com/api/health` deve mostrar `"ready": true` antes de enviar para revisão.
 
-## 6. Conta para os revisores
-Os revisores não conseguem ler a caixa de e-mail. Defina no Railway `REVIEW_EMAIL=review@atlasevermore.com` e `REVIEW_CODE` (6 dígitos) e informe os dois nas notas de revisão. Apague as variáveis depois da aprovação.
-
-## 7. Antes de enviar para revisão
-- `https://app.atlasevermore.com/api/health` deve mostrar `"ready": true` (inclui armazenamento persistente em `/data`, e-mail, IA, RevenueCat e dados legais).
-- Teste a compra com uma conta de teste (Sandbox na Apple, "testadores de licença" no Google).
-- Nas notas para o revisor da Apple, informe: o app não exige login para explorar; a assinatura pede só um e-mail confirmado por código; inclua um e-mail de teste com acesso ativo.
+## Páginas públicas
+Privacidade `/privacy` · Termos `/terms` · Suporte `/support` · Exclusão de conta `/delete-account`

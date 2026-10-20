@@ -13,30 +13,34 @@
   "ios": {
     "contentInset": "never",
     "backgroundColor": "#F3F4F1",
-    "limitsNavigationsToAppBoundDomains": false
+    "limitsNavigationsToAppBoundDomains": false,
+    "scrollEnabled": true
   },
   "android": {
     "backgroundColor": "#F3F4F1",
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "captureInput": true
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 600,
+      "launchShowDuration": 1200,
+      "launchAutoHide": true,
       "backgroundColor": "#0A100D",
-      "showSpinner": false
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
     },
     "StatusBar": {
       "style": "LIGHT",
       "backgroundColor": "#F3F4F1",
       "overlaysWebView": false
     },
-    "GoogleAuth": {
-      "scopes": [
-        "profile",
-        "email"
-      ],
-      "serverClientId": "COLE_AQUI_O_ID_DO_CLIENTE_WEB.apps.googleusercontent.com",
-      "forceCodeForRefreshToken": false
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "LIGHT"
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_nutripilot",
+      "iconColor": "#18E08A"
     }
   }
 }

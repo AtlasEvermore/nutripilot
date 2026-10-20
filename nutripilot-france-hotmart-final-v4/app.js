@@ -884,7 +884,58 @@ function authHeaders(extra = {}) {
   return { ...extra, 'X-NP-Lang': state?.lang || 'fr', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 
+// App Store 5.1.2(i) / GDPR: before the first photo or text goes to the AI provider, ask once, clearly,
+// naming the provider and the data. The choice can be changed at any time in Settings.
+const AI_PATHS = ['/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan', '/api/support'];
+let aiConsentAsk = null;
+function askAiConsent() {
+  if (state.aiConsent === true) return Promise.resolve(true);
+  if (aiConsentAsk) return aiConsentAsk;
+  aiConsentAsk = new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'consent-wrap';
+    wrap.setAttribute('role', 'dialog');
+    wrap.setAttribute('aria-modal', 'true');
+    wrap.innerHTML = `<div class="consent-card" tabindex="-1">
+      <span class="consent-ico">${icon('star')}</span>
+      <h2>${L('Analyse par intelligence artificielle')}</h2>
+      <p>${L('Pour analyser vos repas, répondre à vos questions et créer vos plans, NutriPilot envoie à son fournisseur d’IA, OpenAI, uniquement ce dont la réponse a besoin :')}</p>
+      <ul>
+        <li>${icon('camera')}<span>${L('les photos de repas et d’étiquettes que vous choisissez d’analyser')}</span></li>
+        <li>${icon('coach')}<span>${L('le texte que vous écrivez ou dictez (repas, questions au coach, au support)')}</span></li>
+        <li>${icon('user')}<span>${L('les repères de votre profil utiles au calcul : âge, sexe, poids, objectif, calories, préférences et allergies')}</span></li>
+      </ul>
+      <p class="fine">${L('Pas de nom ni d’e-mail. OpenAI traite ces données pour produire la réponse et ne les utilise pas pour entraîner ses modèles. Vous pouvez retirer votre accord à tout moment dans Réglages.')}</p>
+      <button class="btn btn-lime btn-wide btn-xl" data-ai-yes>${L('Autoriser l’analyse par IA')}</button>
+      <button class="btn btn-ghost btn-wide" data-ai-no>${L('Pas maintenant')}</button>
+      <a class="link-btn center-fine" href="/privacy?lang=${lang()}" target="_blank" rel="noopener">${L('Politique de confidentialité')}</a>
+    </div>`;
+    const done = (ok) => {
+      state.aiConsent = ok; state.aiConsentAt = new Date().toISOString(); saveState(false);
+      track(ok ? 'AiConsentYes' : 'AiConsentNo');
+      wrap.remove(); aiConsentAsk = null; resolve(ok);
+    };
+    // Consent must be a deliberate tap: ignore the key/tap that opened the screen (e.g. "Send" on the keyboard).
+    const shownAt = Date.now();
+    wrap.addEventListener('click', (e) => {
+      if (Date.now() - shownAt < 600) return;
+      if (e.target.closest('[data-ai-yes]')) done(true); else if (e.target.closest('[data-ai-no]')) done(false);
+    });
+    document.activeElement?.blur?.();
+    document.body.append(wrap);
+    wrap.querySelector('.consent-card')?.focus({ preventScroll: true });
+  });
+  return aiConsentAsk;
+}
+class AiConsentError extends Error {}
+async function aiGate(url) {
+  const path = String(url).split('?')[0];
+  if (!AI_PATHS.includes(path)) return;
+  if (await askAiConsent()) return;
+  throw new AiConsentError(L('Analyse par IA désactivée. Vous pouvez l’activer dans Réglages › Analyse par IA.'));
+}
 async function apiFetch(url, options = {}) {
+  await aiGate(url);
   return fetch(url, { ...options, headers: authHeaders(options.headers || {}) });
 }
 
@@ -906,6 +957,20 @@ function saveState(remote = true) {
   }
 }
 
+// After an unlock on a new phone (restore, reinstall): bring back the plan, meals and progress saved on the server.
+async function pullRemoteState() {
+  if (!state.accessToken) return;
+  try {
+    const res = await fetch('/api/user/state', { headers: authHeaders() });
+    const remote = await res.json();
+    if (!res.ok || !remote.state) return;
+    const localNewer = state.updatedAt && remote.state.updatedAt && String(state.updatedAt) > String(remote.state.updatedAt);
+    if (localNewer && state.onboarding) return;
+    const keep = { accessToken: state.accessToken, premium: true, premiumEmail: state.premiumEmail, subscriptionPlan: remote.plan || state.subscriptionPlan, aiConsent: state.aiConsent };
+    state = deepMerge(state, remote.state);
+    Object.assign(state, keep);
+  } catch { /* offline: keep local */ }
+}
 async function syncRemote() {
   try {
     await apiFetch('/api/user/state', {
@@ -1113,6 +1178,7 @@ async function init() {
     const response = await fetch('/api/config');
     if (response.ok) config = { ...config, ...await response.json() };
   } catch {}
+  nativeKitStart();
   NativeBilling.start();
 
   let valid = false;
@@ -1762,6 +1828,7 @@ async function sendSupport(text) {
   supportLoading = true;
   renderModal();
   try {
+    await aiGate('/api/support');
     const response = await fetch('/api/support', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: lang(), messages: supportMessages.slice(-8) }) });
     const data = await response.json();
     supportMessages.push({ role: 'assistant', text: response.ok ? data.answer : (data.error || L('Écrivez-nous à {email}.', { email: config.supportEmail })) });
@@ -2053,6 +2120,13 @@ const NativeBilling = {
     return 'np-' + [...new Uint8Array(hash)].slice(0, 16).map((b) => b.toString(16).padStart(2, '0')).join('');
   },
   token() { return state.accessToken || state.accountToken || ''; },
+  // Free-trial length as configured in App Store Connect / Play Console (introductory offer at 0).
+  trialDays() {
+    const unit = { DAY: 1, WEEK: 7, MONTH: 30, YEAR: 365 };
+    const days = Object.values(this.products).map((p) => p.intro).filter((i) => i && Number(i.price) === 0)
+      .map((i) => Number(i.periodNumberOfUnits || i.cycles || 1) * (unit[String(i.periodUnit || '').toUpperCase()] || 1));
+    return days.length ? Math.max(...days) : 0;
+  },
   email() { const e = state.premiumEmail || state.accountEmail || ''; return e.includes('@') ? e : ''; },
   async start() {
     if (this.started) return;
@@ -2072,15 +2146,16 @@ const NativeBilling = {
       const list = res?.products || [];
       for (const prod of list) {
         const base = String(prod.identifier || '').split(':')[0];
-        this.products[base] = { price: Number(prod.price), priceString: prod.priceString, currency: prod.currencyCode, raw: prod };
+        this.products[base] = { price: Number(prod.price), priceString: prod.priceString, currency: prod.currencyCode, raw: prod, intro: prod.introPrice || null };
       }
-      window.NutriPilotNative = {
+      window.NutriPilotNative = Object.assign(window.NutriPilotNative || {}, {
         store: this.platform() === 'ios' ? 'App Store' : 'Google Play',
         currency: list[0]?.currencyCode || '',
         products: this.products,
         purchase: (storeId, intent) => this.purchase(storeId, intent),
         restore: () => this.restore(),
-      };
+        trialDays: this.trialDays(),
+      });
       render();
     } catch (error) { console.error('billing start', error); this.started = false; }
   },
@@ -2089,6 +2164,7 @@ const NativeBilling = {
       const data = await this.verify();
       if (data?.premium && data.token) {
         Object.assign(state, { premium: true, accessToken: data.token, subscriptionPlan: data.plan || state.subscriptionPlan, premiumEmail: data.email || state.premiumEmail });
+        await pullRemoteState();
         saveState(false);
         nav(state.onboarding ? 'app' : 'onboarding');
       }
@@ -2142,6 +2218,69 @@ const NativeBilling = {
     return data.premium ? { token: data.token, email: data.email, plan: data.plan } : null;
   },
 };
+// ---- Native kit (iPhone / Android app): haptics, local notifications, files -------------------
+const capPlugin = (name) => (window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins?.[name] || null : null);
+function haptic(kind = 'light') {
+  const H = capPlugin('Haptics');
+  try {
+    if (H) {
+      if (kind === 'success' || kind === 'warning') return H.notification({ type: kind.toUpperCase() }).catch(() => {});
+      return H.impact({ style: kind === 'heavy' ? 'HEAVY' : kind === 'medium' ? 'MEDIUM' : 'LIGHT' }).catch(() => {});
+    }
+    navigator.vibrate?.(kind === 'success' ? [30, 40, 30] : kind === 'heavy' ? 60 : 20);
+  } catch { /* optional */ }
+}
+const NOTIF_BASE = 7000;
+async function scheduleNativeReminders(r) {
+  const N = capPlugin('LocalNotifications');
+  if (!N) return false;
+  const pending = await N.getPending().catch(() => ({ notifications: [] }));
+  const ours = (pending.notifications || []).filter((n) => n.id >= NOTIF_BASE && n.id < NOTIF_BASE + 1000).map((n) => ({ id: n.id }));
+  if (ours.length) await N.cancel({ notifications: ours }).catch(() => {});
+  if (!Object.values(r).some((x) => x.on)) return true;
+  let perm = await N.checkPermissions().catch(() => ({ display: 'prompt' }));
+  if (perm.display !== 'granted') perm = await N.requestPermissions().catch(() => ({ display: 'denied' }));
+  if (perm.display !== 'granted') { toast(L('Les notifications sont bloquées dans les réglages de votre appareil. Autorisez-les pour recevoir les rappels.')); return true; }
+  const list = [];
+  let id = NOTIF_BASE;
+  const at = (hm) => { const [h, m] = String(hm || '08:00').split(':').map(Number); return { hour: h || 0, minute: m || 0 }; };
+  const add = (body, on) => list.push({ id: id++, title: 'NutriPilot', body, schedule: { on, allowWhileIdle: false } });
+  if (r.water.on) for (let t = r.water.from * 60; t < r.water.to * 60 && list.length < 20; t += Number(r.water.every || 120)) add(L('Un verre d’eau ? Pensez à vous hydrater.'), { hour: Math.floor(t / 60), minute: t % 60 });
+  if (r.meals.on) r.meals.times.forEach((tm, i) => add(L('C’est l’heure de votre {meal}. Scannez-le en une photo.', { meal: L(['petit-déjeuner', 'déjeuner', 'dîner'][i]) }), at(tm)));
+  if (r.workout.on) trainingDays().forEach((wd) => add(L('C’est jour d’entraînement. Votre séance vous attend.'), { weekday: Number(wd) + 1, ...at(r.workout.time) }));
+  if (r.weigh.on) add(L('C’est le jour de la pesée. Notez votre poids pour suivre la tendance.'), { weekday: Number(r.weigh.day) + 1, ...at(r.weigh.time) });
+  await N.schedule({ notifications: list });
+  return true;
+}
+// Saves a file the person exported: share sheet in the app (Files, Mail, WhatsApp…), download on the web.
+async function saveFile(content, name, type) {
+  const FS = capPlugin('Filesystem'); const SH = capPlugin('Share');
+  if (FS && SH) {
+    try {
+      const w = await FS.writeFile({ path: name, data: content, directory: 'CACHE', encoding: 'utf8' });
+      await SH.share({ title: name, files: [w.uri] });
+      return;
+    } catch (error) { if (/cancel/i.test(String(error?.message || ''))) return; }
+  }
+  const file = new File([content], name, { type });
+  if (window.Capacitor?.isNativePlatform?.() && navigator.canShare?.({ files: [file] })) { try { await navigator.share({ files: [file], title: name }); return; } catch { return; } }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30_000);
+}
+function nativeKitStart() {
+  const plat = nativePlatform();
+  if (!plat) return;
+  document.documentElement.classList.add(`cap-${plat}`);
+  window.NutriPilotNative = Object.assign(window.NutriPilotNative || {}, { scheduleReminders: scheduleNativeReminders });
+  // Android hardware back: close the open sheet first, then go back, then leave the app from the home screen.
+  capPlugin('App')?.addListener?.('backButton', ({ canGoBack }) => {
+    if (overlayOpen()) return history.back();
+    if (canGoBack && !ROOT_ROUTES.includes(route)) return history.back();
+    if (route !== 'app') return nav('app');
+    capPlugin('App').exitApp?.();
+  });
+  capPlugin('SplashScreen')?.hide?.().catch?.(() => {});
+}
 // In the store app, legal / support pages open in a sheet inside the app (no dead "new tab" links).
 document.addEventListener('click', (event) => {
   const a = event.target.closest?.('a[href^="/privacy"], a[href^="/terms"], a[href^="/support"], a[href^="/delete-account"]');
@@ -2150,6 +2289,12 @@ document.addEventListener('click', (event) => {
   modal = { type: 'page', src: a.getAttribute('href') };
   renderModal();
 }, true);
+document.addEventListener('change', async (event) => {
+  const t = event.target;
+  if (!t?.matches?.('[data-ai-toggle]')) return;
+  if (t.checked) { state.aiConsent = null; t.checked = await askAiConsent(); }
+  else { state.aiConsent = false; state.aiConsentAt = new Date().toISOString(); saveState(false); toast(L('Analyse par IA désactivée.')); }
+});
 function pageSheet() {
   return `<div class="sheet-head"><span></span><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
     <iframe class="page-frame" src="${esc(modal.src)}" title="${esc(modal.src.split('?')[0].slice(1))}"></iframe>`;
@@ -2274,12 +2419,14 @@ function separatePrice(modules, period) {
 // What the same access would cost without any discount: modules bought one by one, paid monthly.
 // In the buyer's currency: modules bought one by one, paid monthly.
 function refPrice(plan, period, cur = currency()) {
+  if (!plan) return 0;
   const mods = plan.kind === 'module' ? [plan] : sortMods(plan.modules || []).map((id) => DEFAULT_PLANS.find((p) => p.tier === id));
   const monthly = mods.reduce((t, m) => t + lp(m, 'monthly', cur), 0);
   return r2(period === 'annual' ? monthly * 12 : monthly);
 }
-function saveAmount(plan, period, cur = currency()) { return Math.max(0, r2(refPrice(plan, period, cur) - lp(plan, period, cur))); }
+function saveAmount(plan, period, cur = currency()) { if (!plan) return 0; return Math.max(0, r2(refPrice(plan, period, cur) - lp(plan, period, cur))); }
 function planSaving(plan, period) {
+  if (!plan) return 0;
   const ref = refPrice(plan, period);
   return ref ? Math.max(0, Math.round((1 - lp(plan, period) / ref) * 100)) : 0;
 }
@@ -2779,7 +2926,11 @@ const Billing = {
     const sold = this.native() && Object.keys(window.NutriPilotNative?.products || {}).length ? all.filter((p) => sellable(p)) : all;
     return sold.length ? sold : all;
   },
-  trialDays() { return Number(config.trialDays || 3); },
+  trialDays() {
+    // In the store app, show a free trial only if the store really offers one (App Store 3.1.2).
+    if (this.native() && Object.keys(window.NutriPilotNative?.products || {}).length) return Number(window.NutriPilotNative.trialDays || 0);
+    return Number(config.trialDays || 3);
+  },
   async purchase(plan, period) {
     const option = plan[period];
     const id = `${plan.tier}_${period}`;
@@ -2793,24 +2944,34 @@ const Billing = {
       state.premiumEmail = result.email || state.premiumEmail;
       state.subscriptionPlan = result.plan || `${plan.tier}_${period}`;
       saveState();
+      haptic('success');
       track('StartTrial', { plan: id });
       celebrate();
       toast(L('Formule activée ✓'));
       return nav(state.onboarding ? 'app' : 'onboarding');
+    }
+    if (nativePlatform()) {
+      // Inside the app but the store did not answer yet (offline, slow network): retry, never a dead end.
+      NativeBilling.started = false; await NativeBilling.start();
+      if (this.native()) return this.purchase(plan, period);
+      return toast(L('La boutique ne répond pas. Vérifiez votre connexion et réessayez.'));
     }
     // On the web, subscriptions are taken in the iPhone / Android app.
     modal = { type: 'store', plan: plan.tier, period };
     return renderModal();
   },
   async restore() {
-    if (!this.native() || !window.NutriPilotNative.restore) return nav('access');
+    if ((!this.native() || !window.NutriPilotNative.restore) && nativePlatform()) { NativeBilling.started = false; await NativeBilling.start(); }
+    if (!this.native() || !window.NutriPilotNative.restore) return nativePlatform() ? toast(L('La boutique ne répond pas. Vérifiez votre connexion et réessayez.')) : nav('access');
     let result = null;
     try { result = await window.NutriPilotNative.restore(); } catch (error) { return toast(error?.message || L('Réessayez dans un instant.')); }
     if (result?.token) {
       state.premium = true;
       state.accessToken = result.token;
       state.subscriptionPlan = result.plan || state.subscriptionPlan;
+      await pullRemoteState();
       saveState();
+      haptic('success'); toast(L('Achats restaurés ✓'));
       return nav(state.onboarding ? 'app' : 'onboarding');
     }
     toast(L('Aucun abonnement actif trouvé.'));
@@ -2990,8 +3151,9 @@ function paywall() {
           const bundles = plans.filter((x) => x.kind === 'bundle' && !first.includes(x));
           const mods = plans.filter((x) => x.kind === 'module' && !first.includes(x));
           return first.map((x) => planOptionHtml(x, plan.tier)).join('')
-            + `<details class="more-plans" ${plan.kind === 'bundle' ? '' : ''}><summary>${L('Combinaisons')} <span>${L('jusqu’à −{n} %', { n: Math.max(...BUNDLES.map((b) => planSaving(findPlan(b.id), 'monthly'))) })}</span></summary>${bundles.map((x) => planOptionHtml(x, plan.tier)).join('')}</details>`
-            + `<details class="more-plans"><summary>${L('Modules individuels')} <span>${mods.length}</span></summary>${mods.map((x) => planOptionHtml(x, plan.tier)).join('')}</details>`
+            // Only the groups the store really sells (the app may launch with just a few products).
+            + (bundles.length ? `<details class="more-plans"><summary>${L('Combinaisons')} <span>${L('jusqu’à −{n} %', { n: Math.max(0, ...bundles.map((b) => planSaving(b, 'monthly'))) })}</span></summary>${bundles.map((x) => planOptionHtml(x, plan.tier)).join('')}</details>` : '')
+            + (mods.length ? `<details class="more-plans"><summary>${L('Modules individuels')} <span>${mods.length}</span></summary>${mods.map((x) => planOptionHtml(x, plan.tier)).join('')}</details>` : '')
             + `<button class="link-btn pw-builder" data-go-builder>${icon('grid')} ${L('Composer ma formule module par module')}</button>`;
         })()}
       </div>
@@ -3870,7 +4032,7 @@ function celebrate() {
   const colors = ['#d7ff6a', '#102419', '#3546a6', '#a2456f', '#b5532f', '#0b6e6e', '#9a6a00'];
   box.innerHTML = Array.from({ length: 26 }, (_, i) => `<i style="--x:${Math.round((Math.random() - 0.5) * 340)}px;--y:${Math.round(-180 - Math.random() * 260)}px;--r:${Math.round(Math.random() * 720 - 360)}deg;--d:${(0.9 + Math.random() * 0.7).toFixed(2)}s;background:${colors[i % colors.length]}"></i>`).join('');
   document.body.appendChild(box);
-  try { navigator.vibrate?.(30); } catch { /* optional */ }
+  haptic('success');
   setTimeout(() => box.remove(), 1800);
 }
 
@@ -3922,13 +4084,14 @@ async function saveReminders(root) {
   state.reminders = r;
   saveState();
   const anyOn = Object.values(r).some((x) => x.on);
-  if (anyOn && window.NutriPilotNative?.scheduleReminders) {
-    await window.NutriPilotNative.scheduleReminders(r);
+  if (window.NutriPilotNative?.scheduleReminders) {
+    await window.NutriPilotNative.scheduleReminders(r).catch(() => {});
   } else if (anyOn && 'Notification' in window && Notification.permission === 'default') {
     try { await Notification.requestPermission(); } catch {}
   }
   track('RemindersSaved', { water: r.water.on, meals: r.meals.on, workout: r.workout.on });
-  toast('Rappels enregistrés ✓');
+  haptic('success');
+  toast(L('Rappels enregistrés ✓'));
 }
 
 let reminderTimer = null;
@@ -5088,7 +5251,7 @@ function startRest(seconds) {
     el.querySelector('button').onclick = () => { clearInterval(restTimer.id); el.remove(); };
     if (left <= 0) {
       clearInterval(restTimer.id);
-      navigator.vibrate?.([200, 100, 200]);
+      haptic('warning');
       el.classList.add('done');
       el.querySelector('span').textContent = L('C’est reparti !');
       setTimeout(() => el.remove(), 2500);
@@ -5583,6 +5746,7 @@ ${factorCount.length ? `<h2>${L('Facteurs notés')}</h2><p>${factorCount.map(([l
 </body></html>`;
 }
 function openMenoReport() {
+  if (nativePlatform()) { track('MenoReport'); return saveFile(menoReportHtml(), 'rapport-menopause.html', 'text/html'); }
   const blob = new Blob([menoReportHtml()], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const win = window.open(url, '_blank');
@@ -6743,6 +6907,7 @@ function settings() {
       <div class="fine center-fine">${L('Formule actuelle : {plan}', { plan: esc(planLabel()) })}</div>
       <button class="btn ${planTier() !== 'complete' ? 'btn-lime' : 'btn-ghost'} btn-wide" data-go="plans">${L('Voir les formules')}</button>
       <div class="section-label"><h3>${L('Données & appareil')}</h3></div>
+      <label class="rem-row ai-row"><span>${icon('star')}<b>${L('Analyse par IA')}</b><small>${L('Photos et textes envoyés à OpenAI pour l’analyse, le coach et les plans')}</small></span><input type="checkbox" class="switch" data-ai-toggle ${state.aiConsent === true ? 'checked' : ''}></label>
       <button class="btn btn-ghost btn-wide" data-export>${L('Exporter mes données (.json)')}</button>
       ${window.Capacitor?.isNativePlatform?.() ? '' : `<button class="btn btn-ghost btn-wide" data-install>${L('Ajouter NutriPilot à l’écran d’accueil')}</button>`}
       <button class="btn btn-ghost btn-wide" data-go="support">${L('Aide & support')}</button>
@@ -6842,19 +7007,36 @@ const localFood = [
 ];
 
 let bcStream = null;
+// iPhone (and some Android WebViews) have no built-in BarcodeDetector: load the bundled ZXing reader once.
+let bcReader = null;
+async function barcodeDetector() {
+  const formats = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
+  if ('BarcodeDetector' in window) { try { const ok = await window.BarcodeDetector.getSupportedFormats?.(); if (!ok || formats.some((f) => ok.includes(f))) return new window.BarcodeDetector({ formats }); } catch { /* fall back */ } }
+  if (!bcReader) {
+    bcReader = new Promise((resolve, reject) => {
+      const sc = document.createElement('script');
+      sc.src = '/vendor/barcode/barcode-detector.js';
+      sc.onload = () => { const api = window.BarcodeDetectionAPI; api.prepareZXingModule?.({ overrides: { locateFile: (p) => `/vendor/barcode/${p}` } }); resolve(api); };
+      sc.onerror = () => { bcReader = null; reject(new Error('reader')); };
+      document.head.append(sc);
+    });
+  }
+  const api = await bcReader;
+  return new api.BarcodeDetector({ formats });
+}
 function stopBarcodeCamera() { try { bcStream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ } bcStream = null; }
 async function startBarcodeCamera(root) {
   const box = $('#bc-cam', root); const video = $('#bc-video', root);
   if (!box || !video) return;
   try {
-    const detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+    const detector = await barcodeDetector();
     bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     video.srcObject = bcStream; box.hidden = false; await video.play();
     const scanLoop = async () => {
       if (!bcStream || !document.body.contains(video)) return stopBarcodeCamera();
       try {
         const codes = await detector.detect(video);
-        if (codes[0]?.rawValue) { stopBarcodeCamera(); box.hidden = true; $('#barcode', root).value = codes[0].rawValue; navigator.vibrate?.(40); return $('[data-barcode]', root)?.click(); }
+        if (codes[0]?.rawValue) { stopBarcodeCamera(); box.hidden = true; $('#barcode', root).value = codes[0].rawValue; haptic('medium'); return $('[data-barcode]', root)?.click(); }
       } catch { /* keep trying */ }
       setTimeout(scanLoop, 250);
     };
@@ -6867,8 +7049,8 @@ function addTab(tab) {
     return `<div class="mod-upsell m-scan">${icon('scan')}<b>${L('Disponible avec le module Scanner')}</b><p>${L('Photo du repas, code-barres, étiquette, allergènes et comparaison de produits.')}</p><button class="btn btn-lime" data-module-buy="scanner">${Billing.trialDays() ? L('Commencer mes {n} jours gratuits', { n: Billing.trialDays() }) : L('Activer ce module')}</button></div>`;
   }
   if (tab === 'photo' || tab === 'label') return `<label class="upload"><input id="meal-image" type="file" accept="image/*" capture="environment"><div class="camera-ico">${tab === 'label' ? '▤' : '📸'}</div><h3>${L(tab === 'label' ? 'Photographier l’étiquette' : 'Photographier mon repas')}</h3><p>${L(tab === 'label' ? 'Cadrez les valeurs nutritionnelles et la portion.' : 'Une photo donne une estimation. Vous pourrez corriger chaque quantité avant de l’enregistrer.')}</p><span class="btn btn-primary">${L('Choisir une photo')}</span></label>`;
-  if (tab === 'text') return `<div class="field"><label>${L('Décrivez votre repas')}</label><textarea class="textarea" id="meal-text" placeholder="${L('Ex. 150 g de poulet, 120 g de riz, courgettes et 1 c. à café d’huile d’olive')}"></textarea></div><div class="inline-actions"><button class="voice-btn" data-voice>${L('🎙 Dicter')}</button><button class="btn btn-primary" data-analyze-text>${L('Analyser →')}</button></div>`;
-  if (tab === 'barcode') return `<div class="day-card"><h3>${L('Produit emballé')}</h3><p class="screen-sub">${L('Entrez les 8 à 14 chiffres du code-barres. Les données disponibles proviennent d’Open Food Facts et restent à vérifier sur l’emballage.')}</p>${'BarcodeDetector' in window ? `<button class="btn btn-lime btn-wide" data-barcode-cam>${icon('camera')} ${L('Scanner avec la caméra')}</button><div id="bc-cam" class="bc-cam" hidden><video id="bc-video" playsinline muted></video><span>${L('Placez le code-barres dans le cadre')}</span></div>` : ''}<div class="field"><label>${L('Code-barres')}</label><input id="barcode" inputmode="numeric" placeholder="${L('Ex. 3017620422003')}"></div><button class="btn btn-primary btn-wide" data-barcode>${L('Rechercher →')}</button></div>`;
+  if (tab === 'text') return `<div class="field"><label>${L('Décrivez votre repas')}</label><textarea class="textarea" id="meal-text" placeholder="${L('Ex. 150 g de poulet, 120 g de riz, courgettes et 1 c. à café d’huile d’olive')}"></textarea></div><div class="inline-actions"><button class="voice-btn" data-voice ${window.SpeechRecognition || window.webkitSpeechRecognition ? '' : 'hidden'}>${L('🎙 Dicter')}</button><button class="btn btn-primary" data-analyze-text>${L('Analyser →')}</button></div>`;
+  if (tab === 'barcode') return `<div class="day-card"><h3>${L('Produit emballé')}</h3><p class="screen-sub">${L('Entrez les 8 à 14 chiffres du code-barres. Les données disponibles proviennent d’Open Food Facts et restent à vérifier sur l’emballage.')}</p>${navigator.mediaDevices?.getUserMedia ? `<button class="btn btn-lime btn-wide" data-barcode-cam>${icon('camera')} ${L('Scanner avec la caméra')}</button><div id="bc-cam" class="bc-cam" hidden><video id="bc-video" playsinline muted></video><span>${L('Placez le code-barres dans le cadre')}</span></div>` : ''}<div class="field"><label>${L('Code-barres')}</label><input id="barcode" inputmode="numeric" placeholder="${L('Ex. 3017620422003')}"></div><button class="btn btn-primary btn-wide" data-barcode>${L('Rechercher →')}</button></div>`;
   if (tab === 'manual') return `<div class="field"><label>${L('Rechercher un aliment')}</label><input id="manual-search" placeholder="${L('Ex. poulet, riz, skyr…')}"></div><div id="manual-list" class="manual-list">${manualResults('')}</div>`;
   if (tab === 'favorites') return state.favorites.length ? `<div class="manual-list">${state.favorites.map((fav, i) => `<button class="manual-item" data-fav="${i}"><span><b>${esc(fav.title)}</b><small>${fmt(fav.total?.kcal)} kcal</small></span><b>→</b></button>`).join('')}</div>` : `<div class="empty">${L('Aucun favori. Enregistrez un repas analysé comme favori pour le retrouver ici.')}</div>`;
   return '';
@@ -7528,7 +7710,7 @@ function bind() {
       if (napTimer) { clearTimeout(napTimer.id); napTimer = null; }
       if (m) {
         const end = Date.now() + m * 60000;
-        napTimer = { minutes: m, end, id: setTimeout(() => { napTimer = null; try { navigator.vibrate?.([400, 200, 400, 200, 600]); } catch { /* optional */ } chime(); toast('Fin de la sieste ✓'); if (route === 'sleep') render(); }, m * 60000) };
+        napTimer = { minutes: m, end, id: setTimeout(() => { napTimer = null; haptic('warning'); chime(); toast('Fin de la sieste ✓'); if (route === 'sleep') render(); }, m * 60000) };
         track('NapTimer', { minutes: m });
       }
       return render();
@@ -8055,21 +8237,11 @@ function bind() {
       const rows = [[L('Date'), ...MENO_SYMPTOMS.map(([, label]) => L(label))].join(';')];
       keys.forEach((k) => rows.push([k, ...MENO_SYMPTOMS.map(([key]) => state.menoLog[k]?.[key] ?? '')].join(';')));
       rows.push('', L('Échelle : 0 = aucun, 1 = léger, 2 = moyen, 3 = fort'));
-      const blob = new Blob(['\ufeff' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
-      const anchor = document.createElement('a');
-      anchor.href = URL.createObjectURL(blob);
-      anchor.download = 'journal-menopause.csv';
-      anchor.click();
-      URL.revokeObjectURL(anchor.href);
+      await saveFile('\ufeff' + rows.join('\n'), 'journal-menopause.csv', 'text/csv');
       return;
     }
     if (button.dataset.export !== undefined) {
-      const blob = new Blob([JSON.stringify(syncSafeState(), null, 2)], { type: 'application/json' });
-      const anchor = document.createElement('a');
-      anchor.href = URL.createObjectURL(blob);
-      anchor.download = 'nutripilot-donnees.json';
-      anchor.click();
-      URL.revokeObjectURL(anchor.href);
+      await saveFile(JSON.stringify(syncSafeState(), null, 2), 'nutripilot-donnees.json', 'application/json');
       return;
     }
     if (button.dataset.install !== undefined) {
@@ -8332,7 +8504,7 @@ function bindModal(root) {
       return nav('training');
     }
     if (button.dataset.rest) return startRest(Number(button.dataset.rest));
-    if (button.dataset.setDot) { button.classList.toggle('done'); navigator.vibrate?.(15); return; }
+    if (button.dataset.setDot) { button.classList.toggle('done'); haptic('light'); return; }
   };
 
   root.oninput = (event) => {
