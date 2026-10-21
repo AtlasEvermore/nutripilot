@@ -2634,3 +2634,38 @@ html.cosmos .compose-meta{color:#1D2A22}
 html.cosmos .water-actions button{color:#04130A;font-weight:800}
 html.cosmos .gp-unit,html.cosmos .gp-num small{color:var(--muted)}
 @media (prefers-reduced-motion:reduce){html.cosmos .route-in .screen{animation:none!important}}
+
+/* ================= v17 surgical polish ================= */
+/* week: each day is a small orbit; today glows */
+html.cosmos .wd-dot svg circle.wdt{stroke:rgba(255,255,255,.1)}
+html.cosmos .wd-dot svg circle.wdv{stroke:var(--lime);filter:drop-shadow(0 0 4px rgba(201,255,59,.6))}
+html.cosmos .wd-dot.today b{color:var(--lime);text-shadow:0 0 10px rgba(201,255,59,.8)}
+html.cosmos .wd-dot.today svg{filter:drop-shadow(0 0 8px rgba(201,255,59,.55))}
+html.cosmos .wd-dot.today svg circle.wdt{stroke:rgba(201,255,59,.45)}
+html.cosmos .wd-dot.future{opacity:.45}
+html.cosmos .wd-dot.today small{color:var(--lime)}
+/* segmented tabs: lit capsule */
+html.cosmos .today-tabs{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+html.cosmos .today-tabs button{color:rgba(234,242,238,.6)}
+html.cosmos .today-tabs button.active{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(201,255,59,.35),0 8px 22px -12px rgba(201,255,59,.55)}
+html.cosmos .today-tabs em{color:#0A100D}
+/* progress bars: energy beams */
+html.cosmos :is(.mm-bar,.mini-bar,.pd-bar,.journey-line,.fg-bar){background:rgba(255,255,255,.07)}
+html.cosmos :is(.mini-bar,.pd-bar,.journey-line,.fg-bar) i{background:linear-gradient(90deg,var(--lime),#7DF9C2 60%,var(--cy));box-shadow:0 0 12px rgba(201,255,59,.55)}
+html.cosmos .mm-bar i{box-shadow:0 0 10px currentColor}
+/* rings glow */
+html.cosmos .day-ring circle:not(:first-child),html.cosmos .day-ring path{filter:drop-shadow(0 0 5px rgba(201,255,59,.45))}
+/* empty states: holographic slot */
+html.cosmos .empty{position:relative;border:1px dashed rgba(201,255,59,.35);background:radial-gradient(120% 120% at 50% 0%,rgba(201,255,59,.07),transparent 60%),rgba(255,255,255,.02);border-radius:20px;color:rgba(234,242,238,.72)}
+html.cosmos .empty::before{content:"";display:block;width:34px;height:34px;margin:0 auto 10px;border-radius:50%;border:1.5px solid rgba(201,255,59,.6);box-shadow:0 0 18px rgba(201,255,59,.35),inset 0 0 10px rgba(201,255,59,.25);background:radial-gradient(circle,var(--lime) 0 3px,transparent 4px)}
+html.cosmos .empty.slim::before,html.cosmos .empty.small-empty::before{display:none}
+/* selected chips everywhere share one lit state */
+html.cosmos :is(.mini-choice.selected,.cuisine-chip.on,.region-chip.on,.gp-pace.on,.mt-chips button.on){background:var(--lime);color:#0A100D;border-color:var(--lime);box-shadow:0 0 18px -4px rgba(201,255,59,.7)}
+/* tactile press for every tappable surface */
+html.cosmos :is(.mini-card,.mx-meal,.md-act,.cp-chip,.planner-mode,.recipe-card,.rc-card,.mod-card,.pw-period,.wd-dot){transition:transform .16s var(--spring),box-shadow .25s}
+html.cosmos :is(.mini-card,.mx-meal,.md-act,.planner-mode,.recipe-card,.rc-card,.mod-card,.pw-period):active{transform:scale(.975)}
+/* toast as a floating HUD capsule */
+html.cosmos .toast{background:rgba(10,16,13,.92);color:#fff;border:1px solid rgba(201,255,59,.35);box-shadow:0 18px 40px -16px rgba(0,0,0,.8),0 0 24px -8px rgba(201,255,59,.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+/* scrollbars on desktop */
+html.cosmos ::-webkit-scrollbar{width:10px;height:10px}html.cosmos ::-webkit-scrollbar-thumb{background:rgba(201,255,59,.18);border-radius:10px;border:3px solid #04080A}html.cosmos ::-webkit-scrollbar-track{background:transparent}
+html.cosmos ::selection{background:rgba(201,255,59,.35);color:#fff}
