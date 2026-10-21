@@ -820,6 +820,19 @@ function locale() {
 }
 // Translation: French source text is the key. Missing keys fall back to French.
 const missingKeys = new Set();
+// App Store 2.3.10 / Google Play: inside each store app, name only that store and platform
+// ("App Store or Google Play" → "App Store" on iPhone, "Google Play" on Android). The web keeps both.
+const STORE_PLATFORM = (() => { try { return window.Capacitor?.isNativePlatform?.() ? window.Capacitor.getPlatform() : ''; } catch { return ''; } })();
+function storeScrub(text) {
+  if (!STORE_PLATFORM || !text || typeof text !== 'string' || !/Google|Android|Apple|App Store|iPhone/.test(text)) return text;
+  const ios = STORE_PLATFORM === 'ios';
+  const pair = (a, b) => new RegExp(`(${a})\\s*(?:/|[^\\s,.;:!?()]{1,6})\\s*(${b})|(${b})\\s*(?:/|[^\\s,.;:!?()]{1,6})\\s*(${a})`, 'g');
+  return text
+    .replace(pair('App Store', 'Google Play'), ios ? 'App Store' : 'Google Play')
+    .replace(pair('Apple', 'Google'), ios ? 'Apple' : 'Google')
+    .replace(pair('iPhone', 'Android'), ios ? 'iPhone' : 'Android')
+    .replace(pair('iOS', 'Android'), ios ? 'iOS' : 'Android');
+}
 function L(fr, vars, record = true) {
   const code = state?.lang || 'fr';
   let out = fr;
@@ -835,7 +848,7 @@ function L(fr, vars, record = true) {
   // Live content numbers ({r} recipes, {c} cuisines, {e} exercises, {p} programmes) fill themselves in.
   if (/\{[rcep]\}/.test(String(out))) { const mv = MV(); out = String(out).replace(/\{([rcep])\}/g, (match, key) => mv[key] ?? match); }
   if (code === 'ar' && out) out = String(out).replace(/→/g, '←');
-  return out;
+  return storeScrub(out);
 }
 window.__npMissing = () => [...missingKeys];
 // Debug helper: touches every static text so translators can list them.
@@ -1071,7 +1084,7 @@ function track(name, params = {}) {
     } catch { /* analytics must never break the app */ }
   }
 }
-const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus', 'TrialStart', 'TrialEnded', 'TrialSignIn']);
+const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus', 'TrialStart', 'TrialEnded', 'TrialSignIn', 'CopilotAsk', 'CopilotApply', 'CopilotUndo', 'CopilotProSummary']);
 
 function logo() {
   return `<div class="logo"><span class="logo-mark"></span>${esc(config.brand)}</div>`;
@@ -1846,7 +1859,7 @@ function tourScreen() {
 
 // ---- Support ---------------------------------------------------------------
 const FAQ = [
-  ['Comment fonctionne l’essai gratuit ?', 'Dans les applications iPhone et Android, vous profitez de 3 jours gratuits avec un accès complet à votre formule. Aucun paiement pendant l’essai. L’abonnement démarre ensuite, sauf si vous annulez au moins 24 h avant la fin. Nous vous envoyons un rappel avant.'],
+  ['Comment fonctionne l’essai gratuit ?', 'Quand la boutique propose un essai gratuit, sa durée est indiquée sur le bouton d’achat (par exemple 7 jours sur la formule annuelle), avec un accès complet. Aucun paiement pendant l’essai. L’abonnement démarre ensuite, sauf si vous annulez au moins 24 h avant la fin. Nous vous envoyons un rappel 2 jours avant.'],
   ['Comment annuler mon abonnement ?', 'iPhone : Réglages › votre nom › Abonnements › NutriPilot. Android : Play Store › votre profil › Paiements et abonnements › Abonnements. Supprimer l’application n’annule pas l’abonnement.'],
   ['Quelle différence entre les formules ?', 'Nutrition : scanner, plan de repas, recettes, courses, cours nutrition et coach. Entraînement : programmes salle et maison avec suivi des charges et cours musculation. Kit complet : tout NutriPilot, Académie incluse, au meilleur prix.'],
   ['Le scanner est-il précis ?', 'Une photo ne pèse pas un aliment : NutriPilot affiche des estimations. Vous pouvez corriger chaque quantité avant d’enregistrer. Le code-barres et l’étiquette donnent des valeurs plus précises.'],
@@ -4002,7 +4015,7 @@ function plansScreen() {
       </details>
       <details class="pl-more"><summary>${L('Questions fréquentes')}</summary>
         <div class="plans-faq">
-          <p><b>${L('Comment fonctionne l’essai gratuit ?')}</b> ${L('Dans l’application iPhone et Android, chaque formule commence par 3 jours gratuits. Vous pouvez annuler avant la fin de l’essai sans rien payer.')}</p>
+          <p><b>${L('Comment fonctionne l’essai gratuit ?')}</b> ${L('Quand la boutique propose un essai gratuit (par exemple 7 jours sur la formule annuelle), sa durée est indiquée sur le bouton. Vous pouvez annuler avant la fin de l’essai sans rien payer.')}</p>
           <p><b>${L('Puis-je combiner plusieurs modules ?')}</b> ${L('Oui. Chaque module s’ajoute à votre abonnement. Si une combinaison ou le Kit complet revient moins cher, NutriPilot vous le propose dans « Composer ».')}</p>
           <p><b>${L('Puis-je changer de formule ?')}</b> ${L('Oui, à tout moment depuis les réglages de votre compte App Store ou Google Play.')}</p>
           <p><b>${L('Le coach est-il inclus ?')}</b> ${L('Oui, le coach répond dans chaque module que vous avez activé.')}</p>
@@ -7689,7 +7702,7 @@ function storeSheet() {
     <p class="screen-sub">${L('NutriPilot est disponible sur l’App Store et Google Play. Vos {n} jours gratuits commencent dans l’application ; le paiement est géré par Apple ou Google, annulable à tout moment.', { n: Billing.trialDays() })}</p>
     <div class="store-plan"><span class="mod-ico ${plan.tone}">${icon(plan.icon)}</span><span><small>${L('Formule choisie')}</small><b>${esc(planName(plan))}</b></span><em>${finalPrice(plan, modal.period)}</em></div>
     <div class="store-btns">${[btn(config.appStoreUrl, 'App Store', 'Télécharger sur', apple), btn(config.playStoreUrl, 'Google Play', 'Disponible sur', play)].sort((x) => (android && x.includes('Google') ? -1 : ios && x.includes('App Store') ? -1 : 0)).join('')}</div>
-    <p class="fine center-fine">${L('Connectez-vous dans l’application avec le même e-mail : votre profil, vos repas et vos séances vous suivent.')}</p>`;
+    <p class="fine center-fine">${L('Votre abonnement suit votre identifiant Apple ou Google : sur un nouvel appareil, touchez « Restaurer mes achats ».')}</p>`;
 }
 
 function openAdd(tab = 'photo') {

@@ -152,3 +152,23 @@ na França você é comerciante: endereço, telefone e e-mail ficam públicos na
 | Coach (v12) | conversa real em vários turnos; sessão renovada sozinha (sem "sessão expirada" no meio da conversa); sem internet ou com o serviço fora do ar, mostra o aviso + resposta com os dados do usuário + botão "Tentar de novo" |
 | Copiloto "Meu dia agora" (v12) | início do assinante: próxima ação, refeições registradas/pendentes, "Minha rotina mudou", "Vou comer fora", "O que posso preparar com isso?", "Trocar esta refeição", "Registrar o que comi"; alternativas com prévia → aplicar → desfazer, histórico, lembretes do dia ajustados, metas nunca alteradas, resumo para o profissional |
 | Estados de gravação (v12) | "Salvando", "Salvo", "Pendente de sincronização" (envia sozinho ao voltar a internet), "Não foi possível salvar"; ao reabrir o app, traz alterações feitas em outro aparelho |
+
+## Checklist de lançamento (auditoria v16)
+
+**Obrigatório antes de enviar às lojas** — `https://app.atlasevermore.com/api/health` precisa mostrar `"ready": true`:
+- [ ] Railway: sair do plano Trial (Hobby ou Pro). Quando o teste acaba o servidor para, e o app abre vazio.
+- [ ] Railway: variáveis `REVENUECAT_IOS_KEY`, `REVENUECAT_ANDROID_KEY`, `REVENUECAT_SECRET_KEY`, `REVENUECAT_WEBHOOK_AUTH` (sem elas a compra dentro do app não libera o acesso).
+- [ ] Railway: `LEGAL_COMPANY_NAME`, `LEGAL_COMPANY_ADDRESS`, `LEGAL_COMPANY_ID` (exigidos por Apple e Google na política de privacidade).
+- [ ] Railway: `APP_STORE_URL` e `PLAY_STORE_URL` assim que as fichas existirem (botões da versão web).
+- [ ] Railway › Backups: ativar backup do volume `/data` (contas, assinaturas e progresso).
+- [ ] Monitor de disponibilidade grátis (ex.: UptimeRobot) em `/api/health`, com alerta por e-mail.
+- [ ] OpenAI: limite de gasto mensal configurado no painel da OpenAI.
+
+**Já resolvido no código**
+- Dentro do app de cada loja aparece só aquela loja ("App Store" no iPhone, "Google Play" no Android), regra 2.3.10 da Apple.
+- Textos do teste grátis seguem a oferta real da loja (sem promessa de "3 dias em todas as formulas").
+- Limite de verificação de compra por aparelho, e não só por IP (operadoras móveis põem muitos celulares no mesmo IP).
+- Robô de testes tocou em todos os botões de 27 telas (assinante e visitante): 0 erros de código, 0 erros de servidor, 0 telas de erro.
+- Capturas das lojas (iPhone 6,9", iPad 13", Android) e capturas do paywall para a revisão refeitas com o novo design.
+
+**Atualizações depois do lançamento:** telas, textos, preços exibidos e funções mudam pelo site, sem novo envio e sem custo nas lojas. Só ícone, nome e permissões pedem nova versão (também sem custo, apenas o tempo de revisão).

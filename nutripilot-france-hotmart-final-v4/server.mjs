@@ -1720,7 +1720,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
-        version: '15.0.0',
+        version: '16.0.0',
         brand: BRAND_NAME,
         ai,
         email,
@@ -1792,7 +1792,8 @@ const server = http.createServer(async (req, res) => {
       // The account key is RevenueCat's original_app_user_id, which stays the same after "Restore purchases"
       // on a new phone, so data and access follow the person without any login screen.
       if (!payload) {
-        if (!rateLimit(`iapanon:${clientIp(req)}`, 40, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
+        // Mobile carriers put many phones behind one IP: limit per purchase id, with a generous per-IP ceiling.
+        if (!rateLimit(`iapanon:${clientIp(req)}`, 600, 15 * 60 * 1000) || !rateLimit(`iapid:${String(body.appUserId).slice(0, 120)}`, 20, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
         const subscriber = await revenueCatSubscriber(String(body.appUserId));
         const owner = validAppUserId(subscriber?.original_app_user_id) ? String(subscriber.original_app_user_id) : String(body.appUserId);
         // Reinstall or new phone: RevenueCat may hand out a new anonymous id. Find the account that already
