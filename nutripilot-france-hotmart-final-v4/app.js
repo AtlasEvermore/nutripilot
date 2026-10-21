@@ -4436,6 +4436,7 @@ function cpLogPlanned(i) {
   track('MealSaved', { source: 'copilot-planned' });
   haptic('success');
   render();
+  sparkBurst(document.querySelector('.ds-ring'));
   cpUndoBar(L('{meal} enregistré', { meal: cpTypeLabel(meal) }), '', id);
 }
 // Meals saved from the scanner right after "I ate something else" are linked to that slot.
@@ -4476,6 +4477,44 @@ const CP_ACTIONS = [
   ['swap', 'swap', 'Remplacer ce repas'],
   ['log', 'plus', 'Enregistrer ce que j’ai mangé'],
 ];
+// Day score (0–100) built only from what the person did today against their own plan: meals logged,
+// protein, water and the planned workout. It never judges food; it shows the next action that moves it.
+function dayScore() {
+  const p = state.profile || {};
+  const rows = cpRows();
+  const t = totals();
+  const parts = [];
+  if (rows.length) { const due = rows.filter((r) => hmToMin(r.time) <= nowMin() + 30); const n = Math.max(1, due.length); parts.push(['meals', 40, Math.min(1, rows.filter((r) => r.status === 'done').length / n)]); }
+  if (p.protein) parts.push(['protein', 20, Math.min(1, t.protein / p.protein)]);
+  parts.push(['water', 20, Math.min(1, waterToday() / Math.max(1, waterGoal()))]);
+  if (hasFeature('training') && todaySession()) parts.push(['workout', 20, doneOn(todayKey()) ? 1 : 0]);
+  const total = parts.reduce((a, [, w]) => a + w, 0) || 1;
+  const score = Math.round(parts.reduce((a, [, w, v]) => a + w * v, 0) / total * 100);
+  const gap = parts.map(([k, w, v]) => [k, Math.round(w * (1 - v) / total * 100)]).sort((a, b) => b[1] - a[1])[0];
+  const next = rows.length ? cpNext(rows) : null;
+  const tip = !gap || gap[1] < 3 ? L('Journée au top. Continuez comme ça.')
+    : gap[0] === 'meals' ? L('Enregistrez votre {meal} : +{n} points', { meal: next ? cpTypeLabel(next.meal).toLowerCase() : L('repas'), n: gap[1] })
+    : gap[0] === 'water' ? L('Un verre d’eau maintenant : jusqu’à +{n} points', { n: gap[1] })
+    : gap[0] === 'protein' ? L('Une source de protéines au prochain repas : jusqu’à +{n} points', { n: gap[1] })
+    : L('Faites votre séance du jour : +{n} points', { n: gap[1] });
+  return { score, tip };
+}
+function scoreRing(score) {
+  const c = 2 * Math.PI * 26;
+  return `<div class="ds-ring" role="img" aria-label="${L('Score du jour : {n} sur 100', { n: score })}"><svg viewBox="0 0 64 64"><defs><linearGradient id="dsg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#C9FF3B"/><stop offset=".6" stop-color="#7DF9C2"/><stop offset="1" stop-color="#16C6F0"/></linearGradient></defs><circle cx="32" cy="32" r="26" class="ds-t"/><circle cx="32" cy="32" r="26" class="ds-v" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - score / 100)).toFixed(1)}"/></svg><b>${score}</b></div>`;
+}
+// Small celebration (light particles + haptic) when something is completed.
+function sparkBurst(anchor) {
+  haptic('success');
+  if (AURA_REDUCED) return;
+  const r = anchor?.getBoundingClientRect?.() || { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 };
+  const box = document.createElement('div');
+  box.className = 'np-burst';
+  box.style.cssText = `left:${r.left + r.width / 2}px;top:${r.top + r.height / 2}px`;
+  box.innerHTML = Array.from({ length: 14 }, (_, i) => `<i style="--a:${i * 360 / 14}deg;--d:${40 + (i % 3) * 18}px;--c:${['#C9FF3B', '#7DF9C2', '#16C6F0', '#fff'][i % 4]}"></i>`).join('');
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 900);
+}
 function myDayCard() {
   const p = state.profile || {};
   const plan = cpPlan();
@@ -4496,6 +4535,7 @@ function myDayCard() {
     : plan ? `<div class="md-next"><small>${L('Journée bouclée')}</small><b>${L('Tous les repas prévus sont enregistrés.')}</b><span class="fine">${L('Il vous reste environ {k} kcal aujourd’hui.', { k: fmt(left) })}</span></div>` : '';
   return `<section class="myday" aria-labelledby="myday-h">
     <div class="md-head"><h2 id="myday-h">${L('Mon jour maintenant')}</h2>${syncPillHtml()}</div>
+    ${plan ? (() => { const ds = dayScore(); return `<div class="md-score">${scoreRing(ds.score)}<span><small>${L('Score du jour')}</small><b>${esc(ds.tip)}</b></span></div>`; })() : ''}
     ${plan ? `${nextHtml}
     <ol class="md-timeline">${rows.map((r) => { const [lab, tone] = statusTag(r.status); return `<li class="${r.status}"><time>${r.time}</time><span><b>${esc(cpTypeLabel(r.meal))}</b><small>${esc(cpMealName(r.meal))}</small></span><em class="md-tag ${tone}">${lab}</em></li>`; }).join('')}${hasFeature('training') && todaySession() ? `<li class="train"><time>${cpWorkoutTime()}</time><span><b>${L('Séance')}</b><small>${esc(L(todaySession().name))}</small></span><em class="md-tag ${doneOn(todayKey()) ? 'ok' : 'soft'}">${doneOn(todayKey()) ? L('Faite') : L('À venir')}</em></li>` : ''}</ol>
     <div class="fine md-sum">${L('{d}/{n} repas enregistrés · il reste environ {k} kcal', { d: done, n: rows.length, k: fmt(left) })}</div>`
