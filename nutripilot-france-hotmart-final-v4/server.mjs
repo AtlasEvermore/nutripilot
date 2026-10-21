@@ -1451,8 +1451,15 @@ async function verifyAccessCode(email, code) {
   });
 }
 
+// Spending guard for the AI provider: per subscriber per hour and per day, plus an optional
+// whole-service daily ceiling (AI_GLOBAL_DAILY_LIMIT, 0 = off) so a bug or abuse can't run up the bill.
+const AI_GLOBAL_DAILY_LIMIT = Math.max(0, Number(process.env.AI_GLOBAL_DAILY_LIMIT || 0));
+const AI_USER_DAILY_LIMIT = Math.max(20, Number(process.env.AI_USER_DAILY_LIMIT || 250));
+function aiGlobalOk() {
+  return !AI_GLOBAL_DAILY_LIMIT || rateLimit('ai:global', AI_GLOBAL_DAILY_LIMIT, 24 * 60 * 60 * 1000);
+}
 function aiRateOk(req, email) {
-  return rateLimit(`ai:${email}:${clientIp(req)}`, 80, 60 * 60 * 1000);
+  return rateLimit(`ai:${email}:${clientIp(req)}`, 80, 60 * 60 * 1000) && rateLimit(`aiday:${email}`, AI_USER_DAILY_LIMIT, 24 * 60 * 60 * 1000) && aiGlobalOk();
 }
 
 // ---- App Store / Google Play subscriptions (through RevenueCat) ---------------------------
@@ -1720,7 +1727,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
-        version: '16.0.0',
+        version: '16.1.0',
         brand: BRAND_NAME,
         ai,
         email,
@@ -1937,6 +1944,7 @@ const server = http.createServer(async (req, res) => {
       if (device.length < 8) return send(res, 401, { error: 'Accès Premium requis. Connectez-vous avec l’e-mail utilisé lors de votre achat.' });
       if (!aiRateOk(req, `free:${device}`)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
       const body = await readJson(req);
+      if (!aiGlobalOk()) return send(res, 429, { error: 'Service très demandé en ce moment. Réessayez dans un instant.' });
       const q = await useFreeScan(device, clientIp(req));
       if (!q.ok) return send(res, 402, { error: 'Vos analyses gratuites sont utilisées. Choisissez une formule pour continuer.', code: 'free_limit', freeLeft: 0 });
       try {

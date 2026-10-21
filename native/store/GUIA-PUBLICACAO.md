@@ -162,7 +162,8 @@ na França você é comerciante: endereço, telefone e e-mail ficam públicos na
 - [ ] Railway: `APP_STORE_URL` e `PLAY_STORE_URL` assim que as fichas existirem (botões da versão web).
 - [ ] Railway › Backups: ativar backup do volume `/data` (contas, assinaturas e progresso).
 - [ ] Monitor de disponibilidade grátis (ex.: UptimeRobot) em `/api/health`, com alerta por e-mail.
-- [ ] OpenAI: limite de gasto mensal configurado no painel da OpenAI.
+- [ ] OpenAI: limite de gasto mensal configurado no painel da OpenAI (platform.openai.com › Settings › Limits).
+- [ ] Railway: `AI_GLOBAL_DAILY_LIMIT=2000` (teto diário de chamadas de IA do app inteiro; `0` desliga) e, se quiser, `AI_USER_DAILY_LIMIT` (padrão 250 por assinante/dia).
 
 **Já resolvido no código**
 - Dentro do app de cada loja aparece só aquela loja ("App Store" no iPhone, "Google Play" no Android), regra 2.3.10 da Apple.
