@@ -132,7 +132,10 @@ async function staticEntry(filePath, stat) {
 
 function send(res, status, body, type) {
   const t = type || 'application/json; charset=utf-8';
-  res.writeHead(status, securityHeaders(t));
+  const h = securityHeaders(t);
+  // Sliding session: a premium call with a token older than 3 days gets a fresh one back.
+  if (res.npFreshToken) h['X-NP-Token'] = res.npFreshToken;
+  res.writeHead(status, h);
   res.end(Buffer.isBuffer(body) ? body : (typeof body === 'string' ? body : JSON.stringify(body)));
 }
 
@@ -852,6 +855,37 @@ const COACH_MODES = {
   wellbeing: 'coach bien-être : sommeil, stress, envies de manger, reprise de la routine',
   menopause: 'coach ménopause : alimentation, activité, sommeil et suivi des symptômes, sans traitement',
 };
+// Copilot: turns what the person writes ("I'm late, lunch at a restaurant, training tonight") into
+// structured events. The app builds the options itself from the plan and the recipe library.
+async function copilotParse(body) {
+  const text = safeText(body.text, 500);
+  if (!text) throw publicError('Message vide.');
+  if (!OPENAI_API_KEY || !OPENAI_MODEL) return { events: [], offline: true };
+  const meals = (Array.isArray(body.meals) ? body.meals : []).slice(0, 6).map((m) => ({ type: safeText(m?.type, 30), time: safeText(m?.time, 5), status: safeText(m?.status, 10) }));
+  const prompt = `Tu analyses un message d'un utilisateur de l'application NutriPilot qui décrit un changement dans sa journée.
+Repas prévus aujourd'hui : ${JSON.stringify(meals)}.
+Retourne UNIQUEMENT un JSON : {"events":[{"type":"late|out|train|skip|missing|hungry|lessHungry","slot":"Petit-déjeuner|Déjeuner|Dîner|Collation|","time":"HH:MM ou vide","minutes":60}],"clinical":false}
+- late = retard ou changement d'horaire (minutes = retard estimé) ; out = repas hors de chez soi ; train = séance déplacée (time) ; skip = repas non pris ; missing = ingrédient manquant ; hungry / lessHungry = faim.
+- "slot" = le repas concerné (vide si inconnu). N'invente rien qui n'est pas dans le message.
+- "clinical": true si le message parle de symptômes, douleur, maladie, traitement, grossesse ou trouble alimentaire.
+Message : ${text}`;
+  try {
+    const raw = await callAI(prompt, 400, 12_000);
+    const TYPES = ['late', 'out', 'train', 'skip', 'missing', 'hungry', 'lessHungry'];
+    const SLOTS = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Collation'];
+    const events = (Array.isArray(raw.events) ? raw.events : []).filter((e) => TYPES.includes(e?.type)).slice(0, 6).map((e) => ({
+      type: e.type,
+      slot: SLOTS.includes(e.slot) ? e.slot : '',
+      time: /^([01]\d|2[0-3]):[0-5]\d$/.test(String(e.time || '')) ? e.time : '',
+      ...(e.type === 'late' ? { minutes: Math.round(finiteNumber(e.minutes, 60, 15, 240) / 15) * 15 } : {}),
+    }));
+    return { events, clinical: raw.clinical === true };
+  } catch (error) {
+    console.error(`[NutriPilot] copilot parse fallback: ${safeText(error?.internalMessage || error?.message || 'error', 200)}`);
+    return { events: [], offline: true };
+  }
+}
+
 async function coach(body) {
   const mode = COACH_MODES[body.mode] ? body.mode : 'nutrition';
   const ctx = body.context && typeof body.context === 'object' ? body.context : {};
@@ -874,25 +908,31 @@ async function coach(body) {
     sleep: ctx.sleep || null,
     supplements: Array.isArray(ctx.supplements) ? ctx.supplements.slice(0, 10) : [],
   }).slice(0, 16_000);
-  const history = (Array.isArray(body.history) ? body.history : []).slice(-8)
-    .map((m) => `${m?.role === 'user' ? 'Utilisateur' : 'Coach'} : ${safeText(m?.text || '', 600)}`).join('\n');
+  const history = (Array.isArray(body.history) ? body.history : []).slice(-10)
+    .map((m) => ({ role: m?.role === 'user' ? 'user' : 'assistant', content: safeText(m?.text || '', 1200) }))
+    .filter((m) => m.content);
+  const message = safeText(body.message, 1200);
+  if (!message) throw publicError('Message vide.');
 
-  if (!OPENAI_API_KEY || !OPENAI_MODEL) return { answer: '', offline: true };
+  if (!OPENAI_API_KEY || !OPENAI_MODEL) return { answer: '', offline: true, reason: 'not_configured' };
 
-  const input = `Tu es le ${COACH_MODES[mode]} de l'application NutriPilot (présente-toi simplement comme « le coach », jamais comme une IA nommée).
+  const rules = `Tu es le ${COACH_MODES[mode]} de l'application NutriPilot (présente-toi simplement comme « le coach », jamais comme une IA nommée).
+Réponds TOUJOURS précisément à la dernière question de l'utilisateur, dans la langue de l'utilisateur. Ne change pas de sujet. Si une information indispensable manque (heure, lieu, ce qu'il a sous la main), donne quand même une réponse utile puis pose UNE question courte.
 Style : concret, chaleureux, court (6 phrases ou 5 puces maximum), sans jargon. Utilise le prénom si tu le connais.
-Pour chaque recommandation, explique en une phrase POURQUOI elle convient à cette personne (son objectif, sa journée, ses goûts, sa culture culinaire).
+Pour chaque recommandation, explique en une phrase POURQUOI elle convient à cette personne (son objectif, sa journée, ses goûts, sa culture culinaire). Utilise les chiffres du contexte (calories restantes, protéines) quand c'est utile, sans en inventer.
 Adapte les exemples d'aliments et de plats à sa cuisine et à son pays. Respecte ses allergies et son régime.
-Interdits : diagnostic, prescription de médicaments ou d'hormones, doses de compléments, régimes très restrictifs, culpabilisation.
+Interdits : diagnostic, prescription de médicaments ou d'hormones, doses de compléments, jeûne ou restriction pour « compenser » un repas, exercice pour « brûler » un repas, régimes très restrictifs, culpabilisation, jugement « bon/mauvais » d'un repas.
 Si la question touche une grossesse, un trouble alimentaire, une maladie, un traitement, une douleur ou un symptôme inquiétant, conseille un professionnel de santé ; en cas d'urgence, les services d'urgence.
-Si l'utilisateur dit qu'une réponse précédente ne convient pas, corrige-la en proposant une alternative différente.
-Contexte autorisé par l'utilisateur : ${context}
-Conversation récente :
-${history || '(début)'}
-Nouvelle question : ${safeText(body.message, 1200)}
-Réponds directement en texte simple (pas de JSON, pas de titre), avec des puces « • » si utile.`;
+Si l'utilisateur dit qu'une réponse précédente ne convient pas, corrige-la en proposant une alternative vraiment différente.
+Contexte autorisé par l'utilisateur (données de l'app) : ${context}
+Réponds en texte simple (pas de JSON, pas de titre), avec des puces « • » si utile.`;
+  const input = [
+    { role: 'system', content: [{ type: 'input_text', text: rules }] },
+    ...history,
+    { role: 'user', content: message },
+  ];
   try {
-    const text = await callAI(input, 1200, 50_000, { json: false });
+    const text = await callAI(input, 1200, 55_000, { json: false });
     let answer = String(text).replace(/^\s*```\w*\s*|\s*```\s*$/g, '').trim();
     // Some models still wrap the answer in JSON: unwrap it.
     if (/^\{/.test(answer)) { try { answer = JSON.parse(answer.match(/\{[\s\S]*\}/)[0]).answer || answer; } catch {} }
@@ -902,7 +942,7 @@ Réponds directement en texte simple (pas de JSON, pas de titre), avec des puces
     console.error(`[NutriPilot] coach fallback: ${safeText(error?.internalMessage || error?.message || 'error', 300)}`);
   }
   // Never show an error in the chat: the app answers from the person's own data instead.
-  return { answer: '', offline: true };
+  return { answer: '', offline: true, reason: 'ai_error' };
 }
 
 function normalizeIngredient(x) {
@@ -1298,14 +1338,17 @@ async function premiumIdentity(req) {
     return null;
   }
   if (!entitlement || entitlement.status !== 'active') return null;
-  return { email: payload.email, plan: entitlement.plan || 'premium', entitlement };
+  return { email: payload.email, plan: entitlement.plan || 'premium', entitlement, iat: Number(payload.iat || 0) };
 }
 
 async function requirePremium(req, res) {
   const identity = await premiumIdentity(req);
   if (!identity) {
-    send(res, 401, { error: 'Accès Premium requis. Connectez-vous avec l’e-mail utilisé lors de votre achat.' });
+    send(res, 401, { error: 'Accès Premium requis. Connectez-vous avec l’e-mail utilisé lors de votre achat.', code: 'auth' });
     return null;
+  }
+  if (identity.iat && Date.now() / 1000 - identity.iat > 3 * 86400) {
+    try { res.npFreshToken = signAccessToken(identity.email); } catch { /* secret missing: keep the current token */ }
   }
   return identity;
 }
@@ -1677,7 +1720,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
-        version: '11.0.0',
+        version: '12.0.0',
         brand: BRAND_NAME,
         ai,
         email,
@@ -1904,7 +1947,7 @@ const server = http.createServer(async (req, res) => {
       const identity = await requirePremium(req, res);
       if (!identity) return;
 
-      if (['/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/barcode', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan'].includes(url.pathname)) {
+      if (['/api/copilot', '/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/barcode', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan'].includes(url.pathname)) {
         if (!aiRateOk(req, identity.email)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
       }
 
@@ -1912,6 +1955,7 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === '/api/supplement' && req.method === 'POST') return send(res, 200, await supplementLabel(await readJson(req)));
       if (url.pathname === '/api/compose' && req.method === 'POST') return send(res, 200, await compose(await readJson(req)));
       if (url.pathname === '/api/coach' && req.method === 'POST') return send(res, 200, await coach(await readJson(req)));
+      if (url.pathname === '/api/copilot' && req.method === 'POST') return send(res, 200, await copilotParse(await readJson(req)));
       if (url.pathname === '/api/barcode' && req.method === 'GET') return send(res, 200, await barcode(url.searchParams.get('code') || ''));
       if (url.pathname === '/api/week-plan' && req.method === 'POST') return send(res, 200, await weekPlan(await readJson(req)));
       if (url.pathname === '/api/recipe' && req.method === 'POST') return send(res, 200, await recipeDetail(await readJson(req)));

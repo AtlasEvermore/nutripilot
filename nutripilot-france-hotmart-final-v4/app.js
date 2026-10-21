@@ -715,6 +715,10 @@ const defaultState = {
   customExercises: [],
   exerciseSwaps: {},
   reminders: null,
+  changes: [],
+  dayTimes: {},
+  cpDismissed: {},
+  cpPatternsOff: false,
   waterGoal: 2000,
   menoLog: {},
   menoTasks: {},
@@ -745,10 +749,14 @@ let route = location.hash.replace('#', '') || 'app';
 let onboardingState = { step: 0, data: { ...state.profile } };
 let modal = null;
 let syncTimer = null;
+let syncStatus = 'saved'; // saving | saved | pending | error — shown on "Mon jour maintenant"
 let pendingPlanSwap = null;
 
 // Older versions pre-filled 70 kg → 62 kg for everyone: never show those as the person's numbers.
 function migrateState(s) {
+  if (Array.isArray(s.changes)) { const old = new Date(Date.now() - 35 * 86400000).toISOString().slice(0, 10); s.changes = s.changes.filter((c) => c && c.day >= old).slice(0, 60); }
+  if (s.dayTimes && typeof s.dayTimes === 'object') { const old = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10); s.dayTimes = Object.fromEntries(Object.entries(s.dayTimes).filter(([d]) => d >= old)); }
+  if (Array.isArray(s.coach)) s.coach = s.coach.filter((m) => m && !m.pending && (m.text || '').trim() && m.text !== '…');
   const p = s.profile || {};
   if (!s.onboarding && !p.goalSet) {
     if (!s.basicsFilled?.weight && Number(p.weight) === 70) p.weight = '';
@@ -887,7 +895,7 @@ function authHeaders(extra = {}) {
 
 // App Store 5.1.2(i) / GDPR: before the first photo or text goes to the AI provider, ask once, clearly,
 // naming the provider and the data. The choice can be changed at any time in Settings.
-const AI_PATHS = ['/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan', '/api/support'];
+const AI_PATHS = ['/api/copilot', '/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan', '/api/support'];
 let aiConsentAsk = null;
 function askAiConsent() {
   if (state.aiConsent === true) return Promise.resolve(true);
@@ -935,9 +943,27 @@ async function aiGate(url) {
   if (await askAiConsent()) return;
   throw new AiConsentError(L('Analyse par IA désactivée. Vous pouvez l’activer dans Réglages › Analyse par IA.'));
 }
+// Keeps the session alive: the server sends a fresh token on premium calls (sliding session), and an
+// expired token on the phone is renewed from the store purchase before giving up.
+function takeFreshToken(response) {
+  const fresh = response?.headers?.get?.('X-NP-Token');
+  if (fresh && fresh !== state.accessToken) { state.accessToken = fresh; saveState(false); }
+}
 async function apiFetch(url, options = {}) {
   await aiGate(url);
-  return fetch(url, { ...options, headers: authHeaders(options.headers || {}) });
+  let response = await fetch(url, { ...options, headers: authHeaders(options.headers || {}) });
+  takeFreshToken(response);
+  if (response.status === 401 && Billing.native() && !options._retried) {
+    try {
+      const data = await NativeBilling.verify();
+      if (data?.premium && data.token) {
+        state.accessToken = data.token; saveState(false);
+        response = await fetch(url, { ...options, headers: authHeaders(options.headers || {}) });
+        takeFreshToken(response);
+      }
+    } catch { /* store unreachable: keep the 401 */ }
+  }
+  return response;
 }
 
 function syncSafeState() {
@@ -950,10 +976,13 @@ function syncSafeState() {
 }
 
 function saveState(remote = true) {
+  cpLinkPending();
   state.updatedAt = new Date().toISOString();
   try { localStorage.setItem('nutripilot_v7', JSON.stringify(state)); } catch { /* storage full or blocked: remote sync still runs */ }
   if (remote && state.premium && state.accessToken) {
     clearTimeout(syncTimer);
+    syncStatus = navigator.onLine === false ? 'pending' : 'saving';
+    try { refreshSyncPill(); } catch {}
     syncTimer = setTimeout(syncRemote, 900);
   }
 }
@@ -973,14 +1002,26 @@ async function pullRemoteState() {
   } catch { /* offline: keep local */ }
 }
 async function syncRemote() {
+  if (navigator.onLine === false) { syncStatus = 'pending'; refreshSyncPill(); return; }
   try {
-    await apiFetch('/api/user/state', {
+    const res = await apiFetch('/api/user/state', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ state: syncSafeState() }),
     });
-  } catch {}
+    syncStatus = res.ok ? 'saved' : res.status >= 500 || res.status === 429 ? 'pending' : 'error';
+  } catch { syncStatus = 'pending'; }
+  refreshSyncPill();
+  if (syncStatus === 'pending') { clearTimeout(syncTimer); syncTimer = setTimeout(syncRemote, 30_000); }
 }
+// Back online: send what is waiting. Back to the app: bring changes made on another device.
+window.addEventListener('online', () => { if (state.premium && state.accessToken && syncStatus !== 'saved') syncRemote(); });
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || !state.premium || !state.accessToken || syncStatus === 'saving') return;
+  const before = state.updatedAt;
+  await pullRemoteState();
+  if (state.updatedAt !== before && !modal) render();
+});
 
 function esc(value = '') {
   return String(value).replace(/[&<>'"]/g, (char) => ({
@@ -1996,6 +2037,10 @@ const ICONS = {
   wave: '<path d="M3 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>',
   sparkle: '<path d="M12 3.5 13.8 10l6.7 2-6.7 2L12 20.5 10.2 14 3.5 12l6.7-2z"/>',
   fork: '<path d="M7 3.5v7a2 2 0 0 0 4 0v-7M9 10.5v10M16.5 20.5V3.5c-2 1-3 3.6-3 6.5v3h3"/>',
+  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
+  flag: '<path d="M6 21V4M6 4.5h10l-2 3.5 2 3.5H6"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',
+  cart: '<path d="M3.5 4.5h2.2l2 10.5h9.6l2-7.5H7"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/>',
 };
 function icon(name, cls = '') {
   if (name === 'chevron' || name === 'back') cls += ' flip-rtl';
@@ -2276,10 +2321,21 @@ async function scheduleNativeReminders(r) {
   const list = [];
   let id = NOTIF_BASE;
   const at = (hm) => { const [h, m] = String(hm || '08:00').split(':').map(Number); return { hour: h || 0, minute: m || 0 }; };
-  const add = (body, on) => list.push({ id: id++, title: 'NutriPilot', body, schedule: { on, allowWhileIdle: false } });
+  const add = (body, on, when) => list.push({ id: id++, title: 'NutriPilot', body, schedule: when ? { at: when, allowWhileIdle: false } : { on, allowWhileIdle: false } });
   if (r.water.on) for (let t = r.water.from * 60; t < r.water.to * 60 && list.length < 20; t += Number(r.water.every || 120)) add(L('Un verre d’eau ? Pensez à vous hydrater.'), { hour: Math.floor(t / 60), minute: t % 60 });
-  if (r.meals.on) r.meals.times.forEach((tm, i) => add(L('C’est l’heure de votre {meal}. Scannez-le en une photo.', { meal: L(['petit-déjeuner', 'déjeuner', 'dîner'][i]) }), at(tm)));
-  if (r.workout.on) trainingDays().forEach((wd) => add(L('C’est jour d’entraînement. Votre séance vous attend.'), { weekday: Number(wd) + 1, ...at(r.workout.time) }));
+  // Meals and workouts: one notification per day for the next 7 days, so a change made for today
+  // (late, eating out, training moved) moves today's reminder only. Rescheduled at each app start.
+  const nowTs = Date.now();
+  for (let d = 0; d < 7; d += 1) {
+    const day = addDays(d);
+    const dayAt = (hm) => { const [h, m] = String(hm).split(':').map(Number); const x = new Date(`${day}T12:00:00`); x.setHours(h || 0, m || 0, 0, 0); return x; };
+    if (r.meals.on) {
+      const plan = (state.weekPlan || []).find((x) => x.date === day);
+      const items = plan?.meals?.length ? plan.meals.map((m, i) => [m.type, cpTimes(day)[i], state.dayTimes?.[day]?.status?.[i]]) : r.meals.times.map((tm, i) => [['Petit-déjeuner', 'Déjeuner', 'Dîner'][i], tm, '']);
+      items.forEach(([type, tm, st]) => { const when = dayAt(tm); if (st !== 'skipped' && when.getTime() > nowTs + 60_000) add(L('C’est l’heure de votre {meal}. Scannez-le en une photo.', { meal: L(type).toLowerCase() }), undefined, when); });
+    }
+    if (r.workout.on && trainingDays().map(Number).includes(new Date(`${day}T12:00:00`).getDay())) { const when = dayAt(cpWorkoutTime(day)); if (when.getTime() > nowTs + 60_000) add(L('C’est jour d’entraînement. Votre séance vous attend.'), undefined, when); }
+  }
   if (r.weigh.on) add(L('C’est le jour de la pesée. Notez votre poids pour suivre la tendance.'), { weekday: Number(r.weigh.day) + 1, ...at(r.weigh.time) });
   await N.schedule({ notifications: list });
   return true;
@@ -2304,6 +2360,8 @@ function nativeKitStart() {
   if (!plat) return;
   document.documentElement.classList.add(`cap-${plat}`);
   window.NutriPilotNative = Object.assign(window.NutriPilotNative || {}, { scheduleReminders: scheduleNativeReminders });
+  // Day-by-day reminders are planned 7 days ahead: refresh them at each start (no permission prompt here).
+  setTimeout(async () => { try { const perm = await capPlugin('LocalNotifications')?.checkPermissions(); if (perm?.display === 'granted') cpRescheduleReminders(); } catch {} }, 3000);
   // Android hardware back: close the open sheet first, then go back, then leave the app from the home screen.
   capPlugin('App')?.addListener?.('backButton', ({ canGoBack }) => {
     if (overlayOpen()) return history.back();
@@ -2338,6 +2396,7 @@ document.addEventListener('click', (event) => {
 }, true);
 document.addEventListener('change', async (event) => {
   const t = event.target;
+  if (t?.matches?.('[data-cp-patterns-toggle]')) { state.cpPatternsOff = !t.checked; saveState(); return; }
   if (!t?.matches?.('[data-ai-toggle]')) return;
   if (t.checked) { state.aiConsent = null; t.checked = await askAiConsent(); }
   else { state.aiConsent = false; state.aiConsentAt = new Date().toISOString(); saveState(false); toast(L('Analyse par IA désactivée.')); }
@@ -3537,6 +3596,7 @@ function dashboard() {
       ${weekDots()}
       ${todayTabsHtml()}
       ${todayTab === 'summary' ? `
+      ${myDayCard()}
       ${welcomeBackCard()}
       <section class="hero-ring-card">
         <div class="ring-wrap">
@@ -3953,6 +4013,579 @@ function plansScreen() {
 }
 
 // ---- Hub (explorers) ----------------------------------------------------------
+// ==========================================================================================
+// v12 · MISSION CONTROL — the visitor home. It does not list plans: it shows NutriPilot already
+// working for this person (daily target, today's menu from real recipes, today's workout from the
+// programme recommended for her, a live scanner demo, projection), with one clear next step.
+let missionMenu = null;
+function missionDay(p) {
+  const key = `${p.dailyKcal}|${p.diet}|${p.track}|${lang()}`;
+  if (missionMenu?.key === key) return missionMenu.meals;
+  const used = new Set();
+  const meals = (SLOT_PLANS[3]).map(([type, label, part]) => {
+    const target = Number(p.dailyKcal || 1700) * part;
+    const r = rankRecipes(type, target, used)[0];
+    if (!r) return null;
+    used.add(r.id);
+    return scaledMeal(r, target, label);
+  }).filter(Boolean);
+  missionMenu = { key, meals };
+  return meals;
+}
+function orbitGauge(p) {
+  const kcal = Number(p.dailyKcal || 1700);
+  const ring = (r, frac, cls, delay) => { const c = 2 * Math.PI * r; return `<circle class="og-track" cx="120" cy="120" r="${r}"/><circle class="og-arc ${cls}" cx="120" cy="120" r="${r}" style="--c:${c.toFixed(1)};--o:${(c * (1 - frac)).toFixed(1)};animation-delay:${delay}s"/>`; };
+  return `<div class="orbit">
+    <svg viewBox="0 0 240 240" aria-hidden="true">
+      <defs><linearGradient id="og1" x1="0" x2="1"><stop offset="0" stop-color="#C9FF3B"/><stop offset="1" stop-color="#18E08A"/></linearGradient>
+      <linearGradient id="og2" x1="0" x2="1"><stop offset="0" stop-color="#16C6F0"/><stop offset="1" stop-color="#7D5CFF"/></linearGradient>
+      <linearGradient id="og3" x1="0" x2="1"><stop offset="0" stop-color="#FFB547"/><stop offset="1" stop-color="#FF6B8B"/></linearGradient></defs>
+      ${ring(104, 0.86, 'a1', 0.1)}${ring(86, 0.72, 'a2', 0.35)}${ring(68, 0.58, 'a3', 0.6)}
+      <g class="og-spin"><circle cx="120" cy="10" r="3.5" fill="#C9FF3B"/><circle cx="230" cy="120" r="2.5" fill="#16C6F0"/></g>
+      <g class="og-spin rev"><circle cx="120" cy="214" r="2.5" fill="#7D5CFF"/></g>
+    </svg>
+    <div class="og-core"><small>${L('Votre repère')}</small><b data-count="${kcal}">${fmt(kcal)}</b><span>${L('kcal / jour')}</span></div>
+    <span class="og-sat s1"><i></i>${L('Protéines')} <b>${fmt(p.protein || 110)} g</b></span>
+    <span class="og-sat s2"><i></i>${L('Glucides')} <b>${fmt(p.carbs || 180)} g</b></span>
+    <span class="og-sat s3"><i></i>${L('Lipides')} <b>${fmt(p.fat || 55)} g</b></span>
+  </div>`;
+}
+function missionScreen() {
+  const p = state.profile || {};
+  const proj = p.goalSet && p.weight && p.target && Number(p.target) !== Number(p.weight) ? projection(p) : null;
+  const trial = Billing.trialDays();
+  const meals = missionDay(p);
+  const total = meals.reduce((t, m) => ({ kcal: t.kcal + m.kcal, protein: t.protein + m.protein }), { kcal: 0, protein: 0 });
+  const prog = findProgram(recommendedProgramId(p)) || WORKOUT_PROGRAMS[0];
+  const session = prog?.sessions?.[0];
+  const exs = (session?.ex || []).slice(0, 4);
+  const v = MV();
+  const left = freeScansLeft();
+  const tracks = t('tracks');
+  const name = p.name ? esc(p.name) : '';
+  return `<div class="mobile-app space">
+    <div class="space-bg" aria-hidden="true"><i class="st s1"></i><i class="st s2"></i><i class="st s3"></i><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
+    <header class="app-head mx-head"><div class="app-head-row"><button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${(LANGS.find((x) => x[0] === lang()) || [])[2] || '🌐'}</button></div></div></header>
+    <div class="screen mx">
+      <section class="mx-hero">
+        <div class="mx-statusbar"><span class="revo-kicker">${icon('star')}${L('Révolutionnaire')}</span><span class="mx-live"><i></i>${L('Système NutriPilot · en ligne')}</span></div>
+        <h1>${name ? L('{name}, votre programme est calibré.', { name }) : L('Votre corps. Votre plan. Calculé au gramme près.')}</h1>
+        <p>${L('Plan alimentaire, entraînement, sommeil et suivi : un seul système qui s’ajuste à vous chaque jour.')}</p>
+        ${orbitGauge(p)}
+        <div class="mx-metrics">
+          ${proj ? `<div><small>${L('Objectif')}</small><b>${kgFmt(p.target)} kg</b><span>${esc(dateFr(proj.end))}</span></div>` : `<div><small>${L('Objectif')}</small><b>${L('Sur mesure')}</b><span>${L('selon votre profil')}</span></div>`}
+          <div><small>${L('Recettes')}</small><b data-count="${v.r}">${v.r}</b><span>${L('{c} cuisines', { c: v.c })}</span></div>
+          <div><small>${L('Exercices')}</small><b data-count="${v.e}">${v.e}</b><span>${L('{p} programmes', { p: v.p })}</span></div>
+        </div>
+        <button class="btn btn-lime btn-wide btn-xl mx-cta" data-module-buy="${esc(recommendedTier())}">${trial ? L('Activer mon programme · {n} jours gratuits', { n: trial }) : L('Activer mon programme')}</button>
+        ${left > 0 ? `<button class="btn btn-glass btn-wide" data-open-add>${icon('scan')} ${L('Analyser mon repas gratuitement')}<em class="fs-count">${L('{n} offertes', { n: left })}</em></button>` : `<button class="btn btn-glass btn-wide" data-open-add>${icon('scan')} ${L('Scanner un code-barres')}<em class="fs-count">${L('Gratuit')}</em></button>`}
+      </section>
+
+      <section class="mx-card mx-menu">
+        <div class="mx-title"><span class="mx-ico m-nut">${icon('fork')}</span><div><small>${L('Plan alimentaire sur mesure')}</small><h2>${L('Votre menu d’aujourd’hui')}</h2></div><em>${L('Calculé pour vous')}</em></div>
+        <div class="mx-meals">${meals.map((m) => `<button class="mx-meal" data-recipe-id="${esc(m.recipeId)}"><span class="mm-flag">${CUISINE_FLAG[m.cuisine] || '🍽️'}</span><span class="mm-txt"><small>${L(m.type)}</small><b>${esc(L(m.name))}</b></span><span class="mm-kcal"><b>${fmt(m.kcal)}</b><small>kcal · ${m.protein} g P</small></span></button>`).join('')}</div>
+        <div class="mx-sum">${icon('check')}<span>${L('{k} kcal et {p} g de protéines : exactement votre repère, avec la cuisine que vous aimez.', { k: fmt(total.kcal), p: total.protein })}</span></div>
+      </section>
+
+      ${session ? `<section class="mx-card mx-train">
+        <div class="mx-title"><span class="mx-ico m-train">${icon('dumbbell')}</span><div><small>${L('Coach sportif personnel')}</small><h2>${L('Votre séance du jour')}</h2></div><em>${esc(L(prog.name))}</em></div>
+        <div class="mt-body">
+          <div class="mt-anim">${exAnim(exs[0]?.[0] || 'squat')}</div>
+          <ol class="mt-list">${exs.map(([id, sets, reps]) => `<li><b>${esc(exName(id))}</b><span>${sets} × ${esc(L(String(reps)))}</span></li>`).join('')}</ol>
+        </div>
+      </section>` : ''}
+
+      <section class="mx-card mx-scan">
+        <div class="mx-title"><span class="mx-ico m-scan">${icon('scan')}</span><div><small>${L('Scanner de repas')}</small><h2>${L('Une photo. Les calories en secondes.')}</h2></div></div>
+        <div class="scan-demo" aria-hidden="true">
+          <div class="sd-frame"><span class="sd-plate">🥗</span><i class="sd-line"></i><b class="c1"></b><b class="c2"></b><b class="c3"></b><b class="c4"></b></div>
+          <div class="sd-out"><span class="sd-chip k">520 kcal</span><span class="sd-chip">${L('Protéines')} 38 g</span><span class="sd-chip">${L('Glucides')} 41 g</span><span class="sd-chip">${L('Lipides')} 19 g</span></div>
+        </div>
+        <button class="btn btn-glass btn-wide" data-open-add>${icon('camera')} ${left > 0 ? L('Essayer maintenant · {n} offertes', { n: left }) : L('Scanner un code-barres')}</button>
+      </section>
+
+      <section class="mx-card mx-grid">
+        ${[['flower', 'm-meno', 'Programme Ménopause 40+', '8 semaines guidées'], ['moon', 'm-sleep', 'Sommeil & anti-stress', 'Respirations guidées'], ['leaf', 'm-vit', 'Vitamines & minéraux', 'Ce qui manque à votre assiette'], ['coach', 'm-coach', 'Coach 24 h/24', 'Une réponse à toute heure']].map(([ic, tone, ti, sub]) => `<div class="mg-item ${tone}"><span class="mx-ico ${tone}">${icon(ic)}</span><b>${L(ti)}</b><small>${L(sub)}</small></div>`).join('')}
+      </section>
+
+      <section class="mx-tracks">
+        <h2>${L('Calibrez NutriPilot sur votre objectif')}</h2>
+        <div class="mt-chips">${TRACKS.map(([id, , , emoji], i) => `<button data-track="${id}"><span>${emoji}</span>${esc(tracks[i][0])}</button>`).join('')}</div>
+      </section>
+
+      <section class="mx-final">
+        <h2>${L('Tout NutriPilot travaille pour vous dès aujourd’hui.')}</h2>
+        <button class="btn btn-lime btn-wide btn-xl" data-module-buy="${esc(recommendedTier())}">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Choisir ma formule')}</button>
+        <small>${trial ? L('Sans engagement · annulable en un geste') : L('Annulable à tout moment')}</small>
+        <div class="mx-links"><button class="link-btn" data-go="plans">${L('Comparer les formules')}</button>${loginLink(undefined, 'link-btn')}</div>
+      </section>
+    </div>
+    ${bottom('app')}
+  </div>`;
+}
+// ---- Copilot: "Mon jour maintenant" ------------------------------------------------------------
+// The person says what changed (late, eating out, training moved, skipped meal, missing ingredient,
+// hunger). NutriPilot reads today's plan and records, asks what is missing, proposes alternatives with
+// a preview, applies only the chosen one, keeps a history and lets the latest change be undone.
+// Daily targets and anything set by a professional are never changed here.
+const CP_SLOT_TIME = { 'Petit-déjeuner': 0, 'Déjeuner': 1, 'Dîner': 2 };
+const CP_MEAL_LABEL = { b: 'Petit-déjeuner', m: 'Repas', s: 'Collation' };
+let cpPending = null; // { slot, since }: links the next meal the person logs to a slot of today's plan
+let cpUndoTimer = null;
+function cpDayIndex(day = todayKey()) { return (state.weekPlan || []).findIndex((d) => d.date === day); }
+function cpPlan(day = todayKey()) { const i = cpDayIndex(day); return i >= 0 ? state.weekPlan[i] : null; }
+function hmToMin(hm) { const [h, m] = String(hm || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); }
+function minToHm(n) { const v = clamp(Math.round(n / 15) * 15, 0, 23 * 60 + 45); return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`; }
+function nowMin() { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+function cpDefaultTime(meal) { const r = reminders(); return meal.type in CP_SLOT_TIME ? r.meals.times[CP_SLOT_TIME[meal.type]] : '16:00'; }
+function cpTimesFrom(meals, times = {}) { return (meals || []).map((m, i) => times[i] || cpDefaultTime(m)); }
+function cpTimes(day = todayKey()) { return cpTimesFrom(cpPlan(day)?.meals, state.dayTimes?.[day]?.meals); }
+function cpWorkoutTime(day = todayKey()) { return state.dayTimes?.[day]?.workout || reminders().workout.time; }
+function cpLogged(i, day = todayKey()) {
+  const m = cpPlan(day)?.meals?.[i];
+  return state.meals.find((x) => x.day === day && (x.planSlot === i || (x.planSlot == null && m && x.source === 'week-plan' && x.title === m.name)));
+}
+function cpStatus(i, day = todayKey()) { return cpLogged(i, day) ? 'done' : state.dayTimes?.[day]?.status?.[i] || 'pending'; }
+function cpRows(day = todayKey()) {
+  const plan = cpPlan(day);
+  const times = cpTimes(day);
+  return (plan?.meals || []).map((meal, i) => ({ i, meal, time: times[i], status: cpStatus(i, day) })).sort((a, b) => hmToMin(a.time) - hmToMin(b.time));
+}
+function cpNext(rows = cpRows()) { return rows.find((r) => r.status === 'pending' || r.status === 'out') || null; }
+function cpMealName(meal) { return meal.restaurant ? L('Repas au restaurant') : L(meal.name); }
+function cpTypeLabel(meal) { return L(meal.type || 'Repas'); }
+
+// What the person tells NutriPilot, turned into events. Works offline; the server can refine it.
+function cpParse(text) {
+  const low = foldText(String(text || ''));
+  const ev = [];
+  const slotWord = () => (/almoc|almuerz|lunch|dejeuner|pranzo|mittag/.test(low) ? 'Déjeuner' : /jant|dinner|diner|cena|abend|souper/.test(low) ? 'Dîner' : /cafe da manha|breakfast|petit-dej|petit dej|desayun|colazion|fruhst/.test(low) ? 'Petit-déjeuner' : /lanche|snack|collation|merienda|goute/.test(low) ? 'Collation' : '');
+  const timeWord = () => {
+    const m = low.match(/\b(\d{1,2})\s*(?:h|:|hrs?|horas?)\s*(\d{2})?\b/);
+    if (m && +m[1] < 24) return minToHm(+m[1] * 60 + (+m[2] || 0));
+    if (/noite|night|evening|soir|noche|sera|abend/.test(low)) return '19:30';
+    if (/manha|morning|matin|manana|mattin|morgen/.test(low)) return '07:00';
+    if (/tarde|afternoon|apres-midi|pomeriggio|nachmittag/.test(low)) return '17:00';
+    return '';
+  };
+  if (/atras|late|retard|tard|corrid|sem tempo|pressa|hurry|apress|en retard|verspat/.test(low)) ev.push({ type: 'late', minutes: 60 });
+  if (/restaur|comer fora|almocar fora|jantar fora|eat out|eating out|fora de casa|viag|travel|voyage|resto\b|comer en la calle|fuera de casa|au resto|dehors/.test(low)) ev.push({ type: 'out', slot: slotWord() });
+  if (/trein|treino|academia|workout|gym|entrain|seance|sport|musculac|corrida|correr/.test(low)) ev.push({ type: 'train', time: timeWord() });
+  if (/pulei|nao comi|skipp|saute|perdi o|sem almocar|sem cafe|sem jantar|no comi|salte/.test(low)) ev.push({ type: 'skip', slot: slotWord() });
+  if (/nao tenho|acabou|falt|don.?t have|ran out|pas de |plus de |no tengo|se acabo|manca/.test(low)) ev.push({ type: 'missing', slot: slotWord() });
+  if (/sem fome|pouca fome|not hungry|pas faim|sin hambre|nao estou com fome/.test(low)) ev.push({ type: 'lessHungry' });
+  else if (/fome|faim|hungry|hambre|fame\b|hunger/.test(low)) ev.push({ type: 'hungry' });
+  return ev;
+}
+// Asks for a professional when the message is about health rather than routine.
+function cpClinical(text) {
+  return /dor\b|dores|nause|nausea|vomit|tontur|desmai|dizz|faint|gravid|pregnan|enceinte|embaraz|remedio|medicament|medication|insulin|diabet|glicem|glycem|pressao|tension|alergi.*rea|reacao|febre|fever|fievre|sangue|blood|saign|compuls|binge|purg/.test(foldText(String(text || '')));
+}
+function cpMergeEvents(list) {
+  const out = [];
+  for (const e of list) { if (!out.some((x) => x.type === e.type)) out.push({ ...e }); else Object.assign(out.find((x) => x.type === e.type), Object.fromEntries(Object.entries(e).filter(([, v]) => v))); }
+  return out;
+}
+function cpSlotIndex(slotType) {
+  const rows = cpRows();
+  if (slotType) { const r = rows.find((x) => x.meal.type === slotType && x.status !== 'done'); if (r) return r.i; }
+  return cpNext(rows)?.i ?? -1;
+}
+// Information the copilot still needs before proposing something precise.
+function cpMissing(events) {
+  const miss = [];
+  for (const e of events) {
+    if (['out', 'skip', 'missing'].includes(e.type) && (e.slotIndex == null || e.slotIndex < 0)) miss.push({ ev: e.type, field: 'slotIndex' });
+    if (e.type === 'train' && !e.time) miss.push({ ev: 'train', field: 'time' });
+  }
+  return miss;
+}
+
+function cpDraft() {
+  const day = todayKey();
+  const plan = cpPlan(day);
+  const dt = state.dayTimes?.[day] || {};
+  return { meals: clone(plan?.meals || []), times: { ...(dt.meals || {}) }, status: { ...(dt.status || {}) }, workout: dt.workout || '' };
+}
+function cpEnsureTimes(d) { cpTimesFrom(d.meals, d.times).forEach((tm, i) => { d.times[i] = tm; }); return d; }
+
+// Builds the alternatives. Values come from NutriPilot's recipe library (grams, kcal, macros);
+// a restaurant meal keeps the planned budget as a guide, never an invented measurement.
+function cpOptions(events) {
+  const day = todayKey();
+  const base = cpEnsureTimes(cpDraft());
+  const notes = [];
+  const now = nowMin();
+  const shared = (d) => {
+    for (const e of events) {
+      if (e.type === 'late') {
+        d.meals.forEach((m, i) => { if (cpStatus(i) !== 'done' && d.status[i] !== 'skipped' && hmToMin(d.times[i]) >= now - 60) d.times[i] = minToHm(Math.max(hmToMin(d.times[i]) + Number(e.minutes || 60), now + 15)); });
+      }
+      if (e.type === 'train' && e.time) {
+        d.workout = e.time;
+        const tw = hmToMin(e.time);
+        const snack = d.meals.findIndex((m, i) => m.type === 'Collation' && cpStatus(i) !== 'done');
+        if (snack >= 0 && tw - 90 > now) d.times[snack] = minToHm(tw - 90);
+        const dinner = d.meals.findIndex((m, i) => m.type === 'Dîner' && cpStatus(i) !== 'done');
+        if (dinner >= 0 && hmToMin(d.times[dinner]) < tw + 75 && hmToMin(d.times[dinner]) > tw - 120) d.times[dinner] = minToHm(Math.min(tw + 75, 22 * 60 + 30));
+      }
+    }
+    return d;
+  };
+  const why = [];
+  if (events.some((e) => e.type === 'late')) why.push(L('Les horaires suivants sont décalés pour garder un intervalle normal entre les repas.'));
+  if (events.some((e) => e.type === 'train' && e.time)) why.push(L('Collation environ 1 h 30 avant la séance et dîner après, pour avoir de l’énergie sans manger juste avant.'));
+  const choice = events.find((e) => ['out', 'missing', 'skip', 'hungry', 'lessHungry'].includes(e.type));
+  const options = [];
+  const opt = (id, title, reason, mutate, extra = {}) => { const d = shared(clone(base)); mutate?.(d); options.push({ id, title, why: [reason, ...why].filter(Boolean), after: d, ...extra }); };
+  const used = new Set((state.weekPlan || []).flatMap((x) => (x.meals || []).map((m) => m.recipeId)));
+  if (choice?.type === 'out' && choice.slotIndex >= 0) {
+    const i = choice.slotIndex; const m = base.meals[i];
+    opt('out-plate', L('Au restaurant : assiette équilibrée'), L('Même repère que votre {meal} (≈ {k} kcal) : une protéine grillée ou rôtie, des légumes et une portion de féculents. Vous enregistrez le vrai plat avec le scanner.', { meal: cpTypeLabel(m).toLowerCase(), k: fmt(m.kcal) }), (d) => {
+      d.meals[i] = { type: m.type, name: 'Repas au restaurant', restaurant: true, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, fiber: m.fiber, guide: true, prep: '' }; d.status[i] = 'out';
+    }, { restaurant: true });
+    const quick = rankRecipes(mealTypeCode(m.type), m.kcal, used, planCuisines(), m.recipeId).filter((r) => (r.prepMin || 30) <= 12)[0];
+    if (quick) opt('out-quick', L('Emporter un repas rapide : {name}', { name: L(quick.name) }), L('Prêt en {p}, même repère calorique, à préparer avant de partir.', { p: L(quick.prep) }), (d) => { d.meals[i] = scaledMeal(quick, m.kcal, m.type); });
+    opt('keep', L('Garder le plan, seulement les horaires'), L('Rien ne change dans le menu : NutriPilot ajuste seulement les heures et les rappels.'), null);
+  } else if (choice?.type === 'missing' && choice.slotIndex >= 0) {
+    const i = choice.slotIndex; const m = base.meals[i];
+    rankRecipes(mealTypeCode(m.type), m.kcal, used, planCuisines(), m.recipeId).slice(0, 3).forEach((r, k) => {
+      const nm = scaledMeal(r, m.kcal, m.type);
+      opt(`swap-${k}`, L('Remplacer par {name}', { name: L(r.name) }), L('Même repère calorique ({k} kcal), avec d’autres ingrédients : {ing}.', { k: fmt(nm.kcal), ing: nm.ingredients.slice(0, 5).map((x) => `${L(x.name)} ${x.grams} g`).join(', ') }), (d) => { d.meals[i] = nm; });
+    });
+  } else if (choice?.type === 'skip' && choice.slotIndex >= 0) {
+    const i = choice.slotIndex; const m = base.meals[i];
+    opt('skip-normal', L('Continuer la journée normalement'), L('Le repas suivant reste tel quel. Pas besoin de compenser : ni jeûne, ni restriction, ni sport en plus.'), (d) => { d.status[i] = 'skipped'; });
+    const snack = rankRecipes('s', Math.min(250, Math.round(m.kcal * 0.5)), used, planCuisines())[0];
+    if (snack) opt('skip-snack', L('Ajouter une collation si la faim arrive : {name}', { name: L(snack.name) }), L('Une petite collation évite d’arriver affamé(e) au prochain repas. Vos objectifs du jour ne changent pas.'), (d) => { d.status[i] = 'skipped'; d.meals.push(scaledMeal(snack, Math.min(250, Math.round(m.kcal * 0.5)), 'Collation')); d.times[d.meals.length - 1] = minToHm(now + 30); });
+  } else if (choice?.type === 'hungry' || choice?.type === 'lessHungry') {
+    const nx = cpNext(); const i = nx ? nx.i : -1;
+    if (i >= 0 && choice.type === 'hungry') {
+      const m = base.meals[i];
+      const pool = ALL_RECIPES.filter((r) => r.type === mealTypeCode(m.type) && r.id !== m.recipeId && recipeAllowed(r)).sort((a, b) => ((b.protein * 4 + b.fiber * 6) / b.kcal) - ((a.protein * 4 + a.fiber * 6) / a.kcal));
+      const r = pool[0];
+      if (r) { const nm = scaledMeal(r, m.kcal, m.type); opt('hungry-swap', L('{meal} plus rassasiant : {name}', { meal: cpTypeLabel(m), name: L(r.name) }), L('Plus de protéines et de fibres pour les mêmes calories ({p} g de protéines, {f} g de fibres) : cela tient plus longtemps.', { p: fmt(nm.protein), f: fmt(nm.fiber) }), (d) => { d.meals[i] = nm; }); }
+      opt('hungry-early', L('Avancer le {meal} de 30 minutes', { meal: cpTypeLabel(m).toLowerCase() }), L('Manger un peu plus tôt quand la faim est là est plus simple que de tenir jusqu’à l’heure prévue.'), (d) => { d.times[i] = minToHm(Math.max(now + 10, hmToMin(d.times[i]) - 30)); });
+    } else if (i >= 0) {
+      const m = base.meals[i];
+      opt('later', L('Décaler le {meal} d’une heure', { meal: cpTypeLabel(m).toLowerCase() }), L('Mangez quand la faim revient : le menu reste le même.'), (d) => { d.times[i] = minToHm(hmToMin(d.times[i]) + 60); });
+    }
+  }
+  if (!options.length) opt('apply', events.length ? L('Réorganiser ma journée') : L('Garder ma journée telle quelle'), '', null);
+  // Drop alternatives that change nothing.
+  const before = cpEnsureTimes(cpDraft());
+  return options.filter((o) => cpDiff(before, o.after).length || o.id === 'apply').map((o) => ({ ...o, lines: cpDiff(before, o.after) }));
+}
+
+function cpDiff(a, b) {
+  const lines = [];
+  const p = state.profile || {};
+  b.meals.forEach((m, i) => {
+    const o = a.meals[i];
+    if (!o) { lines.push(['plus', L('Ajout : {type} · {name} ({k} kcal) à {t}', { type: cpTypeLabel(m), name: cpMealName(m), k: fmt(m.kcal), t: b.times[i] })]); return; }
+    if (o.name !== m.name || o.restaurant !== m.restaurant) lines.push(['swap', L('{type} : {a} → {b}', { type: cpTypeLabel(m), a: cpMealName(o), b: cpMealName(m) }) + (m.restaurant ? ` · ${L('repère ≈ {k} kcal', { k: fmt(m.kcal) })}` : ` · ${fmt(o.kcal)} → ${fmt(m.kcal)} kcal`)]);
+    if ((a.times[i] || '') !== (b.times[i] || '')) lines.push(['clock', L('{type} : {a} → {b}', { type: cpTypeLabel(m), a: a.times[i], b: b.times[i] })]);
+    if ((a.status[i] || '') !== (b.status[i] || '')) lines.push(['flag', b.status[i] === 'skipped' ? L('{type} marqué comme non pris', { type: cpTypeLabel(m) }) : b.status[i] === 'out' ? L('{type} marqué « hors de chez moi »', { type: cpTypeLabel(m) }) : L('{type} remis comme prévu', { type: cpTypeLabel(m) })]);
+  });
+  if ((a.workout || '') !== (b.workout || '') && b.workout) lines.push(['dumbbell', L('Séance : {a} → {b}', { a: a.workout || cpWorkoutTime(), b: b.workout })]);
+  if (lines.length) {
+    const r = reminders();
+    if (r.meals.on || r.workout.on) lines.push(['bell', L('Les rappels d’aujourd’hui suivent les nouveaux horaires.')]);
+    if (p.dailyKcal) lines.push(['target', L('Vos objectifs du jour ne changent pas ({k} kcal · {p} g de protéines).', { k: fmt(p.dailyKcal), p: fmt(p.protein) })]);
+  }
+  return lines;
+}
+
+function cpApply(option, meta = {}) {
+  const day = todayKey();
+  const di = cpDayIndex(day);
+  if (di < 0) return;
+  const before = cpDraft();
+  const after = clone(option.after);
+  const change = { id: `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, at: new Date().toISOString(), day, title: option.title, why: option.why || [], lines: option.lines || [], source: meta.source || 'copilot', kind: meta.kind || 'replan', note: meta.note || '', before, after, undone: false };
+  state.weekPlan[di].meals = after.meals;
+  state.dayTimes = { ...(state.dayTimes || {}), [day]: { meals: after.times, status: after.status, workout: after.workout } };
+  state.changes = [change, ...(state.changes || [])].slice(0, 60);
+  saveState();
+  cpRescheduleReminders();
+  track('CopilotApply', { source: option.id || meta.kind });
+  haptic('success');
+  render();
+  cpUndoBar(L('Modification appliquée'), change.id);
+  return change;
+}
+function cpLatest(day = todayKey()) { return (state.changes || []).find((c) => c.day === day && !c.undone); }
+function cpUndo(id) {
+  const c = (state.changes || []).find((x) => x.id === id);
+  if (!c || c.undone) return;
+  if (cpLatest(c.day)?.id !== c.id) return toast(L('Annulez d’abord la modification la plus récente.'));
+  const di = cpDayIndex(c.day);
+  if (di >= 0) state.weekPlan[di].meals = clone(c.before.meals);
+  state.dayTimes = { ...(state.dayTimes || {}), [c.day]: { meals: c.before.times, status: c.before.status, workout: c.before.workout } };
+  c.undone = true; c.undoneAt = new Date().toISOString();
+  saveState();
+  cpRescheduleReminders();
+  track('CopilotUndo', { source: c.kind });
+  render();
+  toast(L('Modification annulée ✓'));
+}
+function cpUndoBar(text, changeId = '', mealId = '') {
+  document.querySelector('.np-undo')?.remove();
+  const bar = document.createElement('div');
+  bar.className = 'np-undo';
+  bar.setAttribute('role', 'status');
+  bar.innerHTML = `<span>${icon('check')} ${esc(text)}</span><button type="button">${L('Annuler')}</button>`;
+  bar.querySelector('button').onclick = () => {
+    bar.remove();
+    if (changeId) cpUndo(changeId);
+    if (mealId) { state.meals = state.meals.filter((m) => m.id !== mealId); saveState(); render(); toast(L('Enregistrement annulé ✓')); }
+  };
+  document.body.appendChild(bar);
+  clearTimeout(cpUndoTimer);
+  cpUndoTimer = setTimeout(() => bar.remove(), 7000);
+}
+function cpRescheduleReminders() {
+  const r = reminders();
+  if (window.NutriPilotNative?.scheduleReminders && Object.values(r).some((x) => x.on)) window.NutriPilotNative.scheduleReminders(r).catch(() => {});
+}
+// Logs a planned meal "as planned", linked to its slot.
+function cpLogPlanned(i) {
+  const meal = cpPlan()?.meals?.[i];
+  if (!meal || cpLogged(i)) return;
+  const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  state.meals.push({ id, day: todayKey(), type: meal.type, title: meal.name, planSlot: i, foods: (meal.ingredients || []).map((raw) => { const x = normalizeIngredient(raw); return { name: x.name, grams: x.grams, kcal: 0 }; }), total: { kcal: Number(meal.kcal || 0), protein: Number(meal.protein || 0), carbs: Number(meal.carbs || 0), fat: Number(meal.fat || 0), fiber: Number(meal.fiber || 0) }, icon: '▦', source: 'week-plan' });
+  saveState();
+  track('MealSaved', { source: 'copilot-planned' });
+  haptic('success');
+  render();
+  cpUndoBar(L('{meal} enregistré', { meal: cpTypeLabel(meal) }), '', id);
+}
+// Meals saved from the scanner right after "I ate something else" are linked to that slot.
+function cpLinkPending() {
+  if (!cpPending) return;
+  if (Date.now() - cpPending.since > 20 * 60 * 1000) { cpPending = null; return; }
+  const m = state.meals.find((x) => x.day === todayKey() && x.planSlot == null && Number(String(x.id).split('-')[0]) >= cpPending.since);
+  if (m) { m.planSlot = cpPending.slot; cpPending = null; }
+}
+
+// Repeated behaviour seen in the app (never a health inference), offered as a suggestion that can be declined.
+function cpPattern() {
+  if (state.cpPatternsOff) return null;
+  const since = addDays(-21);
+  const counts = {};
+  (state.changes || []).filter((c) => c.day >= since && !c.undone && ['swap', 'replan'].includes(c.kind)).forEach((c) => {
+    c.before.meals.forEach((m, i) => { const n = c.after.meals[i]; if (n && n.name !== m.name) counts[m.type] = (counts[m.type] || 0) + 1; });
+  });
+  const [type, n] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0] || [];
+  if (!type || n < 3) return null;
+  const dismissed = state.cpDismissed?.[type];
+  if (dismissed && Date.now() - dismissed < 14 * 86400000) return null;
+  const slot = cpRows().find((r) => r.meal.type === type && r.status !== 'done');
+  return { type, n, slot: slot ? slot.i : -1 };
+}
+
+function cpSyncLabel() {
+  if (!state.premium || !state.accessToken) return ['local', L('Enregistré sur cet appareil')];
+  return { saving: ['saving', L('Enregistrement…')], pending: ['pending', L('En attente de synchronisation')], error: ['error', L('Impossible d’enregistrer')], saved: ['saved', L('Enregistré')] }[syncStatus] || ['saved', L('Enregistré')];
+}
+function syncPillHtml() { const [k, label] = cpSyncLabel(); return `<span class="sync-pill ${k}" role="status">${k === 'saving' ? '<i class="sp-dot"></i>' : icon(k === 'error' ? 'info' : k === 'pending' ? 'clock' : 'check')}${esc(label)}</span>`; }
+function refreshSyncPill() { document.querySelectorAll('.sync-pill').forEach((el) => { el.outerHTML = syncPillHtml(); }); }
+
+const CP_ACTIONS = [
+  ['changed', 'clock', 'Ma routine a changé'],
+  ['out', 'fork', 'Je mange dehors'],
+  ['fridge', 'book', 'Que cuisiner avec ce que j’ai ?'],
+  ['swap', 'swap', 'Remplacer ce repas'],
+  ['log', 'plus', 'Enregistrer ce que j’ai mangé'],
+];
+function myDayCard() {
+  const p = state.profile || {};
+  const plan = cpPlan();
+  const rows = cpRows();
+  const next = cpNext(rows);
+  const t = totals();
+  const left = Math.max(0, Math.round((p.dailyKcal || 0) - t.kcal));
+  const done = rows.filter((r) => r.status === 'done').length;
+  const changes = (state.changes || []).filter((c) => c.day === todayKey()).slice(0, 2);
+  const latest = cpLatest();
+  const pat = cpPattern();
+  const statusTag = (s) => ({ done: [L('Enregistré'), 'ok'], skipped: [L('Non pris'), 'mute'], out: [L('Hors de chez moi'), 'warn'], pending: [L('À venir'), 'soft'] }[s]);
+  const nextHtml = next
+    ? `<div class="md-next"><small>${hmToMin(next.time) < nowMin() - 30 ? L('Pas encore enregistré · prévu à {t}', { t: next.time }) : L('Prochaine étape · {t}', { t: next.time })}</small>
+        <b>${esc(L('{type} : {name}', { type: cpTypeLabel(next.meal), name: cpMealName(next.meal) }))}</b>
+        <span class="fine">${next.meal.restaurant ? L('Repère ≈ {k} kcal · protéine + légumes + 1 portion de féculents', { k: fmt(next.meal.kcal) }) : `${fmt(next.meal.kcal)} kcal · P ${fmt(next.meal.protein)} g`}</span>
+        <div class="md-next-actions">${next.meal.restaurant ? '' : `<button class="btn btn-lime" data-cp-log="${next.i}">${icon('check')} ${L('Mangé comme prévu')}</button>`}<button class="btn btn-ghost" data-cp-other="${next.i}">${icon('scan')} ${L('J’ai mangé autre chose')}</button></div></div>`
+    : plan ? `<div class="md-next"><small>${L('Journée bouclée')}</small><b>${L('Tous les repas prévus sont enregistrés.')}</b><span class="fine">${L('Il vous reste environ {k} kcal aujourd’hui.', { k: fmt(left) })}</span></div>` : '';
+  return `<section class="myday" aria-labelledby="myday-h">
+    <div class="md-head"><h2 id="myday-h">${L('Mon jour maintenant')}</h2>${syncPillHtml()}</div>
+    ${plan ? `${nextHtml}
+    <ol class="md-timeline">${rows.map((r) => { const [lab, tone] = statusTag(r.status); return `<li class="${r.status}"><time>${r.time}</time><span><b>${esc(cpTypeLabel(r.meal))}</b><small>${esc(cpMealName(r.meal))}</small></span><em class="md-tag ${tone}">${lab}</em></li>`; }).join('')}${hasFeature('training') && todaySession() ? `<li class="train"><time>${cpWorkoutTime()}</time><span><b>${L('Séance')}</b><small>${esc(L(todaySession().name))}</small></span><em class="md-tag ${doneOn(todayKey()) ? 'ok' : 'soft'}">${doneOn(todayKey()) ? L('Faite') : L('À venir')}</em></li>` : ''}</ol>
+    <div class="fine md-sum">${L('{d}/{n} repas enregistrés · il reste environ {k} kcal', { d: done, n: rows.length, k: fmt(left) })}</div>`
+    : `<div class="md-next"><small>${L('Pas encore de plan pour aujourd’hui')}</small><b>${L('Créez votre plan du jour pour que NutriPilot puisse vous guider.')}</b><div class="md-next-actions"><button class="btn btn-lime" data-cp-plan>${icon('calendar')} ${L('Créer mon plan')}</button></div></div>`}
+    <div class="md-actions">${CP_ACTIONS.map(([k, ico, label]) => `<button class="md-act" data-cp-act="${k}">${icon(ico)}<span>${L(label)}</span></button>`).join('')}</div>
+    ${changes.length ? `<div class="md-changes"><small>${L('Changements aujourd’hui')}</small>${changes.map((c) => `<div class="md-change ${c.undone ? 'undone' : ''}"><span class="md-badge applied">${c.undone ? L('Annulé') : L('Appliqué')} · ${new Date(c.at).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}</span><b>${esc(c.title)}</b>${!c.undone && latest?.id === c.id ? `<button class="link-btn" data-cp-undo="${c.id}">${L('Annuler')}</button>` : ''}</div>`).join('')}<button class="link-btn" data-cp-history>${L('Historique')}</button></div>` : ''}
+    ${pat ? `<div class="md-pattern"><span class="md-badge suggest">${L('Suggestion')}</span><b>${L('Ces 3 dernières semaines, vous avez remplacé votre {meal} {n} fois. Voulez-vous une option plus pratique ?', { meal: L(pat.type).toLowerCase(), n: pat.n })}</b><small>${L('Pourquoi : d’après vos remplacements enregistrés dans l’app. Rien n’est déduit sur votre santé.')}</small><div class="md-next-actions">${pat.slot >= 0 ? `<button class="btn btn-ghost" data-cp-swap="${pat.slot}">${L('Voir des options')}</button>` : ''}<button class="link-btn" data-cp-dismiss="${esc(pat.type)}">${L('Pas maintenant')}</button><button class="link-btn" data-cp-patterns-off>${L('Désactiver ces suggestions')}</button></div></div>` : ''}
+  </section>`;
+}
+
+const CP_CHIPS = [
+  ['late', 'clock', 'Je suis en retard'],
+  ['out', 'fork', 'Je mange dehors'],
+  ['train', 'dumbbell', 'Ma séance change d’heure'],
+  ['skip', 'minus', 'J’ai sauté un repas'],
+  ['missing', 'cart', 'Il me manque un ingrédient'],
+  ['hungry', 'flame', 'J’ai plus faim que prévu'],
+  ['lessHungry', 'moon', 'Je n’ai pas faim'],
+];
+function cpOpen(preset = []) {
+  if (!cpPlan()) { state.weekPlan = buildLocalWeek(); state.planSource = 'local'; saveState(); }
+  modal = { type: 'copilot', step: 'ask', text: '', picked: preset, events: [] };
+  renderModal();
+}
+function cpContextHtml() {
+  const p = state.profile || {};
+  const rows = cpRows();
+  const t = totals();
+  const session = hasFeature('training') ? todaySession() : null;
+  return `<div class="cp-context"><small>${L('Ce que NutriPilot prend en compte')}</small><ul>
+    <li>${L('Plan d’aujourd’hui : {n} repas, objectif {k} kcal', { n: rows.length, k: fmt(p.dailyKcal) })}</li>
+    <li>${L('Déjà enregistré : {d} repas, {k} kcal', { d: rows.filter((r) => r.status === 'done').length, k: fmt(t.kcal) })}</li>
+    ${session ? `<li>${L('Séance prévue à {t} : {name}', { t: cpWorkoutTime(), name: L(session.name) })}</li>` : ''}
+    ${p.allergies ? `<li>${L('Allergies et exclusions respectées : {a}', { a: esc(p.allergies) })}</li>` : ''}
+  </ul></div>`;
+}
+function copilotSheet() {
+  const m = modal;
+  if (m.step === 'ask') {
+    return `<div class="sheet-head"><div><span class="tag">${L('Copilote')}</span><h2>${L('Qu’est-ce qui a changé ?')}</h2><div class="fine">${L('Rien n’est modifié avant votre choix.')}</div></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">×</button></div>
+      ${cpContextHtml()}
+      <div class="cp-chips">${CP_CHIPS.map(([k, ico, label]) => `<button class="cp-chip ${m.picked.includes(k) ? 'on' : ''}" data-cp-chip="${k}" aria-pressed="${m.picked.includes(k)}">${icon(ico)} ${L(label)}</button>`).join('')}</div>
+      <div class="field"><label for="cp-text">${L('Ou racontez avec vos mots')}</label><textarea class="textarea compact" id="cp-text" maxlength="500" placeholder="${L('Ex. Je suis parti en retard, je déjeune au restaurant et je ne m’entraîne que ce soir.')}">${esc(m.text || '')}</textarea></div>
+      <button class="btn btn-primary btn-wide" data-cp-go>${L('Voir mes options')}</button>`;
+  }
+  const rows = cpRows();
+  const miss = cpMissing(m.events);
+  const slotPick = (ev) => `<div class="cp-q"><b>${ev === 'out' ? L('Quel repas sera hors de chez vous ?') : ev === 'skip' ? L('Quel repas n’a pas été pris ?') : L('Pour quel repas manque-t-il un ingrédient ?')}</b><div class="cp-chips">${rows.filter((r) => r.status !== 'done').map((r) => `<button class="cp-chip ${m.events.find((e) => e.type === ev)?.slotIndex === r.i ? 'on' : ''}" data-cp-slot="${ev}:${r.i}">${esc(cpTypeLabel(r.meal))} · ${r.time}</button>`).join('')}</div></div>`;
+  const ev = (type) => m.events.find((e) => e.type === type);
+  const questions = [
+    ...['out', 'skip', 'missing'].filter((k) => ev(k)).map(slotPick),
+    ev('train') ? `<div class="cp-q"><b>${L('À quelle heure sera la séance ?')}</b><div class="cp-chips">${['07:00', '12:00', '17:00', '18:30', '19:30', '20:30'].map((tm) => `<button class="cp-chip ${ev('train').time === tm ? 'on' : ''}" data-cp-train="${tm}">${tm}</button>`).join('')}</div></div>` : '',
+    ev('late') ? `<div class="cp-q"><b>${L('Combien de retard ?')}</b><div class="cp-chips">${[30, 60, 90, 120].map((n) => `<button class="cp-chip ${ev('late').minutes === n ? 'on' : ''}" data-cp-late="${n}">${{ 30: '30 min', 60: '1 h', 90: '1 h 30', 120: '2 h' }[n]}</button>`).join('')}</div></div>` : '',
+  ].join('');
+  const options = miss.length ? [] : cpOptions(m.events);
+  m.options = options;
+  return `<div class="sheet-head"><div><span class="tag">${L('Copilote')}</span><h2>${L('Vos options')}</h2><div class="fine">${L('Suggestions : rien n’est encore modifié.')}</div></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">×</button></div>
+    ${m.clinical ? `<div class="cp-clinical">${icon('info')}<span><b>${L('Cela mérite l’avis d’un professionnel de santé.')}</b><small>${L('NutriPilot ne pose pas de diagnostic. Préparez un résumé à lui envoyer ; en cas d’urgence, appelez les services d’urgence.')}</small></span></div>` : ''}
+    ${questions ? `<div class="cp-questions">${miss.length ? `<small class="cp-missing">${L('Il manque une information pour vous proposer quelque chose de précis :')}</small>` : ''}${questions}</div>` : ''}
+    ${options.map((o, k) => `<article class="cp-option"><span class="md-badge suggest">${L('Suggestion')}</span><h3>${esc(o.title)}</h3>${o.why.filter(Boolean).map((w) => `<p class="cp-why">${esc(w)}</p>`).join('')}
+      ${o.lines.length ? `<ul class="cp-diff">${o.lines.map(([ico, txt]) => `<li>${icon(ico === 'swap' ? 'swap' : ico === 'clock' ? 'clock' : ico === 'dumbbell' ? 'dumbbell' : ico === 'bell' ? 'bell' : ico === 'target' ? 'target' : ico === 'plus' ? 'plus' : 'flag')}<span>${esc(txt)}</span></li>`).join('')}</ul>` : `<p class="fine">${L('Aucun changement nécessaire dans votre plan.')}</p>`}
+      ${o.restaurant ? `<button class="link-btn" data-cp-menu>${L('J’ai la carte : choisir mon plat avec le mode restaurant →')}</button><p class="fine">${L('NutriPilot ne peut pas garantir l’absence d’allergènes d’après une carte ou une photo : demandez toujours au restaurant.')}</p>` : ''}
+      <button class="btn ${k ? 'btn-ghost' : 'btn-primary'} btn-wide" data-cp-apply="${k}" ${o.lines.length ? '' : 'disabled'}>${L('Appliquer cette option')}</button></article>`).join('')}
+    ${!miss.length && !options.length ? `<p class="fine">${L('Aucune option pour le moment.')}</p>` : ''}
+    <div class="cp-foot"><button class="link-btn" data-cp-back>← ${L('Modifier')}</button><button class="link-btn" data-cp-pro>${icon('share')} ${L('Préparer un message pour mon professionnel')}</button></div>`;
+}
+function cpHistorySheet() {
+  const list = (state.changes || []).slice(0, 30);
+  return `<div class="sheet-head"><div><span class="tag">${L('Copilote')}</span><h2>${L('Historique des changements')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">×</button></div>
+    ${list.length ? `<div class="cp-hist">${list.map((c) => `<article class="md-change ${c.undone ? 'undone' : ''}"><span class="md-badge applied">${c.undone ? L('Annulé') : L('Appliqué')} · ${new Date(c.at).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span><b>${esc(c.title)}</b>${c.note ? `<small class="md-user">${L('Votre message')} : « ${esc(c.note)} »</small>` : ''}${(c.lines || []).length ? `<ul class="cp-diff small">${c.lines.slice(0, 5).map(([, txt]) => `<li><span>${esc(txt)}</span></li>`).join('')}</ul>` : ''}${!c.undone && cpLatest(c.day)?.id === c.id && c.day === todayKey() ? `<button class="link-btn" data-cp-undo="${c.id}">${L('Annuler')}</button>` : ''}</article>`).join('')}</div>` : `<p class="fine">${L('Aucun changement pour le moment.')}</p>`}`;
+}
+// A summary the person sends to their dietitian/doctor. Clearly separates their own records from automatic suggestions.
+function cpProSummary() {
+  const p = state.profile || {};
+  const since = addDays(-7);
+  const lines = [];
+  lines.push(`NutriPilot — ${L('Résumé pour mon professionnel')} (${new Date().toLocaleDateString(locale())})`);
+  lines.push('');
+  lines.push(`${L('Objectifs saisis dans l’app')} : ${fmt(p.dailyKcal)} kcal · ${fmt(p.protein)} g ${L('protéines')}${p.allergies ? ` · ${L('Allergies')} : ${p.allergies}` : ''}`);
+  lines.push('');
+  lines.push(`[${L('Mes enregistrements')}]`);
+  const days = [...new Set(state.meals.filter((m) => m.day >= since).map((m) => m.day))].sort();
+  days.forEach((d) => { const ms = state.meals.filter((m) => m.day === d); lines.push(`${d} : ${ms.map((m) => `${L(m.type || '')} ${m.title} (${Math.round(m.total?.kcal || 0)} kcal)`).join(' ; ')}`); });
+  if (!days.length) lines.push(L('Aucun repas enregistré cette semaine.'));
+  const notes = (state.changes || []).filter((c) => c.day >= since && c.note).map((c) => `${c.day} : « ${c.note} »`);
+  if (notes.length) { lines.push(''); lines.push(`[${L('Ce que j’ai signalé')}]`); lines.push(...notes); }
+  const applied = (state.changes || []).filter((c) => c.day >= since);
+  if (applied.length) { lines.push(''); lines.push(`[${L('Ajustements suggérés automatiquement par NutriPilot')}]`); applied.forEach((c) => lines.push(`${c.day} : ${c.title}${c.undone ? ` (${L('annulé')})` : ''}`)); }
+  lines.push('');
+  lines.push(L('Ces ajustements sont des suggestions de l’application, pas une prescription. Merci de me dire ce qui est adapté pour moi.'));
+  return lines.join('\n');
+}
+async function cpShareText(text) {
+  const SH = capPlugin('Share');
+  try {
+    if (SH) { await SH.share({ title: 'NutriPilot', text }); return; }
+    if (navigator.share) { await navigator.share({ title: 'NutriPilot', text }); return; }
+  } catch (error) { if (/cancel|abort/i.test(String(error?.message || error?.name || ''))) return; }
+  try { await navigator.clipboard.writeText(text); toast(L('Résumé copié : collez-le dans votre message ✓')); } catch { saveFile(text, 'nutripilot-resume.txt', 'text/plain'); }
+}
+async function cpAnalyze() {
+  const m = modal;
+  const text = ($('#cp-text')?.value || '').trim();
+  m.text = text;
+  let events = m.picked.map((type) => ({ type, ...(type === 'late' ? { minutes: 60 } : {}) }));
+  if (text) {
+    events = cpMergeEvents([...events, ...cpParse(text)]);
+    m.clinical = cpClinical(text);
+    // The server understands free text better; the local reading is kept if it's unreachable.
+    if (state.premium && state.aiConsent === true && navigator.onLine) {
+      const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 9000);
+      try {
+        const res = await apiFetch('/api/copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl.signal, body: JSON.stringify({ text, meals: cpRows().map((r) => ({ type: r.meal.type, time: r.time, status: r.status })) }) });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && Array.isArray(data.events)) events = cpMergeEvents([...events, ...data.events.filter((e) => CP_CHIPS.some(([k]) => k === e.type))]);
+        if (data.clinical) m.clinical = true;
+      } catch { /* offline: local reading */ } finally { clearTimeout(timer); }
+    }
+  }
+  if (!events.length && !m.clinical) return toast(L('Choisissez ce qui a changé ou écrivez-le.'));
+  events.forEach((e) => { if (['out', 'skip', 'missing'].includes(e.type)) e.slotIndex = cpSlotIndex(e.slot); });
+  m.events = events;
+  m.step = 'options';
+  track('CopilotAsk', { source: events.map((e) => e.type).join(',') });
+  renderModal();
+}
+function copilotClick(button, root) {
+  const d = button.dataset;
+  if (d.cpChip) { const k = d.cpChip; modal.text = $('#cp-text')?.value || modal.text; modal.picked = modal.picked.includes(k) ? modal.picked.filter((x) => x !== k) : [...modal.picked.filter((x) => !(k === 'hungry' && x === 'lessHungry') && !(k === 'lessHungry' && x === 'hungry')), k]; renderModal(); return true; }
+  if (d.cpGo !== undefined) { cpAnalyze(); return true; }
+  if (d.cpBack !== undefined) { modal.step = 'ask'; renderModal(); return true; }
+  if (d.cpSlot) { const [ev, i] = d.cpSlot.split(':'); const e = modal.events.find((x) => x.type === ev); if (e) e.slotIndex = Number(i); renderModal(); return true; }
+  if (d.cpTrain) { const e = modal.events.find((x) => x.type === 'train'); if (e) e.time = d.cpTrain; renderModal(); return true; }
+  if (d.cpLate) { const e = modal.events.find((x) => x.type === 'late'); if (e) e.minutes = Number(d.cpLate); renderModal(); return true; }
+  if (d.cpApply !== undefined) {
+    if (button.disabled) return true;
+    button.disabled = true;
+    const o = modal.options?.[Number(d.cpApply)];
+    const note = modal.text || '';
+    modal = null; root?.remove();
+    if (o) cpApply(o, { note });
+    return true;
+  }
+  if (d.cpMenu !== undefined) { modal = null; root?.remove(); nav('planner'); setTimeout(() => $('[data-planner-mode="restaurant"]')?.click(), 0); return true; }
+  if (d.cpPro !== undefined) { cpShareText(cpProSummary()); track('CopilotProSummary', {}); return true; }
+  return false;
+}
+function myDayClick(button) {
+  const d = button.dataset;
+  if (d.cpAct) {
+    const k = d.cpAct;
+    if (k === 'changed') { cpOpen([]); return true; }
+    if (k === 'out') { cpOpen(['out']); return true; }
+    if (k === 'fridge') { nav('planner'); setTimeout(() => $('[data-planner-mode="fridge"]')?.click(), 0); return true; }
+    if (k === 'swap') { const nx = cpNext(); if (!nx) { toast(L('Aucun repas à venir aujourd’hui.')); return true; } modal = { type: 'plan-swap', dayIndex: cpDayIndex(), mealIndex: nx.i }; renderModal(); return true; }
+    if (k === 'log') { const nx = cpNext(); if (nx) cpPending = { slot: nx.i, since: Date.now() }; openAdd(state.meals.length >= 2 ? 'recent' : 'photo'); return true; }
+  }
+  if (d.cpLog !== undefined) { cpLogPlanned(Number(d.cpLog)); return true; }
+  if (d.cpOther !== undefined) { cpPending = { slot: Number(d.cpOther), since: Date.now() }; openAdd('photo'); return true; }
+  if (d.cpSwap !== undefined) { modal = { type: 'plan-swap', dayIndex: cpDayIndex(), mealIndex: Number(d.cpSwap) }; renderModal(); return true; }
+  if (d.cpUndo) { cpUndo(d.cpUndo); return true; }
+  if (d.cpHistory !== undefined) { modal = { type: 'cp-history' }; renderModal(); return true; }
+  if (d.cpPlan !== undefined) { state.weekPlan = buildLocalWeek(); state.planSource = 'local'; saveState(); render(); toast(L('Votre plan du jour est prêt ✓')); return true; }
+  if (d.cpDismiss) { state.cpDismissed = { ...(state.cpDismissed || {}), [d.cpDismiss]: Date.now() }; saveState(); render(); return true; }
+  if (d.cpPatternsOff !== undefined) { state.cpPatternsOff = true; saveState(); render(); toast(L('Suggestions désactivées. Réactivez-les dans Réglages.')); return true; }
+  return false;
+}
+
 function hubScreen() {
   const p = state.profile || {};
   const tracks = t('tracks');
@@ -4134,8 +4767,9 @@ function checkReminders() {
     const slot = Math.floor((now.getHours() * 60 + now.getMinutes()) / r.water.every);
     once(`w-${today}-${slot}`, () => notify('NutriPilot', L('Un verre d’eau ? Il vous reste {n} ml pour aujourd’hui.', { n: fmt(waterGoal() - waterToday()) })));
   }
-  if (r.meals.on) r.meals.times.forEach((tm, i) => { if (tm === hm) once(`m-${today}-${i}`, () => notify('NutriPilot', L('C’est l’heure de votre {meal}. Scannez-le en une photo.', { meal: L(['Petit-déjeuner', 'Déjeuner', 'Dîner'][i]).toLowerCase() }))); });
-  if (r.workout.on && r.workout.time === hm && todaySession()) once(`t-${today}`, () => notify('NutriPilot', L('Séance du jour : {name}. On y va ?', { name: L(todaySession().name) })));
+  const plan = cpPlan();
+  if (r.meals.on) (plan?.meals?.length ? plan.meals.map((m, i) => [m.type, cpTimes()[i], i]) : r.meals.times.map((tm, i) => [['Petit-déjeuner', 'Déjeuner', 'Dîner'][i], tm, i])).forEach(([type, tm, i]) => { if (tm === hm && cpStatus(i) === 'pending') once(`m-${today}-${i}`, () => notify('NutriPilot', L('C’est l’heure de votre {meal}. Scannez-le en une photo.', { meal: L(type).toLowerCase() }))); });
+  if (r.workout.on && cpWorkoutTime() === hm && todaySession()) once(`t-${today}`, () => notify('NutriPilot', L('Séance du jour : {name}. On y va ?', { name: L(todaySession().name) })));
   if (r.weigh.on && now.getDay() === r.weigh.day && r.weigh.time === hm) once(`p-${today}`, () => notify('NutriPilot', L('C’est le jour de la pesée. Notez votre poids pour suivre la tendance.')));
   state.remindersFired = Object.fromEntries(Object.entries(fired).filter(([, ts]) => Date.now() - ts < 2 * 86400000));
   saveState(false);
@@ -5918,6 +6552,25 @@ function localCoachAnswer(message, mode) {
   const protLeft = Math.max(0, Math.round((p.protein || 0) - t.protein));
   const recipeIdeas = (n) => ALL_RECIPES.filter((r) => recipeAllowed(r) && (!kcalLeft || r.kcal <= kcalLeft + 80)).sort((a, b) => (b.protein / b.kcal) - (a.protein / a.kcal)).slice(0, n);
   const lazy = /pregui|flemme|motiv|lazy|pereza|ganas|keine lust|voglia|zin|nie chce|üşen|やる気|귀찮|懒|كسل|malas/.test(low);
+  // Answer the question that was asked, even offline.
+  const restaurant = /restau|resto|fora|comer fora|eating out|dîner dehors|afuera|außer haus|fuori|uit eten|na mieście|dışarıda|外食|외식|外出吃|مطعم|di luar/.test(low);
+  const hungry = /fome|faim|hungry|hambre|hunger|fame|honger|głod|aç|お腹|배고|饿|جوع|lapar|grignot|lanche|snack|beliscar/.test(low);
+  const protein = /prot[eé]in|protéine|białk|タンパク|단백|蛋白|بروتين/.test(low);
+  if (mode !== 'training' && !lazy && (restaurant || hungry || protein)) {
+    if (p.dailyKcal) lines.push(name + L('il vous reste environ {kcal} kcal et {p} g de protéines aujourd’hui.', { kcal: fmt(kcalLeft), p: protLeft }));
+    if (restaurant) {
+      lines.push(L('Au restaurant : choisissez une source de protéines grillée ou rôtie (poisson, poulet, viande, œufs, tofu) avec des légumes.'));
+      lines.push(L('Accompagnement : une portion de féculents de la taille de votre poing ; sauces et fritures à part si possible.'));
+      lines.push(L('Vous pouvez photographier le plat avec le scanner pour l’enregistrer en quelques secondes.'));
+    } else if (protein) {
+      lines.push(L('Ajoutez une source de protéines à chaque repas : œufs, yaourt grec, fromage blanc, poulet, poisson, tofu, légumineuses.'));
+      recipeIdeas(1).forEach((r) => lines.push(L('Idée adaptée : {recipe} ({kcal} kcal, {p} g de protéines).', { recipe: L(r.name), kcal: fmt(r.kcal), p: Math.round(r.protein) })));
+    } else {
+      lines.push(L('Une collation qui tient : un yaourt ou fromage blanc avec un fruit, ou une poignée d’oléagineux.'));
+      lines.push(L('Buvez un verre d’eau d’abord : la soif ressemble parfois à la faim.'));
+    }
+    return lines.map((x, i) => (i ? `• ${x}` : x)).join('\n');
+  }
   if (mode === 'training' || lazy) {
     const s = todaySession();
     if (lazy) lines.push(name + L('commencez petit : mettez votre tenue et faites seulement l’échauffement (5 minutes). Si l’envie revient, continuez ; sinon, c’est déjà une victoire.'));
@@ -5957,7 +6610,7 @@ function coachScreen() {
     <div class="screen coach-screen">
       <div class="tab-scroll mod-tabs coach-modes">${COACH_TABS.map(([k, label, ico]) => `<button class="${coachMode === k ? 'active' : ''}" data-coach-mode="${k}">${icon(ico)} ${L(label)}</button>`).join('')}</div>
       <div class="quick-prompts">${tab[3].map((q) => `<button data-quick-coach="${esc(L(q))}">${esc(L(q))}</button>`).join('')}</div>
-      <div class="chat" id="chat">${msgs.length ? msgs.map((m, i) => `<div class="bubble ${m.role === 'user' ? 'user' : 'ai'}">${coachText(m.text)}${m.role !== 'user' && i === msgs.length - 1 && state.premium ? `<span class="fb"><button data-coach-fb="up" aria-label="${L('Utile')}">👍</button><button data-coach-fb="down" aria-label="${L('Pas adapté')}">👎</button></span>` : ''}</div>`).join('') : `<div class="bubble ai">${L('Bonjour {name} 👋 Je connais votre objectif, votre journée et vos préférences. Posez votre question ou choisissez une idée ci-dessus.', { name: esc(p.name || '') })}</div>`}</div>
+      <div class="chat" id="chat" aria-live="polite">${msgs.length ? msgs.map((m, i) => m.pending ? `<div class="bubble ai typing" role="status" aria-label="${L('Le coach écrit…')}"><i></i><i></i><i></i></div>` : `<div class="bubble ${m.role === 'user' ? 'user' : 'ai'}${m.kind ? ' note' : ''}">${coachText(m.text)}${m.kind === 'local' && m.q ? `<button class="chip-retry" data-coach-retry="${state.coach.length - msgs.length + i}">↻ ${L('Réessayer')}</button>` : ''}${m.kind === 'auth' ? (Billing.native() ? `<button class="chip-retry" data-restore>${L('Restaurer mes achats')}</button>` : `<button class="chip-retry" data-go="access">${L('Se connecter')}</button>`) : ''}${m.role !== 'user' && !m.kind && i === msgs.length - 1 && state.premium ? `<span class="fb"><button data-coach-fb="up" aria-label="${L('Utile')}">👍</button><button data-coach-fb="down" aria-label="${L('Pas adapté')}">👎</button></span>` : ''}</div>`).join('') : `<div class="bubble ai">${L('Bonjour {name} 👋 Je connais votre objectif, votre journée et vos préférences. Posez votre question ou choisissez une idée ci-dessus.', { name: esc(p.name || '') })}</div>`}</div>
       <div class="chatbar"><input id="coach-input" placeholder="${L('Posez votre question…')}" enterkeyhint="send"><button class="btn btn-primary" data-coach-send aria-label="${L('Envoyer')}"><span class="flip-rtl">→</span></button></div>
       <div class="coach-ctl"><label><input type="checkbox" id="coach-data" ${state.coachUsesData === false ? '' : 'checked'}> ${L('Utiliser mes données (repas, séances, sommeil) pour personnaliser')}</label>${state.coach.length ? `<button class="link-btn" data-coach-clear>${L('Effacer la conversation')}</button>` : ''}</div>
       <div class="fine">${L('Réponses générées automatiquement : elles peuvent contenir des erreurs. Le coach ne pose pas de diagnostic et ne prescrit ni médicament ni hormone. En cas de symptôme ou de question médicale, consultez un professionnel.')}</div>
@@ -6920,6 +7573,7 @@ function settings() {
       <div class="fine center-fine">${L('Formule actuelle : {plan}', { plan: esc(planLabel()) })}</div>
       <button class="btn ${planTier() !== 'complete' ? 'btn-lime' : 'btn-ghost'} btn-wide" data-go="plans">${L('Voir les formules')}</button>
       <div class="section-label"><h3>${L('Données & appareil')}</h3></div>
+      <label class="rem-row"><span>${icon('sparkle')}<b>${L('Suggestions d’après ma routine')}</b><small>${L('Repère les repas que vous remplacez souvent pour proposer des options plus pratiques')}</small></span><input type="checkbox" class="switch" data-cp-patterns-toggle ${state.cpPatternsOff ? '' : 'checked'}></label>
       <label class="rem-row ai-row"><span>${icon('star')}<b>${L('Analyse par IA')}</b><small>${L('Photos et textes envoyés à OpenAI pour l’analyse, le coach et les plans')}</small></span><input type="checkbox" class="switch" data-ai-toggle ${state.aiConsent === true ? 'checked' : ''}></label>
       <button class="btn btn-ghost btn-wide" data-export>${L('Exporter mes données (.json)')}</button>
       ${window.Capacitor?.isNativePlatform?.() ? '' : `<button class="btn btn-ghost btn-wide" data-install>${L('Ajouter NutriPilot à l’écran d’accueil')}</button>`}
@@ -6987,7 +7641,7 @@ function renderModal() {
   if (trialActive()) { if (modal.type === 'recipe') trialFound('recipe'); if (['session', 'exercise'].includes(modal.type)) trialFound('workout'); }
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'signin' ? signInSheet() : ['trial', 'trial-started', 'trial-ended', 'trial-guide', 'trial-5min'].includes(modal.type) ? trialSheet(modal.type) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'signin' ? signInSheet() : ['trial', 'trial-started', 'trial-ended', 'trial-guide', 'trial-5min'].includes(modal.type) ? trialSheet(modal.type) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : modal.type === 'copilot' ? copilotSheet() : modal.type === 'cp-history' ? cpHistorySheet() : addSheet()}</div>`;
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
@@ -7290,31 +7944,51 @@ async function generateWeeklyReview(button) {
   }
 }
 
-async function sendCoach(prefill = '') {
+let coachBusy = false;
+function coachScroll() { setTimeout(() => { const chat = $('#chat'); if (chat) chat.scrollTop = chat.scrollHeight; }, 0); }
+async function sendCoach(prefill = '', { retryOf = null } = {}) {
   const input = $('#coach-input');
   const message = (prefill || input?.value || '').trim();
-  if (!message) return;
-  state.coach.push({ role: 'user', text: message });
+  if (!message || coachBusy) return;
+  coachBusy = true;
+  if (retryOf != null) state.coach = state.coach.filter((m, i) => i !== retryOf);
+  else state.coach.push({ role: 'user', text: message });
   if (state.coach.length > 40) state.coach = state.coach.slice(-40);
-  state.coach.push({ role: 'ai', text: L('…'), pending: true });
+  state.coach.push({ role: 'ai', text: '', pending: true });
   saveState(false);
   render();
-  setTimeout(() => { const chat = $('#chat'); if (chat) chat.scrollTop = chat.scrollHeight; }, 0);
-  const finish = (text) => { state.coach = state.coach.filter((m) => !m.pending); state.coach.push({ role: 'ai', text }); saveState(); render(); setTimeout(() => { const chat = $('#chat'); if (chat) chat.scrollTop = chat.scrollHeight; }, 0); };
-  try {
-    const t = totals();
-    const p = state.profile;
-    const history = state.coach.filter((m) => !m.pending).slice(-9, -1);
-    const response = await apiFetch('/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, mode: coachMode || 'nutrition', history, context: coachContext(), goal: p.goal, dailyKcal: p.dailyKcal, remaining: Math.max(0, p.dailyKcal - t.kcal), proteinLeft: Math.max(0, p.protein - t.protein), diet: p.diet, allergies: p.allergies, week: weeklyData().map((d) => ({ day: d.day, kcal: d.kcal, protein: d.protein })), weightTrend: (state.weights || []).slice(-12) }) });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error);
-    finish(data.answer || localCoachAnswer(message, coachMode));
-    track('CoachAnswer', { source: coachMode, local: !data.answer });
-  } catch (error) {
-    // Offline, expired session or server issue: still a useful answer.
-    finish(localCoachAnswer(message, coachMode));
-    track('CoachAnswer', { source: coachMode, local: true });
+  coachScroll();
+  const finish = (entry) => { coachBusy = false; state.coach = state.coach.filter((m) => !m.pending); state.coach.push({ role: 'ai', ...entry }); saveState(); render(); coachScroll(); };
+  const t = totals();
+  const p = state.profile;
+  // Only real coach answers go back as history (not offline notes), so the conversation stays coherent.
+  const history = state.coach.filter((m) => !m.pending && !m.kind).slice(-11, -1).map((m) => ({ role: m.role, text: m.text }));
+  const body = JSON.stringify({ message, mode: coachMode || 'nutrition', history, context: coachContext(), goal: p.goal, dailyKcal: p.dailyKcal, remaining: Math.max(0, p.dailyKcal - t.kcal), proteinLeft: Math.max(0, p.protein - t.protein), diet: p.diet, allergies: p.allergies, week: weeklyData().map((d) => ({ day: d.day, kcal: d.kcal, protein: d.protein })), weightTrend: (state.weights || []).slice(-12) });
+  let status = 0;
+  let data = null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 65_000);
+    try {
+      const response = await apiFetch('/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: ctl.signal });
+      status = response.status;
+      data = await response.json().catch(() => ({}));
+      clearTimeout(timer);
+      if (response.ok && data.answer) break;
+      if (response.ok || status === 401 || status === 402 || status === 429 || status === 400) break;
+    } catch (error) {
+      clearTimeout(timer);
+      if (error instanceof AiConsentError) { coachBusy = false; state.coach = state.coach.filter((m) => !m.pending); saveState(false); render(); return toast(error.message); }
+      status = 0;
+    }
+    if (attempt === 0) await new Promise((r) => setTimeout(r, 1200));
   }
+  if (data?.answer) { finish({ text: data.answer }); return track('CoachAnswer', { source: coachMode }); }
+  track('CoachAnswer', { source: coachMode, local: true, status });
+  if (status === 401 || status === 402) return finish({ kind: 'auth', text: L('Votre session a expiré. Reconnectez-vous pour continuer avec le coach : vos données restent sur votre téléphone.') });
+  if (status === 429) return finish({ kind: 'local', q: message, text: L('Beaucoup de questions en peu de temps : réessayez dans quelques minutes.') });
+  const why = status === 0 || !navigator.onLine ? L('Pas de connexion internet pour le moment.') : L('Le coach est momentanément indisponible.');
+  finish({ kind: 'local', q: message, text: `${why} ${L('En attendant, voici une réponse à partir de vos données :')}\n${localCoachAnswer(message, coachMode)}` });
 }
 
 function loadingHtml(label) {
@@ -7417,7 +8091,7 @@ function render() {
   else if (route === 'saving') html = savingScreen();
   else if (route === 'tour') html = tourScreen();
   else if (route === 'support') html = supportScreen();
-  else if (route === 'app' && !fullAccess()) html = hubScreen();
+  else if (route === 'app' && !fullAccess()) html = missionScreen();
   else if (route === 'onboarding') html = onboarding();
   else if (route === 'analyzing') html = analyzing();
   else if (route === 'paywall' || route === 'upgrade') html = paywall();
@@ -7480,7 +8154,7 @@ function render() {
   document.documentElement.dir = lang() === 'ar' ? 'rtl' : 'ltr';
   bind();
   if (route === 'analyzing' && !analyzingTimer) startAnalyzing();
-  if (entered || (route === 'app' && state.premium && !window.__npCounted)) { runCountUps(); window.__npCounted = true; }
+  if (entered || (route === 'app' && !window.__npCounted)) { runCountUps(); window.__npCounted = true; }
   if (document.querySelector('[data-tilt]')) bindTilt();
   if (route === 'progress') renderPhotos();
   if (route === 'saving' && !savingTimer) startSaving();
@@ -7551,6 +8225,7 @@ function bind() {
       modal = { type: 'trial' }; return renderModal();
     }
     if (button.dataset.drawer !== undefined) return openDrawer();
+    if (myDayClick(button)) return;
     if (button.dataset.navBack !== undefined) {
       let prev = navStack.pop();
       while (prev && (prev === route || ['lang', 'basics', 'saving', 'analyzing'].includes(prev))) prev = navStack.pop();
@@ -7626,6 +8301,7 @@ function bind() {
 
     if (button.dataset.retryRender !== undefined) return render();
     if (button.dataset.coachMode) { coachMode = button.dataset.coachMode; return render(); }
+    if (button.dataset.coachRetry !== undefined) { const i = +button.dataset.coachRetry; const m = state.coach[i]; if (m?.q) return sendCoach(m.q, { retryOf: i }); return; }
     if (button.dataset.coachClear !== undefined) { if (!confirmSoft(button)) return; state.coach = []; saveState(); return render(); }
     if (button.dataset.coachFb) {
       track('CoachFeedback', { source: button.dataset.coachFb });
@@ -8310,6 +8986,8 @@ function bindModal(root) {
   root.onclick = async (event) => {
     const button = event.target.closest('button');
     if (!button) return;
+    if (modal?.type === 'copilot' && copilotClick(button, root)) return;
+    if (button.dataset.cpUndo) { modal = null; root.remove(); return cpUndo(button.dataset.cpUndo); }
 
     if (button.dataset.appTab) { const [id, key] = button.dataset.appTab.split(':'); modal = null; root.remove(); return openAppTab(id, key); }
     if (button.dataset.trialStart !== undefined) { modal = null; root.remove(); return beginTrial(); }
@@ -8486,8 +9164,17 @@ function bindModal(root) {
       const { dayIndex, mealIndex } = modal;
       const meal = state.weekPlan[dayIndex].meals[mealIndex];
       const r = ALL_RECIPES.find((x) => x.id === button.dataset.swapChoose);
-      state.weekPlan[dayIndex].meals[mealIndex] = scaledMeal(r, meal.kcal, meal.type);
-      saveState(); modal = null; root.remove(); toast('Repas remplacé ✓'); return render();
+      const nm = scaledMeal(r, meal.kcal, meal.type);
+      modal = null; root.remove();
+      if (state.weekPlan[dayIndex].date === todayKey()) {
+        const after = cpEnsureTimes(cpDraft()); after.meals[mealIndex] = nm;
+        const before = cpEnsureTimes(cpDraft());
+        return cpApply({ id: 'swap', title: L('{type} : {name}', { type: L(meal.type), name: L(r.name) }), why: [], after, lines: cpDiff(before, after) }, { kind: 'swap', source: 'user' });
+      }
+      const before = { meals: clone(state.weekPlan[dayIndex].meals), times: {}, status: {}, workout: '' };
+      state.weekPlan[dayIndex].meals[mealIndex] = nm;
+      state.changes = [{ id: `c${Date.now().toString(36)}`, at: new Date().toISOString(), day: state.weekPlan[dayIndex].date || '', title: L('{type} : {name}', { type: L(meal.type), name: L(r.name) }), kind: 'swap', source: 'user', before, after: { meals: clone(state.weekPlan[dayIndex].meals), times: {}, status: {}, workout: '' }, lines: [], undone: false }, ...(state.changes || [])].slice(0, 60);
+      saveState(); toast('Repas remplacé ✓'); return render();
     }
     if (button.dataset.swapAi !== undefined) {
       const { dayIndex, mealIndex } = modal; modal = null; root.remove();

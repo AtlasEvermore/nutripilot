@@ -149,3 +149,6 @@ na França você é comerciante: endereço, telefone e e-mail ficam públicos na
 | Conversão (v10) | questionário → "Seu plano está pronto" → planos; 3 análises grátis; planos com 2–3 opções; teste só no anual |
 | Avaliações | pedido nativo de avaliação após uma vitória (7 dias seguidos ou dia dentro da meta), no máximo a cada 4 meses |
 | Abertura rápida / offline | arquivos guardados no celular (ETag/304), service worker com limite de 2,5 s, App-Bound Domains no iPhone |
+| Coach (v12) | conversa real em vários turnos; sessão renovada sozinha (sem "sessão expirada" no meio da conversa); sem internet ou com o serviço fora do ar, mostra o aviso + resposta com os dados do usuário + botão "Tentar de novo" |
+| Copiloto "Meu dia agora" (v12) | início do assinante: próxima ação, refeições registradas/pendentes, "Minha rotina mudou", "Vou comer fora", "O que posso preparar com isso?", "Trocar esta refeição", "Registrar o que comi"; alternativas com prévia → aplicar → desfazer, histórico, lembretes do dia ajustados, metas nunca alteradas, resumo para o profissional |
+| Estados de gravação (v12) | "Salvando", "Salvo", "Pendente de sincronização" (envia sozinho ao voltar a internet), "Não foi possível salvar"; ao reabrir o app, traz alterações feitas em outro aparelho |
