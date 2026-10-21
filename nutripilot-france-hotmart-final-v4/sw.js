@@ -1,4 +1,4 @@
-const CACHE = 'nutripilot-v32-20261020-fast';
+const CACHE = 'nutripilot-v33-20261021-funnel';
 const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {

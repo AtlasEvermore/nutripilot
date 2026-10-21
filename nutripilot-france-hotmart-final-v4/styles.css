@@ -2166,3 +2166,53 @@ img,svg,video,canvas,iframe{max-width:100%}
 .proj-card .proj-milestone .ico{color:var(--lime)}
 .proj-card .fine{color:rgba(255,255,255,.6)}
 .proj-card svg text{fill:rgba(255,255,255,.8)}
+
+/* v11 · paywall: what's included, space by space */
+.pwp-mods{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.pwp-mods i{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;color:#fff;background:var(--mc)}
+.pwp-mods .ico{width:13px;height:13px}
+.pw-plan em{font-style:normal;font-size:12px;font-weight:600;color:var(--muted);margin-top:4px}
+.pw-inc{margin:4px 0 16px;display:grid;gap:10px}
+.pw-inc-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:4px}
+.pw-inc-head h2{margin:0;font-size:20px;letter-spacing:-.03em}
+.pw-inc-head h3{margin:6px 0 0;font-size:15px;color:var(--muted)}
+.pw-inc-head span{flex:none;font-size:12px;font-weight:700;color:#06140C;background:var(--lime);border-radius:999px;padding:5px 10px}
+.inc-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+@media (min-width:600px){.inc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.inc-tile{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:12px;align-items:start;background:#fff;border:.5px solid var(--line);border-radius:18px;padding:12px;box-shadow:var(--lift);position:relative;overflow:hidden}
+.inc-tile:before{content:"";position:absolute;inset:0;background:radial-gradient(90% 120% at 0% 0%,var(--mt),transparent 60%);z-index:0}
+.inc-tile>*{position:relative;z-index:1}
+.inc-ico{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,color-mix(in srgb,var(--mc) 70%,#fff),var(--mc) 70%)}
+.inc-ico .ico{width:22px;height:22px}
+.inc-tile b{display:block;font-size:15px;line-height:1.2;letter-spacing:-.02em}
+.inc-tile ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:3px}
+.inc-tile li{font-size:12.5px;line-height:1.35;color:var(--ink2);padding-inline-start:12px;position:relative}
+.inc-tile li:before{content:"";position:absolute;inset-inline-start:0;top:.55em;width:5px;height:5px;border-radius:50%;background:var(--mc)}
+.inc-tile small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.inc-tile em{font-style:normal;font-size:11px;font-weight:800;color:var(--mc);display:grid;place-items:center;min-width:24px;height:24px;border-radius:999px;background:color-mix(in srgb,var(--mc) 12%,#fff);padding:0 7px}
+.inc-tile em .ico{width:14px;height:14px}
+.inc-tile.off{opacity:.62;box-shadow:none}
+.inc-tile.off .inc-ico{background:#C9CEC9}
+.inc-tile.off:before{display:none}
+.inc-tile.off em{color:var(--muted);background:#EEF0EC}
+.pw-to-kit{margin-top:2px}
+.pw-also-t{margin:8px 0 0;font-size:15px}
+.pw-also{display:flex;flex-wrap:wrap;gap:6px}
+.pw-also span{display:inline-flex;align-items:center;gap:6px;background:#fff;border:.5px solid var(--line);border-radius:999px;padding:7px 11px;font-size:12.5px;font-weight:600;color:var(--ink2)}
+.pw-also .ico{width:14px;height:14px;color:#2e7d32}
+
+/* v11 · top-of-funnel paywall: CTA above the fold, trust row, always-visible bar */
+.pw-cta-top{margin:2px 0 8px}
+.pw-trust{display:grid;gap:6px;margin:0 0 14px}
+.pw-trust span{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);font-weight:600}
+.pw-trust .ico{flex:none;width:16px;height:16px;color:#2e7d32}
+.pw2{padding-bottom:calc(92px + var(--safe))}
+.pw-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + var(--safe));z-index:60;width:min(560px,calc(100% - 20px));display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:22px;
+  background:color-mix(in srgb,#0A100D 92%,transparent);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);color:#fff;box-shadow:0 20px 40px -16px rgba(0,0,0,.55);border:.5px solid rgba(255,255,255,.1);animation:sheetUp .4s var(--ease) both}
+.pw-bar>span{flex:1;min-width:0;display:grid;gap:1px}
+.pw-bar b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pw-bar small{font-size:11.5px;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pw-bar .btn{flex:none;min-height:46px;padding:10px 20px}
+.pw2 .sticky-cta{position:static}
+.pw-bar{opacity:0;pointer-events:none;transform:translate(-50%,20px);transition:opacity .25s,transform .35s var(--ease);animation:none}
+.pw-bar.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}

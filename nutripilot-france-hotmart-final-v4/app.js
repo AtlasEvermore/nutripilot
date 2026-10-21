@@ -509,7 +509,7 @@ function recipeGridHtml() {
 
 let recipeView = 'explore';
 function recipeTabs() {
-  const tabs = [['explore', 'Explorer'], ['fav', 'Favoris'], ['made', 'Déjà préparées'], ['create', 'Créer avec l’IA']];
+  const tabs = [['explore', 'Explorer'], ['fav', 'Favoris'], ['made', 'Déjà préparées'], ['create', 'Créer avec mes ingrédients']];
   return `<div class="tab-scroll mod-tabs">${tabs.map(([k, label]) => `<button class="${recipeView === k ? 'active' : ''}" data-recipe-view="${k}">${L(label)}</button>`).join('')}</div>`;
 }
 function recipesScreen() {
@@ -2083,7 +2083,7 @@ const PROGRAM_FEATURES = [
   'Plan alimentaire sur mesure et {r} recettes du monde',
   'Menus de 7 jours ajustés à vos calories et à vos protéines',
   'Coach sportif personnel et programme Ménopause 40+',
-  'Scanner IA, coach IA, sommeil et vitamines',
+  'Scanner, coach 24 h/24, sommeil et vitamines',
   'Liste de courses générée automatiquement',
 ];
 
@@ -2101,8 +2101,8 @@ const MODULES = [
   { id: 'nutrition', name: 'Nutrition', title: 'Plan alimentaire sur mesure', short: 'Plan repas', sub: 'Votre plan repas complet, calculé pour votre corps et votre objectif.', icon: 'fork', route: 'program', tone: 'm-nut',
     features: ['Menus de 7 jours ajustés à vos calories et à vos protéines', 'Perte de poids, prise de muscle ou ménopause : le plan suit votre objectif', 'Cuisine de votre pays, allergies et goûts respectés', 'Liste de courses générée automatiquement'] },
   { id: 'recipes', name: 'Recettes', title: 'Recettes du monde entier', short: 'Recettes', sub: '{r} recettes de {c} cuisines, au gramme près.', icon: 'book', route: 'recipes', tone: 'm-rec',
-    features: ['Française, brésilienne, japonaise, indienne, mexicaine… et bien plus', 'Portions recalculées pour votre objectif', 'Recettes créées par l’IA avec ce que vous avez'] },
-  { id: 'scanner', name: 'Scanner', title: 'Scanner IA', short: 'Scanner IA', sub: 'Une photo, et votre repas est analysé.', icon: 'scan', route: 'scanner', tone: 'm-scan', free: true,
+    features: ['Française, brésilienne, japonaise, indienne, mexicaine… et bien plus', 'Portions recalculées pour votre objectif', 'Des variantes pour chaque situation : régimes, objectifs et goûts, personnalisées pour vous'] },
+  { id: 'scanner', name: 'Scanner', title: 'Scanner de repas', short: 'Scanner', sub: 'Une photo, et votre repas est analysé.', icon: 'scan', route: 'scanner', tone: 'm-scan', free: true,
     features: ['Calories et macros en quelques secondes', 'Code-barres, étiquettes et allergènes', 'Portions corrigées en un geste'] },
   { id: 'training', name: 'Entraînement', title: 'Coach sportif personnel', short: 'Entraînement', sub: 'Un programme d’entraînement construit pour vous.', icon: 'dumbbell', route: 'training', tone: 'm-train',
     features: ['{e} exercices animés, en salle ou à la maison', '{p} programmes, du débutant au confirmé', 'Charges, repos et records suivis automatiquement'] },
@@ -2114,7 +2114,7 @@ const MODULES = [
     features: ['Scanner d’étiquette de complément', 'Alerte en cas d’ingrédient en double', 'Niveau de preuve et précautions'] },
   { id: 'sleep', name: 'Sommeil & stress', title: 'Sommeil & anti-stress', short: 'Sommeil', sub: 'Mieux dormir et reprendre le contrôle des envies.', icon: 'moon', route: 'sleep', tone: 'm-sleep',
     features: ['Respirations guidées à voix haute', 'Journal du sommeil et des envies de manger', 'Bouton SOS fringales'] },
-  { id: 'coach', name: 'Coach', title: 'Coach IA 24 h/24', short: 'Coach IA', sub: 'Une réponse adaptée à votre journée, à toute heure.', icon: 'coach', route: 'coach', tone: 'm-coach', free: true,
+  { id: 'coach', name: 'Coach', title: 'Coach 24 h/24', short: 'Coach', sub: 'Une réponse adaptée à votre journée, à toute heure.', icon: 'coach', route: 'coach', tone: 'm-coach', free: true,
     features: ['Nutrition, entraînement et recettes', 'Explique chaque conseil', 'Limites claires sur les questions médicales'] },
 ];
 // Live numbers used in the copy above.
@@ -2450,12 +2450,12 @@ const BUNDLES = [
 const bundleById = (id) => BUNDLES.find((b) => b.id === id);
 const DEFAULT_PLANS = [
   { tier: 'complete', kind: 'complete', label: 'Kit complet', sub: 'Tous les modules NutriPilot', tagline: 'Tout NutriPilot, sans limite.', icon: 'star', tone: 'm-kit', badge: 'Meilleure offre', modules: MODULES.map((m) => m.id),
-    features: ['Les 9 espaces NutriPilot, sans limite', 'Plan alimentaire sur mesure et {r} recettes du monde', 'Coach sportif personnel et programme Ménopause 40+', 'Scanner IA, coach IA, sommeil et vitamines'],
+    features: ['Les 9 espaces NutriPilot, sans limite', 'Plan alimentaire sur mesure et {r} recettes du monde', 'Coach sportif personnel et programme Ménopause 40+', 'Scanner, coach 24 h/24, sommeil et vitamines'],
     monthly: { price: MODULE_PRICES.complete[0], storeId: 'np_complete_monthly' }, annual: { price: MODULE_PRICES.complete[1], storeId: 'np_complete_annual' } },
   ...BUNDLES.map((b) => ({ tier: b.id, kind: 'bundle', label: b.name, sub: b.sub, tagline: b.tagline, icon: b.icon, tone: b.tone, badge: b.badge, modules: b.modules,
-    features: [...b.modules.map((id) => moduleById(id).title), 'Scanner IA, compléments et coach IA offerts'],
+    features: [...b.modules.map((id) => moduleById(id).title), 'Scanner, Compléments et Coach offerts'],
     monthly: { price: b.price[0], storeId: `np_${b.id}_monthly` }, annual: { price: b.price[1], storeId: `np_${b.id}_annual` } })),
-  ...PAID_MODULES.map((m) => ({ tier: m.id, kind: 'module', label: m.name, sub: m.sub, tagline: m.sub, icon: m.icon, tone: m.tone, modules: [m.id], features: [...m.features.slice(0, 3), 'Scanner IA, compléments et coach IA offerts'],
+  ...PAID_MODULES.map((m) => ({ tier: m.id, kind: 'module', label: m.name, sub: m.sub, tagline: m.sub, icon: m.icon, tone: m.tone, modules: [m.id], features: [...m.features.slice(0, 3), 'Scanner, Compléments et Coach offerts'],
     monthly: { price: MODULE_PRICES[m.id][0], storeId: `np_${m.id}_monthly` }, annual: { price: MODULE_PRICES[m.id][1], storeId: `np_${m.id}_annual` } })),
 ];
 // Price of buying these modules one by one, for the same billing period.
@@ -2488,7 +2488,7 @@ function customPlan(parts) {
   if (same) return same;
   const code = mods.map((id) => MOD_CODE[id]).join('');
   const m = comboMonthly(mods);
-  return { tier: 'mix_' + code, kind: 'custom', parts: mods, label: '', sub: 'Ma sélection', icon: 'grid', tone: 'm-kit', modules: mods, features: [...mods.map((id) => moduleById(id).title), 'Scanner IA, compléments et coach IA offerts'],
+  return { tier: 'mix_' + code, kind: 'custom', parts: mods, label: '', sub: 'Ma sélection', icon: 'grid', tone: 'm-kit', modules: mods, features: [...mods.map((id) => moduleById(id).title), 'Scanner, Compléments et Coach offerts'],
     monthly: { price: m, storeId: `np_mix_${code}_monthly` }, annual: { price: annualOf(m), storeId: `np_mix_${code}_annual` } };
 }
 const modsFromMix = (tier) => String(tier).replace(/^mix_/, '').split('').map((c) => CODE_MOD[c]).filter(Boolean);
@@ -2575,7 +2575,7 @@ const canScan = () => fullAccess() || freeScansLeft() > 0;
 function freeScanBanner() {
   if (state.premium || !freeScanLimit()) return '';
   const left = freeScansLeft();
-  return `<div class="free-scan ${left ? '' : 'out'}"><span>${icon(left ? 'scan' : 'lock')}</span><p><b>${left ? L('{n} analyses gratuites restantes', { n: left }) : L('Analyses gratuites utilisées')}</b><small>${left ? L('Photographiez votre assiette : calories et macros en quelques secondes.') : L('Continuez avec votre formule : analyses illimitées et plan complet.')}</small></p>${left ? '' : `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>`}</div>`;
+  return `<div class="free-scan ${left ? '' : 'out'}"><span>${icon(left ? 'scan' : 'lock')}</span><p><b>${left ? L('{n} analyses gratuites restantes', { n: left }) : L('Analyses gratuites utilisées')}</b><small>${left ? L('Photographiez votre assiette : calories et macros en quelques secondes. Le code-barres est gratuit et illimité.') : L('Le code-barres reste gratuit et illimité. Pour les photos : analyses illimitées avec votre formule.')}</small></p>${left ? '' : `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>`}</div>`;
 }
 function freeScansOut() {
   track('FreeScansOut');
@@ -2720,7 +2720,7 @@ function moduleBar(id) {
 // so every screen shows one thing at a time. "Apps" goes back to the launcher.
 const APP_SHELL = {
   nutrition: { route: 'program', get: () => route, set: (k) => nav(k), tabs: () => [['program', 'Plan 7 jours', 'calendar', 'Vos repas de la semaine, ajustés à vos calories'], ['diary', 'Journal', 'list', 'Ce que vous avez mangé, jour et semaine'], ['shopping', 'Courses', 'check', 'La liste générée depuis votre plan'], ['targets', 'Objectifs', 'scale', 'Calories, protéines, glucides et lipides'], ['planner', 'Hors maison', 'sparkle', '« Que manger ensuite ? », restaurant et voyages'], ['guides', 'Leçons', 'book', 'Cours courts de nutrition']] },
-  recipes: { route: 'recipes', get: () => recipeView, set: (k) => { recipeView = k; }, tabs: () => [['explore', 'Explorer', 'search', 'Par objectif, région et ingrédient'], ['fav', 'Favoris', 'heart', 'Les recettes que vous avez gardées'], ['create', 'Créer avec l’IA', 'sparkle', 'Des recettes avec ce que vous avez'], ['made', 'Déjà préparées', 'check', 'Les recettes ajoutées à votre journal']] },
+  recipes: { route: 'recipes', get: () => recipeView, set: (k) => { recipeView = k; }, tabs: () => [['explore', 'Explorer', 'search', 'Par objectif, région et ingrédient'], ['fav', 'Favoris', 'heart', 'Les recettes que vous avez gardées'], ['create', 'Créer avec mes ingrédients', 'sparkle', 'Des recettes avec ce que vous avez'], ['made', 'Déjà préparées', 'check', 'Les recettes ajoutées à votre journal']] },
   training: { route: 'training', get: () => trainTab, set: (k) => { trainTab = k; }, tabs: () => [hasTrainingPlan() ? ['mine', 'Ma semaine', 'calendar', 'Vos séances de la semaine'] : ['plan', 'Planifier', 'calendar', 'Vos jours, votre objectif, votre niveau'], ['programs', 'Programmes', 'list', 'Tous les programmes prêts à suivre'], ['library', 'Exercices', 'dumbbell', 'Plus de 100 mouvements animés'], ...(hasTrainingPlan() ? [['plan', 'Planifier', 'calendar', 'Changer vos jours et votre objectif']] : []), ['create', 'Créer', 'plus', 'Votre propre programme, exercice par exercice'], ['history', 'Historique', 'progress', 'Séances faites et charges'], ['lessons', 'Leçons', 'book', 'Technique, progression et récupération']] },
   menopause: { route: 'menopause', get: () => menoTab, set: (k) => { menoTab = k; }, tabs: () => [['today', 'Aujourd’hui', 'flower', 'Journal des symptômes du jour'], ['program', 'Programme', 'calendar', '8 semaines guidées'], ['workouts', 'Séances', 'dumbbell', 'Force, os et équilibre'], ['lessons', 'Cours', 'book', 'Comprendre chaque étape']] },
   nutrients: { route: 'nutrients', get: () => nutrientTab, set: (k) => { nutrientTab = k; }, tabs: () => [['guide', 'Guide', 'leaf', 'Rôle de chaque vitamine et minéral'], ['sources', 'Sources', 'fork', 'Les aliments les plus riches'], ['gaps', 'Mon journal', 'list', 'Ce qui manque peut-être dans vos repas']] },
@@ -2925,6 +2925,11 @@ const Billing = {
       state.subscriptionPlan = result.plan || `${plan.tier}_${period}`;
       saveState();
       haptic('success');
+      const trialLen = this.trialFor(plan, period);
+      const N = capPlugin('LocalNotifications');
+      if (trialLen > 2 && N) {
+        N.requestPermissions().then(() => N.schedule({ notifications: [{ id: NOTIF_BASE + 900, title: 'NutriPilot', body: L('Votre essai gratuit se termine dans 2 jours. Rien à faire pour continuer ; pour annuler, passez par les réglages de votre compte {store}.', { store: this.store() }), schedule: { at: new Date(Date.now() + (trialLen - 2) * 86400000) } }] })).catch(() => {});
+      }
       track('StartTrial', { plan: id });
       celebrate();
       toast(L('Formule activée ✓'));
@@ -3101,6 +3106,28 @@ function planOptionHtml(x, current) {
 
 // v10 paywall: one decision. The plan that fits her (and the Kit), then Annual (highlighted) or Monthly.
 // Everything else lives behind "See all plans".
+// v11 — what the person pays for: every space of the chosen plan with what it delivers,
+// what is only in the Complete kit (for combos), and what every subscriber gets on top.
+const ALSO_INCLUDED = [['list', 'Liste de courses automatique'], ['progress', 'Suivi du poids et des mensurations'], ['bell', 'Rappels repas, eau et séances'], ['camera', 'Photos de progrès privées'], ['fork', 'Modes restaurant et frigo'], ['user', 'Synchronisé sur tous vos appareils'], ['star', '14 langues · sans publicité']];
+function includedHtml(plan) {
+  const mods = new Set(plan?.modules || []);
+  const paid = PAID_MODULES.length && plan ? PAID_MODULES.filter((m) => mods.has(m.id)) : [];
+  const free = FREE_MODULES;
+  const missing = PAID_MODULES.filter((m) => !mods.has(m.id));
+  const tile = (m, kind) => `<div class="inc-tile ${m.tone} ${kind}">
+      <span class="inc-ico">${icon(m.icon)}</span>
+      <div><b>${modTitle(m)}</b>${kind === 'off' ? `<small>${L('Disponible dans le Kit complet')}</small>` : `<ul>${m.features.slice(0, 2).map((f) => `<li>${L(f)}</li>`).join('')}</ul>`}</div>
+      <em>${kind === 'off' ? icon('lock') : kind === 'free' ? L('Offert') : icon('check')}</em>
+    </div>`;
+  return `<section class="pw-inc">
+    <div class="pw-inc-head"><h2>${L('Ce que comprend {plan}', { plan: esc(planName(plan)) })}</h2><span>${L('{n} espaces inclus', { n: paid.length + free.length })}</span></div>
+    <div class="inc-grid">${paid.map((m) => tile(m, 'on')).join('')}${free.map((m) => tile(m, 'free')).join('')}</div>
+    ${missing.length ? `<div class="pw-inc-head off"><h3>${L('Pas inclus dans cette formule')}</h3></div><div class="inc-grid">${missing.map((m) => tile(m, 'off')).join('')}</div>
+      <button class="btn btn-ghost btn-wide pw-to-kit" data-tier="complete">${icon('star')} ${L('Passer au Kit complet')}</button>` : ''}
+    <h3 class="pw-also-t">${L('Et aussi, pour tous les abonnés')}</h3>
+    <div class="pw-also">${ALSO_INCLUDED.map(([ic, t]) => `<span>${icon(ic)}${L(t)}</span>`).join('')}</div>
+  </section>`;
+}
 function paywall() {
   const p = state.profile || {};
   const plans = Billing.plans();
@@ -3135,9 +3162,15 @@ function paywall() {
       <span class="revo-kicker">${icon('star')}${L('Révolutionnaire')}</span>
       <h1 class="screen-title">${p.name ? L('{name}, débloquez votre programme complet.', { name: esc(p.name) }) : L('Débloquez votre programme complet.')}</h1>
       ${proj ? `<div class="pw-goal">${icon('progress')}<span>${L('Objectif {target} · estimé le {date}', { target: `<b>${kgFmt(p.target)} kg</b>`, date: `<b>${esc(dateFr(proj.end))}</b>` })}</span></div>` : ''}
-      <ul class="pw-value">${(plan.features || []).slice(0, 3).map((f) => `<li>${icon('check')}<span>${L(f)}</span></li>`).join('')}</ul>
-      ${choices.length > 1 ? `<div class="pw-plans" role="radiogroup">${choices.map((x) => `<button class="pw-plan ${x.tone || ''} ${x.tier === plan.tier ? 'on' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}"><small>${L(x.tier === 'complete' ? 'Tout inclus' : 'Recommandé pour vous')}</small><b>${esc(planName(x))}</b></button>`).join('')}</div>` : `<div class="pw-plan-one"><b>${esc(planName(plan))}</b><small>${esc(L(plan.sub))}</small></div>`}
+      ${choices.length > 1 ? `<div class="pw-plans" role="radiogroup">${choices.map((x) => `<button class="pw-plan ${x.tone || ''} ${x.tier === plan.tier ? 'on' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}"><small>${L(x.tier === 'complete' ? 'Tout inclus' : 'Recommandé pour vous')}</small><b>${esc(planName(x))}</b><span class="pwp-mods">${MODULES.filter((m) => x.modules.includes(m.id) || m.free).map((m) => `<i class="${m.tone}" title="${esc(modTitle(m))}">${icon(m.icon)}</i>`).join('')}</span><em>${L('{n} espaces inclus', { n: MODULES.filter((m) => x.modules.includes(m.id) || m.free).length })}</em></button>`).join('')}</div>` : `<div class="pw-plan-one"><b>${esc(planName(plan))}</b><small>${esc(L(plan.sub))}</small></div>`}
       <div class="pw-periods" role="radiogroup">${periods.map(periodCard).join('')}</div>
+      <button class="btn btn-lime btn-wide btn-xl pw-cta-top" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
+      <div class="pw-trust">
+        <span>${icon('lock')}${L('Paiement sécurisé par l’App Store / Google Play')}</span>
+        <span>${icon('check')}${L('Annulable en un geste, sans engagement')}</span>
+        ${trial ? `<span>${icon('bell')}${L('Rappel 2 jours avant la fin de l’essai')}</span>` : ''}
+      </div>
+      ${includedHtml(plan)}
       ${trial ? `<div class="trial-timeline">
         <div><span class="tl-dot on">${icon('lock')}</span><p><b>${L('Aujourd’hui')}</b>${L('Accès complet à votre formule. Aucun paiement maintenant.')}</p></div>
         <div><span class="tl-dot">${icon('bell')}</span><p><b>${L('Jour {n}', { n: Math.max(1, trial - 1) })}</b>${L('Annulez quand vous voulez depuis votre compte App Store ou Google Play, sans frais pendant l’essai.')}</p></div>
@@ -3156,6 +3189,7 @@ function paywall() {
       </div>
       ${Billing.native() ? '' : `<details class="pw-country"><summary>${L('Pays et devise')}</summary>${locationPicker()}</details>`}
     </div>
+    <div class="pw-bar"><span><b>${esc(planName(plan))}</b><small>${trial ? L('{n} jours gratuits, puis {price} / {period}', { n: trial, price, period: periodLabel }) : `${price} ${unitOf(selectedPeriod)}`}</small></span><button class="btn btn-lime" data-buy>${trial ? L('Commencer') : L('Continuer')}</button></div>
   </div>`;
 }
 
@@ -3240,7 +3274,7 @@ function openDrawer() {
     if (event.target === el || (btn && btn.dataset.drawerClose !== undefined)) return closeDrawer();
     if (!btn) return;
     closeDrawer(true);
-    if (btn.dataset.openAdd !== undefined) return canScan() ? openAdd('photo') : freeScansOut();
+    if (btn.dataset.openAdd !== undefined) return openAdd(canScan() ? 'photo' : 'barcode');
     if (btn.dataset.reminders !== undefined) { modal = { type: 'reminders' }; return renderModal(); }
     if (btn.dataset.go) return nav(btn.dataset.go);
   });
@@ -5955,7 +5989,7 @@ function insights() {
       <div class="section-label"><h3>${L('Votre semaine')}</h3></div>
       ${data.map((d) => `<div class="day-card"><div class="day-top"><div><b>${dateLabel(d.day)}</b><div class="fine">${fmt(d.protein)} g prot. · ${fmt(d.fiber)} g fibres · ${fmt(d.water)} ml</div></div><b>${fmt(d.kcal)} kcal</b></div><div class="mini-bar"><i style="width:${clamp(d.kcal / Math.max(1, p.dailyKcal) * 100, 0, 100)}%"></i></div></div>`).join('')}
       <div class="section-label"><h3>${L('Lecture simple')}</h3></div>${weeklyInsight(data, p)}
-      <button class="btn btn-primary btn-wide" data-week-review>${L('Créer mon bilan IA →')}</button>
+      <button class="btn btn-primary btn-wide" data-week-review>${L('Créer mon bilan de la semaine →')}</button>
       ${state.weekReview ? `<div style="margin-top:12px">${weeklyReviewHtml()}</div>` : ''}
       <div class="section-label"><h3>${L('Badges')}</h3></div>${achievements()}
     </div>
@@ -7024,7 +7058,6 @@ async function startBarcodeCamera(root) {
 }
 function addTab(tab) {
   if (tab === 'recent') return recentTab();
-  if (!state.premium && tab === 'barcode') return `<div class="mod-upsell m-scan">${icon('scan')}<b>${L('Disponible avec le module Scanner')}</b><p>${L('Photo du repas, code-barres, étiquette, allergènes et comparaison de produits.')}</p><button class="btn btn-lime btn-wide" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button></div>`;
   if (state.premium && !hasModule('scanner') && ['photo', 'barcode', 'label'].includes(tab)) {
     return `<div class="mod-upsell m-scan">${icon('scan')}<b>${L('Disponible avec le module Scanner')}</b><p>${L('Photo du repas, code-barres, étiquette, allergènes et comparaison de produits.')}</p><button class="btn btn-lime" data-module-buy="scanner">${Billing.trialDays() ? L('Commencer mes {n} jours gratuits', { n: Billing.trialDays() }) : L('Activer ce module')}</button></div>`;
   }
@@ -7428,10 +7461,14 @@ function render() {
       .replace('<div class="mobile-app', '<div class="in-app mobile-app');
   } else if (modHere && html.includes('</header>')) html = html.replace(/<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, `</header>${moduleBar(modHere.id)}`);
   // Visitors without free minutes left see each app behind a blur, with the trial box on top.
-  const locked = !fullAccess() && modHere && !['plans', 'paywall', 'upgrade'].includes(route) && !(modHere.id === 'scanner' && freeScansLeft() > 0);
+  const locked = !fullAccess() && modHere && !['plans', 'paywall', 'upgrade'].includes(route) && modHere.id !== 'scanner';
   if (locked) html = html.replace('<div class="screen', '<div inert aria-hidden="true" class="locked-blur screen').replace('<div class="in-app mobile-app', '<div class="in-app locked-app mobile-app') + lockOverlay(modHere);
   const noFab = state.premium || locked || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
+  // Paywall: the floating "Start" bar appears only once the main button has scrolled out of view.
+  const pwTop = $('.pw-cta-top'); const pwBar = $('.pw-bar');
+  if (pwTop && pwBar && 'IntersectionObserver' in window) new IntersectionObserver(([e]) => pwBar.classList.toggle('show', !e.isIntersecting && e.boundingClientRect.top < 0)).observe(pwTop);
+  else pwBar?.classList.add('show');
   a11yPass(app);
   const entered = window.__npLastRoute !== route;
   if (entered) {
@@ -7507,8 +7544,7 @@ function bind() {
     const button = event.target.closest('button, [role="button"]');
     if (!button) return;
 
-    const freeScanTap = (button.dataset.openAdd !== undefined || ['photo', 'text', 'label', 'recent'].includes(button.dataset.addTab)) && canScan();
-    if (!fullAccess() && !freeScanTap && freeScanLimit() && (button.dataset.openAdd !== undefined || ['photo', 'text', 'label'].includes(button.dataset.addTab))) return freeScansOut();
+    const freeScanTap = button.dataset.openAdd !== undefined || ['photo', 'text', 'label', 'recent', 'barcode'].includes(button.dataset.addTab);
     if (!fullAccess() && !freeScanTap && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
       track('PaywallFromFeature', { feature: PREMIUM_ACTIONS.find((key) => button.dataset[key] !== undefined) });
       selectedTier = moduleForRoute()?.id || (button.dataset.openAdd !== undefined || button.dataset.addTab ? 'scanner' : 'complete');
@@ -8062,7 +8098,7 @@ function bind() {
     }
     if (button.dataset.track) return startQuiz(button.dataset.track);
 
-    if (button.dataset.openAdd !== undefined) return state.premium || !freeScanLimit() || canScan() ? openAdd(state.meals.length >= 2 ? 'recent' : 'photo') : freeScansOut();
+    if (button.dataset.openAdd !== undefined) return openAdd(state.meals.length >= 2 ? 'recent' : canScan() ? 'photo' : 'barcode');
     if (button.dataset.addTab) return openAdd(button.dataset.addTab);
     if (button.dataset.water) {
       const key = todayKey();

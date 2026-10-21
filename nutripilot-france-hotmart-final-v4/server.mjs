@@ -1677,7 +1677,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
-        version: '10.0.0',
+        version: '11.0.0',
         brand: BRAND_NAME,
         ai,
         email,
@@ -1879,6 +1879,12 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/support' && req.method === 'POST') {
       if (!rateLimit(`support:${clientIp(req)}`, 25, 60 * 60 * 1000)) return send(res, 429, { error: 'Trop de messages. Écrivez-nous par e-mail.' });
       return send(res, 200, await support(await readJson(req)));
+    }
+
+    // Barcodes are free for everyone (Open Food Facts, no AI cost), with a rate limit.
+    if (url.pathname === '/api/barcode' && req.method === 'GET' && !(await premiumIdentity(req))) {
+      if (!rateLimit(`barcode:${clientIp(req)}`, 60, 60 * 60 * 1000)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
+      return send(res, 200, await barcode(url.searchParams.get('code') || ''));
     }
 
     // Visitors: a few free meal analyses (photo or text) before choosing a plan.
