@@ -2602,3 +2602,35 @@ html.cosmos .head-app{color:var(--mcl,#EEF4F0)}
 html.cosmos .pw-period,html.cosmos .pw-plan{background:rgba(255,255,255,.04)}
 html.cosmos :is(.pw-period,.pw-plan).on{border-color:var(--lime);background:linear-gradient(160deg,rgba(201,255,59,.14),rgba(22,198,240,.06) 60%,rgba(125,92,255,.08));box-shadow:0 0 0 4px rgba(201,255,59,.08),0 20px 50px -24px rgba(201,255,59,.45)}
 html.cosmos .pw-period.on .pwp-radio{border-color:var(--lime)}
+
+/* ================= v15 HUD — concept details on every screen ================= */
+html.cosmos{--hud:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace}
+/* titles: luminous gradient type */
+html.cosmos :is(.screen-title,.mx-hero h1,.hub-hero h1,.pw-hero h1,.access-hero h1,.md-head h2){background:linear-gradient(100deg,#FFFFFF 0%,#F2FFD6 45%,#C9FF3B 120%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#fff}
+/* section labels with a glowing tick */
+html.cosmos :is(.section-label h3,.screen>h2,.screen>h3){display:flex;align-items:center;gap:9px}
+html.cosmos :is(.section-label h3,.screen>h2,.screen>h3)::before{content:"";width:4px;height:1em;border-radius:3px;background:linear-gradient(180deg,var(--lime),var(--cy));box-shadow:0 0 10px rgba(201,255,59,.7);flex:0 0 auto}
+/* HUD data type: times, dates, status and small caps labels */
+html.cosmos :is(.md-timeline time,.sync-pill,.mx-live,.head-date,.md-next small,.md-changes>small,.cp-context small,.md-badge,.at-item+small,.aura-tech>small){font-family:var(--hud);letter-spacing:.04em}
+html.cosmos .head-date{text-transform:uppercase;font-size:10.5px;color:rgba(201,255,59,.75)}
+/* key numbers glow */
+html.cosmos :is(.ring-center strong,.hero-number,.og-num,.compact-total strong,.settings-goal b,.pf-stats b,.progress-hero b,.mx-metrics b,[data-count]){text-shadow:0 0 24px rgba(201,255,59,.28);font-variant-numeric:tabular-nums}
+/* corner brackets on the next-step panel (targeting reticle) */
+html.cosmos .md-next{position:relative}
+html.cosmos .md-next::before{content:"";position:absolute;inset:6px;pointer-events:none;border-radius:14px;background:
+  linear-gradient(var(--lime),var(--lime)) top left/14px 1.5px no-repeat,linear-gradient(var(--lime),var(--lime)) top left/1.5px 14px no-repeat,
+  linear-gradient(var(--lime),var(--lime)) top right/14px 1.5px no-repeat,linear-gradient(var(--lime),var(--lime)) top right/1.5px 14px no-repeat,
+  linear-gradient(var(--cy),var(--cy)) bottom left/14px 1.5px no-repeat,linear-gradient(var(--cy),var(--cy)) bottom left/1.5px 14px no-repeat,
+  linear-gradient(var(--cy),var(--cy)) bottom right/14px 1.5px no-repeat,linear-gradient(var(--cy),var(--cy)) bottom right/1.5px 14px no-repeat;opacity:.7}
+/* faint engineering grid behind every screen */
+html.cosmos body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%);mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%)}
+/* screens arrive with a soft focus pull */
+html.cosmos.aura:not(.aura-lite) .route-in .screen{animation:hudIn .5s var(--ease) both}
+@keyframes hudIn{from{opacity:0;filter:blur(6px);transform:translateY(8px)}to{opacity:1;filter:none;transform:none}}
+/* cards: hairline light on top edge */
+html.cosmos :is(.mini-card,.water-tile,.day-card,.recipe-card,.rc-card,.mod-card,.planner-mode,.access-benefits>div,.checkin-card,.cp-option,.pw-period){box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 40px -28px rgba(0,0,0,.9)}
+/* leftovers */
+html.cosmos .compose-meta{color:#1D2A22}
+html.cosmos .water-actions button{color:#04130A;font-weight:800}
+html.cosmos .gp-unit,html.cosmos .gp-num small{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){html.cosmos .route-in .screen{animation:none!important}}

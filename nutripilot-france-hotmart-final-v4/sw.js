@@ -1,4 +1,4 @@
-const CACHE = 'nutripilot-v36-20261021-cosmos';
+const CACHE = 'nutripilot-v37-20261021-hud';
 const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {
