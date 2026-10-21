@@ -2360,6 +2360,8 @@ function nativeKitStart() {
   if (!plat) return;
   document.documentElement.classList.add(`cap-${plat}`);
   window.NutriPilotNative = Object.assign(window.NutriPilotNative || {}, { scheduleReminders: scheduleNativeReminders });
+  // Space theme: light status bar text on the dark app (no new store build needed).
+  try { capPlugin('StatusBar')?.setStyle?.({ style: 'DARK' }); capPlugin('StatusBar')?.setBackgroundColor?.({ color: '#04080A' }); } catch {}
   // Day-by-day reminders are planned 7 days ahead: refresh them at each start (no permission prompt here).
   setTimeout(async () => { try { const perm = await capPlugin('LocalNotifications')?.checkPermissions(); if (perm?.display === 'granted') cpRescheduleReminders(); } catch {} }, 3000);
   // Android hardware back: close the open sheet first, then go back, then leave the app from the home screen.
@@ -4055,7 +4057,7 @@ function orbitGauge(p) {
 // you scroll. Everything is skipped with "reduce motion", and continuous effects stop on modest phones.
 const AURA_REDUCED = matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const AURA_LITE = AURA_REDUCED || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 3);
-document.documentElement.classList.add('aura', ...(AURA_LITE ? ['aura-lite'] : []));
+document.documentElement.classList.add('aura', 'cosmos', ...(AURA_LITE ? ['aura-lite'] : []));
 const AURA_TAP = '.btn, .md-act, .cp-chip, .nav-btn, .mx-meal, .icon-btn, .mt-chips button, .chip-retry, .app-icon, .mini-card, .plan-option';
 document.addEventListener('pointerdown', (event) => {
   if (AURA_REDUCED) return;
