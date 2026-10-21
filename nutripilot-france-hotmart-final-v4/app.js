@@ -4050,6 +4050,67 @@ function orbitGauge(p) {
     <span class="og-sat s3"><i></i>${L('Lipides')} <b>${fmt(p.fat || 55)} g</b></span>
   </div>`;
 }
+// ---- v13 Aura: light, touch and motion layer -------------------------------------------------------
+// Ripples where the finger lands, a light that follows the pointer on cards, sections that appear as
+// you scroll. Everything is skipped with "reduce motion", and continuous effects stop on modest phones.
+const AURA_REDUCED = matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const AURA_LITE = AURA_REDUCED || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 3);
+document.documentElement.classList.add('aura', ...(AURA_LITE ? ['aura-lite'] : []));
+const AURA_TAP = '.btn, .md-act, .cp-chip, .nav-btn, .mx-meal, .icon-btn, .mt-chips button, .chip-retry, .app-icon, .mini-card, .plan-option';
+document.addEventListener('pointerdown', (event) => {
+  if (AURA_REDUCED) return;
+  const el = event.target.closest?.(AURA_TAP);
+  if (!el || el.disabled) return;
+  const r = el.getBoundingClientRect();
+  const dot = document.createElement('span');
+  dot.className = 'aura-ripple';
+  const size = Math.max(r.width, r.height) * 2.2;
+  dot.style.cssText = `width:${size}px;height:${size}px;left:${event.clientX - r.left - size / 2}px;top:${event.clientY - r.top - size / 2}px`;
+  if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+  el.classList.add('aura-host');
+  el.appendChild(dot);
+  setTimeout(() => dot.remove(), 650);
+}, { passive: true });
+if (!AURA_LITE && matchMedia?.('(pointer: fine)').matches) {
+  document.addEventListener('pointermove', (event) => {
+    const card = event.target.closest?.('.myday, .mx-card, .hero-ring-card, .cp-option, .aura-spot');
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--sx', `${event.clientX - r.left}px`);
+    card.style.setProperty('--sy', `${event.clientY - r.top}px`);
+  }, { passive: true });
+}
+let auraObserver = null;
+function auraAfterRender() {
+  if (AURA_REDUCED || !('IntersectionObserver' in window)) return;
+  auraObserver?.disconnect();
+  auraObserver = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('aura-in'); auraObserver.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  $$('.mx-card, .mx-tracks, .mx-final, .aura-demo, .aura-tech').forEach((el, i) => { if (el.getBoundingClientRect().top > innerHeight * 0.9) { el.classList.add('aura-pre'); el.style.setProperty('--d', `${(i % 3) * 60}ms`); auraObserver.observe(el); } });
+}
+// Live, honest demo of the copilot for people who haven't subscribed yet: it replays what the real
+// feature does with the person's own plan (no invented results).
+function copilotDemo(meals) {
+  const lunch = meals.find((m) => m.type === 'Déjeuner') || meals[1] || meals[0];
+  if (!lunch) return '';
+  return `<section class="mx-card aura-demo" aria-label="${L('Copilote en direct')}">
+    <div class="mx-title"><span class="mx-ico m-coach">${icon('sparkle')}</span><div><small>${L('Copilote en direct')}</small><h2>${L('Votre journée change. Votre plan suit.')}</h2></div><em>${L('Exclusif')}</em></div>
+    <div class="ad-stage" aria-hidden="true">
+      <div class="ad-msg">${L('Je suis parti en retard, je déjeune au restaurant et je m’entraîne ce soir.')}</div>
+      <div class="ad-scan"><i></i><span>${L('Analyse de votre journée…')}</span></div>
+      <div class="ad-res">
+        <div class="ad-row"><b>${L('Déjeuner')}</b><span>${esc(L(lunch.name))}</span><em>→ ${L('Repas au restaurant')} · ≈ ${fmt(lunch.kcal)} kcal</em></div>
+        <div class="ad-row"><b>${L('Séance')}</b><span>18:00</span><em>→ 19:30</em></div>
+        <div class="ad-row"><b>${L('Rappels')}</b><span>${L('Les rappels d’aujourd’hui suivent les nouveaux horaires.')}</span></div>
+        <div class="ad-ok">${icon('check')} ${L('Appliqué')} · ${L('Annuler')}</div>
+      </div>
+    </div>
+    <p class="ad-note">${L('Vous choisissez, NutriPilot réorganise : repas, horaires et rappels. Vos objectifs ne bougent pas, et tout s’annule en un geste.')}</p>
+  </section>
+  <section class="aura-tech" aria-label="${L('Technologie NutriPilot')}">
+    <small>${L('Technologie NutriPilot')}</small>
+    <div class="at-grid">${[['camera', 'Vision par photo', 'Calories et macros d’une assiette'], ['scan', 'Code-barres', 'Millions de produits'], ['sparkle', 'Copilote de routine', 'Réorganise votre journée'], ['bell', 'Rappels intelligents', 'Suivent vos horaires du jour'], ['globe', '{n} langues', 'Et la cuisine de votre pays'], ['drop', 'Hors ligne', 'Votre plan reste disponible']].map(([ic, ti, sub]) => `<div class="at-item">${icon(ic)}<b>${L(ti, { n: LANGS.length })}</b><span>${L(sub)}</span></div>`).join('')}</div>
+  </section>`;
+}
 function missionScreen() {
   const p = state.profile || {};
   const proj = p.goalSet && p.weight && p.target && Number(p.target) !== Number(p.weight) ? projection(p) : null;
@@ -4094,6 +4155,8 @@ function missionScreen() {
           <ol class="mt-list">${exs.map(([id, sets, reps]) => `<li><b>${esc(exName(id))}</b><span>${sets} × ${esc(L(String(reps)))}</span></li>`).join('')}</ol>
         </div>
       </section>` : ''}
+
+      ${copilotDemo(meals)}
 
       <section class="mx-card mx-scan">
         <div class="mx-title"><span class="mx-ico m-scan">${icon('scan')}</span><div><small>${L('Scanner de repas')}</small><h2>${L('Une photo. Les calories en secondes.')}</h2></div></div>
@@ -8153,6 +8216,7 @@ function render() {
   document.documentElement.lang = lang();
   document.documentElement.dir = lang() === 'ar' ? 'rtl' : 'ltr';
   bind();
+  auraAfterRender();
   if (route === 'analyzing' && !analyzingTimer) startAnalyzing();
   if (entered || (route === 'app' && !window.__npCounted)) { runCountUps(); window.__npCounted = true; }
   if (document.querySelector('[data-tilt]')) bindTilt();

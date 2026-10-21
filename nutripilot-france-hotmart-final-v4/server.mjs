@@ -1720,7 +1720,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
-        version: '12.0.0',
+        version: '13.0.0',
         brand: BRAND_NAME,
         ai,
         email,

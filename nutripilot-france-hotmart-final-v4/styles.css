@@ -2415,3 +2415,122 @@ img,svg,video,canvas,iframe{max-width:100%}
 .cp-hist{display:grid;gap:12px}.cp-hist .md-change{padding:12px;border:1.5px solid var(--line);border-radius:16px}
 .cp-hist .md-badge.applied{background:var(--mint);color:#1F6B3A}
 @media (prefers-reduced-motion:reduce){.np-undo,.sp-dot{animation:none}}
+
+/* ================= v13 AURA — futuristic light, touch & motion layer ================= */
+@property --aura-a{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes auraSpin{to{--aura-a:360deg}}
+@keyframes auraSheen{0%,62%{transform:translateX(-120%) skewX(-18deg)}100%{transform:translateX(220%) skewX(-18deg)}}
+@keyframes auraPulse{0%,100%{box-shadow:0 10px 26px -12px rgba(160,240,30,.85),0 0 0 0 rgba(201,255,59,.0),inset 0 1px 0 rgba(255,255,255,.7)}50%{box-shadow:0 14px 34px -12px rgba(160,240,30,.95),0 0 0 6px rgba(201,255,59,.10),inset 0 1px 0 rgba(255,255,255,.7)}}
+@keyframes auraRipple{from{transform:scale(0);opacity:.45}to{transform:scale(1);opacity:0}}
+@keyframes auraRise{from{opacity:0;transform:translateY(22px) scale(.985);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+
+/* touch ripple */
+.aura-host{overflow:hidden;isolation:isolate}
+.aura-ripple{position:absolute;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,0) 62%);animation:auraRipple .62s cubic-bezier(.2,.7,.2,1) forwards;z-index:0;mix-blend-mode:soft-light}
+.btn-lime .aura-ripple,.cp-chip:not(.on) .aura-ripple,.btn-ghost .aura-ripple{background:radial-gradient(circle,rgba(10,16,13,.18),rgba(10,16,13,0) 62%);mix-blend-mode:normal}
+
+/* primary lime button: living light */
+.aura .btn-lime{position:relative;overflow:hidden;isolation:isolate;background:linear-gradient(115deg,#E6FF8A 0%,#C9FF3B 38%,#A8F21A 70%,#D4FF5C 100%);background-size:200% 100%;transition:transform .18s var(--spring),background-position .6s var(--ease),filter .2s}
+.aura .btn-lime:hover{background-position:100% 0}
+.aura .btn-lime::after{content:"";position:absolute;inset:-2px auto -2px 0;width:38%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);transform:translateX(-120%) skewX(-18deg);animation:auraSheen 4.8s ease-in-out infinite;pointer-events:none;z-index:1}
+.aura .btn-xl.btn-lime,.aura .mx-cta,.aura .pw-cta-top,.aura .scan-main{animation:auraPulse 3.2s ease-in-out infinite}
+.aura .btn-lime>*{position:relative;z-index:2}
+
+/* dark primary: hairline gradient edge */
+.aura .btn-primary{position:relative;border:1px solid transparent;background:linear-gradient(180deg,#1E2A25,#0A100D) padding-box,linear-gradient(120deg,rgba(201,255,59,.65),rgba(22,198,240,.45),rgba(125,92,255,.45)) border-box}
+.aura .btn-primary:hover{box-shadow:0 14px 30px -14px rgba(22,198,240,.45),0 0 0 4px rgba(201,255,59,.08)}
+
+/* glass buttons on dark */
+.aura .btn-glass,.aura .myday .btn-ghost{border:1px solid transparent;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.05)) padding-box,linear-gradient(130deg,rgba(201,255,59,.55),rgba(255,255,255,.12) 45%,rgba(22,198,240,.5)) border-box;-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%)}
+
+/* focus: visible, luminous */
+.aura :is(.btn,.icon-btn,.nav-btn,.md-act,.cp-chip,.mx-meal):focus-visible{outline:none;box-shadow:0 0 0 2px #0A100D,0 0 0 4px var(--lime),0 0 22px 2px rgba(201,255,59,.45)}
+
+/* aura ring on hero cards (rotating conic edge) + spotlight that follows the pointer */
+.aura :is(.myday,.hero-ring-card,.mx-hero,.aura-demo){position:relative;isolation:isolate}
+.aura :is(.myday,.hero-ring-card,.aura-demo)::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:conic-gradient(from var(--aura-a),rgba(201,255,59,.0) 0deg,rgba(201,255,59,.85) 50deg,rgba(22,198,240,.7) 120deg,rgba(125,92,255,.0) 190deg,rgba(125,92,255,.55) 280deg,rgba(201,255,59,.0) 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:auraSpin 9s linear infinite;pointer-events:none;z-index:3;opacity:.9}
+.aura :is(.myday,.mx-card,.hero-ring-card,.cp-option){background-image:radial-gradient(420px circle at var(--sx,-999px) var(--sy,-999px),rgba(201,255,59,.10),transparent 45%)}
+.aura .myday{background-color:var(--ink)}
+.aura .hero-ring-card{background-color:var(--ink)}
+.aura .mx-card{background-image:radial-gradient(420px circle at var(--sx,-999px) var(--sy,-999px),rgba(201,255,59,.10),transparent 45%),linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035))}
+.aura .cp-option{background-image:radial-gradient(380px circle at var(--sx,-999px) var(--sy,-999px),rgba(22,198,240,.08),transparent 45%)}
+
+/* my day: holographic next-step + glowing timeline */
+.aura .md-next{background:linear-gradient(135deg,rgba(201,255,59,.10),rgba(22,198,240,.06) 50%,rgba(125,92,255,.08));border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.aura .md-timeline{padding-inline-start:14px}
+.aura .md-timeline::before{content:"";position:absolute;inset-inline-start:3px;top:16px;bottom:16px;width:2px;border-radius:2px;background:linear-gradient(180deg,var(--lime),rgba(22,198,240,.6),rgba(125,92,255,.3))}
+.aura .md-timeline li{position:relative}
+.aura .md-timeline li::before{content:"";position:absolute;inset-inline-start:-15px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:#0A100D;border:2px solid rgba(255,255,255,.35)}
+.aura .md-timeline li.done::before{background:var(--lime);border-color:var(--lime);box-shadow:0 0 12px rgba(201,255,59,.8)}
+.aura .md-timeline li.out::before{border-color:#FFD27A;box-shadow:0 0 10px rgba(255,210,122,.6)}
+.aura .md-timeline li.pending:first-of-type::before,.aura .md-timeline li.next::before{border-color:var(--lime)}
+.aura .md-act{border:1px solid transparent;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03)) padding-box,linear-gradient(130deg,rgba(201,255,59,.45),rgba(255,255,255,.1) 50%,rgba(22,198,240,.4)) border-box;transition:transform .18s var(--spring),box-shadow .25s}
+.aura .md-act:hover{box-shadow:0 0 0 3px rgba(201,255,59,.08),0 8px 22px -10px rgba(201,255,59,.5)}
+.aura .sync-pill.saved{box-shadow:0 0 0 1px rgba(201,255,59,.25),0 0 14px -2px rgba(201,255,59,.35)}
+
+/* bottom nav: deep glass, glowing active state, orbiting scan button */
+.aura .bottom-nav{-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);box-shadow:0 18px 40px -18px rgba(10,16,13,.45),inset 0 1px 0 rgba(255,255,255,.5)}
+.aura .nav-btn.active:not(.center) .ico{filter:drop-shadow(0 0 6px rgba(160,240,30,.55))}
+.aura .nav-btn.center span{position:relative;box-shadow:0 10px 26px -8px rgba(22,198,240,.65),0 0 0 4px rgba(255,255,255,.65)}
+.aura .nav-btn.center span::before{content:"";position:absolute;inset:-5px;border-radius:50%;background:conic-gradient(from var(--aura-a),transparent 0 60%,rgba(201,255,59,.95) 75%,rgba(22,198,240,.9) 88%,transparent);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 2px));animation:auraSpin 2.8s linear infinite}
+
+/* icon buttons: glass */
+.aura .icon-btn{-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:transform .18s var(--spring),box-shadow .25s}
+.aura .icon-btn:hover{box-shadow:0 0 0 3px rgba(201,255,59,.18)}
+
+/* chips & options in the copilot */
+.aura .cp-chip{transition:transform .18s var(--spring),background .2s,box-shadow .25s}
+.aura .cp-chip.on{background:linear-gradient(135deg,#0A100D,#1D2622);box-shadow:0 0 0 1px rgba(201,255,59,.5),0 8px 20px -10px rgba(10,16,13,.7)}
+.aura .cp-option{transition:transform .25s var(--ease),box-shadow .3s}
+.aura .cp-option:hover{transform:translateY(-2px);box-shadow:0 20px 40px -26px rgba(10,16,13,.5)}
+.aura .cp-option:first-of-type{border-color:transparent;background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(130deg,var(--lime),var(--cy) 60%,var(--vi)) border-box}
+
+/* "AI thinking" loader */
+.aura .loader{position:relative;overflow:hidden}
+.aura .loader::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(201,255,59,.18) 50%,transparent 70%);background-size:220% 100%;animation:auraShimmer 1.6s linear infinite;pointer-events:none}
+@keyframes auraShimmer{from{background-position:120% 0}to{background-position:-120% 0}}
+
+/* scroll reveal */
+.aura-pre{opacity:0;transform:translateY(22px)}
+.aura-pre.aura-in{animation:auraRise .7s var(--ease) var(--d,0ms) both}
+
+/* copilot live demo (visitor home) */
+.aura-demo{gap:14px}
+.ad-stage{position:relative;display:grid;gap:10px;min-height:236px}
+.ad-msg{justify-self:end;max-width:86%;background:linear-gradient(135deg,var(--lime),#A8F21A);color:#0A100D;font-weight:700;font-size:.9rem;line-height:1.35;padding:11px 14px;border-radius:18px 18px 4px 18px;animation:adMsg 9s var(--ease) infinite}
+.ad-scan{display:flex;align-items:center;gap:10px;color:rgba(234,242,238,.8);font-size:.85rem;font-weight:700;animation:adScan 9s linear infinite}
+.ad-scan i{width:18px;height:18px;border-radius:50%;border:2px solid rgba(201,255,59,.25);border-top-color:var(--lime);animation:auraSpinR .8s linear infinite}
+@keyframes auraSpinR{to{transform:rotate(360deg)}}
+.ad-res{display:grid;gap:8px;animation:adRes 9s var(--ease) infinite}
+.ad-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:.84rem;color:rgba(234,242,238,.75)}
+.ad-row b{color:#fff;grid-row:span 2}
+.ad-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ad-row em{font-style:normal;color:var(--lime);font-weight:700}
+.ad-ok{justify-self:start;display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:.82rem;color:#0A100D;background:var(--lime);padding:6px 12px;border-radius:999px;box-shadow:0 0 18px rgba(201,255,59,.55)}
+.ad-ok .ico{width:15px;height:15px}
+.ad-note{margin:0;color:rgba(234,242,238,.72);font-size:.88rem;line-height:1.45}
+@keyframes adMsg{0%{opacity:0;transform:translateY(10px)}6%,92%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes adScan{0%,8%{opacity:0;height:0}12%,30%{opacity:1;height:22px}36%,100%{opacity:0;height:0}}
+@keyframes adRes{0%,34%{opacity:0;transform:translateY(12px);filter:blur(4px)}42%,92%{opacity:1;transform:none;filter:none}100%{opacity:0}}
+.aura-tech{display:grid;gap:10px;padding:4px 2px}
+.aura-tech>small{font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--lime);text-align:center}
+.at-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.at-item{display:grid;gap:2px;padding:12px;border-radius:18px;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);color:rgba(234,242,238,.7);font-size:.78rem}
+.at-item .ico{width:20px;height:20px;color:var(--lime);margin-bottom:4px;filter:drop-shadow(0 0 6px rgba(201,255,59,.5))}
+.at-item b{color:#fff;font-size:.9rem}
+@media (min-width:700px){.at-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* light mode for modest devices / reduced motion: keep the look, stop the loops */
+.aura-lite .btn-lime::after,.aura-lite :is(.myday,.hero-ring-card,.aura-demo)::after,.aura-lite .nav-btn.center span::before{animation:none}
+.aura-lite .btn-xl.btn-lime,.aura-lite .mx-cta,.aura-lite .pw-cta-top,.aura-lite .scan-main{animation:none}
+@media (prefers-reduced-motion:reduce){
+  .aura .btn-lime::after,.aura :is(.myday,.hero-ring-card,.aura-demo)::after,.aura .nav-btn.center span::before,.aura .loader::after{animation:none!important}
+  .aura .btn-lime,.aura .mx-cta{animation:none!important}
+  .ad-msg,.ad-res{animation:none!important;opacity:1!important;transform:none!important;filter:none!important}
+  .ad-scan{display:none}
+  .aura-pre{opacity:1;transform:none}
+}
+/* v13 fixes: opaque base under gradient edges (the edge must not bleed into the fill) */
+.aura .btn-glass,.aura .myday .btn-ghost{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04)) padding-box,linear-gradient(#131C18,#131C18) padding-box,linear-gradient(130deg,rgba(201,255,59,.6),rgba(255,255,255,.12) 45%,rgba(22,198,240,.55)) border-box}
+.aura .md-act{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.02)) padding-box,linear-gradient(#111915,#111915) padding-box,linear-gradient(130deg,rgba(201,255,59,.5),rgba(255,255,255,.1) 50%,rgba(22,198,240,.45)) border-box}
+.ad-row span{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
