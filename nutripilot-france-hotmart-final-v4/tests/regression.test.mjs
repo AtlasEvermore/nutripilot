@@ -9,6 +9,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import vm from 'node:vm';
+import { checkApplication } from '../ops/smoke.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const appSource = await fs.readFile(path.join(root, 'app.js'), 'utf8');
@@ -19,7 +20,7 @@ async function freePort() {
   const s = net.createServer(); s.listen(0, '127.0.0.1'); await once(s, 'listening');
   const port = s.address().port; await new Promise(r => s.close(r)); return port;
 }
-async function fixture(t, { ai = true, globalLimit = 0 } = {}) {
+async function fixture(t, { ai = true, globalLimit = 0, hotmart = '' } = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'np-regression-'));
   const requests = []; let mode = 'meal'; let calls = 0;
   const provider = http.createServer(async (req, res) => {
@@ -27,7 +28,8 @@ async function fixture(t, { ai = true, globalLimit = 0 } = {}) {
     const body = raw ? JSON.parse(raw) : {}; requests.push(body); calls++;
     res.setHeader('Content-Type', 'application/json');
     if (req.url === '/fx') return res.end(JSON.stringify({ rates: { USD: 1, BRL: 5 } }));
-    if (mode === 'failure') { res.statusCode = 401; return res.end(JSON.stringify({ error: { message: 'provider-test-secret-must-not-leak' } })); }
+    if (mode === 'failure') { res.statusCode = 400; return res.end(JSON.stringify({ error: { message: 'provider-test-secret-must-not-leak' } })); }
+    if (mode === 'quota') { res.statusCode = 429; return res.end(JSON.stringify({ error: { code: 'insufficient_quota', message: 'You have no credits remaining.' } })); }
     if (mode === 'retry' && calls === 1) { res.statusCode = 503; return res.end('{}'); }
     const result = mode === 'coach' ? 'Inclua uma fonte de proteína no jantar.' : mode === 'empty' ? '{}' : JSON.stringify(meal);
     res.end(JSON.stringify({ output: [{ content: [{ type: 'output_text', text: result }] }] }));
@@ -40,7 +42,7 @@ async function fixture(t, { ai = true, globalLimit = 0 } = {}) {
     ...process.env, NODE_ENV: 'production', PORT: String(port), APP_URL: url, DATA_DIR: dir,
     ACCESS_TOKEN_SECRET: secret, OPENAI_API_KEY: ai ? 'test-key' : '', OPENAI_MODEL: ai ? 'test-model' : '',
     OPENAI_BASE_URL: aiUrl, FX_URL: `${aiUrl}/fx`, FREE_SCANS: '3', AI_GLOBAL_DAILY_LIMIT: String(globalLimit),
-    RESEND_API_KEY: '', REVENUECAT_SECRET_KEY: '', HOTMART_HOTTOK: '',
+    RESEND_API_KEY: '', REVENUECAT_SECRET_KEY: '', HOTMART_HOTTOK: hotmart,
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let logs = ''; child.stdout.on('data', x => { logs += x; }); child.stderr.on('data', x => { logs += x; });
   t.after(async () => {
@@ -210,4 +212,61 @@ test('Offline service worker never substitutes HTML for a missing script', async
   assert.equal((await result).type, 'error');
   handlers.fetch({ request: { url: 'https://test.invalid/', method: 'GET', mode: 'navigate' }, respondWith: p => { result = p; } });
   assert.equal(await (await result).text(), '<html>offline</html>');
+});
+
+
+test('Exhausted AI credit is not retried; the circuit pauses calls and refunds scans', async t => {
+  const f = await fixture(t); f.mode('quota');
+  assert.equal((await f.post('/api/analyze', { image })).status, 502);
+  assert.equal(f.requests.length, 1);
+  assert.equal((await f.post('/api/analyze', { image })).status, 503);
+  assert.equal(f.requests.length, 1);
+  const health = await (await fetch(f.url + '/api/health')).json();
+  assert.equal(health.aiProvider.status, 'unavailable');
+  assert.equal(health.backups.enabled, false);
+  const quota = JSON.parse(await fs.readFile(path.join(f.dir, 'free-scans.json')));
+  assert.equal(Object.values(quota.devices)[0], 0);
+});
+
+test('Corrupted purchases or user data fail without erasing or treating them as empty', async t => {
+  const f = await fixture(t);
+  await fs.writeFile(path.join(f.dir, 'entitlements.json'), '{broken');
+  assert.equal((await f.post('/api/user/state', { state: {} }, { premium: true })).status, 500);
+  assert.equal(await fs.readFile(path.join(f.dir, 'entitlements.json'), 'utf8'), '{broken');
+  assert.equal((await fetch(f.url + '/api/health')).status, 503);
+  await fs.writeFile(path.join(f.dir, 'entitlements.json'), JSON.stringify({ 'tester@example.invalid': { status: 'active' } }));
+  const name = crypto.createHash('sha256').update('tester@example.invalid').digest('hex') + '.json';
+  await fs.writeFile(path.join(f.dir, 'users', name), '{broken');
+  assert.equal((await fetch(f.url + '/api/user/state', { headers: { Authorization: `Bearer ${f.token}` } })).status, 500);
+});
+
+
+test('Release verification checks public routes and distinguishes unconfigured backup protection', async t => {
+  const f = await fixture(t);
+  const result = await checkApplication(f.url, { expectedVersion: '18.0.2' });
+  assert.deepEqual(result.issues, []);
+  const operational = await checkApplication(f.url, { expectedVersion: '18.0.2', operational: true });
+  assert.ok(operational.issues.includes('Independent backup is not verified'));
+  const wrong = await checkApplication(f.url, { expectedVersion: 'old-version' });
+  assert.match(wrong.issues.join(' '), /expected old-version/);
+});
+
+
+test('Hotmart authorization, purchase, duplicate, cancellation and refund preserve access rules', async t => {
+  const f = await fixture(t, { hotmart: 'isolated-test-webhook-secret' });
+  const payload = event => ({ event, data: { buyer: { email: 'tester@example.invalid' }, purchase: { transaction: 'TEST-ORDER', offer: { code: 'r3ueswug' } } } });
+  const hook = async (event, authorized = true) => {
+    const res = await fetch(f.url + '/api/hotmart/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(authorized ? { 'x-hotmart-hottok': 'isolated-test-webhook-secret' } : {}) }, body: JSON.stringify(payload(event)) });
+    return { status: res.status, data: await res.json() };
+  };
+  const entitlements = async () => JSON.parse(await fs.readFile(path.join(f.dir, 'entitlements.json')))['tester@example.invalid'];
+  assert.equal((await hook('PURCHASE_APPROVED', false)).status, 401);
+  assert.equal((await hook('PURCHASE_APPROVED')).data.action, 'granted');
+  const approved = await entitlements(); assert.equal(approved.status, 'active'); assert.equal(approved.plan, 'monthly');
+  assert.equal((await hook('PURCHASE_APPROVED')).data.action, 'granted');
+  assert.equal((await hook('SUBSCRIPTION_CANCELLATION')).data.action, 'cancel_at_period_end');
+  assert.equal((await entitlements()).status, 'active');
+  assert.equal((await hook('PURCHASE_REFUNDED')).data.action, 'revoked');
+  assert.equal((await entitlements()).status, 'revoked');
+  assert.equal((await f.post('/api/coach', { message: 'Oi' }, { premium: true })).status, 401);
 });

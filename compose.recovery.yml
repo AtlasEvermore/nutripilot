@@ -1,0 +1,24 @@
+# Existing restored data only: create it with backup-cli.mjs restore before starting.
+services:
+  nutripilot:
+    image: ${NUTRIPILOT_IMAGE:?Set an immutable GHCR image tag or digest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: '8080'
+      DATA_DIR: /data
+    ports:
+      - '127.0.0.1:8080:8080'
+    volumes:
+      - type: bind
+        source: ${NUTRIPILOT_DATA_DIR:?Set the absolute restored data directory}
+        target: /data
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
