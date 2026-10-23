@@ -1,4 +1,4 @@
-const CACHE = 'nutripilot-v40-20261021-score';
+const CACHE = 'nutripilot-v41-20261023-reliability';
 const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {
@@ -23,7 +23,7 @@ self.addEventListener('fetch', (event) => {
       // Fresh files when the network answers quickly (304 thanks to the ETag); the saved copy after 2.5 s or offline.
       new Promise((resolve) => {
         let done = false;
-        const fallback = () => caches.match(event.request).then((cached) => cached || caches.match('/index.html'));
+        const fallback = () => caches.match(event.request).then((cached) => cached || (event.request.mode === 'navigate' ? caches.match('/index.html') : undefined));
         const timer = setTimeout(() => fallback().then((cached) => { if (cached && !done) { done = true; resolve(cached); } }), 2500);
         fetch(event.request, { cache: 'no-cache' })
           .then((response) => {
