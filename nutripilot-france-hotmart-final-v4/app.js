@@ -6641,6 +6641,8 @@ const COACH_TABS = [
   ['menopause', 'Ménopause', 'flower', ['Que manger contre les bouffées de chaleur ?', 'Pourquoi mon ventre change ?', 'Quels exercices pour mes os ?', 'Analyse mon journal.']],
 ];
 let coachMode = '';
+let coachDraft = '';
+let coachRequestId = 0;
 function coachContext() {
   if (state.coachUsesData === false) return {};
   const p = state.profile || {};
@@ -6729,7 +6731,7 @@ function coachScreen() {
       <div class="tab-scroll mod-tabs coach-modes">${COACH_TABS.map(([k, label, ico]) => `<button class="${coachMode === k ? 'active' : ''}" data-coach-mode="${k}">${icon(ico)} ${L(label)}</button>`).join('')}</div>
       <div class="quick-prompts">${tab[3].map((q) => `<button data-quick-coach="${esc(L(q))}">${esc(L(q))}</button>`).join('')}</div>
       <div class="chat" id="chat" aria-live="polite">${msgs.length ? msgs.map((m, i) => m.pending ? `<div class="bubble ai typing" role="status" aria-label="${L('Le coach écrit…')}"><i></i><i></i><i></i></div>` : `<div class="bubble ${m.role === 'user' ? 'user' : 'ai'}${m.kind ? ' note' : ''}">${coachText(m.text)}${m.kind === 'local' && m.q ? `<button class="chip-retry" data-coach-retry="${state.coach.length - msgs.length + i}">↻ ${L('Réessayer')}</button>` : ''}${m.kind === 'auth' ? (Billing.native() ? `<button class="chip-retry" data-restore>${L('Restaurer mes achats')}</button>` : `<button class="chip-retry" data-go="access">${L('Se connecter')}</button>`) : ''}${m.role !== 'user' && !m.kind && i === msgs.length - 1 && state.premium ? `<span class="fb"><button data-coach-fb="up" aria-label="${L('Utile')}">👍</button><button data-coach-fb="down" aria-label="${L('Pas adapté')}">👎</button></span>` : ''}</div>`).join('') : `<div class="bubble ai">${L('Bonjour {name} 👋 Je connais votre objectif, votre journée et vos préférences. Posez votre question ou choisissez une idée ci-dessus.', { name: esc(p.name || '') })}</div>`}</div>
-      <div class="chatbar"><input id="coach-input" placeholder="${L('Posez votre question…')}" enterkeyhint="send"><button class="btn btn-primary" data-coach-send aria-label="${L('Envoyer')}"><span class="flip-rtl">→</span></button></div>
+      <div class="chatbar"><input id="coach-input" value="${esc(coachDraft)}" placeholder="${L('Posez votre question…')}" enterkeyhint="send"><button class="btn btn-primary" data-coach-send ${coachBusy ? 'disabled' : ''} aria-label="${L('Envoyer')}"><span class="flip-rtl">→</span></button></div>
       <div class="coach-ctl"><label><input type="checkbox" id="coach-data" ${state.coachUsesData === false ? '' : 'checked'}> ${L('Utiliser mes données (repas, séances, sommeil) pour personnaliser')}</label>${state.coach.length ? `<button class="link-btn" data-coach-clear>${L('Effacer la conversation')}</button>` : ''}</div>
       <div class="fine">${L('Réponses générées automatiquement : elles peuvent contenir des erreurs. Le coach ne pose pas de diagnostic et ne prescrit ni médicament ni hormone. En cas de symptôme ou de question médicale, consultez un professionnel.')}</div>
     </div>
@@ -7929,24 +7931,28 @@ function planRecipeSheet() {
 }
 
 async function analyze(body) {
-  modal.loading = true;
+  const target = modal;
+  if (!target || target.loading) return;
+  target.loading = true;
   renderModal();
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 60_000);
   try {
-    if (!state.premium && !canScan()) { modal.loading = false; return freeScansOut(); }
-    const response = await apiFetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(state.premium ? {} : { 'X-NP-Device': deviceId() }) }, body: JSON.stringify(body) });
+    if (!state.premium && !canScan()) { target.loading = false; if (modal === target) freeScansOut(); return; }
+    const response = await apiFetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(state.premium ? {} : { 'X-NP-Device': deviceId() }) }, body: JSON.stringify(body), signal: ctl.signal });
     const data = await response.json();
     if (Number.isFinite(Number(data.freeLeft))) { state.freeScansUsed = Math.max(0, freeScanLimit() - Number(data.freeLeft)); saveState(false); }
-    if (response.status === 402 || data.code === 'free_limit') { modal.loading = false; return freeScansOut(); }
-    if (!response.ok) throw new Error(data.error);
-    modal.loading = false;
-    modal.result = data;
+    if (response.status === 402 || data.code === 'free_limit') { target.loading = false; if (modal === target) freeScansOut(); return; }
+    if (!response.ok) throw new Error(data.error || 'Le service IA est temporairement indisponible.');
+    target.result = data;
     pushScan(data, body.mode || (body.image ? 'photo' : 'text'));
-    renderModal();
     track('MealAnalyzed', { source: data.source || 'unknown' });
   } catch (error) {
-    modal.loading = false;
-    renderModal();
-    toast(error.message);
+    toast(error.name === 'AbortError' ? 'Le service IA est temporairement indisponible.' : error.message);
+  } finally {
+    clearTimeout(timer);
+    target.loading = false;
+    if (modal === target) renderModal();
   }
 }
 
@@ -7955,13 +7961,22 @@ function fileToData(file, max = 1600, quality = 0.82) {
     const image = new Image();
     const url = URL.createObjectURL(file);
     image.onload = () => {
-      const scale = Math.min(1, max / Math.max(image.width, image.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(image.width * scale);
-      canvas.height = Math.round(image.height * scale);
-      canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      try {
+        const scale = Math.min(1, max / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(image.width * scale);
+        canvas.height = Math.round(image.height * scale);
+        const context = canvas.getContext('2d');
+        if (!context || !canvas.width || !canvas.height) throw new Error('Impossible de lire cette image.');
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const data = canvas.toDataURL('image/jpeg', quality);
+        if (!data.startsWith('data:image/jpeg;base64,')) throw new Error('Impossible de lire cette image.');
+        resolve(data);
+      } catch (error) {
+        reject(new Error('Impossible de lire cette image.'));
+      } finally {
+        URL.revokeObjectURL(url);
+      }
     };
     image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Impossible de lire cette image.')); };
     image.src = url;
@@ -8069,6 +8084,8 @@ async function sendCoach(prefill = '', { retryOf = null } = {}) {
   const message = (prefill || input?.value || '').trim();
   if (!message || coachBusy) return;
   coachBusy = true;
+  const requestId = ++coachRequestId;
+  if (!prefill) coachDraft = '';
   if (retryOf != null) state.coach = state.coach.filter((m, i) => i !== retryOf);
   else state.coach.push({ role: 'user', text: message });
   if (state.coach.length > 40) state.coach = state.coach.slice(-40);
@@ -8076,12 +8093,13 @@ async function sendCoach(prefill = '', { retryOf = null } = {}) {
   saveState(false);
   render();
   coachScroll();
-  const finish = (entry) => { coachBusy = false; state.coach = state.coach.filter((m) => !m.pending); state.coach.push({ role: 'ai', ...entry }); saveState(); render(); coachScroll(); };
+  const finish = (entry) => { if (requestId !== coachRequestId) return; coachBusy = false; state.coach = state.coach.filter((m) => !m.pending); state.coach.push({ role: 'ai', ...entry }); saveState(); render(); coachScroll(); };
   const t = totals();
   const p = state.profile;
   // Only real coach answers go back as history (not offline notes), so the conversation stays coherent.
-  const history = state.coach.filter((m) => !m.pending && !m.kind).slice(-11, -1).map((m) => ({ role: m.role, text: m.text }));
-  const body = JSON.stringify({ message, mode: coachMode || 'nutrition', history, context: coachContext(), goal: p.goal, dailyKcal: p.dailyKcal, remaining: Math.max(0, p.dailyKcal - t.kcal), proteinLeft: Math.max(0, p.protein - t.protein), diet: p.diet, allergies: p.allergies, week: weeklyData().map((d) => ({ day: d.day, kcal: d.kcal, protein: d.protein })), weightTrend: (state.weights || []).slice(-12) });
+  const history = state.coach.filter((m) => !m.pending && !m.kind).slice(-11, -1).map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', text: m.text }));
+  const personal = state.coachUsesData === false ? {} : { context: coachContext(), goal: p.goal, dailyKcal: p.dailyKcal, remaining: Math.max(0, p.dailyKcal - t.kcal), proteinLeft: Math.max(0, p.protein - t.protein), diet: p.diet, allergies: p.allergies, week: weeklyData().map((d) => ({ day: d.day, kcal: d.kcal, protein: d.protein })), weightTrend: (state.weights || []).slice(-12) };
+  const body = JSON.stringify({ message, mode: coachMode || 'nutrition', history, ...personal });
   let status = 0;
   let data = null;
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -8096,11 +8114,12 @@ async function sendCoach(prefill = '', { retryOf = null } = {}) {
       if (response.ok || status === 401 || status === 402 || status === 429 || status === 400) break;
     } catch (error) {
       clearTimeout(timer);
-      if (error instanceof AiConsentError) { coachBusy = false; state.coach = state.coach.filter((m) => !m.pending); saveState(false); render(); return toast(error.message); }
+      if (error instanceof AiConsentError) { if (requestId !== coachRequestId) return; coachBusy = false; state.coach = state.coach.filter((m) => !m.pending); saveState(false); render(); return toast(error.message); }
       status = 0;
     }
     if (attempt === 0) await new Promise((r) => setTimeout(r, 1200));
   }
+  if (requestId !== coachRequestId) return;
   if (data?.answer) { finish({ text: data.answer }); return track('CoachAnswer', { source: coachMode }); }
   track('CoachAnswer', { source: coachMode, local: true, status });
   if (status === 401 || status === 402) return finish({ kind: 'auth', text: L('Votre session a expiré. Reconnectez-vous pour continuer avec le coach : vos données restent sur votre téléphone.') });
@@ -8317,6 +8336,7 @@ function bind() {
   app.oninput = (event) => {
     if (event.target.id === 'snd-vol') { SleepAudio.setVolume(Number(event.target.value)); return; }
     const el = event.target;
+    if (el.id === 'coach-input') coachDraft = el.value;
     if (el.id === 'goal-range' && goalDraft) {
       goalDraft.target = Number(el.value);
       const t = $('#goal-target'); if (t) t.value = goalDraft.target;
@@ -8421,7 +8441,7 @@ function bind() {
     if (button.dataset.retryRender !== undefined) return render();
     if (button.dataset.coachMode) { coachMode = button.dataset.coachMode; return render(); }
     if (button.dataset.coachRetry !== undefined) { const i = +button.dataset.coachRetry; const m = state.coach[i]; if (m?.q) return sendCoach(m.q, { retryOf: i }); return; }
-    if (button.dataset.coachClear !== undefined) { if (!confirmSoft(button)) return; state.coach = []; saveState(); return render(); }
+    if (button.dataset.coachClear !== undefined) { if (!confirmSoft(button)) return; coachRequestId += 1; coachBusy = false; coachDraft = ''; state.coach = []; saveState(); return render(); }
     if (button.dataset.coachFb) {
       track('CoachFeedback', { source: button.dataset.coachFb });
       if (button.dataset.coachFb === 'up') { button.parentElement.innerHTML = `<small>${L('Merci !')}</small>`; return; }
@@ -9340,9 +9360,12 @@ function bindModal(root) {
       if (!selected) return;
       if (!/^image\/(?:jpeg|png|webp)$/i.test(selected.type || '')) return toast('Utilisez une image JPEG, PNG ou WebP.');
       if (selected.size > 7_000_000) return toast('Image trop lourde (7 Mo max).');
+      const target = modal;
+      const mode = target?.tab === 'label' ? 'label' : 'meal';
       try {
         const image = await fileToData(selected, 1600, 0.82);
-        await analyze({ image, mode: modal.tab === 'label' ? 'label' : 'meal' });
+        if (modal !== target) return;
+        await analyze({ image, mode });
       } catch (error) { toast(error.message); }
     };
   }

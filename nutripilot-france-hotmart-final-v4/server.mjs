@@ -79,6 +79,8 @@ const REVOKED_EVENTS = new Set(['PURCHASE_REFUNDED', 'PURCHASE_CHARGEBACK', 'PUR
 const STATIC_FILES = new Set([
   '/index.html',
   '/app.js',
+  '/vendor/barcode/barcode-detector.js',
+  '/vendor/barcode/zxing_reader.wasm',
   ...['en', 'es', 'pt', 'de', 'it', 'nl', 'pl', 'tr', 'ja', 'ko', 'zh', 'ar', 'id'].map((code) => `/i18n/${code}.js`),
   '/food.js',
   '/exercises.js',
@@ -196,7 +198,9 @@ async function readJson(req) {
   const raw = await readRaw(req);
   if (!raw) return {};
   try {
-    return JSON.parse(raw);
+    const body = JSON.parse(raw);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('object required');
+    return body;
   } catch {
     const e = new Error('JSON invalide');
     e.statusCode = 400;
@@ -304,11 +308,14 @@ function useFreeScan(device, ip) {
     if (used >= FREE_SCANS || net.count >= FREE_SCANS * 10) return { ok: false, left: Math.max(0, FREE_SCANS - used) };
     all.devices[d] = used + 1; net.count += 1; all.ips[n] = net;
     for (const [k, v] of Object.entries(all.ips)) if (v.day !== day) delete all.ips[k];
-    return { ok: true, left: FREE_SCANS - used - 1, d };
+    return { ok: true, left: FREE_SCANS - used - 1, d, n, day };
   });
 }
-function refundFreeScan(d) {
-  return mutateFree((all) => { if (all.devices[d] > 0) all.devices[d] -= 1; });
+function refundFreeScan({ d, n, day }) {
+  return mutateFree((all) => {
+    if (all.devices[d] > 0) all.devices[d] -= 1;
+    if (all.ips[n]?.day === day && all.ips[n].count > 0) all.ips[n].count -= 1;
+  });
 }
 
 // Pending web sign-ins (state → nonce), kept 10 minutes.
@@ -737,7 +744,11 @@ async function aiAnalyze({ text = '', image = '', mode = 'meal' }) {
     throw publicError('Format d’image non pris en charge.');
   }
   if (imageValue.length > 10_500_000) throw publicError('Image trop volumineuse.', 413);
-  if (!OPENAI_API_KEY || !OPENAI_MODEL) return localAnalyze(text);
+  if (!safeText(text, 2000) && !imageValue) throw publicError('Ajoutez une photo ou décrivez votre repas.');
+  if (!OPENAI_API_KEY || !OPENAI_MODEL) {
+    if (imageValue) throw publicError('Le service IA est temporairement indisponible.', 503);
+    return localAnalyze(text);
+  }
   const prompt = `Tu es le moteur d'analyse alimentaire de NutriPilot, application française de suivi de perte de poids. Mode: ${safeText(mode, 30)}.
 Analyse avec prudence. Une photo ne permet jamais de peser précisément un aliment: estime les grammes, donne une incertitude réaliste et rappelle que l'utilisateur peut corriger.
 Retourne UNIQUEMENT un JSON valide au format:
@@ -747,6 +758,7 @@ Texte utilisateur: ${safeText(text || '(aucun)', 2000)}`;
   const content = [{ type: 'input_text', text: prompt }];
   if (imageValue) content.push({ type: 'input_image', image_url: imageValue, detail: 'high' });
   const raw = await callAI([{ role: 'user', content }], 2200);
+  if (!raw || !Array.isArray(raw.foods) || !raw.foods.length) throw publicError('La réponse IA n’a pas pu être interprétée. Réessayez.', 502);
   return normalizeAnalysis({ ...raw, source: 'ai' });
 }
 
@@ -1727,7 +1739,8 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
-        version: '18.0.0',
+        version: '18.0.1',
+        revision: process.env.APP_REVISION || 'unknown',
         brand: BRAND_NAME,
         ai,
         email,
@@ -1944,12 +1957,11 @@ const server = http.createServer(async (req, res) => {
       if (device.length < 8) return send(res, 401, { error: 'Accès Premium requis. Connectez-vous avec l’e-mail utilisé lors de votre achat.' });
       if (!aiRateOk(req, `free:${device}`)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
       const body = await readJson(req);
-      if (!aiGlobalOk()) return send(res, 429, { error: 'Service très demandé en ce moment. Réessayez dans un instant.' });
       const q = await useFreeScan(device, clientIp(req));
       if (!q.ok) return send(res, 402, { error: 'Vos analyses gratuites sont utilisées. Choisissez une formule pour continuer.', code: 'free_limit', freeLeft: 0 });
       try {
         return send(res, 200, { ...(await aiAnalyze(body)), freeLeft: q.left });
-      } catch (error) { await refundFreeScan(q.d); throw error; }
+      } catch (error) { await refundFreeScan(q); throw error; }
     }
 
     if (url.pathname.startsWith('/api/')) {

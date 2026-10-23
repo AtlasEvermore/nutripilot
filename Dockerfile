@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY nutripilot-france-hotmart-final-v4/ ./
 
+ARG APP_REVISION=unknown
+ENV APP_REVISION=$APP_REVISION
 ENV NODE_ENV=production
 
 RUN npm install --omit=dev
