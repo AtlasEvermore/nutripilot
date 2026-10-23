@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { startBackups } from './ops/backup.mjs';
 import { AsyncLocalStorage } from 'node:async_hooks';
 const requestLang = new AsyncLocalStorage();
 import fs from 'node:fs/promises';
@@ -19,6 +20,8 @@ const OPENAI_BASE_URL = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/
 // Reasoning models (o1/o3/o4, gpt-5…) count hidden reasoning in max_output_tokens: they need more room and a low effort.
 const REASONING_MODEL = /^(o\d|gpt-5)/i.test(OPENAI_MODEL);
 let reasoningParamOk = true;
+const aiRuntime = { status: 'unchecked', checkedAt: null };
+let aiBlockedUntil = 0;
 // Exchange rates per 1 USD for showing prices in each buyer's currency (stores charge in local currency).
 const FX_URL = process.env.FX_URL || 'https://open.er-api.com/v6/latest/USD';
 let fx = { rates: null, date: '', fetchedAt: 0 };
@@ -260,25 +263,33 @@ async function ensureData() {
   await fs.mkdir(USERS_DIR, { recursive: true });
   try {
     await fs.access(ENTITLEMENTS_FILE);
-  } catch {
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
     await atomicWriteJson(ENTITLEMENTS_FILE, {});
   }
 }
 
 async function atomicWriteJson(file, data) {
   await fs.mkdir(path.dirname(file), { recursive: true });
-  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(data, null, 2), 'utf8');
-  await fs.rename(tmp, file);
+  const tmp = `${file}.${process.pid}.${crypto.randomBytes(12).toString('hex')}.tmp`;
+  let handle;
+  try {
+    handle = await fs.open(tmp, 'wx', 0o600);
+    await handle.writeFile(JSON.stringify(data, null, 2), 'utf8');
+    await handle.sync();
+    await handle.close(); handle = null;
+    await fs.rename(tmp, file);
+  } finally {
+    if (handle) await handle.close();
+    await fs.rm(tmp, { force: true });
+  }
 }
 
 async function loadEntitlements() {
   await ensureData();
-  try {
-    return JSON.parse(await fs.readFile(ENTITLEMENTS_FILE, 'utf8'));
-  } catch {
-    return {};
-  }
+  const data = JSON.parse(await fs.readFile(ENTITLEMENTS_FILE, 'utf8'));
+  if (!data || Array.isArray(data) || typeof data !== 'object') throw new Error('Invalid entitlements data');
+  return data;
 }
 
 const hashKey = (v) => crypto.createHash('sha256').update(String(v)).digest('hex');
@@ -649,6 +660,7 @@ function langFromRequest(req) {
 
 async function callAI(input, max = 1600, timeoutMs = 45_000, { json = true } = {}) {
   if (!OPENAI_API_KEY || !OPENAI_MODEL) throw new Error('IA non configurée');
+  if (Date.now() < aiBlockedUntil) throw publicError('Le service IA est temporairement indisponible.', 503);
   const langCode = requestLang.getStore();
   if (langCode && langCode !== 'fr' && LANG_NAMES[langCode]) {
     const note = `\nIMPORTANT : rédige tous les textes destinés à l'utilisateur (titres, noms d'aliments et de plats, conseils, étapes, réponses) en ${LANG_NAMES[langCode]}.${json ? ' Les clés JSON restent identiques.' : ''}`;
@@ -681,11 +693,14 @@ async function callAI(input, max = 1600, timeoutMs = 45_000, { json = true } = {
       continue;
     }
     if (!response.ok) {
+      aiRuntime.status = 'unavailable'; aiRuntime.checkedAt = new Date().toISOString();
+      const quotaError = ['insufficient_quota', 'billing_hard_limit_reached'].includes(data?.error?.code) || /no credits remaining|exceeded your current quota/i.test(String(data?.error?.message || ''));
+      if (response.status === 401 || response.status === 403 || quotaError) aiBlockedUntil = Date.now() + 60000;
       const msg = safeText(data?.error?.message || `OpenAI HTTP ${response.status}`, 500);
       lastError = publicError('Le service IA est temporairement indisponible.', 502);
       lastError.internalMessage = msg;
       if (response.status === 400 && body.reasoning && /reasoning/i.test(msg)) { reasoningParamOk = false; continue; }
-      if (response.status === 429 || response.status >= 500) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+      if (!quotaError && (response.status === 429 || response.status >= 500)) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
       throw lastError;
     }
     const text = outputText(data).trim();
@@ -694,14 +709,17 @@ async function callAI(input, max = 1600, timeoutMs = 45_000, { json = true } = {
       lastError.internalMessage = `OpenAI empty output (status ${data?.status || '?'}, ${data?.incomplete_details?.reason || 'no reason'})`;
       continue;
     }
-    if (!json) return text;
+    if (!json) { aiRuntime.status = 'available'; aiRuntime.checkedAt = new Date().toISOString(); return text; }
     try {
-      return parseJson(text);
+      const value = parseJson(text);
+      aiRuntime.status = 'available'; aiRuntime.checkedAt = new Date().toISOString();
+      return value;
     } catch (cause) {
       lastError = publicError('La réponse IA n’a pas pu être interprétée. Réessayez.', 502);
-      lastError.internalMessage = `OpenAI non-JSON output: ${safeText(text, 160)}`;
+      lastError.internalMessage = 'OpenAI returned invalid JSON';
     }
   }
+  aiRuntime.status = 'unavailable'; aiRuntime.checkedAt = new Date().toISOString();
   throw lastError || publicError('Le service IA est temporairement indisponible.', 502);
 }
 
@@ -1373,7 +1391,8 @@ async function loadUserState(email) {
   await ensureData();
   try {
     return JSON.parse(await fs.readFile(userFile(email), 'utf8'));
-  } catch {
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
     return null;
   }
 }
@@ -1615,7 +1634,7 @@ async function handleHotmart(req, res) {
 async function dataDirectoryWritable() {
   const probe = path.join(DATA_DIR, `.health-${process.pid}-${Date.now()}.tmp`);
   try {
-    await ensureData();
+    await loadEntitlements();
     await fs.writeFile(probe, 'ok', { encoding: 'utf8', flag: 'wx' });
     await fs.unlink(probe);
     return true;
@@ -1736,10 +1755,12 @@ const server = http.createServer(async (req, res) => {
       const storeBilling = { serverKey: Boolean(REVENUECAT_SECRET_KEY), webhook: Boolean(REVENUECAT_WEBHOOK_AUTH), ios: Boolean(process.env.REVENUECAT_IOS_KEY), android: Boolean(process.env.REVENUECAT_ANDROID_KEY) };
       const legal = Boolean(process.env.LEGAL_COMPANY_NAME && process.env.LEGAL_COMPANY_ADDRESS);
       const stores = { appStoreUrl: Boolean(process.env.APP_STORE_URL), playStoreUrl: Boolean(process.env.PLAY_STORE_URL) };
-      return send(res, 200, {
-        ok: true,
+      return send(res, dataWritable ? 200 : 503, {
+        ok: dataWritable,
+        backups: backupManager.state,
+        aiProvider: aiRuntime,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
-        version: '18.0.1',
+        version: '18.0.2',
         revision: process.env.APP_REVISION || 'unknown',
         brand: BRAND_NAME,
         ai,
@@ -2042,4 +2063,10 @@ await ensureData();
 if (process.env.NODE_ENV === 'production' && (!ACCESS_TOKEN_SECRET || ACCESS_TOKEN_SECRET.length < 24)) {
   console.warn('[NutriPilot] ACCESS_TOKEN_SECRET est absent ou trop court. Les connexions Premium ne pourront pas être créées.');
 }
-server.listen(PORT, '0.0.0.0', () => { console.log(`${BRAND_NAME} v7 Premium — ${APP_URL}`); refreshRates(); });
+const backupManager = startBackups(DATA_DIR);
+server.listen(PORT, '0.0.0.0', () => { console.log(`${BRAND_NAME} v18.0.2 — ${APP_URL}`); refreshRates(); });
+for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => {
+  backupManager.stop();
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(1), 10000).unref();
+});

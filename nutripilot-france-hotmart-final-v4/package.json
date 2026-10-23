@@ -1,14 +1,16 @@
 {
   "name": "nutripilot-france-hotmart-v7-premium",
-  "version": "7.0.0",
+  "version": "18.0.2",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
     "dev": "NODE_ENV=development node server.mjs",
-    "check": "node --check server.mjs && node --check app.js && node scripts/build-i18n.mjs > /dev/null",
+    "check": "node --check server.mjs && node --check app.js && node --check ops/backup-cli.mjs && node --check ops/smoke.mjs && node scripts/build-i18n.mjs > /dev/null",
     "i18n": "node scripts/build-i18n.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "smoke": "node ops/smoke.mjs",
+    "backup": "node ops/backup-cli.mjs"
   },
   "engines": {
     "node": ">=20"

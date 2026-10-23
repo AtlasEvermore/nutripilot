@@ -1,5 +1,4 @@
-# Builds the server image on GitHub and publishes it to GitHub Container Registry.
-# Lets Railway run a ready-made image when its own builder is unavailable.
+# Build and verify a portable image before publishing it to GHCR.
 name: Server image
 on:
   push:
@@ -8,10 +7,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  packages: write
 jobs:
   regression:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,19 +26,43 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: regression
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/setup-node@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          node-version: '22'
       - uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          load: true
+          push: false
           build-args: APP_REVISION=${{ github.sha }}
           labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ghcr.io/atlasevermore/nutripilot:latest
             ghcr.io/atlasevermore/nutripilot:${{ github.sha }}
+      - name: Verify the built container before publishing
+        env:
+          IMAGE: ghcr.io/atlasevermore/nutripilot:${{ github.sha }}
+          APP_CHECK_URL: http://127.0.0.1:18080
+        run: |
+          trap 'docker logs np-release-check; docker rm -f np-release-check' EXIT
+          docker run --detach --name np-release-check -p 127.0.0.1:18080:3000 -e DATA_DIR=/data -e APP_URL=http://127.0.0.1:18080 -e ACCESS_TOKEN_SECRET=isolated-container-test-secret-only "$IMAGE"
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail "$APP_CHECK_URL/api/health" > /dev/null; then break; fi
+            sleep 1
+          done
+          node nutripilot-france-hotmart-final-v4/ops/smoke.mjs
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the verified image
+        run: |
+          docker push ghcr.io/atlasevermore/nutripilot:${{ github.sha }}
+          docker push ghcr.io/atlasevermore/nutripilot:latest
