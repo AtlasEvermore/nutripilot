@@ -21,6 +21,7 @@ jobs:
         run: |
           npm run check
           npm test
+          node --test ../ops/release-gate.test.mjs
           git diff --exit-code -- i18n/
   image:
     if: github.event_name != 'pull_request'

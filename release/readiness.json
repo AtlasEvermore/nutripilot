@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "version": "18.0.2",
+  "applicationTree": "974a79e49061ebe37bf1e311cdfa9acf64ca36a6",
+  "channels": [
+    "web_hotmart"
+  ],
+  "gates": {
+    "prepare": {
+      "hosting_access": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "independent_backup": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "restore_drill": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "new_credentials_stored": {
+        "status": "verified",
+        "verifiedAt": "2026-10-24T03:37:05Z",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "private-ops:Railway acknowledgements for new OpenAI and Resend variables; provider scopes reviewed"
+        ]
+      },
+      "ai_billing_limits": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "email_delivery": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "legal_configuration": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "rollback_migration": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "ci_gate_prepared": {
+        "status": "verified",
+        "verifiedAt": "2026-10-24T03:37:05Z",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "private-ops:Railway staged CI-only patch reviewed; source.checkSuites=true is NOT active yet",
+          "private-ops:Railway auto deploy disabled; UI now offers Connect Environment to Branch"
+        ]
+      },
+      "expiry_alert": {
+        "status": "verified",
+        "verifiedAt": "2026-10-24T03:37:05Z",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "private-ops:OpenAI key renewal reminder enabled for 2027-01-14 before 2027-01-21 expiration"
+        ]
+      },
+      "hotmart_transition": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      }
+    },
+    "launch": {
+      "deployed_release": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "credential_cutover": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "photo_chat": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "login_sync": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "old_credentials_revoked": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "offsite_schedule": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "monitoring_alert": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "ci_gate_active": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "legal_pages": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "hotmart_lifecycle": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      }
+    }
+  }
+}
