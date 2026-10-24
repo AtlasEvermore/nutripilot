@@ -37,6 +37,7 @@ test('Real PostgreSQL: shared transactions, budgets, migration and two applicati
  await initializePostgresSchema(p1);await a.checkSchema();
  const clear=()=>p1.query('TRUNCATE np_documents,np_rate_limits');
  await clear();
+ await t.test('A database without verified import does not start as an empty replacement',async()=>{await assert.rejects(app(t),/Application failed:[\s\S]*schema unavailable/);});
  await t.test('Independent pools do not lose concurrent updates, rollback preserves data',async()=>{
   await Promise.all(Array.from({length:100},(_,i)=>(i%2?a:b).mutate('legacy','count',{n:0},value=>{value.n++;return {value};})));
   assert.equal((await a.read('legacy','count',null)).n,100);

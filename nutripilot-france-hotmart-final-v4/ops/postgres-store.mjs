@@ -6,7 +6,7 @@ const clone = value => value === undefined ? undefined : structuredClone(value);
 export function postgresOptions(env = process.env) {
   if (!env.DATABASE_URL) throw new Error('DATABASE_URL required for PostgreSQL storage');
   let url;try { url = new URL(env.DATABASE_URL); } catch { throw new Error('Invalid database configuration'); }
-  if (!['postgres:','postgresql:'].includes(url.protocol)) throw new Error('Invalid database protocol');
+  if (!url.hostname || !url.pathname || url.pathname==='/' || !['postgres:','postgresql:'].includes(url.protocol)) throw new Error('Invalid database protocol');
   // URL options must not silently replace the strict TLS configuration.
   for (const k of ['sslmode','sslcert','sslkey','sslrootcert']) if (url.searchParams.has(k)) throw new Error('Set database TLS using DATABASE_TLS and DATABASE_CA_FILE');
   const plain = env.DATABASE_TLS === 'disabled';
