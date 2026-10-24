@@ -1,0 +1,27 @@
+name: Production release gate
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'prepare antes de implantar; launch após validar a implantação'
+        type: choice
+        default: prepare
+        options: [prepare, launch]
+permissions:
+  contents: read
+jobs:
+  mandatory-readiness:
+    name: Mandatory production requirements
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Refuse production approval while required evidence is missing
+        env:
+          RELEASE_PHASE: ${{ github.event.inputs.phase || 'prepare' }}
+        run: node ops/release-gate.mjs "$RELEASE_PHASE"

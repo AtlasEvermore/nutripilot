@@ -1,0 +1,15 @@
+# NutriPilot — regras obrigatórias de publicação
+
+Estas regras implementam a instrução do proprietário: resolver e verificar as pendências antes de publicar o aplicativo. A autorização para trabalhar ou publicar não substitui a evidência técnica de prontidão.
+
+- Antes de qualquer chamada que implante/promova código em produção (Railway, outro host ou mudança de DNS), execute `node ops/release-gate.mjs prepare` a partir da revisão candidata. Não publique enquanto o comando falhar. Não remova verificações, não marque evidências como verificadas sem realizá-las e não troque de ferramenta/servidor para contornar a trava.
+- `release/readiness.json` é o registro operacional. `release/RELEASE_CHECKLIST.md` define a sequência e as evidências. Evidências devem ser atuais e corresponder à árvore Git da aplicação. Nunca inclua chaves, senhas, valores de variáveis ou dados de saúde nas evidências, issues ou logs. Use referências privadas sem segredos.
+- Desenvolvimento, documentação, PRs, testes e construção da imagem podem continuar enquanto a publicação estiver bloqueada. Publicar uma imagem no registro não significa publicar o site.
+- A publicação automática pelo GitHub está desativada no ambiente de produção. Só reconecte a branch depois de `prepare` passar e com Wait for CI revisado; mantenha a publicação manual controlada até confirmar a proteção ativa.
+- A exigência Wait for CI deve estar ativa no Railway. Na primeira implantação que ativa essa proteção, a mudança pode estar no patch revisado a ser aplicado junto da candidata; execute a trava local antes dessa ação e confirme a proteção ativa após a implantação. Não trate um switch apenas preparado como configuração aplicada.
+- Compare a versão em produção com a candidata. Implante somente a versão consolidada aprovada; não publique todas as versões intermediárias uma a uma. Antes de saltar da V12 para a candidata, valide a compatibilidade/migração com uma restauração isolada dos dados.
+- Não apague ou substitua o volume de produção para resolver uma falha de build. Faça backup independente verificável e ensaio de restauração antes da mudança. Não rode duas cópias independentes gravando estados divergentes.
+- Uma implantação só foi concluída após estado terminal SUCCESS, versão/revisão conferidas e teste real. Depois execute `node ops/release-gate.mjs launch`; só declare o lançamento concluído se essa fase também passar.
+- Se a aceitação após a implantação falhar, investigue e siga o plano de retorno validado. Não apague dados nem faça rollback de dados automaticamente. Preserve a evidência do problema e a cópia anterior.
+- A atualização de segredos guardada na configuração só vale para o processo após nova implantação. Não declare rotação encerrada antes de testar a substituta e revogar a anterior de forma coordenada. Para Hotmart, coordene a troca de Hottok para evitar rejeitar notificações de compras.
+- A autorização atual permite correções e preparação; novas compras/assinaturas exigem orçamento explícito do proprietário. Não compre créditos, não ative recarga automática e não altere planos sem esse orçamento.
