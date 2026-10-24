@@ -20,15 +20,19 @@ async function freePort() {
   const s = net.createServer(); s.listen(0, '127.0.0.1'); await once(s, 'listening');
   const port = s.address().port; await new Promise(r => s.close(r)); return port;
 }
-async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled = true, store = false } = {}) {
+async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled = true, store = false, fxDelay = 0, fxFailure = false } = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'np-regression-'));
-  const requests = []; let mode = 'meal'; let calls = 0; let subscriber = {subscriptions:{}};
+  const requests = []; let mode = 'meal'; let calls = 0; let fxCalls = 0; let subscriber = {subscriptions:{}};
   const provider = http.createServer(async (req, res) => {
     let raw = ''; for await (const part of req) raw += part;
+    if (req.url === '/fx') {
+      fxCalls++;if(fxDelay) await new Promise(resolve=>setTimeout(resolve,fxDelay));
+      res.setHeader('Content-Type','application/json');res.statusCode=fxFailure?503:200;
+      return res.end(JSON.stringify(fxFailure?{}:{rates:{USD:1,BRL:5}}));
+    }
     const body = raw ? JSON.parse(raw) : {}; requests.push(body); calls++;
     res.setHeader('Content-Type', 'application/json');
     if (req.url.startsWith('/rc/')) return res.end(JSON.stringify({subscriber}));
-    if (req.url === '/fx') return res.end(JSON.stringify({ rates: { USD: 1, BRL: 5 } }));
     if (mode === 'failure') { res.statusCode = 400; return res.end(JSON.stringify({ error: { message: 'provider-test-secret-must-not-leak' } })); }
     if (mode === 'quota') { res.statusCode = 429; return res.end(JSON.stringify({ error: { code: 'insufficient_quota', message: 'You have no credits remaining.' } })); }
     if (mode === 'retry' && calls === 1) { res.statusCode = 503; return res.end('{}'); }
@@ -66,6 +70,7 @@ async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled 
   const token = `${payload}.${crypto.createHmac('sha256', secret).update(payload).digest('base64url')}`;
   return {
     url, dir, requests, token, stop,
+    fxCalls() { return fxCalls; },
     subscriber(value) { subscriber = value; },
     mode(v) { mode = v; calls = 0; requests.length = 0; },
     async post(route, body, { premium = false } = {}) {
@@ -414,4 +419,23 @@ test('Locked content does not invent a free trial, and incomplete store catalogs
  assert.equal(vm.runInContext('Billing.plans().length',ctx),0);
  const html=vm.runInContext('trialPitch()',ctx);assert.doesNotMatch(html,/gratuits|\b3\b|\b7\b/);assert.match(html,/Voir les formules/);
  ctx.window.NutriPilotNative.products.year={price:100};assert.equal(vm.runInContext('Billing.plans().length',ctx),1);
+});
+
+
+test('Concurrent health probes stay healthy and detect new corruption without a stale readiness cache',async t=>{
+ const f=await fixture(t);
+ const statuses=await Promise.all(Array.from({length:128},async()=> (await fetch(f.url+'/api/health')).status));
+ assert.ok(statuses.every(x=>x===200));
+ await fs.writeFile(path.join(f.dir,'entitlements.json'),'{broken');assert.equal((await fetch(f.url+'/api/health')).status,503);
+ await fs.writeFile(path.join(f.dir,'entitlements.json'),'{}');assert.equal((await fetch(f.url+'/api/health')).status,200);
+ const files=await fs.readdir(f.dir);assert.ok(files.every(name=>!name.startsWith('.health-')));
+});
+
+test('A cold exchange-rate cache shares concurrent fetches and backs off failures without blocking configuration',async t=>{
+ const f=await fixture(t,{fxDelay:200});
+ const configs=await Promise.all(Array.from({length:40},async()=>await(await fetch(f.url+'/api/config')).json()));
+ assert.equal(f.fxCalls(),1);assert.ok(configs.every(x=>x.rates.BRL===5));
+ const failed=await fixture(t,{fxFailure:true});
+ const statuses=await Promise.all(Array.from({length:40},async()=> (await fetch(failed.url+'/api/config')).status));
+ assert.ok(statuses.every(x=>x===200));assert.equal(failed.fxCalls(),1);
 });
