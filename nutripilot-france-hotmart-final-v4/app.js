@@ -2954,7 +2954,7 @@ function moduleLockedScreen(id) {
     <div class="screen">
       <section class="mod-hero ${m.tone}"><span class="mod-ico big">${icon(m.icon)}</span><h1>${modTitle(m)}</h1><p>${L(m.sub, MV())}</p>
         <ul>${m.features.map((f) => `<li>${icon('check')}<span>${L(f, MV())}</span></li>`).join('')}</ul>
-        ${plan ? `<div class="mod-price"><b>${money(lp(plan, 'monthly'))}</b><small>${L('/ mois · ou {price} par an, 2 mois offerts', { price: money(lp(plan, 'annual')) })}</small></div>` : ''}
+        ${plan ? `<div class="mod-price"><b>${money(lp(plan, 'monthly'))}</b><small>${L('/ mois')} · ${L('Annuel')} : ${money(lp(plan, 'annual'))}</small></div>` : ''}
         <button class="btn btn-lime btn-wide btn-xl" data-module-buy="${m.id}">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Activer ce module')}</button>
         <button class="link-btn" data-module-buy="complete">${L('Ou tous les modules avec le Kit complet')}</button>
       </section>
@@ -3230,7 +3230,7 @@ function paywall() {
     const on = selectedPeriod === k;
     const annual = k === 'annual';
     return `<button class="pw-period ${on ? 'on' : ''} ${annual ? 'best' : ''}" role="radio" aria-checked="${on}" data-period="${k}">
-      ${annual ? `<span class="pwp-badge">${L('Meilleure offre')} · ${L('2 mois offerts')}</span>` : ''}
+      ${annual ? `<span class="pwp-badge">${L('Annuel')}</span>` : ''}
       <span class="pwp-radio"></span>
       <span class="pwp-main"><b>${L(annual ? 'Annuel' : 'Mensuel')}</b>${t ? `<em>${L('{n} jours gratuits', { n: t })}</em>` : ''}</span>
       <span class="pwp-price"><b>${money(lp(plan, k))}</b><small>${unitOf(k)}</small>${annual ? `<i>${L('soit {p} / mois', { p: money(lp(plan, 'annual') / 12) })}</i>` : ''}</span>
@@ -3996,7 +3996,7 @@ function plansScreen() {
       ${freeBanner(true)}
       ${locationPicker()}
       <div class="period-toggle slim" role="tablist">
-        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')} <span>${L('2 mois offerts')}</span></button>
+        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')}</button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
       </div>
       ${kit ? `<button class="kit-row" ${ownsAll ? 'disabled' : `data-choose-plan="complete"`}>
