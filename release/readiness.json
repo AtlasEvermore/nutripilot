@@ -15,16 +15,20 @@
         "evidence": []
       },
       "independent_backup": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-24T23:04:39.246801+00:00",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "private-ops:Encrypted real /data snapshot downloaded independently from Railway and durably saved 2026-10-24; recovery key saved separately; see release/RECOVERY_EVIDENCE_2026-10-24.md"
+        ]
       },
       "restore_drill": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-24T23:04:39.246801+00:00",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "private-ops:Downloaded real archive decrypted and restored outside Railway; every restored file matched original content and SHA-256; see release/RECOVERY_EVIDENCE_2026-10-24.md"
+        ]
       },
       "new_credentials_stored": {
         "status": "verified",
@@ -53,10 +57,12 @@
         "evidence": []
       },
       "rollback_migration": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-24T23:04:39.246801+00:00",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "private-ops:18.1.0 and original V12 both booted isolated restorations; original files byte-identical after candidate shutdown; preserve existing service and volume; see release/RECOVERY_EVIDENCE_2026-10-24.md"
+        ]
       },
       "ci_gate_prepared": {
         "status": "verified",
