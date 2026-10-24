@@ -1,5 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { evaluateReadiness, requirementsFor } from './release-gate.mjs';
 const tree = 'a'.repeat(40), now = Date.parse('2026-10-24T03:37:05Z');
 function report(channels = ['web_hotmart']) {
@@ -43,4 +47,27 @@ test('Malformed reports and invalid scopes fail closed', () => {
   assert.equal(evaluateReadiness(report(), { phase: 'bypass', applicationTree: tree, now }).ok, false);
   const value = report(); value.channels = [];
   assert.equal(evaluateReadiness(value, { applicationTree: tree, now }).ok, false);
+});
+
+test('The deployment command rejects tracked and untracked code outside the approved Git revision', async t => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(),'np-release-git-'));
+  t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const git = (...args) => execFileSync('git',args,{cwd:dir,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
+  await fs.mkdir(path.join(dir,'ops'));
+  await fs.mkdir(path.join(dir,'release'));
+  const app = path.join(dir,'nutripilot-france-hotmart-final-v4'); await fs.mkdir(app);
+  await fs.copyFile(new URL('./release-gate.mjs',import.meta.url),path.join(dir,'ops/release-gate.mjs'));
+  await fs.writeFile(path.join(app,'package.json'),JSON.stringify({version:'18.0.2'}));
+  await fs.writeFile(path.join(app,'app.js'),'// approved\n');
+  git('init'); git('add','.'); git('-c','user.name=Test','-c','user.email=test@example.invalid','commit','-m','isolated fixture');
+  const value = report(); value.applicationTree = git('rev-parse','HEAD:nutripilot-france-hotmart-final-v4');
+  for (const phase of Object.values(value.gates)) for (const item of Object.values(phase)) item.verifiedAt = new Date().toISOString();
+  await fs.writeFile(path.join(dir,'release/readiness.json'),JSON.stringify(value));
+  const check = () => spawnSync(process.execPath,[path.join(dir,'ops/release-gate.mjs'),'prepare'],{encoding:'utf8'});
+  assert.equal(check().status,0);
+  await fs.writeFile(path.join(app,'app.js'),'// changed after approval\n');
+  assert.equal(check().status,1);
+  git('restore','nutripilot-france-hotmart-final-v4/app.js');
+  await fs.writeFile(path.join(app,'new.js'),'// never reviewed\n');
+  assert.equal(check().status,1);
 });

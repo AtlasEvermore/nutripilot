@@ -42,11 +42,15 @@ async function fixture(t, { ai = true, globalLimit = 0, hotmart = '' } = {}) {
     ...process.env, NODE_ENV: 'production', PORT: String(port), APP_URL: url, DATA_DIR: dir,
     ACCESS_TOKEN_SECRET: secret, OPENAI_API_KEY: ai ? 'test-key' : '', OPENAI_MODEL: ai ? 'test-model' : '',
     OPENAI_BASE_URL: aiUrl, FX_URL: `${aiUrl}/fx`, FREE_SCANS: '3', AI_GLOBAL_DAILY_LIMIT: String(globalLimit),
-    RESEND_API_KEY: '', REVENUECAT_SECRET_KEY: '', HOTMART_HOTTOK: hotmart,
+    RESEND_API_KEY: '', REVENUECAT_SECRET_KEY: '', HOTMART_HOTTOK: hotmart, ADMIN_KEY: 'isolated-test-admin-key',
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let logs = ''; child.stdout.on('data', x => { logs += x; }); child.stderr.on('data', x => { logs += x; });
+  async function stop() {
+    if (child.exitCode !== null || child.signalCode !== null) return;
+    const ended = once(child, 'exit'); child.kill(); await ended;
+  }
   t.after(async () => {
-    child.kill(); await once(child, 'exit').catch(() => {});
+    await stop();
     provider.closeAllConnections(); await new Promise(r => provider.close(r));
     await fs.rm(dir, { recursive: true, force: true });
   });
@@ -59,11 +63,11 @@ async function fixture(t, { ai = true, globalLimit = 0, hotmart = '' } = {}) {
   const payload = Buffer.from(JSON.stringify({ email: 'tester@example.invalid', exp: Math.floor(Date.now()/1000)+3600 })).toString('base64url');
   const token = `${payload}.${crypto.createHmac('sha256', secret).update(payload).digest('base64url')}`;
   return {
-    url, dir, requests, token,
+    url, dir, requests, token, stop,
     mode(v) { mode = v; calls = 0; requests.length = 0; },
     async post(route, body, { premium = false } = {}) {
       const res = await fetch(url + route, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-NP-Device': 'regression-test-device', 'X-NP-Lang': 'pt', ...(premium ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
-      return { status: res.status, data: await res.json() };
+      return { status: res.status, data: res.status === 204 ? null : await res.json() };
     },
   };
 }
@@ -238,6 +242,10 @@ test('Corrupted purchases or user data fail without erasing or treating them as 
   const name = crypto.createHash('sha256').update('tester@example.invalid').digest('hex') + '.json';
   await fs.writeFile(path.join(f.dir, 'users', name), '{broken');
   assert.equal((await fetch(f.url + '/api/user/state', { headers: { Authorization: `Bearer ${f.token}` } })).status, 500);
+  assert.equal((await f.post('/api/user/state', { state: {} }, { premium: true })).status, 500);
+  assert.equal(await fs.readFile(path.join(f.dir, 'users', name), 'utf8'), '{broken');
+  await fs.writeFile(path.join(f.dir, 'users', name), '[]');
+  assert.equal((await fetch(f.url + '/api/user/state', { headers: { Authorization: `Bearer ${f.token}` } })).status, 500);
 });
 
 
@@ -269,4 +277,75 @@ test('Hotmart authorization, purchase, duplicate, cancellation and refund preser
   assert.equal((await hook('PURCHASE_REFUNDED')).data.action, 'revoked');
   assert.equal((await entitlements()).status, 'revoked');
   assert.equal((await f.post('/api/coach', { message: 'Oi' }, { premium: true })).status, 401);
+});
+
+test('Corrupt free allowances are preserved and never reset into new free AI usage', async t => {
+  const f = await fixture(t);
+  for (const corrupt of ['{broken', '[]', '{"devices":null,"ips":{}}', '{"devices":{"test":-1},"ips":{}}']) {
+    await fs.writeFile(path.join(f.dir, 'free-scans.json'), corrupt);
+    assert.equal((await f.post('/api/analyze', { image })).status, 500);
+    assert.equal(await fs.readFile(path.join(f.dir, 'free-scans.json'), 'utf8'), corrupt);
+    assert.equal(f.requests.length, 0);
+  }
+  await fs.writeFile(path.join(f.dir, 'free-scans.json'), '{"devices":{},"ips":{}}');
+  assert.equal((await f.post('/api/analyze', { image })).status, 200);
+});
+
+test('Concurrent waitlist entries survive and malformed storage is not overwritten', async t => {
+  const f = await fixture(t);
+  const responses = await Promise.all(Array.from({length: 6}, (_, n) => f.post('/api/waitlist', {email: `lead${n}@example.invalid`, lang: 'pt'})));
+  assert.ok(responses.every(r => r.status === 200));
+  const file = path.join(f.dir, 'waitlist.json');
+  assert.equal(Object.keys(JSON.parse(await fs.readFile(file))).length, 6);
+  await fs.writeFile(file, '{broken');
+  assert.equal((await f.post('/api/waitlist', {email: 'next@example.invalid'})).status, 500);
+  assert.equal(await fs.readFile(file, 'utf8'), '{broken');
+  await fs.writeFile(file, '{}');
+  assert.equal((await f.post('/api/waitlist', {email: 'next@example.invalid'})).status, 200);
+});
+
+test('Funnel flushes serialize, preserve corrupted data and retry buffered events without duplication', async t => {
+  const f = await fixture(t);
+  const read = () => fetch(f.url + '/api/admin/funnel', {headers:{'x-admin-key':'isolated-test-admin-key'}});
+  await Promise.all(Array.from({length: 20}, () => f.post('/api/event', {name:'PlansView',lang:'pt'})));
+  const reads = await Promise.all([read(),read(),read()]);
+  assert.ok(reads.every(r => r.status === 200));
+  const counts = (await reads[2].json()).counts;
+  assert.equal(Object.values(counts).reduce((a,b)=>a+b,0),20);
+  const file = path.join(f.dir, 'funnel.json');
+  await fs.writeFile(file, '{broken');
+  await f.post('/api/event', {name:'PlansView',lang:'pt'});
+  assert.equal((await read()).status,500);
+  assert.equal(await fs.readFile(file,'utf8'),'{broken');
+  await fs.writeFile(file, JSON.stringify(counts));
+  assert.equal(Object.values((await (await read()).json()).counts).reduce((a,b)=>a+b,0),21);
+  assert.equal(Object.values((await (await read()).json()).counts).reduce((a,b)=>a+b,0),21);
+});
+
+test('Web and authenticated account deletion both remove the owned waitlist entry and saved state', async t => {
+  for (const web of [false,true]) {
+    const f = await fixture(t);
+    const email = 'tester@example.invalid';
+    await f.post('/api/user/state', {state:{meals:[{title:'Private test meal'}]}}, {premium:true});
+    await fs.writeFile(path.join(f.dir,'waitlist.json'), JSON.stringify({[email]:{lang:'pt'},'other@example.invalid':{lang:'fr'}}));
+    const file = path.join(f.dir,'entitlements.json');
+    const all = JSON.parse(await fs.readFile(file));
+    Object.assign(all[email], {codeHash:crypto.createHash('sha256').update('123456').digest('hex'),codeExpiresAt:Date.now()+60000,codeAttempts:0});
+    await fs.writeFile(file,JSON.stringify(all));
+    const response = web
+      ? await fetch(f.url+'/delete-account/confirm',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({email,code:'123456'})})
+      : await fetch(f.url+'/api/account',{method:'DELETE',headers:{Authorization:`Bearer ${f.token}`}});
+    assert.equal(response.status,200);
+    assert.equal(JSON.parse(await fs.readFile(file))[email],undefined);
+    assert.deepEqual(Object.keys(JSON.parse(await fs.readFile(path.join(f.dir,'waitlist.json')))),['other@example.invalid']);
+    await assert.rejects(fs.stat(path.join(f.dir,'users',crypto.createHash('sha256').update(email).digest('hex')+'.json')),/ENOENT/);
+  }
+});
+
+test('Graceful shutdown saves pending funnel events before exiting', async t => {
+  const f = await fixture(t);
+  await f.post('/api/event',{name:'PlansView',lang:'pt'});
+  await f.stop();
+  const counts = JSON.parse(await fs.readFile(path.join(f.dir,'funnel.json')));
+  assert.equal(Object.values(counts).reduce((a,b)=>a+b,0),1);
 });

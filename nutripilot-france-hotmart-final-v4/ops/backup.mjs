@@ -114,14 +114,27 @@ export function startBackups(dataDir, env = process.env) {
       if (buffer.length > budget) throw new Error('Encrypted archive exceeds local storage budget');
       const retained = (await fs.readdir(dir)).filter(n => /^\d{4}-.*\.npbak$/.test(n)).sort();
       const sizes = await Promise.all(retained.map(n => fs.stat(path.join(dir, n)).then(v => v.size)));
-      let total = sizes.reduce((a, b) => a + b, 0);
-      while (retained.length && (retained.length >= 7 || total + buffer.length > budget)) {
-        await fs.unlink(path.join(dir, retained.shift())); total -= sizes.shift();
-      }
       const capacity = await fs.statfs(dir);
       if (capacity.bavail * capacity.bsize < buffer.length + 32 * 1024 * 1024) throw new Error('Insufficient free space for backup');
-      await fs.writeFile(path.join(dir, name), buffer, { flag: 'wx', mode: 0o600 });
+      // Publish the complete replacement BEFORE pruning any healthy archive.
+      // A failed write, full disk or interrupted process must not destroy the last good copies.
+      const temporary = path.join(dir, `${name}.tmp`);
+      let handle;
+      try {
+        handle = await fs.open(temporary, 'wx', 0o600);
+        await handle.writeFile(buffer);
+        await handle.sync();
+        await handle.close(); handle = null;
+        await fs.rename(temporary, path.join(dir, name));
+      } finally {
+        if (handle) await handle.close();
+        await fs.rm(temporary, { force: true });
+      }
       state.lastLocalAt = value.createdAt;
+      let total = sizes.reduce((a, b) => a + b, 0) + buffer.length;
+      while (retained.length && (retained.length >= 7 || total > budget)) {
+        await fs.unlink(path.join(dir, retained.shift())); total -= sizes.shift();
+      }
       if (state.offsiteConfigured) { await uploadS3(buffer, name, env); state.lastOffsiteAt = new Date().toISOString(); }
       state.lastErrorAt = null;
     } catch { state.lastErrorAt = new Date().toISOString(); console.error('[NutriPilot] Backup failed; inspect storage and backup configuration.'); }

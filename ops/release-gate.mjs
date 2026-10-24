@@ -74,6 +74,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const applicationTree = execFileSync('git', ['rev-parse', 'HEAD:nutripilot-france-hotmart-final-v4'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
     const source = await fs.readFile(path.join(root, 'nutripilot-france-hotmart-final-v4/package.json'), 'utf8');
     const result = evaluateReadiness(report, { phase: process.argv[2] || 'prepare', applicationTree });
+    const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=normal', '--', 'nutripilot-france-hotmart-final-v4'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    if (dirty) { result.ok = false; result.blockers.push('A aplicação possui alterações fora da revisão Git validada; registre e valide a candidata exata.'); }
     if (JSON.parse(source).version !== report.version) { result.ok = false; result.blockers.push('A versão do pacote não corresponde ao manifesto.'); }
     console.log(JSON.stringify(result, null, 2));
     if (!result.ok) process.exitCode = 1;

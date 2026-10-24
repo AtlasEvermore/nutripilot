@@ -55,3 +55,28 @@ test('Offsite upload signs encrypted payload, refuses redirects and insecure end
   assert.equal(request.url.pathname, '/private-backups/nutripilot/backup.npbak');
   await assert.rejects(uploadS3(data, 'backup.npbak', { ...env, BACKUP_S3_ENDPOINT: 'http://storage.example.invalid' }));
 });
+
+test('Failed replacement writes preserve all seven healthy backups and remove incomplete files', async t => {
+  const f = await fixture(t);
+  const manager = startBackups(f.dir, { BACKUP_ENCRYPTION_KEY: key });
+  t.after(() => manager.stop());
+  while (manager.state.running) await new Promise(r => setTimeout(r, 5));
+  for (let i = 0; i < 6; i++) await manager.run();
+  const dir = path.join(f.dir, 'backups');
+  const before = (await fs.readdir(dir)).sort();
+  const lastGood = manager.state.lastLocalAt;
+  const originalOpen = fs.open;
+  t.mock.method(fs, 'open', async (...args) => {
+    const handle = await originalOpen(...args);
+    if (!String(args[0]).endsWith('.npbak.tmp')) return handle;
+    return {
+      async writeFile() { await handle.writeFile(Buffer.from('incomplete')); throw new Error('simulated ENOSPC'); },
+      sync: () => handle.sync(), close: () => handle.close(),
+    };
+  });
+  await manager.run();
+  assert.equal(manager.state.lastLocalAt, lastGood);
+  assert.ok(manager.state.lastErrorAt);
+  assert.deepEqual((await fs.readdir(dir)).sort(), before);
+  for (const name of before) assert.equal(decryptSnapshot(await fs.readFile(path.join(dir,name)), key).entries.length, 2);
+});
