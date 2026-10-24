@@ -132,5 +132,33 @@ export const LAUNCH_DICT = {
     "es": "Ayuda NutriPilot. Consulta respuestas sobre acceso, suscripciones y tus datos.",
     "de": "NutriPilot-Hilfe. Antworten zu Anmeldung, Abonnements und deinen Daten.",
     "it": "Aiuto NutriPilot. Risposte su accesso, abbonamenti e dati."
+  },
+  "le texte que vous écrivez ou dictez pour vos repas et vos échanges avec le coach": {
+    "en": "the text you type or dictate for meals and conversations with the coach",
+    "pt": "o texto que você escreve ou dita para suas refeições e conversas com o coach",
+    "es": "el texto que escribes o dictas para tus comidas y conversaciones con el coach",
+    "de": "Texte, die du für Mahlzeiten und Gespräche mit dem Coach eingibst oder diktierst",
+    "it": "il testo che scrivi o detti per i pasti e le conversazioni con il coach"
+  },
+  "Analyse désactivée. Vous pouvez l’activer dans Réglages › Analyse personnalisée.": {
+    "en": "Analysis is off. Enable it in Settings › Personalized analysis.",
+    "pt": "Análise desativada. Ative em Configurações › Análise personalizada.",
+    "es": "Análisis desactivado. Actívalo en Ajustes › Análisis personalizado.",
+    "de": "Analyse deaktiviert. Aktiviere sie unter Einstellungen › Personalisierte Analyse.",
+    "it": "Analisi disattivata. Attivala in Impostazioni › Analisi personalizzata."
+  },
+  "Analyse personnalisée désactivée.": {
+    "en": "Personalized analysis disabled.",
+    "pt": "Análise personalizada desativada.",
+    "es": "Análisis personalizado desactivado.",
+    "de": "Personalisierte Analyse deaktiviert.",
+    "it": "Analisi personalizzata disattivata."
+  },
+  "Les analyses et les réponses du coach sont automatisées et peuvent contenir des erreurs. Elles ne constituent pas un diagnostic ni une prescription.": {
+    "en": "Analyses and coach responses are automated and may contain errors. They are not diagnoses or prescriptions.",
+    "pt": "As análises e respostas do coach são automatizadas e podem conter erros. Elas não são diagnósticos nem prescrições.",
+    "es": "Los análisis y las respuestas del coach son automatizados y pueden contener errores. No son diagnósticos ni prescripciones.",
+    "de": "Analysen und Coach-Antworten sind automatisiert und können Fehler enthalten. Sie sind keine Diagnosen oder Verordnungen.",
+    "it": "Le analisi e le risposte del coach sono automatizzate e possono contenere errori. Non sono diagnosi né prescrizioni."
   }
 };
