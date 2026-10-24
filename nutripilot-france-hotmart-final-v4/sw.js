@@ -1,5 +1,5 @@
-const CACHE = 'nutripilot-v41-20261023-reliability';
-const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
+const CACHE = 'nutripilot-v42-20261024-controlled-ai';
+const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n-launch.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)).then(() => self.skipWaiting()));
@@ -17,7 +17,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
 
-  const isAppShell = ['/', '/index.html', '/styles.css', '/app.js', '/food.js', '/exercises.js', '/manifest.webmanifest'].includes(url.pathname) || url.pathname.startsWith('/i18n/');
+  const isAppShell = ['/', '/index.html', '/styles.css', '/app.js', '/i18n-launch.js', '/food.js', '/exercises.js', '/manifest.webmanifest'].includes(url.pathname) || url.pathname.startsWith('/i18n/');
   if (isAppShell) {
     event.respondWith(
       // Fresh files when the network answers quickly (304 thanks to the ETag); the saved copy after 2.5 s or offline.

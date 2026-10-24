@@ -2683,3 +2683,13 @@ html.cosmos ::selection{background:rgba(201,255,59,.35);color:#fff}
 .np-burst{position:fixed;width:0;height:0;pointer-events:none;z-index:10000}
 .np-burst i{position:absolute;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c);animation:npBurst .85s cubic-bezier(.15,.8,.3,1) forwards}
 @keyframes npBurst{from{transform:rotate(var(--a)) translateX(0) scale(1);opacity:1}to{transform:rotate(var(--a)) translateX(var(--d)) scale(.2);opacity:0}}
+
+/* Meal entry: every method remains visible on narrow phones, without a clipped tab strip. */
+.meal-methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:16px 0}
+.meal-methods .tab{min-width:0;min-height:48px;white-space:normal;overflow-wrap:anywhere;padding:10px 6px;line-height:1.25}
+.meal-methods .tab:focus-visible,.access-actions .btn:focus-visible{outline:3px solid var(--lime,#c9ff3b);outline-offset:3px}
+.ai-access-card{border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:22px;padding:24px 18px;background:color-mix(in srgb,var(--paper,#fff) 94%,var(--lime,#c9ff3b));text-align:center}
+.ai-access-card>svg{width:32px;height:32px}.ai-access-card h3{margin:12px 0 8px}.ai-access-card p{line-height:1.5}
+.access-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:18px}.access-actions .btn{min-height:48px;white-space:normal}
+.analysis-error{display:grid;gap:6px;margin:12px 0;padding:16px;border-radius:16px;border:1px solid currentColor;line-height:1.45}.analysis-error small{opacity:.8}
+@media(max-width:360px){.meal-methods{grid-template-columns:repeat(2,minmax(0,1fr))}.access-actions .btn{width:100%}}

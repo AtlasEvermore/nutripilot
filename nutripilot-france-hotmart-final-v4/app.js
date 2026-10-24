@@ -1,3 +1,4 @@
+import { LAUNCH_DICT } from './i18n-launch.js';
 import { WORLD_RECIPES, CUISINES, INGREDIENTS, ingredientAisle, enrichRecipe, ingredientMacros, ingredientState, ALLERGENS } from './food.js';
 import { EXTRA_EXERCISES, EQUIPMENT, EQUIP_OF, moveSvg } from './exercises.js';
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -838,8 +839,8 @@ function L(fr, vars, record = true) {
   let out = fr;
   if (code !== 'fr' && fr) {
     // Lines not translated yet fall back to English (newer languages), then French.
-    const own = dictLang === code ? DICT[fr] : '';
-    const hit = own || DICT_EN[fr];
+    const own = LAUNCH_DICT[fr]?.[code] || (dictLang === code ? DICT[fr] : '');
+    const hit = own || LAUNCH_DICT[fr]?.en || DICT_EN[fr];
     if (hit) out = hit;
     else if (/ \+ | · /.test(fr)) out = fr.split(/( \+ | · )/).map((part) => (/^( \+ | · )$/.test(part) ? part : L(part, null, record))).join('');
     if (!own && !hit && record && !/ \+ | · /.test(fr)) missingKeys.add(fr);
@@ -908,7 +909,7 @@ function authHeaders(extra = {}) {
 
 // App Store 5.1.2(i) / GDPR: before the first photo or text goes to the AI provider, ask once, clearly,
 // naming the provider and the data. The choice can be changed at any time in Settings.
-const AI_PATHS = ['/api/copilot', '/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan', '/api/support'];
+const AI_PATHS = ['/api/copilot', '/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan'];
 let aiConsentAsk = null;
 function askAiConsent() {
   if (state.aiConsent === true) return Promise.resolve(true);
@@ -953,6 +954,7 @@ class AiConsentError extends Error {}
 async function aiGate(url) {
   const path = String(url).split('?')[0];
   if (!AI_PATHS.includes(path)) return;
+  if (config.ai === false) throw new AiConsentError(L('Analyses IA momentanément en pause'));
   if (await askAiConsent()) return;
   throw new AiConsentError(L('Analyse par IA désactivée. Vous pouvez l’activer dans Réglages › Analyse par IA.'));
 }
@@ -1886,7 +1888,7 @@ function supportScreen() {
 }
 
 function supportSheet() {
-  const intro = L('Bonjour 👋 Je suis l’assistant NutriPilot. Posez-moi votre question sur l’application, les formules, l’essai ou votre compte.');
+  const intro = L('Aide automatique, sans IA. Consultez les réponses sur la connexion, les abonnements et vos données.');
   return `<div class="sheet-head"><div><span class="tag">SUPPORT</span><h2>${L('Assistant NutriPilot')}</h2></div><button class="icon-btn" data-close>×</button></div>
     <div class="chat-log" id="support-log">
       <div class="bubble bot">${esc(intro)}</div>
@@ -2643,13 +2645,14 @@ function deviceId() {
   try { let id = localStorage.getItem('np_device'); if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`; localStorage.setItem('np_device', id); } return id; } catch { return `tmp-${Date.now().toString(16)}`; }
 }
 // v10 — visitors get a few free meal analyses (counted by the server) before the plans.
-const freeScanLimit = () => Number(config.freeScans ?? 3);
+const freeScanLimit = () => Math.max(0, Number(config.freeScans ?? 0) || 0);
 function freeScansLeft() { return state.premium ? Infinity : Math.max(0, freeScanLimit() - Number(state.freeScansUsed || 0)); }
 const canScan = () => fullAccess() || freeScansLeft() > 0;
 function freeScanBanner() {
-  if (state.premium || !freeScanLimit()) return '';
+  if (state.premium && config.ai !== false) return '';
+  if (!freeScanLimit()) return `<div class="free-scan access-note"><span>${icon('lock')}</span><p><b>${L(state.premium ? 'Analyses IA momentanément en pause' : 'Analyses IA réservées aux abonnés')}</b><small>${L('Code-barres et saisie manuelle disponibles sans IA.')}</small></p></div>`;
   const left = freeScansLeft();
-  return `<div class="free-scan ${left ? '' : 'out'}"><span>${icon(left ? 'scan' : 'lock')}</span><p><b>${left ? L('{n} analyses gratuites restantes', { n: left }) : L('Analyses gratuites utilisées')}</b><small>${left ? L('Photographiez votre assiette : calories et macros en quelques secondes. Le code-barres est gratuit et illimité.') : L('Le code-barres reste gratuit et illimité. Pour les photos : analyses illimitées avec votre formule.')}</small></p>${left ? '' : `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>`}</div>`;
+  return `<div class="free-scan ${left ? '' : 'out'}"><span>${icon(left ? 'scan' : 'lock')}</span><p><b>${left ? L('{n} analyses gratuites restantes', { n: left }) : L('Analyses gratuites utilisées')}</b><small>${left ? L('Photographiez votre assiette : calories et macros en quelques secondes. Le code-barres est gratuit et illimité.') : L('Les analyses IA de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</small></p>${left ? '' : `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>`}</div>`;
 }
 function freeScansOut() {
   track('FreeScansOut');
@@ -2976,11 +2979,13 @@ const Billing = {
   },
   trialDays() {
     // In the store app, show a free trial only if the store really offers one (App Store 3.1.2).
+    if (!nativePlatform()) return 0;
     if (this.native() && Object.keys(window.NutriPilotNative?.products || {}).length) return Number(window.NutriPilotNative.trialDays || 0);
     return Number(config.trialDays || 7);
   },
   // Trial of one exact product (e.g. 7 days on the annual plan only, none on the monthly).
   trialFor(plan, period) {
+    if (!nativePlatform()) return 0;
     if (!plan?.[period]) return 0;
     if (this.native() && Object.keys(window.NutriPilotNative?.products || {}).length) return NativeBilling.introDays(window.NutriPilotNative.products[plan[period].storeId]?.intro);
     return String(config.trialOn || 'annual').split(',').map((x) => x.trim()).includes(period) ? Number(config.trialDays || 7) : 0;
@@ -3015,7 +3020,8 @@ const Billing = {
       if (this.native()) return this.purchase(plan, period);
       return toast(L('La boutique ne répond pas. Vérifiez votre connexion et réessayez.'));
     }
-    // On the web, subscriptions are taken in the iPhone / Android app.
+    if (config.webCheckout?.[id]) { location.assign(`/checkout?plan=${encodeURIComponent(plan.tier)}&period=${encodeURIComponent(period)}`); return; }
+    // Web checkout opens only for a specifically configured, verified offer.
     modal = { type: 'store', plan: plan.tier, period };
     return renderModal();
   },
@@ -3238,7 +3244,7 @@ function paywall() {
       ${proj ? `<div class="pw-goal">${icon('progress')}<span>${L('Objectif {target} · estimé le {date}', { target: `<b>${kgFmt(p.target)} kg</b>`, date: `<b>${esc(dateFr(proj.end))}</b>` })}</span></div>` : ''}
       ${choices.length > 1 ? `<div class="pw-plans" role="radiogroup">${choices.map((x) => `<button class="pw-plan ${x.tone || ''} ${x.tier === plan.tier ? 'on' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}"><small>${L(x.tier === 'complete' ? 'Tout inclus' : 'Recommandé pour vous')}</small><b>${esc(planName(x))}</b><span class="pwp-mods">${MODULES.filter((m) => x.modules.includes(m.id) || m.free).map((m) => `<i class="${m.tone}" title="${esc(modTitle(m))}">${icon(m.icon)}</i>`).join('')}</span><em>${L('{n} espaces inclus', { n: MODULES.filter((m) => x.modules.includes(m.id) || m.free).length })}</em></button>`).join('')}</div>` : `<div class="pw-plan-one"><b>${esc(planName(plan))}</b><small>${esc(L(plan.sub))}</small></div>`}
       <div class="pw-periods" role="radiogroup">${periods.map(periodCard).join('')}</div>
-      <button class="btn btn-lime btn-wide btn-xl pw-cta-top" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
+      <p class="fine">${L('Les analyses IA de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</p><button class="btn btn-lime btn-wide btn-xl pw-cta-top" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
       <div class="pw-trust">
         <span>${icon('lock')}${L('Paiement sécurisé par l’App Store / Google Play')}</span>
         <span>${icon('check')}${L('Annulable en un geste, sans engagement')}</span>
@@ -7783,10 +7789,10 @@ function renderModal() {
 }
 
 function addSheet() {
-  if (modal.loading) return `<div class="loader"><div class="loader-dots"><i></i><i></i><i></i></div><h3>${L('Analyse en cours…')}</h3><p>${L('NutriPilot identifie les aliments, estime les portions et prépare les données modifiables.')}</p></div>`;
+  if (modal.loading) return `<div class="sheet-head"><h2>${L('Analyse en cours…')}</h2><button class="icon-btn" data-close aria-label="${L('Fermer')}">×</button></div><div class="loader" role="status" aria-live="polite"><div class="loader-dots"><i></i><i></i><i></i></div><p>${L('NutriPilot identifie les aliments, estime les portions et prépare les données modifiables.')}</p></div>`;
   if (modal.result) return resultSheet(modal.result);
   const tabs = [...(state.meals.length ? [['recent', 'Récents']] : []), ['photo','Photo'],['text','Texte / voix'],['barcode','Code-barres'],['label','Étiquette'],['manual','Manuel'],['favorites','Favoris']].map(([k, v]) => [k, L(v)]);
-  return `<div class="sheet-head"><div><span class="tag">${L('AJOUTER UN REPAS')}</span><h2>${L('Choisissez la méthode.')}</h2></div><button class="icon-btn" data-close>×</button></div>${freeScanBanner()}<div class="tabs">${tabs.map(([key, label]) => `<button class="tab ${modal.tab === key ? 'active' : ''}" data-mtab="${key}">${label}</button>`).join('')}</div>${addTab(modal.tab)}`;
+  return `<div class="sheet-head"><div><span class="tag">${L('AJOUTER UN REPAS')}</span><h2>${L('Choisissez la méthode.')}</h2></div><button class="icon-btn" data-close>×</button></div>${freeScanBanner()}${modal.error ? `<div class="analysis-error" role="alert"><strong>${esc(L(modal.error))}</strong><small>${L('Réessayez ou choisissez une méthode sans IA.')}</small></div>` : ''}<div class="meal-methods" role="group" aria-label="${L('Choisissez la méthode.')}">${tabs.map(([key, label]) => `<button type="button" class="tab ${modal.tab === key ? 'active' : ''}" aria-pressed="${modal.tab === key}" data-mtab="${key}">${label}</button>`).join('')}</div><div class="meal-method-content">${addTab(modal.tab)}</div>`;
 }
 
 const localFood = [
@@ -7832,7 +7838,8 @@ async function startBarcodeCamera(root) {
 }
 function addTab(tab) {
   if (tab === 'recent') return recentTab();
-  if (state.premium && !hasModule('scanner') && ['photo', 'barcode', 'label'].includes(tab)) {
+  if (['photo','text','label'].includes(tab) && (!canScan() || config.ai === false)) return `<div class="ai-access-card">${icon('lock')}<h3>${L(state.premium ? 'Analyses IA momentanément en pause' : 'Analyses IA réservées aux abonnés')}</h3><p>${L('Code-barres et saisie manuelle disponibles sans IA.')}</p><div class="access-actions"><button class="btn btn-primary" data-mtab="manual">${L('Manuel')}</button><button class="btn btn-ghost" data-mtab="barcode">${L('Code-barres')}</button>${!state.premium ? `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>` : ''}</div></div>`;
+  if (state.premium && !hasModule('scanner') && ['photo', 'label'].includes(tab)) {
     return `<div class="mod-upsell m-scan">${icon('scan')}<b>${L('Disponible avec le module Scanner')}</b><p>${L('Photo du repas, code-barres, étiquette, allergènes et comparaison de produits.')}</p><button class="btn btn-lime" data-module-buy="scanner">${Billing.trialDays() ? L('Commencer mes {n} jours gratuits', { n: Billing.trialDays() }) : L('Activer ce module')}</button></div>`;
   }
   if (tab === 'photo' || tab === 'label') return `<label class="upload"><input id="meal-image" type="file" accept="image/*" capture="environment"><div class="camera-ico">${tab === 'label' ? '▤' : '📸'}</div><h3>${L(tab === 'label' ? 'Photographier l’étiquette' : 'Photographier mon repas')}</h3><p>${L(tab === 'label' ? 'Cadrez les valeurs nutritionnelles et la portion.' : 'Une photo donne une estimation. Vous pourrez corriger chaque quantité avant de l’enregistrer.')}</p><span class="btn btn-primary">${L('Choisir une photo')}</span></label>`;
@@ -7934,6 +7941,7 @@ async function analyze(body) {
   const target = modal;
   if (!target || target.loading) return;
   target.loading = true;
+  target.error = '';
   renderModal();
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 60_000);
@@ -7948,7 +7956,8 @@ async function analyze(body) {
     pushScan(data, body.mode || (body.image ? 'photo' : 'text'));
     track('MealAnalyzed', { source: data.source || 'unknown' });
   } catch (error) {
-    toast(error.name === 'AbortError' ? 'Le service IA est temporairement indisponible.' : error.message);
+    target.error = error.name === 'AbortError' ? 'Le service IA est temporairement indisponible.' : error.message;
+    if (modal === target) toast(L(target.error));
   } finally {
     clearTimeout(timer);
     target.loading = false;

@@ -5,7 +5,7 @@ import { gzipSync, gunzipSync } from 'node:zlib';
 
 const MAGIC = Buffer.from('NPBACKUP1');
 const MAX = 128 * 1024 * 1024;
-const rootFiles = new Set(['entitlements.json', 'free-scans.json', 'funnel.json', 'waitlist.json', 'last-webhook.json']);
+const rootFiles = new Set(['entitlements.json', 'free-scans.json', 'funnel.json', 'waitlist.json', 'last-webhook.json', 'ai-usage.json']);
 const allowed = name => rootFiles.has(name) || /^users\/[a-f0-9]{64}\.json$/.test(name);
 function keyBytes(key) {
   if (!/^[a-f0-9]{64}$/i.test(key || '')) throw new Error('BACKUP_ENCRYPTION_KEY must contain 64 hexadecimal characters');

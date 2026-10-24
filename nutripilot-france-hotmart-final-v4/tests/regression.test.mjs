@@ -20,7 +20,7 @@ async function freePort() {
   const s = net.createServer(); s.listen(0, '127.0.0.1'); await once(s, 'listening');
   const port = s.address().port; await new Promise(r => s.close(r)); return port;
 }
-async function fixture(t, { ai = true, globalLimit = 0, hotmart = '' } = {}) {
+async function fixture(t, { ai = true, globalLimit = 50, hotmart = '', guests = true, enabled = true, checkout = false } = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'np-regression-'));
   const requests = []; let mode = 'meal'; let calls = 0;
   const provider = http.createServer(async (req, res) => {
@@ -41,6 +41,8 @@ async function fixture(t, { ai = true, globalLimit = 0, hotmart = '' } = {}) {
   const child = spawn(process.execPath, ['server.mjs'], { cwd: root, env: {
     ...process.env, NODE_ENV: 'production', PORT: String(port), APP_URL: url, DATA_DIR: dir,
     ACCESS_TOKEN_SECRET: secret, OPENAI_API_KEY: ai ? 'test-key' : '', OPENAI_MODEL: ai ? 'test-model' : '',
+    WEB_CHECKOUT_ENABLED: String(checkout), HOTMART_CHECKOUT_COMPLETE_MONTHLY: 'https://pay.hotmart.com/R107884011S?off=r3ueswug',
+    AI_ENABLED: String(enabled), AI_ALLOW_GUESTS: String(guests), AI_GLOBAL_MONTHLY_LIMIT: '500', AI_USER_DAILY_LIMIT: '10',
     OPENAI_BASE_URL: aiUrl, FX_URL: `${aiUrl}/fx`, FREE_SCANS: '3', AI_GLOBAL_DAILY_LIMIT: String(globalLimit),
     RESEND_API_KEY: '', REVENUECAT_SECRET_KEY: '', HOTMART_HOTTOK: hotmart, ADMIN_KEY: 'isolated-test-admin-key',
   }, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -74,7 +76,7 @@ async function fixture(t, { ai = true, globalLimit = 0, hotmart = '' } = {}) {
 
 test('Public assets, API validation, access control and state persistence', async t => {
   const f = await fixture(t);
-  for (const file of ['/', '/app.js', '/styles.css', '/food.js', '/exercises.js', '/sw.js', '/i18n/pt.js', '/vendor/barcode/barcode-detector.js', '/vendor/barcode/zxing_reader.wasm']) {
+  for (const file of ['/', '/app.js', '/i18n-launch.js', '/styles.css', '/food.js', '/exercises.js', '/sw.js', '/i18n/pt.js', '/vendor/barcode/barcode-detector.js', '/vendor/barcode/zxing_reader.wasm']) {
     const r = await fetch(f.url + file); assert.equal(r.status, 200, file); assert.ok((await r.arrayBuffer()).byteLength > 0, file);
     if (file.endsWith('.wasm')) assert.match(r.headers.get('content-type'), /application\/wasm/);
   }
@@ -348,4 +350,61 @@ test('Graceful shutdown saves pending funnel events before exiting', async t => 
   await f.stop();
   const counts = JSON.parse(await fs.readFile(path.join(f.dir,'funnel.json')));
   assert.equal(Object.values(counts).reduce((a,b)=>a+b,0),1);
+});
+
+test('Visitors cannot spend AI credits and public help works without any provider request', async t => {
+ const f=await fixture(t,{guests:false});
+ assert.equal((await f.post('/api/analyze',{image})).status,401);
+ assert.equal((await f.post('/api/coach',{message:'Hello'})).status,401);
+ const answer=await f.post('/api/support',{lang:'pt',messages:[{role:'user',text:'Como cancelar minha assinatura?'}]});
+ assert.equal(answer.status,200);assert.equal(answer.data.source,'help-center');assert.match(answer.data.answer,/Hotmart/);
+ assert.equal(f.requests.length,0);
+ const config=await(await fetch(f.url+'/api/config')).json();assert.equal(config.freeScans,0);assert.equal(config.aiPolicy.subscribersOnly,true);
+ assert.equal((await f.post('/api/analyze',{image},{premium:true})).status,200);
+ assert.equal(f.requests.length,1);
+});
+
+test('The kill switch and a zero global limit refuse paid requests before reaching the provider', async t => {
+ for(const options of [{enabled:false},{globalLimit:0}]) {
+  const f=await fixture(t,options);
+  assert.equal((await f.post('/api/analyze',{image},{premium:true})).status,429);
+  assert.equal(f.requests.length,0);
+ }
+});
+
+test('A retry consumes the remaining persistent allowance and cannot exceed the daily cap', async t => {
+ const f=await fixture(t,{globalLimit:1});f.mode('retry');
+ assert.equal((await f.post('/api/analyze',{image})).status,429);
+ assert.equal(f.requests.length,1);
+ const usage=JSON.parse(await fs.readFile(path.join(f.dir,'ai-usage.json')));assert.equal(usage.daily,1);
+});
+
+test('Meal entry shows paid access, visible method choices and an inline recoverable error', () => {
+ const ctx=vm.createContext({state:{premium:false,meals:[]},config:{ai:true,freeScans:0},modal:{tab:'photo',error:'Service unavailable'},L:x=>x,icon:()=>'',esc:String,recommendedTier:()=> 'complete',freeScanBanner:()=>'',canScan:()=>false,hasModule:()=>false,window:{},navigator:{},recentTab:()=>'',manualResults:()=>'',Billing:{trialDays:()=>0}});
+ const a=appSource.indexOf('function addSheet() {'),b=appSource.indexOf('\nconst localFood',a);
+ vm.runInContext(appSource.slice(a,b),ctx);
+ const c=appSource.indexOf('function addTab(tab) {'),d=appSource.indexOf('\nfunction manualResults',c);
+ vm.runInContext(appSource.slice(c,d),ctx);
+ const html=ctx.addSheet();assert.match(html,/meal-methods/);assert.match(html,/role="alert"/);assert.match(html,/aria-pressed="true"/);assert.match(html,/data-mtab="manual"/);assert.doesNotMatch(html,/id="meal-image"/);
+ ctx.modal.loading=true;assert.match(ctx.addSheet(),/data-close/);
+ ctx.state.premium=true;ctx.config.ai=false;ctx.modal.loading=false;assert.match(ctx.addTab('photo'),/momentanément en pause/);
+});
+
+test('The web purchase route redirects only an enabled exact offer and refuses unknown or prototype keys',async t=>{
+ const f=await fixture(t,{checkout:true});
+ const config=await(await fetch(f.url+'/api/config')).json();assert.equal(config.webCheckout.complete_monthly,true);
+ const get=query=>fetch(f.url+'/checkout?'+query,{redirect:'manual'});
+ const result=await get('plan=complete&period=monthly');assert.equal(result.status,302);assert.equal(result.headers.get('location'),'https://pay.hotmart.com/R107884011S?off=r3ueswug');
+ for(const query of ['plan=complete&period=annual','plan=training&period=monthly','plan=_&period=proto__','plan=complete&period=monthly&url=https://evil.invalid']){
+  const response=await get(query);if(query.includes('&url='))assert.equal(response.headers.get('location'),'https://pay.hotmart.com/R107884011S?off=r3ueswug');else assert.equal(response.status,404);
+ }
+ const g=await fixture(t);assert.equal((await fetch(g.url+'/checkout?plan=complete&period=monthly',{redirect:'manual'})).status,404);
+});
+
+test('The web funnel never invents an App Store trial for a Hotmart purchase',()=>{
+ const a=appSource.indexOf('const Billing = {'),b=appSource.indexOf('\n};',a)+3;
+ const ctx=vm.createContext({nativePlatform:()=>false,window:{},config:{trialDays:7}});
+ vm.runInContext(appSource.slice(a,b),ctx);
+ assert.equal(vm.runInContext('Billing.trialDays()',ctx),0);
+ assert.equal(vm.runInContext('Billing.trialFor({annual:{}},"annual")',ctx),0);
 });
