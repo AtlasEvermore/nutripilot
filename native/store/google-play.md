@@ -1,4 +1,4 @@
-# NutriPilot 18.0.2 — Google Play
+# NutriPilot 18.1.0 — Google Play
 
 Rascunho da ficha e instruções. Confirmar catálogo, funcionalidades ativas e textos finais no console antes do envio. Não anunciar análises indisponíveis nem teste grátis sem oferta real. Capturas existentes precisam ser refeitas/conferidas na candidata final.
 
@@ -36,4 +36,4 @@ Preencher com base no aplicativo e nos prestadores efetivamente configurados. A 
 
 Revisar: dados de saúde/fitness, perfil, e-mail para autenticação, refeições e mensagens, fotos selecionadas para análise, identificador da conta e histórico de compras, estatísticas operacionais e permissões de câmera/notificações. Conferir retenção real dos prestadores e as definições da loja antes de classificar processamento como efêmero, não coletado ou isento de compartilhamento. Não assumir isenções por nome do prestador. Confirmar exclusão, criptografia e contratos. Sem publicidade ou rastreamento comercial configurados nesta candidata.
 
-Preparar capturas reais do aparelho e tamanhos exigidos pelo console atual. Não reutilizar imagens antigas como prova da versão 18.0.2. Aprovação e lançamento continuam pendentes até confirmação explícita da loja.
+Preparar capturas reais do aparelho e tamanhos exigidos pelo console atual. Não reutilizar imagens antigas como prova da versão 18.1.0. Aprovação e lançamento continuam pendentes até confirmação explícita da loja.

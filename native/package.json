@@ -1,7 +1,7 @@
 {
   "name": "nutripilot-native",
   "private": true,
-  "version": "18.0.2",
+  "version": "18.1.0",
   "description": "iPhone and Android shell for NutriPilot (Capacitor 8). The app content is served by app.atlasevermore.com.",
   "engines": {
     "node": ">=22"

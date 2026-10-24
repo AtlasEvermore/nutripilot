@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "version": "18.0.2",
-  "applicationTree": "c9ad5af46798db969189470753bc1c2a93573798",
+  "version": "18.1.0",
+  "applicationTree": "4a9d0b7d952ea9b423d17cec58b151e4fda8c4d2",
   "channels": [
     "ios",
     "android"
@@ -181,5 +181,5 @@
       }
     }
   },
-  "nativeTree": "cd669f1fe7b1d0b8dfd60851727d863a16018002"
+  "nativeTree": "400d39acb2bbda7c93bdde181ec71eaf0318bd90"
 }

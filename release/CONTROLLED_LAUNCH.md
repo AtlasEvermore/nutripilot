@@ -1,4 +1,4 @@
-# Candidata consolidada 18.0.2 — lançamento controlado
+# Candidata consolidada 18.1.0 — lançamento controlado
 
 Escopo vigente em 24/10/2026: App Store e Google Play. Nenhum checkout externo ou redirecionamento de pagamento. Rotas legadas de compra foram removidas; os registros existentes não foram apagados. Antes do corte, revisar permissões antigas e suporte aos clientes existentes sem conceder vendas externas novas.
 

@@ -3,6 +3,8 @@ import { startBackups } from './ops/backup.mjs';
 import { createAIBudget, boundedLimit } from './ops/ai-budget.mjs';
 import { supportFaq } from './ops/support-faq.mjs';
 import { createRateLimiter, singleFlight } from './ops/runtime-guards.mjs';
+import { createPostgresStore } from './ops/postgres-store.mjs';
+import { createSharedBudget } from './ops/shared-budget.mjs';
 import { AsyncLocalStorage } from 'node:async_hooks';
 const requestLang = new AsyncLocalStorage();
 import fs from 'node:fs/promises';
@@ -57,7 +59,13 @@ const AI_ENABLED = process.env.AI_ENABLED === 'true';
 const AI_ALLOW_GUESTS = process.env.AI_ALLOW_GUESTS === 'true';
 const AI_GLOBAL_DAILY_LIMIT = boundedLimit(process.env.AI_GLOBAL_DAILY_LIMIT, 50);
 const AI_GLOBAL_MONTHLY_LIMIT = boundedLimit(process.env.AI_GLOBAL_MONTHLY_LIMIT, 500);
-const aiBudget = createAIBudget(DATA_DIR, {daily:AI_GLOBAL_DAILY_LIMIT, monthly:AI_GLOBAL_MONTHLY_LIMIT});
+const STORAGE_BACKEND = process.env.STORAGE_BACKEND || 'files';
+if (!['files','postgres'].includes(STORAGE_BACKEND)) throw new Error('Invalid STORAGE_BACKEND');
+const storage = STORAGE_BACKEND === 'postgres' ? await createPostgresStore() : null;
+if (!storage && Number(process.env.WEB_CONCURRENCY || 1) > 1) throw new Error('File storage supports only one process');
+const aiBudget = storage ? createSharedBudget(storage,{daily:AI_GLOBAL_DAILY_LIMIT,monthly:AI_GLOBAL_MONTHLY_LIMIT}) : createAIBudget(DATA_DIR, {daily:AI_GLOBAL_DAILY_LIMIT, monthly:AI_GLOBAL_MONTHLY_LIMIT});
+const storageCleanup = storage ? setInterval(()=>storage.pruneRates().catch(()=>console.error('[NutriPilot] Shared counter cleanup unavailable.')),60000) : null;
+storageCleanup?.unref();
 const MAX_JSON_BYTES = 14_000_000;
 const USER_STATE_LIMIT = 2_500_000;
 
@@ -162,6 +170,7 @@ function flushFunnel() {
     try {
       await ensureData();
       const file = path.join(DATA_DIR, 'funnel.json');
+      if(storage){await storage.mutate('legacy','funnel.json',{},counts=>{for(const [k,n]of Object.entries(pending)){if(counts[k]!==undefined&&(!Number.isSafeInteger(counts[k])||counts[k]<0))throw new Error('Invalid funnel counters');counts[k]=(counts[k]||0)+n;}return {value:counts};});return;}
       const counts = await readRecord(file, {});
       for (const [k, n] of Object.entries(pending)) {
         if (counts[k] !== undefined && (!Number.isSafeInteger(counts[k]) || counts[k] < 0)) throw new Error('Invalid funnel counters');
@@ -177,7 +186,8 @@ function flushFunnel() {
   return job;
 }
 
-const rateLimit = createRateLimiter();
+const localRateLimit = createRateLimiter();
+const rateLimit = (...args) => storage ? storage.rateLimit(...args) : localRateLimit(...args);
 
 async function readRaw(req, limit = MAX_JSON_BYTES) {
   const chunks = [];
@@ -230,6 +240,7 @@ function publicError(message, statusCode = 400) {
 }
 
 async function ensureData() {
+  if (storage) return;
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.mkdir(USERS_DIR, { recursive: true });
   try {
@@ -257,6 +268,7 @@ async function atomicWriteJson(file, data) {
 }
 
 async function readRecord(file, missing) {
+  if (storage) return storage.read('legacy',path.basename(file),missing);
   try {
     const data = JSON.parse(await fs.readFile(file, 'utf8'));
     if (!data || Array.isArray(data) || typeof data !== 'object') throw new Error('Invalid stored record');
@@ -269,6 +281,7 @@ async function readRecord(file, missing) {
 
 let waitlistQueue = Promise.resolve();
 function mutateWaitlist(fn) {
+  if(storage)return storage.mutate('legacy','waitlist.json',{},async value=>({result:await fn(value),value}));
   const job = waitlistQueue.then(async () => {
     await ensureData();
     const file = path.join(DATA_DIR, 'waitlist.json');
@@ -281,7 +294,11 @@ function mutateWaitlist(fn) {
   return job;
 }
 
-async function loadEntitlements() {
+async function loadEntitlements(email) {
+  if (storage) {
+    if (!email) throw new Error('Account key required for PostgreSQL reads');
+    const entry=await storage.read('entitlement',email,null);return entry?{[email]:entry}:{};
+  }
   await ensureData();
   const data = JSON.parse(await fs.readFile(ENTITLEMENTS_FILE, 'utf8'));
   if (!data || Array.isArray(data) || typeof data !== 'object') throw new Error('Invalid entitlements data');
@@ -296,6 +313,10 @@ const FREE_SCANS = AI_ENABLED && AI_ALLOW_GUESTS ? boundedLimit(process.env.FREE
 const FREE_FILE = path.join(DATA_DIR, 'free-scans.json');
 let freeQueue = Promise.resolve();
 function mutateFree(fn) {
+  if(storage)return storage.mutate('legacy','free-scans.json',{devices:{},ips:{}},async value=>{
+    if(!value.devices||!value.ips||Array.isArray(value.devices)||Array.isArray(value.ips)||Object.values(value.devices).some(n=>!Number.isSafeInteger(n)||n<0)||Object.values(value.ips).some(v=>!v||!/^\d{4}-\d{2}-\d{2}$/.test(v.day)||!Number.isSafeInteger(v.count)||v.count<0))throw new Error('Invalid scan counters');
+    return {result:await fn(value),value};
+  });
   const job = freeQueue.then(async () => {
     await ensureData();
     const data = await readRecord(FREE_FILE, { devices: {}, ips: {} });
@@ -329,14 +350,16 @@ function refundFreeScan({ d, n, day }) {
 
 // Pending web sign-ins (state → nonce), kept 10 minutes.
 const authStates = new Map();
-function newAuthState() {
+async function newAuthState() {
   const state = crypto.randomBytes(18).toString('base64url');
   const nonce = crypto.randomBytes(18).toString('base64url');
+  if(storage){await storage.mutate('auth-state',state,null,()=>({value:{nonce,expiresAt:Date.now()+600000}}));return {state,nonce};}
   authStates.set(state, { nonce, at: Date.now() });
   for (const [k, v] of authStates) if (Date.now() - v.at > 10 * 60 * 1000) authStates.delete(k);
   return { state, nonce };
 }
-function takeAuthState(state) {
+async function takeAuthState(state) {
+  if(storage)return storage.mutate('auth-state',String(state||''),null,value=>({value:null,result:value&&value.expiresAt>Date.now()?value:null}));
   const v = authStates.get(String(state || ''));
   authStates.delete(String(state || ''));
   return v && Date.now() - v.at < 10 * 60 * 1000 ? v : null;
@@ -344,7 +367,7 @@ function takeAuthState(state) {
 // Account session after Apple or Google: same token as the e-mail code sign-in.
 async function signInResult(provider, claims) {
   const email = accountEmail(provider, claims);
-  const entitlements = await loadEntitlements();
+  const entitlements = await loadEntitlements(email);
   const active = entitlements[email]?.status === 'active';
   return { ok: true, email, provider, premium: active, plan: active ? entitlements[email]?.plan || 'premium' : '', token: signAccessToken(email) };
 }
@@ -354,7 +377,8 @@ function authRedirect(res, payload) {
   res.end();
 }
 
-async function mutateEntitlements(fn) {
+async function mutateEntitlements(email, fn) {
+  if (storage) return storage.mutate('entitlement',email,null,async entry=>{const all=entry?{[email]:entry}:{};const result=await fn(all);return {value:all[email]||null,result};});
   const job = entitlementQueue.then(async () => {
     const data = await loadEntitlements();
     const result = await fn(data);
@@ -597,7 +621,7 @@ async function callAI(input, max = 1600, timeoutMs = 45_000, { json = true } = {
       lastError = publicError('L’analyse est temporairement indisponible.', 502);
       lastError.internalMessage = `OpenAI network: ${safeText(cause?.message || cause?.name || 'error', 200)}`;
       continue;
-    } finally { release(); }
+    } finally { await release(); }
     if (!response.ok) {
       aiRuntime.status = 'unavailable'; aiRuntime.checkedAt = new Date().toISOString();
       const quotaError = ['insufficient_quota', 'billing_hard_limit_reached'].includes(data?.error?.code) || /no credits remaining|exceeded your current quota/i.test(String(data?.error?.message || ''));
@@ -1221,10 +1245,10 @@ function bearer(req) {
 async function premiumIdentity(req) {
   const payload = verifyAccessToken(bearer(req));
   if (!payload) return null;
-  const entitlements = await loadEntitlements();
+  const entitlements = await loadEntitlements(payload.email);
   const entitlement = entitlements[payload.email];
   if (entitlement?.status === 'active' && entitlement?.accessUntil && Date.now() > Number(entitlement.accessUntil)) {
-    await mutateEntitlements((all) => {
+    await mutateEntitlements(payload.email, (all) => {
       const entry = all[payload.email];
       if (entry?.status === 'active' && entry?.accessUntil && Date.now() > Number(entry.accessUntil)) {
         entry.status = 'revoked';
@@ -1255,6 +1279,7 @@ function userFile(email) {
 }
 
 async function loadUserState(email) {
+  if(storage)return storage.read('user',path.basename(userFile(email),'.json'),null);
   await ensureData();
   return readRecord(userFile(email), null);
 }
@@ -1269,19 +1294,22 @@ async function saveUserState(email, data) {
   delete clean.premiumEmail;
   const raw = JSON.stringify(clean);
   if (Buffer.byteLength(raw, 'utf8') > USER_STATE_LIMIT) throw publicError('Données utilisateur trop volumineuses', 413);
+  if(storage)return storage.saveUser(email,path.basename(userFile(email),'.json'),clean);
   await atomicWriteJson(userFile(email), clean);
 }
 
 async function deleteUserState(email) {
+  if(storage)return storage.mutate('user',path.basename(userFile(email),'.json'),null,()=>({value:null}));
   try { await fs.unlink(userFile(email)); } catch (e) { if (e?.code !== 'ENOENT') throw e; }
 }
 
 async function deleteAccountData(email) {
+  if(storage)return storage.deleteAccount(email);
   // Remove the marketing entry on both deletion paths. Fail visibly if a
   // damaged waitlist prevents completing the request; never erase other leads.
   await mutateWaitlist(list => { delete list[email]; });
   await deleteUserState(email);
-  await mutateEntitlements(all => { delete all[email]; });
+  await mutateEntitlements(email, all => { delete all[email]; });
 }
 
 async function sendAccessEmail(email, code) {
@@ -1301,7 +1329,7 @@ async function sendAccessEmail(email, code) {
 
 async function requestAccessCode(email, purpose = 'login') {
   if (REVIEW_EMAIL && email === REVIEW_EMAIL && /^\d{6}$/.test(REVIEW_CODE)) return { ok: true, mailed: true };
-  const result = await mutateEntitlements(async (entitlements) => {
+  const result = await mutateEntitlements(email, async (entitlements) => {
     let entry = entitlements[email];
     // "signup": confirm the e-mail before an in-app purchase, so the subscription is tied to a proven address.
     if (purpose === 'signup' && !entry) entry = entitlements[email] = { status: 'none', source: 'signup', createdAt: new Date().toISOString() };
@@ -1329,12 +1357,12 @@ const isReviewLogin = (email, code) => Boolean(REVIEW_EMAIL && /^\d{6}$/.test(RE
 
 async function verifyAccessCode(email, code) {
   if (isReviewLogin(email, code)) {
-    return mutateEntitlements((entitlements) => {
+    return mutateEntitlements(email, (entitlements) => {
       entitlements[email] = { ...(entitlements[email] || {}), status: 'active', source: 'review', plan: 'complete_annual', accessUntil: Date.now() + 90 * 86_400_000, updatedAt: new Date().toISOString() };
       return true;
     });
   }
-  return mutateEntitlements((entitlements) => {
+  return mutateEntitlements(email, (entitlements) => {
     const entry = entitlements[email];
     if (!entry || !entry.codeHash || Date.now() > Number(entry.codeExpiresAt || 0)) return false;
     entry.codeAttempts = Number(entry.codeAttempts || 0) + 1;
@@ -1358,8 +1386,8 @@ const AI_USER_DAILY_LIMIT = boundedLimit(process.env.AI_USER_DAILY_LIMIT, 10);
 function aiGlobalOk() {
   return AI_ENABLED && AI_GLOBAL_DAILY_LIMIT > 0 && AI_GLOBAL_MONTHLY_LIMIT > 0;
 }
-function aiRateOk(req, email) {
-  return AI_USER_DAILY_LIMIT > 0 && rateLimit(`ai:${email}:${clientIp(req)}`, 80, 60 * 60 * 1000) && rateLimit(`aiday:${email}`, AI_USER_DAILY_LIMIT, 24 * 60 * 60 * 1000) && aiGlobalOk();
+async function aiRateOk(req, email) {
+  return AI_USER_DAILY_LIMIT > 0 && (await rateLimit(`ai:${email}:${clientIp(req)}`, 80, 60 * 60 * 1000)) && (await rateLimit(`aiday:${email}`, AI_USER_DAILY_LIMIT, 24 * 60 * 60 * 1000)) && aiGlobalOk();
 }
 
 // ---- App Store / Google Play subscriptions (through RevenueCat) ---------------------------
@@ -1419,7 +1447,7 @@ function applyStoreAccess(entry) {
 }
 async function syncStoreAccount(email, appUserId, subscriber = null) {
   const result = activeStorePlans(subscriber || await revenueCatSubscriber(appUserId));
-  return mutateEntitlements((all) => {
+  return mutateEntitlements(email, (all) => {
     const entry = all[email] || (all[email] = { status: 'none', createdAt: new Date().toISOString() });
     entry.storeAccounts = { ...(entry.storeAccounts || {}), [appUserId]: { ...result, syncedAt: new Date().toISOString() } };
     applyStoreAccess(entry);
@@ -1429,6 +1457,7 @@ async function syncStoreAccount(email, appUserId, subscriber = null) {
 const validAppUserId = (id) => /^[\w$:.@-]{1,120}$/.test(String(id || ''));
 
 const dataDirectoryWritable = singleFlight(async () => {
+  if(storage)return storage.health();
   const probe = path.join(DATA_DIR, `.health-${process.pid}-${crypto.randomUUID()}.tmp`);
   try {
     await loadEntitlements();
@@ -1450,7 +1479,7 @@ const server = http.createServer(async (req, res) => {
     if (/^\/auth\/(apple|google)\/start$/.test(url.pathname) && req.method === 'GET') {
       const provider = url.pathname.split('/')[2];
       if (!webFlowEnabled[provider]()) { res.writeHead(302, { Location: '/#app' }); return res.end(); }
-      const { state, nonce } = newAuthState();
+      const { state, nonce } = await newAuthState();
       const redirectUri = `${APP_URL}/auth/${provider}/callback`;
       res.writeHead(302, { Location: provider === 'apple' ? appleAuthorizeUrl({ redirectUri, state, nonce }) : googleAuthorizeUrl({ redirectUri, state, nonce }), 'Cache-Control': 'no-store' });
       return res.end();
@@ -1460,7 +1489,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const params = req.method === 'POST' ? new URLSearchParams(await readRaw(req)) : url.searchParams;
         if (params.get('error')) return authRedirect(res, { ok: false, error: 'cancelled' });
-        const pending = takeAuthState(params.get('state'));
+        const pending = await takeAuthState(params.get('state'));
         if (!pending) throw new Error('state');
         const idToken = provider === 'apple' ? params.get('id_token') : await googleExchangeCode({ code: params.get('code') || '', redirectUri: `${APP_URL}/auth/google/callback` });
         const claims = await verifyIdToken(provider, idToken, { nonce: pending.nonce });
@@ -1513,7 +1542,7 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === '/delete-account/request' && req.method === 'POST') {
         const email = safeEmail((await form()).email);
         if (!email) return page({ message: 'bad' }, 400);
-        if (rateLimit(`del:${clientIp(req)}:${email}`, 5, 15 * 60 * 1000)) await requestAccessCode(email, 'delete').catch(() => {});
+        if (await rateLimit(`del:${clientIp(req)}:${email}`, 5, 15 * 60 * 1000)) await requestAccessCode(email, 'delete').catch(() => {});
         // Same answer whether or not the account exists (no account discovery).
         return page({ step: 'code', email, message: 'sent' });
       }
@@ -1521,7 +1550,7 @@ const server = http.createServer(async (req, res) => {
         const body = await form();
         const email = safeEmail(body.email);
         const code = String(body.code || '').trim();
-        if (!email || !/^\d{6}$/.test(code) || !rateLimit(`delv:${clientIp(req)}:${email}`, 10, 15 * 60 * 1000) || !(await verifyAccessCode(email, code))) return page({ step: 'code', email, message: 'bad' }, 400);
+        if (!email || !/^\d{6}$/.test(code) || !(await rateLimit(`delv:${clientIp(req)}:${email}`, 10, 15 * 60 * 1000)) || !(await verifyAccessCode(email, code))) return page({ step: 'code', email, message: 'bad' }, 400);
         await deleteAccountData(email);
         return page({ step: 'done' });
       }
@@ -1546,7 +1575,7 @@ const server = http.createServer(async (req, res) => {
       const email = Boolean(RESEND_API_KEY && RESEND_FROM);
       const accessSecret = Boolean(ACCESS_TOKEN_SECRET && ACCESS_TOKEN_SECRET.length >= 24);
       const ai = Boolean(AI_ENABLED && OPENAI_API_KEY && OPENAI_MODEL);
-      const persistentPath = path.resolve(DATA_DIR) === '/data';
+      const persistentPath = Boolean(storage) || path.resolve(DATA_DIR) === '/data';
       const storeBilling = { serverKey: Boolean(REVENUECAT_SECRET_KEY), webhook: Boolean(REVENUECAT_WEBHOOK_AUTH), ios: Boolean(process.env.REVENUECAT_IOS_KEY), android: Boolean(process.env.REVENUECAT_ANDROID_KEY) };
       const legal = Boolean(process.env.LEGAL_COMPANY_NAME && process.env.LEGAL_COMPANY_ADDRESS);
       const stores = { appStoreUrl: Boolean(process.env.APP_STORE_URL), playStoreUrl: Boolean(process.env.PLAY_STORE_URL) };
@@ -1555,7 +1584,7 @@ const server = http.createServer(async (req, res) => {
         backups: backupManager.state,
         aiProvider: aiRuntime,
         ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && storeBilling.ios && storeBilling.android && legal,
-        version: '18.0.2',
+        version: '18.1.0',
         revision: process.env.APP_REVISION || 'unknown',
         brand: BRAND_NAME,
         ai,
@@ -1565,7 +1594,7 @@ const server = http.createServer(async (req, res) => {
         legal,
         stores,
         dataDir: DATA_DIR,
-        persistence: { configured: persistentPath, writable: dataWritable },
+        persistence: { backend:STORAGE_BACKEND,configured: persistentPath, writable: dataWritable,shared:Boolean(storage) },
       });
     }
 
@@ -1577,7 +1606,7 @@ const server = http.createServer(async (req, res) => {
     if (/^\/api\/auth\/(apple|google)$/.test(url.pathname) && req.method === 'POST') {
       const provider = url.pathname.split('/').pop();
       if (!providerEnabled(provider)) return send(res, 503, { error: 'Connexion indisponible pour le moment.' });
-      if (!rateLimit(`auth:${clientIp(req)}`, 20, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de tentatives. Réessayez dans quelques minutes.' });
+      if (!(await rateLimit(`auth:${clientIp(req)}`, 20, 15 * 60 * 1000))) return send(res, 429, { error: 'Trop de tentatives. Réessayez dans quelques minutes.' });
       const body = await readJson(req);
       try {
         const claims = await verifyIdToken(provider, body.idToken, { nonce: body.nonce });
@@ -1592,7 +1621,7 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const email = safeEmail(body.email);
       if (!email) return send(res, 400, { error: 'Email invalide' });
-      if (!rateLimit(`code:${clientIp(req)}:${email}`, 5, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
+      if (!(await rateLimit(`code:${clientIp(req)}:${email}`, 5, 15 * 60 * 1000))) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
       const result = await requestAccessCode(email, body.purpose === 'signup' ? 'signup' : 'login');
       if (!result.ok) return send(res, 404, { error: 'Aucun achat actif trouvé pour cet e-mail.' });
       if (result.emailUnavailable) return send(res, 503, { error: `L’envoi d’e-mail n’est pas encore configuré. Contactez ${SUPPORT_EMAIL}.` });
@@ -1604,10 +1633,10 @@ const server = http.createServer(async (req, res) => {
       const email = safeEmail(body.email);
       const code = String(body.code || '');
       if (!email || !/^\d{6}$/.test(code)) return send(res, 400, { error: 'Données invalides' });
-      if (!rateLimit(`verify:${clientIp(req)}:${email}`, 12, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de tentatives. Demandez un nouveau code plus tard.' });
+      if (!(await rateLimit(`verify:${clientIp(req)}:${email}`, 12, 15 * 60 * 1000))) return send(res, 429, { error: 'Trop de tentatives. Demandez un nouveau code plus tard.' });
       const ok = await verifyAccessCode(email, code);
       if (!ok) return send(res, 401, { error: 'Code invalide ou expiré' });
-      const entitlements = await loadEntitlements();
+      const entitlements = await loadEntitlements(email);
       const active = entitlements[email]?.status === 'active';
       return send(res, 200, {
         ok: true,
@@ -1627,7 +1656,7 @@ const server = http.createServer(async (req, res) => {
       if (!payload || !safeEmail(payload.email)) return send(res, 401, {error: 'Confirmez votre compte avant de vérifier un achat.'});
       const expectedAppUserId = 'np-' + hashKey(`nutripilot:${payload.email.toLowerCase()}`).slice(0,32);
       if (body.appUserId !== expectedAppUserId) return send(res, 403, {error: 'Cet achat ne correspond pas au compte connecté.'});
-      if (!rateLimit(`iap:${clientIp(req)}:${payload.email}`, 30, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
+      if (!(await rateLimit(`iap:${clientIp(req)}:${payload.email}`, 30, 15 * 60 * 1000))) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
       const result = await syncStoreAccount(payload.email, String(body.appUserId));
       return send(res, 200, { ok: true, premium: result.active, email: payload.email, plan: result.plan, token: result.active ? signAccessToken(payload.email) : undefined });
     }
@@ -1639,7 +1668,7 @@ const server = http.createServer(async (req, res) => {
       const event = body?.event || {};
       if (event.aliases !== undefined && !Array.isArray(event.aliases)) return send(res, 400, {error:'Événement invalide'});
       const ids = new Set([event.app_user_id, event.original_app_user_id, ...(event.aliases || [])].filter(validAppUserId).map(String));
-      const entitlements = await loadEntitlements();
+      const entitlements = storage ? await storage.all('entitlement',[...ids]) : await loadEntitlements();
       const targets = [];
       for (const [email, entry] of Object.entries(entitlements)) for (const id of Object.keys(entry.storeAccounts || {})) if (ids.has(id)) targets.push([email, id]);
       for (const [email, id] of targets) await syncStoreAccount(email, id); // Failure returns an error so delivery can be retried.
@@ -1658,12 +1687,12 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const payload = verifyAccessToken(body.token || '');
       if (!payload) return send(res, 401, { premium: false, error: 'Session Premium invalide ou expirée' });
-      const entitlements = await loadEntitlements();
+      const entitlements = await loadEntitlements(payload.email);
       const entry = entitlements[payload.email];
       if (entry?.status === 'active' && entry?.accessUntil && Date.now() > Number(entry.accessUntil)) {
-        await mutateEntitlements((all) => {
+        await mutateEntitlements(payload.email, (all) => {
           const current = all[payload.email];
-          if (current) {
+          if (current?.status === 'active' && current.accessUntil && Date.now() > Number(current.accessUntil)) {
             current.status = 'revoked';
             current.event = 'LOCAL_ACCESS_PERIOD_ENDED';
             current.updatedAt = new Date().toISOString();
@@ -1690,7 +1719,7 @@ const server = http.createServer(async (req, res) => {
 
     // Anonymous funnel counters: event name + day + language only. No identifiers are stored.
     if (url.pathname === '/api/event' && req.method === 'POST') {
-      if (!rateLimit(`event:${clientIp(req)}`, 120, 60 * 60 * 1000)) return send(res, 204, {});
+      if (!(await rateLimit(`event:${clientIp(req)}`, 120, 60 * 60 * 1000))) return send(res, 204, {});
       const body = await readJson(req);
       const name = String(body.name || '');
       if (!FUNNEL_EVENTS.has(name)) return send(res, 204, {});
@@ -1711,7 +1740,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/waitlist' && req.method === 'POST') {
-      if (!rateLimit(`waitlist:${clientIp(req)}`, 8, 60 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez plus tard.' });
+      if (!(await rateLimit(`waitlist:${clientIp(req)}`, 8, 60 * 60 * 1000))) return send(res, 429, { error: 'Trop de demandes. Réessayez plus tard.' });
       const body = await readJson(req);
       const email = safeEmail(body.email);
       if (!email) return send(res, 400, { error: 'E-mail invalide' });
@@ -1729,13 +1758,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/support' && req.method === 'POST') {
-      if (!rateLimit(`support:${clientIp(req)}`, 25, 60 * 60 * 1000)) return send(res, 429, { error: 'Trop de messages. Écrivez-nous par e-mail.' });
+      if (!(await rateLimit(`support:${clientIp(req)}`, 25, 60 * 60 * 1000))) return send(res, 429, { error: 'Trop de messages. Écrivez-nous par e-mail.' });
       return send(res, 200, await support(await readJson(req)));
     }
 
     // Barcodes are free for everyone (Open Food Facts, no AI cost), with a rate limit.
     if (url.pathname === '/api/barcode' && req.method === 'GET' && !(await premiumIdentity(req))) {
-      if (!rateLimit(`barcode:${clientIp(req)}`, 60, 60 * 60 * 1000)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
+      if (!(await rateLimit(`barcode:${clientIp(req)}`, 60, 60 * 60 * 1000))) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
       return send(res, 200, await barcode(url.searchParams.get('code') || ''));
     }
 
@@ -1743,7 +1772,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/analyze' && req.method === 'POST' && FREE_SCANS > 0 && !(await premiumIdentity(req))) {
       const device = String(req.headers['x-np-device'] || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
       if (device.length < 8) return send(res, 401, { error: 'Accès Premium requis. Connectez-vous avec l’e-mail utilisé lors de votre achat.' });
-      if (!aiRateOk(req, `free:${device}`)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
+      if (!(await aiRateOk(req, `free:${device}`))) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
       const body = await readJson(req);
       const q = await useFreeScan(device, clientIp(req));
       if (!q.ok) return send(res, 402, { error: 'Vos analyses gratuites sont utilisées. Choisissez une formule pour continuer.', code: 'free_limit', freeLeft: 0 });
@@ -1757,7 +1786,7 @@ const server = http.createServer(async (req, res) => {
       if (!identity) return;
 
       if (['/api/copilot', '/api/analyze', '/api/supplement', '/api/compose', '/api/coach', '/api/week-plan', '/api/smart-swap', '/api/weekly-review', '/api/recipe', '/api/fridge', '/api/restaurant', '/api/import-plan'].includes(url.pathname)) {
-        if (!aiRateOk(req, identity.email)) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
+        if (!(await aiRateOk(req, identity.email))) return send(res, 429, { error: 'Trop de requêtes en peu de temps. Réessayez dans quelques minutes.' });
       }
 
       if (url.pathname === '/api/analyze' && req.method === 'POST') return send(res, 200, await aiAnalyze(await readJson(req)));
@@ -1830,13 +1859,14 @@ await ensureData();
 if (process.env.NODE_ENV === 'production' && (!ACCESS_TOKEN_SECRET || ACCESS_TOKEN_SECRET.length < 24)) {
   console.warn('[NutriPilot] ACCESS_TOKEN_SECRET est absent ou trop court. Les connexions Premium ne pourront pas être créées.');
 }
-const backupManager = startBackups(DATA_DIR);
-server.listen(PORT, '0.0.0.0', () => { console.log(`${BRAND_NAME} v18.0.2 — ${APP_URL}`); refreshRates(); });
+const backupManager = storage ? {state:{enabled:false,storage:'postgres',requiresDatabaseBackup:true},stop(){}} : startBackups(DATA_DIR);
+server.listen(PORT, '0.0.0.0', () => { console.log(`${BRAND_NAME} v18.1.0 — ${APP_URL}`); refreshRates(); });
 for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => {
   backupManager.stop();
+  clearInterval(storageCleanup);
   clearTimeout(funnelTimer);
   server.close(async () => {
-    try { await flushFunnel(); process.exit(0); }
+    try { await flushFunnel(); await storage?.close(); process.exit(0); }
     catch { console.error('[NutriPilot] Pending funnel events could not be saved during shutdown.'); process.exit(1); }
   });
   setTimeout(() => process.exit(1), 10000).unref();

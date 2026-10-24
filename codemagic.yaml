@@ -19,7 +19,7 @@ workflows:
       groups:
         - google_play # GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
       vars:
-        APP_VERSION: "18.0.2"
+        APP_VERSION: "18.1.0"
     scripts:
       - name: Install Capacitor + RevenueCat
         script: npm ci
@@ -58,7 +58,7 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.atlasevermore.nutripilot
       vars:
-        APP_VERSION: "18.0.2"
+        APP_VERSION: "18.1.0"
     scripts:
       - name: Install Capacitor + RevenueCat
         script: npm ci
