@@ -152,16 +152,28 @@ function clientIp(req) {
 const FUNNEL_EVENTS = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus', 'TrialStart', 'TrialEnded', 'TrialSignIn']);
 let funnelBuffer = {};
 let funnelTimer = null;
+let funnelQueue = Promise.resolve();
 function scheduleFunnelFlush() { if (!funnelTimer) funnelTimer = setTimeout(() => { funnelTimer = null; flushFunnel().catch(() => {}); }, 30_000); }
-async function flushFunnel() {
-  const pending = funnelBuffer; funnelBuffer = {};
-  if (!Object.keys(pending).length) return;
-  await ensureData();
-  const file = path.join(DATA_DIR, 'funnel.json');
-  let counts = {};
-  try { counts = JSON.parse(await fs.readFile(file, 'utf8')); } catch {}
-  for (const [k, n] of Object.entries(pending)) counts[k] = (counts[k] || 0) + n;
-  await fs.writeFile(file, JSON.stringify(counts));
+function flushFunnel() {
+  const job = funnelQueue.then(async () => {
+    const pending = funnelBuffer; funnelBuffer = {};
+    if (!Object.keys(pending).length) return;
+    try {
+      await ensureData();
+      const file = path.join(DATA_DIR, 'funnel.json');
+      const counts = await readRecord(file, {});
+      for (const [k, n] of Object.entries(pending)) {
+        if (counts[k] !== undefined && (!Number.isSafeInteger(counts[k]) || counts[k] < 0)) throw new Error('Invalid funnel counters');
+        counts[k] = (counts[k] || 0) + n;
+      }
+      await atomicWriteJson(file, counts);
+    } catch (error) {
+      for (const [k, n] of Object.entries(pending)) funnelBuffer[k] = (funnelBuffer[k] || 0) + n;
+      throw error;
+    }
+  });
+  funnelQueue = job.catch(() => {});
+  return job;
 }
 
 function rateLimit(key, limit, windowMs) {
@@ -285,6 +297,31 @@ async function atomicWriteJson(file, data) {
   }
 }
 
+async function readRecord(file, missing) {
+  try {
+    const data = JSON.parse(await fs.readFile(file, 'utf8'));
+    if (!data || Array.isArray(data) || typeof data !== 'object') throw new Error('Invalid stored record');
+    return data;
+  } catch (error) {
+    if (error.code === 'ENOENT' && missing !== undefined) return missing;
+    throw error;
+  }
+}
+
+let waitlistQueue = Promise.resolve();
+function mutateWaitlist(fn) {
+  const job = waitlistQueue.then(async () => {
+    await ensureData();
+    const file = path.join(DATA_DIR, 'waitlist.json');
+    const data = await readRecord(file, {});
+    const result = await fn(data);
+    await atomicWriteJson(file, data);
+    return result;
+  });
+  waitlistQueue = job.catch(() => {});
+  return job;
+}
+
 async function loadEntitlements() {
   await ensureData();
   const data = JSON.parse(await fs.readFile(ENTITLEMENTS_FILE, 'utf8'));
@@ -302,8 +339,10 @@ let freeQueue = Promise.resolve();
 function mutateFree(fn) {
   const job = freeQueue.then(async () => {
     await ensureData();
-    let data = { devices: {}, ips: {} };
-    try { data = { devices: {}, ips: {}, ...JSON.parse(await fs.readFile(FREE_FILE, 'utf8')) }; } catch { /* first use */ }
+    const data = await readRecord(FREE_FILE, { devices: {}, ips: {} });
+    if (![data.devices, data.ips].every(v => v && typeof v === 'object' && !Array.isArray(v))) throw new Error('Invalid free scan counters');
+    if (Object.values(data.devices).some(n => !Number.isSafeInteger(n) || n < 0)
+      || Object.values(data.ips).some(v => !v || !/^\d{4}-\d{2}-\d{2}$/.test(v.day) || !Number.isSafeInteger(v.count) || v.count < 0)) throw new Error('Invalid free scan values');
     const result = await fn(data);
     await atomicWriteJson(FREE_FILE, data);
     return result;
@@ -1389,17 +1428,13 @@ function userFile(email) {
 
 async function loadUserState(email) {
   await ensureData();
-  try {
-    return JSON.parse(await fs.readFile(userFile(email), 'utf8'));
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-    return null;
-  }
+  return readRecord(userFile(email), null);
 }
 
 async function saveUserState(email, data) {
   await ensureData();
   if (!data || typeof data !== 'object' || Array.isArray(data)) throw publicError('État utilisateur invalide');
+  await loadUserState(email); // Preserve a damaged existing file for recovery instead of overwriting it.
   const clean = { ...(data || {}) };
   delete clean.accessToken;
   delete clean.premium;
@@ -1411,6 +1446,14 @@ async function saveUserState(email, data) {
 
 async function deleteUserState(email) {
   try { await fs.unlink(userFile(email)); } catch (e) { if (e?.code !== 'ENOENT') throw e; }
+}
+
+async function deleteAccountData(email) {
+  // Remove the marketing entry on both deletion paths. Fail visibly if a
+  // damaged waitlist prevents completing the request; never erase other leads.
+  await mutateWaitlist(list => { delete list[email]; });
+  await deleteUserState(email);
+  await mutateEntitlements(all => { delete all[email]; });
 }
 
 async function sendAccessEmail(email, code) {
@@ -1726,8 +1769,7 @@ const server = http.createServer(async (req, res) => {
         const email = safeEmail(body.email);
         const code = String(body.code || '').trim();
         if (!email || !/^\d{6}$/.test(code) || !rateLimit(`delv:${clientIp(req)}:${email}`, 10, 15 * 60 * 1000) || !(await verifyAccessCode(email, code))) return page({ step: 'code', email, message: 'bad' }, 400);
-        await deleteUserState(email);
-        await mutateEntitlements((all) => { delete all[email]; });
+        await deleteAccountData(email);
         return page({ step: 'done' });
       }
     }
@@ -1870,13 +1912,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/account' && req.method === 'DELETE') {
       const payload = verifyAccessToken(bearer(req));
       if (!payload) return send(res, 401, { error: 'Session invalide. Connectez-vous à nouveau.' });
-      await deleteUserState(payload.email);
-      await mutateEntitlements((all) => { delete all[payload.email]; });
-      try {
-        const file = path.join(DATA_DIR, 'waitlist.json');
-        const list = JSON.parse(await fs.readFile(file, 'utf8'));
-        if (list[payload.email]) { delete list[payload.email]; await atomicWriteJson(file, list); }
-      } catch { /* no waitlist file */ }
+      await deleteAccountData(payload.email);
       return send(res, 200, { ok: true });
     }
 
@@ -1910,8 +1946,7 @@ const server = http.createServer(async (req, res) => {
       const key = process.env.ADMIN_KEY || '';
       const given = String(req.headers['x-admin-key'] || url.searchParams.get('key') || '');
       if (!key || key.length < 16 || !safeTokenEqual(given, key)) return send(res, 404, { error: 'API introuvable' });
-      let list = {};
-      try { list = JSON.parse(await fs.readFile(path.join(DATA_DIR, 'waitlist.json'), 'utf8')); } catch {}
+      const list = await readRecord(path.join(DATA_DIR, 'waitlist.json'), {});
       return send(res, 200, { count: Object.keys(list).length, list });
     }
 
@@ -1933,8 +1968,7 @@ const server = http.createServer(async (req, res) => {
       const given = String(req.headers['x-admin-key'] || url.searchParams.get('key') || '');
       if (!key || key.length < 16 || !safeTokenEqual(given, key)) return send(res, 404, { error: 'API introuvable' });
       await flushFunnel();
-      let counts = {};
-      try { counts = JSON.parse(await fs.readFile(path.join(DATA_DIR, 'funnel.json'), 'utf8')); } catch {}
+      const counts = await readRecord(path.join(DATA_DIR, 'funnel.json'), {});
       return send(res, 200, { counts });
     }
 
@@ -1943,12 +1977,8 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const email = safeEmail(body.email);
       if (!email) return send(res, 400, { error: 'E-mail invalide' });
-      await ensureData();
-      const file = path.join(DATA_DIR, 'waitlist.json');
-      let list = {};
-      try { list = JSON.parse(await fs.readFile(file, 'utf8')); } catch {}
       const utms = body.utms && typeof body.utms === 'object' ? Object.fromEntries(Object.entries(body.utms).slice(0, 8).map(([k, v]) => [safeText(k, 40), safeText(v, 120)])) : {};
-      list[email] = {
+      await mutateWaitlist(list => { list[email] = {
         ...(list[email] || {}),
         lang: safeText(body.lang || 'fr', 5),
         plan: safeText(body.plan || '', 40),
@@ -1956,8 +1986,7 @@ const server = http.createServer(async (req, res) => {
         utms,
         createdAt: list[email]?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      };
-      await atomicWriteJson(file, list);
+      }; });
       return send(res, 200, { ok: true });
     }
 
@@ -2067,6 +2096,10 @@ const backupManager = startBackups(DATA_DIR);
 server.listen(PORT, '0.0.0.0', () => { console.log(`${BRAND_NAME} v18.0.2 — ${APP_URL}`); refreshRates(); });
 for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => {
   backupManager.stop();
-  server.close(() => process.exit(0));
+  clearTimeout(funnelTimer);
+  server.close(async () => {
+    try { await flushFunnel(); process.exit(0); }
+    catch { console.error('[NutriPilot] Pending funnel events could not be saved during shutdown.'); process.exit(1); }
+  });
   setTimeout(() => process.exit(1), 10000).unref();
 });

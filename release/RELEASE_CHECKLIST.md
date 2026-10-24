@@ -20,6 +20,8 @@ Escopo atual: site/PWA com vendas Hotmart. App Store/Google Play só entram como
 
 A candidata deve ser obtida da revisão atual do GitHub, com imagem imutável por SHA/digest. Não implantar V13, V14… individualmente. Conferir o histórico e validar eventuais mudanças de formato antes do salto da V12.
 
+Prioridade definida pelo proprietário: corrigir e proteger os dados primeiro; avaliar créditos/alternativas de IA por último, sem compras automáticas. A publicação será diretamente da candidata consolidada mais recente, mantendo as versões intermediárias apenas no histórico.
+
 ## Fase 1 — antes de implantar (`prepare`)
 
 Todos os itens bloqueiam a publicação até existir evidência válida em `release/readiness.json`.
@@ -44,7 +46,7 @@ Todos os itens bloqueiam a publicação até existir evidência válida em `rele
 4. Confirmar a versão e `applicationTree` com `git rev-parse HEAD:nutripilot-france-hotmart-final-v4`. Mudança no código da aplicação invalida o vínculo da evidência; revisar o que precisa ser testado outra vez antes de atualizar o hash.
 5. Executar `node ops/release-gate.mjs prepare`. Saída diferente de zero significa **não implantar**.
 
-A trava também recusa evidência ausente, antiga, com data futura, sem responsável, com possível segredo ou vinculada a outra árvore da aplicação. Os prazos são por requisito: backup prévio de até 8 horas; restauração ensaiada em até 30 dias; acesso e saldo conferidos em até 24 horas.
+A trava também recusa código da aplicação alterado ou novo fora da revisão Git aprovada, evidência ausente, antiga, com data futura, sem responsável, com possível segredo ou vinculada a outra árvore da aplicação. Os prazos são por requisito: backup prévio de até 8 horas; restauração ensaiada em até 30 dias; acesso e saldo conferidos em até 24 horas.
 
 ## Ordem da implantação
 

@@ -1,12 +1,12 @@
 # NutriPilot: operação e recuperação
 
-## Estado verificado em 23/10/2026
+## Estado verificado em 24/10/2026
 
-A versão 18.0.1 foi integrada no GitHub e a imagem passou na CI. A preparação 18.0.2 acrescenta backups, proteção contra corrupção, diagnóstico e monitoramento. O Railway ainda bloqueia novas publicações; a produção foi observada em 12.0.0. Não confundir código aprovado com implantação concluída.
+A versão 18.0.1 foi integrada no GitHub e a imagem passou na CI. A candidata consolidada 18.0.2 inclui backups, proteção contra corrupção, diagnóstico, monitoramento e correções de concorrência. Não publicar versões intermediárias. O Railway ainda bloqueia novas publicações; a produção foi observada em 12.0.0. Não confundir código aprovado com implantação concluída.
 
 O pedido de desbloqueio foi enviado ao suporte oficial. Não excluir o serviço, o domínio nem o volume `55b5791c-7889-4feb-bbac-992135e41252`, montado em `/data`.
 
-Somente `ACCESS_TOKEN_SECRET` foi trocado na configuração do Railway; o processo em execução só usará o novo valor após a próxima implantação. A rotação de OpenAI, Resend e Hotmart não foi concluída. A criação de uma chave não revoga automaticamente a antiga. A IA retornou falta de créditos; não atribuir esse consumo ao incidente sem examinar o histórico do provedor.
+`ACCESS_TOKEN_SECRET`, `OPENAI_API_KEY` e `RESEND_API_KEY` foram substituídos na configuração do Railway. As chaves de OpenAI e Resend têm escopo reduzido. O processo V12 em execução ainda não recebeu essas alterações; é necessário implantar, testar e encerrar as anteriores. A troca do Hottok da Hotmart permanece pendente. A criação de uma chave não revoga automaticamente a antiga. A IA retornou falta de créditos; não atribuir esse consumo ao incidente sem examinar o histórico do provedor.
 
 ## Credenciais e despesas
 
@@ -21,7 +21,7 @@ Para cada provedor, criar uma credencial substituta na conta correta, com o meno
 
 A interface atual do Railway informa que criar backups e agendamentos exige upgrade para Pro. Nenhum upgrade foi realizado. Não há confirmação de backup existente nessa interface.
 
-O servidor novo cria um backup criptografado na inicialização e a cada 6 horas SE `BACKUP_ENCRYPTION_KEY` estiver configurada. Sem chave não cria cópias e o diagnóstico informa `enabled: false`. Mantém até sete arquivos locais, com orçamento de 64 MiB e reserva de espaço livre; esses arquivos sozinhos NÃO protegem contra perda do provedor.
+O servidor novo cria um backup criptografado na inicialização e a cada 6 horas SE `BACKUP_ENCRYPTION_KEY` estiver configurada. Sem chave não cria cópias e o diagnóstico informa `enabled: false`. Confirma a gravação completa da nova cópia antes de remover as anteriores. Mantém até sete arquivos locais, com orçamento de 64 MiB e reserva de espaço livre; esses arquivos sozinhos NÃO protegem contra perda do provedor.
 
 Configurar um bucket privado em conta independente do Railway com endpoint S3 compatível, acesso mínimo de gravação no prefixo `nutripilot/`, versionamento e política de retenção definida pelo responsável pelos dados. Os campos estão em `.env.example`. Armazenamento pode gerar cobrança; não provisionar sem verificar a conta e o custo. Uma credencial separada de leitura/recuperação deve ficar no gerenciador de senhas.
 
@@ -66,3 +66,15 @@ A imagem Docker é portátil; `compose.recovery.yml` prepara execução em host 
 - Suspender gravações na origem, restaurar cópia final, testar, apontar DNS, confirmar certificados e webhooks. Manter a origem preservada até a aceitação da migração.
 
 Não foi feita migração real, mudança de DNS ou recuperação de dados reais. Essas etapas dependem de acesso autenticado ao volume, armazenamento independente e servidor de destino. Objetivo operacional proposto: cópia a cada 6 horas; tempo de recuperação só pode ser declarado depois de um ensaio real medido.
+
+## Prioridade e acesso aos dados reais
+
+Créditos e comparação de alternativas de IA ficam por último, conforme a orientação do proprietário. Nenhuma compra ou recarga foi autorizada. Isso não impede corrigir e testar o código com provedores simulados. A IA real continua dependendo de configuração e capacidade disponíveis.
+
+O domínio confirmado no Railway é `app.atlasevermore.com`, com DNS propagado e certificado válido. O nome diferente informado por voz/texto não foi aplicado ao DNS. O teste pessoal do proprietário pode ser feito depois; a aceitação técnica em produção continua obrigatória antes de declarar a publicação concluída.
+
+O painel Console foi consultado e informou `No running instances` / `Disconnected` para acesso remoto. A instalação alternativa do CLI falhou ao baixar o binário oficial por timeout de rede. Isso não comprova perda dos dados ou queda do site; apenas impede a exportação nesta sessão. O volume /data foi preservado. Nenhum backup real foi baixado ou enviado por e-mail.
+
+Para exportar sem depender de uma nova implantação, usar uma sessão Railway CLI/SSH autenticada: a documentação oficial permite SFTP/SCP do volume em https://docs.railway.com/cli/ssh#copy-files-with-scp-and-sftp . Gerar uma cópia consistente, criptografar e baixar, depois ensaiar a restauração em diretório novo com o utilitário deste repositório. Não copiar segredos antigos do painel para obter acesso. Não publicar os dados no GitHub nem encaminhar dados de saúde sem criptografia.
+
+Um ZIP do código é uma cópia do aplicativo e das instruções de recuperação; não contém refeições, usuários, permissões de compra nem credenciais da produção. Ele não deve ser usado como prova de backup dos dados reais.
