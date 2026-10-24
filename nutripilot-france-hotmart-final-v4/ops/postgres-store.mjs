@@ -43,8 +43,14 @@ export class PostgresStore {
     const r=ids?await this.pool.query("SELECT key,value FROM np_documents WHERE kind='entitlement' AND (value->'storeAccounts') ?| $1::text[]",[ids]):await this.pool.query('SELECT key,value FROM np_documents WHERE kind=$1',[kind]);
     return Object.fromEntries(r.rows.map(x=>[x.key,x.value]));
   }
+  async page(kind,{limit=100,after=''}={}){
+    limit=Math.max(1,Math.min(1000,Number(limit)||100));limit=Math.floor(limit);
+    const r=await this.pool.query('SELECT key,value FROM np_documents WHERE kind=$1 AND key>$2 ORDER BY key LIMIT $3',[kind,after,limit+1]);
+    const rows=r.rows.slice(0,limit);const count=await this.pool.query('SELECT count(*)::text n FROM np_documents WHERE kind=$1',[kind]);
+    return {count:Number(count.rows[0].n),list:Object.fromEntries(rows.map(x=>[x.key,x.value])),next:r.rows.length>limit?rows.at(-1)?.key:null};
+  }
   async saveUser(email,key,value){return this.transaction(async c=>{await this.lock(c,'entitlement',email);const entry=await this.read('entitlement',email,null,c);if(!entry || entry.status!=='active' || (entry.accessUntil && Number(entry.accessUntil)<Date.now()))throw Object.assign(new Error('Account access changed; sign in again'),{statusCode:401});await this.lock(c,'user',key);await this.write(c,'user',key,value);});}
-  async deleteAccount(email){const hash=crypto.createHash('sha256').update(email).digest('hex');return this.transaction(async c=>{await this.lock(c,'entitlement',email);await this.lock(c,'user',hash);await this.lock(c,'legacy','waitlist.json');const list=await this.read('legacy','waitlist.json',{},c);delete list[email];await this.write(c,'legacy','waitlist.json',list);await this.write(c,'user',hash,null);await this.write(c,'entitlement',email,null);});}
+  async deleteAccount(email){const hash=crypto.createHash('sha256').update(email).digest('hex');return this.transaction(async c=>{await this.lock(c,'entitlement',email);await this.lock(c,'user',hash);await this.lock(c,'waitlist',email);await this.write(c,'waitlist',email,null);await this.write(c,'user',hash,null);await this.write(c,'entitlement',email,null);});}
   async rateLimit(key,limit,windowMs){
     if(!Number.isSafeInteger(limit)||limit<1||!Number.isFinite(windowMs)||windowMs<=0)return false;
     const now=Date.now(),hashed=crypto.createHash('sha256').update(key).digest('hex');
@@ -63,10 +69,11 @@ export async function importLegacySnapshot(store,snapshot){
     const value=JSON.parse(file.content);if(!record(value))throw new Error('Invalid source record');
     if(file.sha256 && crypto.createHash('sha256').update(file.content).digest('hex')!==file.sha256)throw new Error('Source checksum mismatch');
     if(file.name==='entitlements.json'){for(const [key,v]of Object.entries(value)){if(!record(v))throw new Error('Invalid entitlement');entries.push(['entitlement',key,v]);}}
+    else if(file.name==='waitlist.json'){for(const [key,v]of Object.entries(value)){if(!record(v))throw new Error('Invalid waitlist entry');entries.push(['waitlist',key,v]);}}
     else if(/^users\/[a-f0-9]{64}\.json$/.test(file.name))entries.push(['user',file.name.slice(6,-5),value]);
     else if(['free-scans.json','waitlist.json','funnel.json','last-webhook.json','ai-usage.json'].includes(file.name))entries.push(['legacy',file.name,value]);
     else throw new Error('Unexpected source entry');
   }
   if(!seen.has('entitlements.json'))throw new Error('Missing entitlements source');
-  return store.transaction(async c=>{await store.lock(c,'migration','legacy');const r=await c.query('SELECT count(*)::int AS n FROM np_documents');if(r.rows[0].n)throw new Error('Destination must be empty');for(const [kind,key,value]of entries)await store.write(c,kind,key,value);await store.write(c,'migration','legacy-import',{completedAt:new Date().toISOString(),records:entries.length});return {records:entries.length};});
+  return store.transaction(async c=>{await store.lock(c,'migration','legacy');const r=await c.query('SELECT ((SELECT count(*) FROM np_documents)+(SELECT count(*) FROM np_rate_limits))::int AS n');if(r.rows[0].n)throw new Error('Destination must be empty');for(const [kind,key,value]of entries)await store.write(c,kind,key,value);await store.write(c,'migration','legacy-import',{completedAt:new Date().toISOString(),records:entries.length});return {records:entries.length};});
 }

@@ -16,7 +16,7 @@ const token=()=>{const p=Buffer.from(JSON.stringify({email,exp:Math.floor(Date.n
 async function port(){const s=net.createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const n=s.address().port;await new Promise(r=>s.close(r));return n;}
 async function app(t,extra={}){
  const p=await port(),base='http://127.0.0.1:'+p;
- const child=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,NODE_ENV:'test',PORT:String(p),APP_URL:base,STORAGE_BACKEND:'postgres',DATABASE_URL:url,DATABASE_TLS:'disabled',ACCESS_TOKEN_SECRET:secret,AI_ENABLED:'false',FX_URL:'http://127.0.0.1:1',REVENUECAT_WEBHOOK_AUTH:'synthetic-webhook',BACKUP_ENCRYPTION_KEY:'a'.repeat(64),...extra},stdio:['ignore','pipe','pipe']});
+ const child=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,NODE_ENV:'test',PORT:String(p),APP_URL:base,STORAGE_BACKEND:'postgres',DATABASE_URL:url,DATABASE_TLS:'disabled',ACCESS_TOKEN_SECRET:secret,AI_ENABLED:'false',FX_URL:'http://127.0.0.1:1',REVENUECAT_WEBHOOK_AUTH:'synthetic-webhook',ADMIN_KEY:'synthetic-admin-key-12345',BACKUP_ENCRYPTION_KEY:'a'.repeat(64),...extra},stdio:['ignore','pipe','pipe']});
  let logs='';child.stdout.on('data',d=>{logs+=d});child.stderr.on('data',d=>{logs+=d});
  t.after(async()=>{if(child.exitCode===null){const done=once(child,'exit');child.kill();await done;}});
  for(let i=0;;i++){if(child.exitCode!==null)throw new Error('Application failed: '+logs);try{if((await fetch(base+'/api/health')).ok)break;}catch{}if(i>150)throw new Error('Application did not start: '+logs);await new Promise(r=>setTimeout(r,25));}
@@ -53,7 +53,7 @@ test('Real PostgreSQL: shared transactions, budgets, migration and two applicati
  await t.test('Rate limits are atomic across independent pools',async()=>{
   const r=await Promise.all(Array.from({length:40},(_,i)=>(i%2?a:b).rateLimit('one-shared-key',7,60000)));
   assert.equal(r.filter(Boolean).length,7);await p1.query('UPDATE np_rate_limits SET reset_at=0');assert.equal(await b.rateLimit('one-shared-key',7,60000),true);
-  await p1.query('UPDATE np_rate_limits SET reset_at=0');await a.pruneRates();assert.equal((await p1.query('SELECT count(*)::int n FROM np_rate_limits')).rows[0].n,0);
+  await p1.query('UPDATE np_rate_limits SET reset_at=0');await a.mutate('auth-state','expired',{},()=>({value:{expiresAt:0,nonce:'test'}}));await a.mutate('auth-state','live',{},()=>({value:{expiresAt:Date.now()+60000,nonce:'test'}}));await a.pruneRates();assert.equal(await b.read('auth-state','expired',null),null);assert.ok(await b.read('auth-state','live',null));assert.equal((await p1.query('SELECT count(*)::int n FROM np_rate_limits')).rows[0].n,0);
  });
  await t.test('Global attempt and concurrent budgets cannot be multiplied by replicas',async()=>{
   await clear();const x=createSharedBudget(a,{daily:5,monthly:10}),y=createSharedBudget(b,{daily:5,monthly:10});
@@ -73,6 +73,11 @@ test('Real PostgreSQL: shared transactions, budgets, migration and two applicati
   await clear();await assert.rejects(importLegacySnapshot(a,{entries:[...snapshot.entries,{name:'../bad',content:'{}'}]}));assert.equal((await p1.query('SELECT count(*)::int n FROM np_documents')).rows[0].n,0);
   await importLegacySnapshot(a,snapshot);
  });
+ await t.test('Waitlist pages are bounded and preserve independent records',async()=>{
+  await Promise.all(Array.from({length:20},(_,i)=>(i%2?a:b).mutate('waitlist','person-'+String(i).padStart(2,'0'),{},value=>({value:{n:i}}))));
+  const first=await a.page('waitlist',{limit:7});assert.equal(Object.keys(first.list).length,7);assert.equal(first.count,20);assert.ok(first.next);
+  const second=await b.page('waitlist',{limit:7,after:first.next});assert.equal(Object.keys(second.list).length,7);assert.equal(Object.keys(first.list).some(k=>k in second.list),false);
+ });
  await t.test('Two app processes share user state, one-time login, purchases and deletion',async t=>{
   let subscription={store:'app_store',original_purchase_date:new Date().toISOString(),expires_date:new Date(Date.now()+3600000).toISOString()};
   const {default:http}=await import('node:http');const provider=http.createServer((req,res)=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify({subscriber:{subscriptions:{np_complete_monthly:subscription}}}));});provider.listen(0,'127.0.0.1');await once(provider,'listening');t.after(async()=>{provider.closeAllConnections();await new Promise(r=>provider.close(r));});
@@ -81,6 +86,8 @@ test('Real PostgreSQL: shared transactions, budgets, migration and two applicati
   let r=await one.post('/api/user/state',{state:{profile:{name:'Shared profile'},meals:[]}});assert.equal(r.status,200);
   const data=await(await fetch(two.base+'/api/user/state',{headers:{Authorization:'Bearer '+token()}})).json();assert.equal(data.state.profile.name,'Shared profile');
   const h=await(await fetch(two.base+'/api/health')).json();assert.equal(h.persistence.shared,true);assert.equal(h.backups.enabled,false);assert.equal(h.backups.requiresDatabaseBackup,true);
+  assert.equal((await one.post('/api/waitlist',{email})).status,200);assert.equal((await two.post('/api/waitlist',{email:'other@example.invalid'})).status,200);
+  const page=await(await fetch(two.base+'/api/admin/waitlist?limit=1',{headers:{'x-admin-key':'synthetic-admin-key-12345'}})).json();assert.equal(page.count,22);assert.equal(Object.keys(page.list).length,1);assert.ok(page.next);
   await a.mutate('entitlement',email,null,value=>{value.codeHash=crypto.createHash('sha256').update('123456').digest('hex');value.codeExpiresAt=Date.now()+60000;value.codeAttempts=0;return {value};});
   const results=await Promise.all([one.post('/api/access/verify',{email,code:'123456'},false),two.post('/api/access/verify',{email,code:'123456'},false)]);assert.deepEqual(results.map(x=>x.status).sort(),[200,401]);
   const id='np-'+crypto.createHash('sha256').update('nutripilot:'+email).digest('hex').slice(0,32);
@@ -89,9 +96,9 @@ test('Real PostgreSQL: shared transactions, budgets, migration and two applicati
   subscription={...subscription,expires_date:new Date(Date.now()-1000).toISOString()};
   const hook=await fetch(two.base+'/api/revenuecat/webhook',{method:'POST',headers:{Authorization:'Bearer synthetic-webhook','Content-Type':'application/json'},body:JSON.stringify({event:{app_user_id:id}})});assert.equal(hook.status,200);
   assert.equal((await(await one.post('/api/access/status',{token:token()})).json()).premium,false);
-  await a.mutate('legacy','waitlist.json',{},value=>{value[email]={plan:'test'};return {value};});
+  await a.mutate('waitlist',email,{},value=>({value:{plan:'test'}}));
   const del=await fetch(one.base+'/api/account',{method:'DELETE',headers:{Authorization:'Bearer '+token()}});assert.equal(del.status,200);
-  assert.equal(await b.read('entitlement',email,null),null);assert.equal(await b.read('user',hash,null),null);assert.equal((await b.read('legacy','waitlist.json',{}))[email],undefined);
+  assert.equal(await b.read('entitlement',email,null),null);assert.equal(await b.read('user',hash,null),null);assert.equal(await b.read('waitlist',email,null),null);
   await assert.rejects(b.saveUser(email,hash,{meals:[]}),/access changed/);
  });
  await clear();

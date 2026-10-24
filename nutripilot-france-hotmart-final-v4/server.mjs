@@ -280,8 +280,8 @@ async function readRecord(file, missing) {
 }
 
 let waitlistQueue = Promise.resolve();
-function mutateWaitlist(fn) {
-  if(storage)return storage.mutate('legacy','waitlist.json',{},async value=>({result:await fn(value),value}));
+function mutateWaitlist(email, fn) {
+  if(storage)return storage.mutate('waitlist',email,null,async entry=>{const list=entry?{[email]:entry}:{};const result=await fn(list);return {result,value:list[email]||null};});
   const job = waitlistQueue.then(async () => {
     await ensureData();
     const file = path.join(DATA_DIR, 'waitlist.json');
@@ -1307,7 +1307,7 @@ async function deleteAccountData(email) {
   if(storage)return storage.deleteAccount(email);
   // Remove the marketing entry on both deletion paths. Fail visibly if a
   // damaged waitlist prevents completing the request; never erase other leads.
-  await mutateWaitlist(list => { delete list[email]; });
+  await mutateWaitlist(email, list => { delete list[email]; });
   await deleteUserState(email);
   await mutateEntitlements(email, all => { delete all[email]; });
 }
@@ -1478,6 +1478,7 @@ const server = http.createServer(async (req, res) => {
     // Sign in with Apple / Google on the web: redirect, then callback back to the app.
     if (/^\/auth\/(apple|google)\/start$/.test(url.pathname) && req.method === 'GET') {
       const provider = url.pathname.split('/')[2];
+      if (!(await rateLimit(`oauth:${clientIp(req)}`,20,15*60*1000))) return send(res,429,{error:'Trop de demandes. Réessayez plus tard.'});
       if (!webFlowEnabled[provider]()) { res.writeHead(302, { Location: '/#app' }); return res.end(); }
       const { state, nonce } = await newAuthState();
       const redirectUri = `${APP_URL}/auth/${provider}/callback`;
@@ -1713,6 +1714,7 @@ const server = http.createServer(async (req, res) => {
       const key = process.env.ADMIN_KEY || '';
       const given = String(req.headers['x-admin-key'] || url.searchParams.get('key') || '');
       if (!key || key.length < 16 || !safeTokenEqual(given, key)) return send(res, 404, { error: 'API introuvable' });
+      if(storage)return send(res,200,await storage.page('waitlist',{limit:url.searchParams.get('limit'),after:url.searchParams.get('after')||''}));
       const list = await readRecord(path.join(DATA_DIR, 'waitlist.json'), {});
       return send(res, 200, { count: Object.keys(list).length, list });
     }
@@ -1745,7 +1747,7 @@ const server = http.createServer(async (req, res) => {
       const email = safeEmail(body.email);
       if (!email) return send(res, 400, { error: 'E-mail invalide' });
       const utms = body.utms && typeof body.utms === 'object' ? Object.fromEntries(Object.entries(body.utms).slice(0, 8).map(([k, v]) => [safeText(k, 40), safeText(v, 120)])) : {};
-      await mutateWaitlist(list => { list[email] = {
+      await mutateWaitlist(email, list => { list[email] = {
         ...(list[email] || {}),
         lang: safeText(body.lang || 'fr', 5),
         plan: safeText(body.plan || '', 40),

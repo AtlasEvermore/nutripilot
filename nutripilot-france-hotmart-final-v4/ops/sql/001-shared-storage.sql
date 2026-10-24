@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS np_documents (
   updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (kind,key)
 );
 CREATE INDEX IF NOT EXISTS np_store_accounts ON np_documents USING gin ((value->'storeAccounts')) WHERE kind='entitlement';
+CREATE INDEX IF NOT EXISTS np_auth_expiry ON np_documents (((value->>'expiresAt')::bigint)) WHERE kind='auth-state';
 CREATE TABLE IF NOT EXISTS np_rate_limits (
   key text PRIMARY KEY, count integer NOT NULL CHECK(count>=0), reset_at bigint NOT NULL
 );
