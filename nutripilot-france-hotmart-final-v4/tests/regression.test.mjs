@@ -259,9 +259,9 @@ test('Corrupted purchases or user data fail without erasing or treating them as 
 
 test('Release verification checks public routes and distinguishes unconfigured backup protection', async t => {
   const f = await fixture(t);
-  const result = await checkApplication(f.url, { expectedVersion: '18.0.2' });
+  const result = await checkApplication(f.url, { expectedVersion: '18.1.0' });
   assert.deepEqual(result.issues, []);
-  const operational = await checkApplication(f.url, { expectedVersion: '18.0.2', operational: true });
+  const operational = await checkApplication(f.url, { expectedVersion: '18.1.0', operational: true });
   assert.ok(operational.issues.includes('Independent backup is not verified'));
   const wrong = await checkApplication(f.url, { expectedVersion: 'old-version' });
   assert.match(wrong.issues.join(' '), /expected old-version/);

@@ -2,7 +2,7 @@
 
 ## Estado verificado em 24/10/2026
 
-A versão 18.0.1 foi integrada no GitHub e a imagem passou na CI. A candidata consolidada 18.0.2 inclui backups, proteção contra corrupção, diagnóstico, monitoramento e correções de concorrência. Não publicar versões intermediárias. O Railway ainda bloqueia novas publicações; a produção foi observada em 12.0.0. Não confundir código aprovado com implantação concluída.
+A versão 18.0.1 foi integrada no GitHub e a imagem passou na CI. A candidata consolidada 18.1.0 inclui backups, proteção contra corrupção, diagnóstico, monitoramento e correções de concorrência. Não publicar versões intermediárias. O Railway ainda bloqueia novas publicações; a produção foi observada em 12.0.0. Não confundir código aprovado com implantação concluída.
 
 O pedido de desbloqueio foi enviado ao suporte oficial. Não excluir o serviço, o domínio nem o volume `55b5791c-7889-4feb-bbac-992135e41252`, montado em `/data`.
 
@@ -78,3 +78,5 @@ O painel Console foi consultado e informou `No running instances` / `Disconnecte
 Para exportar sem depender de uma nova implantação, usar uma sessão Railway CLI/SSH autenticada: a documentação oficial permite SFTP/SCP do volume em https://docs.railway.com/cli/ssh#copy-files-with-scp-and-sftp . Gerar uma cópia consistente, criptografar e baixar, depois ensaiar a restauração em diretório novo com o utilitário deste repositório. Não copiar segredos antigos do painel para obter acesso. Não publicar os dados no GitHub nem encaminhar dados de saúde sem criptografia.
 
 Um ZIP do código é uma cópia do aplicativo e das instruções de recuperação; não contém refeições, usuários, permissões de compra nem credenciais da produção. Ele não deve ser usado como prova de backup dos dados reais.
+
+A 18.1.0 inclui PostgreSQL opcional. A ativação exige o corte offline e os testes descritos em release/POSTGRES_CUTOVER.md na raiz do repositório. O modo de arquivos permanece o padrão e não suporta múltiplas réplicas com dados independentes.

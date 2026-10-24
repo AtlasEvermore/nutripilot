@@ -1,4 +1,4 @@
-# NutriPilot 18.0.2 — iPhone e Android
+# NutriPilot 18.1.0 — iPhone e Android
 
 Candidata para App Store e Google Play. Compras digitais exclusivamente nas lojas; sem checkout externo. O backend em https://app.atlasevermore.com atende os dois aplicativos. Implantar o backend não publica os aplicativos nas lojas.
 

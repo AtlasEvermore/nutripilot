@@ -11,16 +11,32 @@ jobs:
   regression:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: isolated-ci-database-only
+          POSTGRES_DB: nutripilot_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install locked server dependencies
+        working-directory: nutripilot-france-hotmart-final-v4
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Validate source and regression tests
         working-directory: nutripilot-france-hotmart-final-v4
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:isolated-ci-database-only@127.0.0.1:5432/nutripilot_test
         run: |
           npm run check
           npm test
+          npm audit --omit=dev --audit-level=high
           node --test ../ops/release-gate.test.mjs
           node --test ../native/tests/*.test.mjs
           git diff --exit-code -- i18n/

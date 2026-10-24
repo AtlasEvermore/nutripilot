@@ -13,7 +13,7 @@ Escopo atual: App Store e Google Play, exclusivamente, com backend compartilhado
 | Estado observado | Situação |
 |---|---|
 | Produção | V12.0.0, implantação antiga ainda ativa |
-| Candidata consolidada | V18.0.2, inclui as melhorias anteriores |
+| Candidata consolidada | V18.1.0, inclui as melhorias anteriores |
 | Testes do código e da imagem | Aprovados antes desta trava operacional |
 | Credenciais novas OpenAI e Resend | Guardadas na configuração; ainda não aplicadas ao processo antigo |
 | Publicação automática pelo GitHub | Desativada; ambiente desconectado da branch |

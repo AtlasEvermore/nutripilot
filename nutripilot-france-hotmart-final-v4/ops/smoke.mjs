@@ -32,7 +32,7 @@ export async function checkApplication(base, { expectedVersion, operational = fa
   return { checkedAt: new Date().toISOString(), version: health?.version || null, issues };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const result = await checkApplication(process.env.APP_CHECK_URL || 'https://app.atlasevermore.com', { expectedVersion: process.env.EXPECTED_VERSION || '18.0.2', operational: process.env.CHECK_OPERATIONAL === 'true' });
+  const result = await checkApplication(process.env.APP_CHECK_URL || 'https://app.atlasevermore.com', { expectedVersion: process.env.EXPECTED_VERSION || '18.1.0', operational: process.env.CHECK_OPERATIONAL === 'true' });
   console.log(JSON.stringify(result, null, 2));
   if (result.issues.length) process.exitCode = 1;
 }

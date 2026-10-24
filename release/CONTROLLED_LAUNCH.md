@@ -1,4 +1,4 @@
-# Candidata consolidada 18.0.2 — lançamento controlado
+# Candidata consolidada 18.1.0 — lançamento controlado
 
 Escopo vigente em 24/10/2026: App Store e Google Play. Nenhum checkout externo ou redirecionamento de pagamento. Rotas legadas de compra foram removidas; os registros existentes não foram apagados. Antes do corte, revisar permissões antigas e suporte aos clientes existentes sem conceder vendas externas novas.
 
@@ -23,3 +23,7 @@ O doctor nativo falha se faltarem projetos, versão, número de build ou configu
 Respeitar AGENTS.md, RELEASE_CHECKLIST.md e readiness.json. `prepare` exige evidências atuais e a árvore exata da aplicação e do shell nativo. Builds podem ser preparados antes; deploy/produção e distribuição ficam bloqueados até os requisitos reais passarem. O manifesto registra atestações e referências, não verifica sozinho assinatura ou aprovação nos sistemas externos.
 
 A automação existente pode verificar a liberação e executar o deploy autorizado quando todos os requisitos passarem. Não há envio automático às lojas sem contas, artefatos e validação. Implantar somente a candidata consolidada mais recente; nunca publicar versões intermediárias em sequência.
+
+## Preparação para múltiplas instâncias na 18.1.0
+
+O backend PostgreSQL é opcional e usa transações, dados por conta, lista de interessados por pessoa, limites compartilhados e consumo único de códigos. O padrão continua em arquivos; nenhuma migração de produção foi executada. Seguir POSTGRES_CUTOVER.md antes de ativar, inclusive backup específico do banco e teste de carga. Não ampliar réplicas no modo de arquivos nem declarar capacidade mundial com base apenas nos testes de integração.
