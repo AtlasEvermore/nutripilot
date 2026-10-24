@@ -1,5 +1,7 @@
 # NutriPilot — requisitos obrigatórios para publicar
 
+Política de consumo, checkout e publicação condicional: [CONTROLLED_LAUNCH.md](CONTROLLED_LAUNCH.md).
+
 Acompanhamento central: https://github.com/AtlasEvermore/nutripilot/issues/5
 
 **Decisão atual: publicação bloqueada.** A preparação do código pode continuar; o site não deve ser declarado pronto enquanto as duas fases abaixo não forem comprovadas.
