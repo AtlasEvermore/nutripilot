@@ -40,7 +40,9 @@ jobs:
             if (process.env.CHECK_RESULT !== 'success') {
               if (existing && existing.body !== body) await github.rest.issues.update({owner, repo, issue_number: existing.number, body});
               else if (!existing) await github.rest.issues.create({owner, repo, title: 'NutriPilot production requires attention', body});
-              core.setFailed('Production verification failed; see the operational issue.');
+              // Production incidents must not block the code release that fixes them.
+              // The separate regression/image workflow remains the release gate.
+              core.warning('Production verification failed; see the operational issue.');
             } else if (existing) {
               await github.rest.issues.update({owner, repo, issue_number: existing.number, state: 'closed', state_reason: 'completed'});
             }
