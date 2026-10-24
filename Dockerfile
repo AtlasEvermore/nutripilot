@@ -8,7 +8,7 @@ ARG APP_REVISION=unknown
 ENV APP_REVISION=$APP_REVISION
 ENV NODE_ENV=production
 
-RUN npm install --omit=dev
+RUN npm install --omit=dev --ignore-scripts --no-audit --no-fund
 
 EXPOSE 3000
 

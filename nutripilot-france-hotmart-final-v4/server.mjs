@@ -2,6 +2,7 @@ import http from 'node:http';
 import { startBackups } from './ops/backup.mjs';
 import { createAIBudget, boundedLimit } from './ops/ai-budget.mjs';
 import { supportFaq } from './ops/support-faq.mjs';
+import { createRateLimiter, singleFlight } from './ops/runtime-guards.mjs';
 import { AsyncLocalStorage } from 'node:async_hooks';
 const requestLang = new AsyncLocalStorage();
 import fs from 'node:fs/promises';
@@ -27,20 +28,22 @@ let aiBlockedUntil = 0;
 // Exchange rates per 1 USD for showing prices in each buyer's currency (stores charge in local currency).
 const FX_URL = process.env.FX_URL || 'https://open.er-api.com/v6/latest/USD';
 let fx = { rates: null, date: '', fetchedAt: 0 };
-async function refreshRates() {
-  if (fx.rates && Date.now() - fx.fetchedAt < 12 * 3600 * 1000) return fx;
+let fxRetryAt = 0;
+const refreshRates = singleFlight(async () => {
+  const now = Date.now();
+  if ((fx.rates && now - fx.fetchedAt < 12 * 3600 * 1000) || now < fxRetryAt) return fx;
   try {
-    const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 6000);
-    const r = await fetch(FX_URL, { signal: ctrl.signal }); clearTimeout(timer);
+    const r = await fetch(FX_URL, { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) throw new Error('Rates unavailable');
     const data = await r.json();
-    if (data?.rates && Number(data.rates.USD) > 0) {
-      const rates = {};
-      for (const [k, v] of Object.entries(data.rates)) if (/^[A-Z]{3}$/.test(k) && Number(v) > 0) rates[k] = Number(v);
-      fx = { rates, date: String(data.time_last_update_utc || new Date().toUTCString()), fetchedAt: Date.now() };
-    } else fx.fetchedAt = Date.now() - 11 * 3600 * 1000;
-  } catch { fx.fetchedAt = Date.now() - 11 * 3600 * 1000; }
+    if (!data?.rates || !Number.isFinite(Number(data.rates.USD)) || Number(data.rates.USD) <= 0) throw new Error('Invalid rates');
+    const rates = {};
+    for (const [k, v] of Object.entries(data.rates)) if (/^[A-Z]{3}$/.test(k) && Number.isFinite(Number(v)) && Number(v) > 0) rates[k] = Number(v);
+    fx = { rates, date: String(data.time_last_update_utc || new Date().toUTCString()), fetchedAt: Date.now() };
+    fxRetryAt = 0;
+  } catch { fxRetryAt = Date.now() + 60000; }
   return fx;
-}
+});
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const RESEND_FROM = process.env.RESEND_FROM || '';
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@atlasevermore.com';
@@ -57,7 +60,7 @@ const AI_GLOBAL_MONTHLY_LIMIT = boundedLimit(process.env.AI_GLOBAL_MONTHLY_LIMIT
 const aiBudget = createAIBudget(DATA_DIR, {daily:AI_GLOBAL_DAILY_LIMIT, monthly:AI_GLOBAL_MONTHLY_LIMIT});
 const MAX_JSON_BYTES = 14_000_000;
 const USER_STATE_LIMIT = 2_500_000;
-const MAX_RATE_BUCKETS = 10_000;
+
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -98,9 +101,9 @@ const STATIC_FILES = new Set([
   '/fonts/figtree.woff',
 ]);
 
-const rateBuckets = new Map();
+
 let entitlementQueue = Promise.resolve();
-let lastRateSweep = 0;
+
 
 function securityHeaders(type = 'application/json; charset=utf-8') {
   // App files: kept on the phone and revalidated with their ETag (304 = nothing to download) → fast start.
@@ -174,23 +177,7 @@ function flushFunnel() {
   return job;
 }
 
-function rateLimit(key, limit, windowMs) {
-  const now = Date.now();
-  if (now - lastRateSweep > 5 * 60 * 1000 || rateBuckets.size > MAX_RATE_BUCKETS) {
-    for (const [bucketKey, bucket] of rateBuckets) {
-      if (now > bucket.resetAt) rateBuckets.delete(bucketKey);
-    }
-    lastRateSweep = now;
-  }
-  const previous = rateBuckets.get(key);
-  if (!previous || now > previous.resetAt) {
-    rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-  if (previous.count >= limit) return false;
-  previous.count += 1;
-  return true;
-}
+const rateLimit = createRateLimiter();
 
 async function readRaw(req, limit = MAX_JSON_BYTES) {
   const chunks = [];
@@ -1441,8 +1428,8 @@ async function syncStoreAccount(email, appUserId, subscriber = null) {
 }
 const validAppUserId = (id) => /^[\w$:.@-]{1,120}$/.test(String(id || ''));
 
-async function dataDirectoryWritable() {
-  const probe = path.join(DATA_DIR, `.health-${process.pid}-${Date.now()}.tmp`);
+const dataDirectoryWritable = singleFlight(async () => {
+  const probe = path.join(DATA_DIR, `.health-${process.pid}-${crypto.randomUUID()}.tmp`);
   try {
     await loadEntitlements();
     await fs.writeFile(probe, 'ok', { encoding: 'utf8', flag: 'wx' });
@@ -1452,7 +1439,7 @@ async function dataDirectoryWritable() {
     try { await fs.unlink(probe); } catch {}
     return false;
   }
-}
+});
 
 const server = http.createServer(async (req, res) => {
   requestLang.enterWith(langFromRequest(req));
