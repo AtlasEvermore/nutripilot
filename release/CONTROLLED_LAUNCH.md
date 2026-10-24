@@ -1,48 +1,25 @@
-# NutriPilot 18.0.2 — lançamento com custo controlado
+# Candidata consolidada 18.0.2 — lançamento controlado
 
-## O que mudou
+Escopo vigente em 24/10/2026: App Store e Google Play. Nenhum checkout externo ou redirecionamento de pagamento. Rotas legadas de compra foram removidas; os registros existentes não foram apagados. Antes do corte, revisar permissões antigas e suporte aos clientes existentes sem conceder vendas externas novas.
 
-- IA pausada por padrão (`AI_ENABLED=false`). Guardar uma chave não ativa consumo.
-- Visitantes não têm análises de IA por padrão: `AI_ALLOW_GUESTS=false` e `FREE_SCANS=0`. A API exige compra ativa; alterar o navegador não concede acesso.
-- O suporte público usa respostas locais de ajuda, sem chamada a modelo externo. Assuntos específicos são encaminhados ao e-mail de suporte.
-- Código de barras e registro manual continuam disponíveis sem IA. Não anunciar IA gratuita ou ilimitada.
-- Após aprovação do orçamento, os valores iniciais de proteção são 10 solicitações por usuário/dia, 50 tentativas externas por dia e 500 por mês no serviço, com no máximo duas chamadas simultâneas. Falhas e novas tentativas também contam no teto global.
-- Contadores globais persistem em `/data/ai-usage.json`, são gravados antes da chamada e entram no backup criptografado. Zero ou configuração inválida desativa, nunca libera uso ilimitado. Arquivo corrompido bloqueia chamadas em vez de zerar a contagem.
+O funil é: conhecer os recursos → escolher uma fórmula confirmada pela loja → confirmar e-mail → compra da loja → validação da conta e assinatura no servidor → uso e acompanhamento → gerenciamento/restauração pela loja. Sem produtos confirmados, exibir indisponibilidade e tentar novamente, sem preços ou teste grátis inventados.
 
-Esses são limites de quantidade, NÃO um teto financeiro em reais ou dólares. O custo depende do modelo, entrada, imagem, saída e novas tentativas. Não ativar até medir o custo por operação, aprovar orçamento e configurar os controles do provedor. A chave geral continua pausada até isso acontecer. O contador pressupõe uma única instância: múltiplos processos/replicas exigem um contador transacional compartilhado antes de escalar.
+## Proteção de consumo e dados
 
-## Funil web e pagamento
+Análises desativadas por padrão (`AI_ENABLED=false`). Visitantes sem consumo pago por padrão (`AI_ALLOW_GUESTS=false`, `FREE_SCANS=0`). A API valida acesso; controles locais não concedem assinatura. Limites globais persistentes por dia/mês, por usuário e concorrência incluem as tentativas repetidas. São limites de requisições, não um teto financeiro exato; medir tokens e custos antes de definir oferta/orçamento. Não comprar créditos, alterar planos ou habilitar recarga automática sem orçamento.
 
-A compra web antes levava às lojas de aplicativos, que ainda não tinham URLs configuradas. A candidata agora aceita checkout Hotmart para uma oferta exata do Kit completo, com redirecionamento validado no servidor. É necessário conferir produto, preço, moeda, periodicidade, benefícios e webhook antes de preencher `HOTMART_CHECKOUT_COMPLETE_MONTHLY` / `HOTMART_CHECKOUT_COMPLETE_ANNUAL` e ativar `WEB_CHECKOUT_ENABLED`.
+Registro manual, cálculos, biblioteca e ajuda local não dependem de inferência. Nenhum novo prestador gratuito foi ativado: gratuidades podem ter limites e condições incompatíveis com dados de saúde. Saldo, modelo e autorização para testes reais ainda devem ser conferidos por último, conforme instrução do proprietário.
 
-O código não reutiliza automaticamente links históricos nem transforma um plano isolado em Kit completo. O checkout permanece desativado até a confirmação comercial. O site não promete um teste gratuito da App Store em uma compra Hotmart. As condições definitivas devem corresponder às exibidas na oferta de pagamento.
+Fotos e mensagens exigem autorização explícita, identificando OpenAI e os dados enviados. Linguagem comercial usa análise de refeições, coach e plano personalizado. Não ocultar o prestador na privacidade nem falsificar declarações das lojas.
 
-Não iniciar uma campanha de vendas enquanto compra de teste, recebimento do e-mail, acesso, cancelamento e reembolso não estiverem comprovados. Nenhuma campanha ou despesa de publicidade foi criada.
+## O que a candidata verifica
 
-## Interface e recuperação
+Testes automatizados cobrem falhas de foto/chat, isolamento de conta, validade e fonte da assinatura, corrupção e persistência de dados, backup/restore sintético, limites de consumo e bloqueios de publicação. Eles não substituem backup dos dados reais, aparelhos físicos, entrega de e-mail, compra sandbox nem aprovação das lojas.
 
-A tela de refeição mostra todos os métodos em uma grade adaptável, estado selecionado acessível, erro persistente na tela, alternativas sem IA e possibilidade de fechar durante o processamento. Mensagens novas têm tradução para português, inglês, espanhol, alemão e italiano, com francês como origem. O novo dicionário pequeno faz parte do cache offline, sem carregar todos os idiomas extras no telefone.
+O doctor nativo falha se faltarem projetos, versão, número de build ou configurações. A geração e configuração dos dois projetos foram verificadas em cópia temporária. Não foram produzidos binários assinados. Codemagic está configurado apenas para gerar artefatos; não inicia ou distribui automaticamente.
 
-Os testes automatizados exercitam a renderização e o servidor. A inspeção visual em aparelhos reais e a aceitação final no domínio continuam pendentes; não registrar isso como concluído por um teste de HTML.
+## Publicação
 
-## Alternativas gratuitas de IA avaliadas em 24/10/2026
+Respeitar AGENTS.md, RELEASE_CHECKLIST.md e readiness.json. `prepare` exige evidências atuais e a árvore exata da aplicação e do shell nativo. Builds podem ser preparados antes; deploy/produção e distribuição ficam bloqueados até os requisitos reais passarem. O manifesto registra atestações e referências, não verifica sozinho assinatura ou aprovação nos sistemas externos.
 
-| Alternativa | Uso possível | Condição antes de ativar |
-|---|---|---|
-| Recursos locais existentes | Registro manual, cálculos, biblioteca e ajuda automática sem custo de inferência | Não apresentar regras locais como IA generativa nem como reconhecimento de foto |
-| Groq Free | Avaliação de um modelo dentro dos limites gratuitos do provedor | Conta/chave própria, modelo compatível, privacidade e qualidade verificadas; sem upgrade automático |
-| Gemini Free | Experimentos com dados sintéticos ou não sensíveis, conforme termos aplicáveis | Não encaminhar automaticamente fotos, histórico ou dados de saúde de clientes ao serviço gratuito |
-
-Fontes oficiais:
-- https://console.groq.com/docs/rate-limits
-- https://console.groq.com/docs/your-data
-- https://ai.google.dev/gemini-api/docs/pricing
-- https://ai.google.dev/gemini-api/terms
-
-Não foi criada conta em outro provedor, não foi enviada informação de clientes a outro modelo e não foi ativada uma alternativa sem avaliação. Uma faixa gratuita não garante capacidade, qualidade ou disponibilidade para o público.
-
-## Publicação condicional
-
-Usar a candidata mais recente do GitHub, hoje 18.0.2, sem publicar as versões intermediárias. Acompanhar o Railway e o suporte; só implantar após todas as evidências de `prepare` estarem válidas, CI/imagem aprovadas, backup externo/restauração comprovados e acesso liberado. O retorno da hospedagem sozinho não satisfaz os demais requisitos.
-
-Depois da implantação, exigir SUCCESS, conferir revisão e domínio e executar a aceitação `launch`. Se houver bloqueio de aprovação, não trocar de ferramenta para contorná-lo. Não apagar volume, trocar DNS, comprar serviços ou revogar credenciais automaticamente.
+A automação existente pode verificar a liberação e executar o deploy autorizado quando todos os requisitos passarem. Não há envio automático às lojas sem contas, artefatos e validação. Implantar somente a candidata consolidada mais recente; nunca publicar versões intermediárias em sequência.

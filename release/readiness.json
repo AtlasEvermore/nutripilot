@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
   "version": "18.0.2",
-  "applicationTree": "4bd3fff01a47a1f76741548567815bbb6fd86e55",
+  "applicationTree": "82f0c38ad7efd4fd57cd6af5db67bdccdf6d077e",
   "channels": [
-    "web_hotmart"
+    "ios",
+    "android"
   ],
   "gates": {
     "prepare": {
@@ -74,7 +75,25 @@
           "private-ops:OpenAI key renewal reminder enabled for 2027-01-14 before 2027-01-21 expiration"
         ]
       },
-      "hotmart_transition": {
+      "ios_configuration": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "ios_artifact": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "android_configuration": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "android_artifact": {
         "status": "pending",
         "verifiedAt": null,
         "verifiedBy": null,
@@ -136,12 +155,31 @@
         "verifiedBy": null,
         "evidence": []
       },
-      "hotmart_lifecycle": {
+      "ios_purchase": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "android_purchase": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "ios_store_release": {
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
+      },
+      "android_store_release": {
         "status": "pending",
         "verifiedAt": null,
         "verifiedBy": null,
         "evidence": []
       }
     }
-  }
+  },
+  "nativeTree": "cd669f1fe7b1d0b8dfd60851727d863a16018002"
 }

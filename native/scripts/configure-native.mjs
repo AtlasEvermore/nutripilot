@@ -9,10 +9,16 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CHECK = process.argv.includes('--check');
-const VERSION = process.env.APP_VERSION || '1.0.0';
-const BUILD = String(parseInt(process.env.BUILD_NUMBER || process.env.CM_BUILD_NUMBER || '', 10) || '');
+const VERSION = process.env.APP_VERSION || JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;
+const rawBuild = process.env.BUILD_NUMBER || process.env.CM_BUILD_NUMBER || '';
+const BUILD = /^[1-9]\d*$/.test(rawBuild) && Number(rawBuild) <= 2100000000 ? rawBuild : '';
+const at = process.argv.indexOf('--platform');
+const platform = at < 0 ? 'all' : process.argv[at+1];
+if (!['all','ios','android'].includes(platform) || !/^\d+\.\d+\.\d+$/.test(VERSION) || (rawBuild && !BUILD)) { console.error('Invalid platform, APP_VERSION or BUILD_NUMBER'); process.exit(2); }
+const targets = new Set(platform === 'all' ? ['ios','android'] : [platform]);
 const problems = [];
 const done = [];
+if (CHECK && !BUILD) problems.push('BUILD_NUMBER must be an explicit positive release build number');
 
 function edit(file, fn, label) {
   if (!fs.existsSync(file)) return false;
@@ -33,7 +39,10 @@ function write(file, content, label) {
 }
 
 // ---------------------------------------------------------------- iOS
+if (targets.has('ios')) {
 const plist = path.join(root, 'ios/App/App/Info.plist');
+if (CHECK && !fs.existsSync(plist)) problems.push('iOS project or Info.plist missing');
+if (CHECK && !fs.existsSync(path.join(root,'ios/App/App.xcodeproj/project.pbxproj'))) problems.push('iOS Xcode project missing');
 const IOS_KEYS = {
   // Without these the app crashes the first time the camera opens (meal photo, barcode, label).
   NSCameraUsageDescription: 'NutriPilot uses the camera to photograph your meals and scan food labels and barcodes, so it can estimate calories and nutrients.',
@@ -66,8 +75,13 @@ if (hasIos) {
   }, `iOS version ${VERSION}${BUILD ? ` (${BUILD})` : ''}`);
 } else if (!fs.existsSync(path.join(root, 'ios'))) console.log('· iOS project not created yet (npx cap add ios) — skipped');
 
+}
+
 // ---------------------------------------------------------------- Android
+if (targets.has('android')) {
 const manifest = path.join(root, 'android/app/src/main/AndroidManifest.xml');
+if (CHECK && !fs.existsSync(manifest)) problems.push('Android project or manifest missing');
+if (CHECK && !fs.existsSync(path.join(root,'android/app/build.gradle'))) problems.push('Android build.gradle missing');
 const hasAndroid = edit(manifest, (xml) => {
   let out = xml;
   const perms = ['android.permission.INTERNET', 'android.permission.CAMERA', 'android.permission.POST_NOTIFICATIONS'];
@@ -91,8 +105,10 @@ if (hasAndroid) {
 `, 'Android notification icon');
 } else if (!fs.existsSync(path.join(root, 'android'))) console.log('· Android project not created yet (npx cap add android) — skipped');
 
+}
+
 if (CHECK) {
-  console.log(problems.length ? `Missing (${problems.length}):\n- ${problems.join('\n- ')}\nRun: npm run configure` : '✓ Native projects are store-ready');
+  console.log(problems.length ? `Missing (${problems.length}):\n- ${problems.join('\n- ')}\nRun: npm run configure` : '✓ Native configuration checks passed; signing, purchases and store review are separate');
   process.exit(problems.length ? 1 : 0);
 }
 console.log(done.length ? `✓ Applied:\n- ${done.join('\n- ')}` : '✓ Nothing to change');

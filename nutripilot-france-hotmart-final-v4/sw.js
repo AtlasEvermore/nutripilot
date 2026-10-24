@@ -1,4 +1,4 @@
-const CACHE = 'nutripilot-v42-20261024-controlled-ai';
+const CACHE = 'nutripilot-v43-20261024-native-stores';
 const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n-launch.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {

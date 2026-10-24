@@ -2,7 +2,6 @@ import http from 'node:http';
 import { startBackups } from './ops/backup.mjs';
 import { createAIBudget, boundedLimit } from './ops/ai-budget.mjs';
 import { supportFaq } from './ops/support-faq.mjs';
-import { webCheckouts } from './ops/web-checkout.mjs';
 import { AsyncLocalStorage } from 'node:async_hooks';
 const requestLang = new AsyncLocalStorage();
 import fs from 'node:fs/promises';
@@ -51,8 +50,6 @@ const USERS_DIR = path.join(DATA_DIR, 'users');
 const REVENUECAT_SECRET_KEY = process.env.REVENUECAT_SECRET_KEY || '';
 const REVENUECAT_WEBHOOK_AUTH = process.env.REVENUECAT_WEBHOOK_AUTH || '';
 const ENTITLEMENTS_FILE = path.join(DATA_DIR, 'entitlements.json');
-const LAST_WEBHOOK_FILE = path.join(DATA_DIR, 'last-webhook.json');
-const WEB_CHECKOUTS = webCheckouts();
 const AI_ENABLED = process.env.AI_ENABLED === 'true';
 const AI_ALLOW_GUESTS = process.env.AI_ALLOW_GUESTS === 'true';
 const AI_GLOBAL_DAILY_LIMIT = boundedLimit(process.env.AI_GLOBAL_DAILY_LIMIT, 50);
@@ -78,15 +75,6 @@ const TYPES = {
   '.wasm': 'application/wasm',
   '.txt': 'text/plain; charset=utf-8',
 };
-
-const HOTMART_OFFER_TO_PLAN = {
-  r3ueswug: 'monthly',
-  xb98vzl6: 'quarterly',
-  gatqnh54: 'yearly',
-};
-
-const APPROVED_EVENTS = new Set(['PURCHASE_APPROVED', 'PURCHASE_COMPLETE']);
-const REVOKED_EVENTS = new Set(['PURCHASE_REFUNDED', 'PURCHASE_CHARGEBACK', 'PURCHASE_CANCELED', 'PURCHASE_EXPIRED']);
 
 const STATIC_FILES = new Set([
   '/index.html',
@@ -254,32 +242,6 @@ function publicError(message, statusCode = 400) {
   return error;
 }
 
-function normalizeTimestamp(value) {
-  const raw = value == null ? '' : String(value).trim();
-  let n = Number(raw || 0);
-  if ((!Number.isFinite(n) || n <= 0) && raw) n = Date.parse(raw);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  return n < 1_000_000_000_000 ? n * 1000 : n;
-}
-
-function deepFind(obj, keyNames) {
-  const keys = new Set(keyNames.map((x) => x.toLowerCase()));
-  const seen = new Set();
-  function walk(x) {
-    if (!x || typeof x !== 'object' || seen.has(x)) return null;
-    seen.add(x);
-    for (const [k, v] of Object.entries(x)) {
-      if (keys.has(k.toLowerCase()) && typeof v === 'string' && v.trim()) return v.trim();
-    }
-    for (const v of Object.values(x)) {
-      const got = walk(v);
-      if (got) return got;
-    }
-    return null;
-  }
-  return walk(obj);
-}
-
 async function ensureData() {
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.mkdir(USERS_DIR, { recursive: true });
@@ -420,100 +382,6 @@ function safeTokenEqual(a, b) {
   const aa = Buffer.from(String(a || ''));
   const bb = Buffer.from(String(b || ''));
   return aa.length === bb.length && aa.length > 0 && crypto.timingSafeEqual(aa, bb);
-}
-
-function verifyHotmartWebhook(req) {
-  const secret = process.env.HOTMART_HOTTOK || '';
-  const allowUnsigned = String(process.env.HOTMART_WEBHOOK_ALLOW_UNSIGNED || 'false').toLowerCase() === 'true';
-  if (!secret) return allowUnsigned;
-  const received = String(req.headers['x-hotmart-hottok'] || '').trim();
-  return safeTokenEqual(received, secret);
-}
-
-function eventName(payload) {
-  return safeText(payload?.event || deepFind(payload, ['event', 'event_name', 'type']) || '', 120).toUpperCase();
-}
-
-function buyerEmail(payload) {
-  return safeEmail(
-    payload?.data?.buyer?.email ||
-    payload?.data?.subscriber?.email ||
-    deepFind(payload, ['buyer_email', 'customer_email', 'payer_email', 'subscriber_email', 'user_email', 'email']) || ''
-  );
-}
-
-function orderId(payload) {
-  return safeText(
-    payload?.data?.purchase?.transaction ||
-    payload?.id ||
-    deepFind(payload, ['transaction', 'order_id', 'transaction_id', 'purchase_id', 'subscription_id']) || '',
-    160
-  );
-}
-
-function subscriptionCode(payload) {
-  return safeText(
-    payload?.data?.subscription?.subscriber?.code ||
-    payload?.data?.subscriber_code ||
-    deepFind(payload, ['subscriber_code']) || '',
-    120
-  );
-}
-
-function planFrom(payload) {
-  const offerCode = safeText(
-    payload?.data?.purchase?.offer?.code ||
-    payload?.data?.offer?.code ||
-    deepFind(payload, ['offer_code', 'offerCode']) || '',
-    80
-  ).toLowerCase();
-  if (HOTMART_OFFER_TO_PLAN[offerCode]) return HOTMART_OFFER_TO_PLAN[offerCode];
-
-  const raw = safeText(
-    payload?.data?.subscription?.plan?.name ||
-    payload?.data?.purchase?.offer?.name ||
-    deepFind(payload, ['plan', 'offer', 'product_name', 'plan_name']) || '',
-    200
-  ).toLowerCase();
-
-  if (raw.includes('year') || raw.includes('annuel') || raw.includes('annual')) return 'yearly';
-  if (raw.includes('3 mois') || raw.includes('quarter') || raw.includes('trimes')) return 'quarterly';
-  if (raw.includes('month') || raw.includes('mensuel') || raw.includes('mens')) return 'monthly';
-  return 'premium';
-}
-
-function planPeriodEnd(fromMs, plan = 'premium') {
-  const date = new Date(Number(fromMs) || Date.now());
-  if (Number.isNaN(date.getTime())) return 0;
-  if (plan === 'yearly') date.setFullYear(date.getFullYear() + 1);
-  else if (plan === 'quarterly') date.setMonth(date.getMonth() + 3);
-  else date.setMonth(date.getMonth() + 1);
-  return date.getTime();
-}
-
-function purchaseTimestamp(payload) {
-  return normalizeTimestamp(
-    payload?.data?.purchase?.approved_date ||
-    payload?.data?.purchase?.order_date ||
-    payload?.data?.purchase?.date ||
-    deepFind(payload, ['approved_date', 'order_date', 'purchase_date']) ||
-    0
-  );
-}
-
-function nextChargeFromHotmart(payload) {
-  return normalizeTimestamp(
-    payload?.data?.purchase?.date_next_charge ||
-    payload?.data?.subscription?.date_next_charge ||
-    deepFind(payload, ['date_next_charge', 'next_charge_date']) ||
-    0
-  );
-}
-
-function accessUntilFromHotmart(payload, plan = 'premium') {
-  const nextCharge = nextChargeFromHotmart(payload);
-  if (nextCharge) return nextCharge;
-  return planPeriodEnd(purchaseTimestamp(payload) || Date.now(), plan);
 }
 
 const foods = [
@@ -709,8 +577,8 @@ function langFromRequest(req) {
 
 async function callAI(input, max = 1600, timeoutMs = 45_000, { json = true } = {}) {
   if (!AI_ENABLED) throw publicError('Les analyses IA sont momentanément en pause.', 503);
-  if (!OPENAI_API_KEY || !OPENAI_MODEL) throw new Error('IA non configurée');
-  if (Date.now() < aiBlockedUntil) throw publicError('Le service IA est temporairement indisponible.', 503);
+  if (!OPENAI_API_KEY || !OPENAI_MODEL) throw new Error('Analyse indisponible');
+  if (Date.now() < aiBlockedUntil) throw publicError('L’analyse est temporairement indisponible.', 503);
   const langCode = requestLang.getStore();
   if (langCode && langCode !== 'fr' && LANG_NAMES[langCode]) {
     const note = `\nIMPORTANT : rédige tous les textes destinés à l'utilisateur (titres, noms d'aliments et de plats, conseils, étapes, réponses) en ${LANG_NAMES[langCode]}.${json ? ' Les clés JSON restent identiques.' : ''}`;
@@ -739,7 +607,7 @@ async function callAI(input, max = 1600, timeoutMs = 45_000, { json = true } = {
         body: JSON.stringify(body),
       }, remaining));
     } catch (cause) {
-      lastError = publicError('Le service IA est temporairement indisponible.', 502);
+      lastError = publicError('L’analyse est temporairement indisponible.', 502);
       lastError.internalMessage = `OpenAI network: ${safeText(cause?.message || cause?.name || 'error', 200)}`;
       continue;
     } finally { release(); }
@@ -748,7 +616,7 @@ async function callAI(input, max = 1600, timeoutMs = 45_000, { json = true } = {
       const quotaError = ['insufficient_quota', 'billing_hard_limit_reached'].includes(data?.error?.code) || /no credits remaining|exceeded your current quota/i.test(String(data?.error?.message || ''));
       if (response.status === 401 || response.status === 403 || quotaError) aiBlockedUntil = Date.now() + 60000;
       const msg = safeText(data?.error?.message || `OpenAI HTTP ${response.status}`, 500);
-      lastError = publicError('Le service IA est temporairement indisponible.', 502);
+      lastError = publicError('L’analyse est temporairement indisponible.', 502);
       lastError.internalMessage = msg;
       if (response.status === 400 && body.reasoning && /reasoning/i.test(msg)) { reasoningParamOk = false; continue; }
       if (!quotaError && (response.status === 429 || response.status >= 500)) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
@@ -771,7 +639,7 @@ async function callAI(input, max = 1600, timeoutMs = 45_000, { json = true } = {
     }
   }
   aiRuntime.status = 'unavailable'; aiRuntime.checkedAt = new Date().toISOString();
-  throw lastError || publicError('Le service IA est temporairement indisponible.', 502);
+  throw lastError || publicError('L’analyse est temporairement indisponible.', 502);
 }
 
 // Reads a supplement label (photo or typed text). Educational only: never advises a dose.
@@ -815,7 +683,7 @@ async function aiAnalyze({ text = '', image = '', mode = 'meal' }) {
   if (imageValue.length > 10_500_000) throw publicError('Image trop volumineuse.', 413);
   if (!safeText(text, 2000) && !imageValue) throw publicError('Ajoutez une photo ou décrivez votre repas.');
   if (!OPENAI_API_KEY || !OPENAI_MODEL) {
-    if (imageValue) throw publicError('Le service IA est temporairement indisponible.', 503);
+    if (imageValue) throw publicError('L’analyse est temporairement indisponible.', 503);
     return localAnalyze(text);
   }
   const prompt = `Tu es le moteur d'analyse alimentaire de NutriPilot, application française de suivi de perte de poids. Mode: ${safeText(mode, 30)}.
@@ -1533,7 +1401,11 @@ function activeStorePlans(subscriber = {}) {
   let until = 0;
   let store = '';
   for (const [productId, sub] of Object.entries(subscriber.subscriptions || {})) {
-    const expires = sub?.expires_date ? Date.parse(sub.expires_date) : now + 3650 * 86_400_000;
+    if (!['app_store','play_store'].includes(String(sub?.store || '').toLowerCase())) continue;
+    const expiry = Date.parse(sub?.expires_date || '');
+    if (!Number.isFinite(expiry)) continue;
+    const grace = Date.parse(sub?.grace_period_expires_date || '');
+    const expires = Math.max(expiry, Number.isFinite(grace) ? grace : 0);
     if (!(expires > now) || sub?.refunded_at) continue;
     const tier = storeTier(productId);
     if (!tier) continue;
@@ -1551,7 +1423,7 @@ function applyStoreAccess(entry) {
     entry.status = 'active';
     entry.source = 'store';
     entry.plan = [...new Set(live.flatMap((a) => a.plans))].join(',');
-    entry.accessUntil = Math.max(...live.map((a) => a.until)) + 86_400_000; // 1 day grace for renewals
+    entry.accessUntil = Math.max(...live.map((a) => a.until)); // Only the store-confirmed expiration/grace period.
   } else if (entry.source === 'store' && entry.status === 'active') {
     entry.status = 'revoked';
     entry.event = 'STORE_SUBSCRIPTION_ENDED';
@@ -1568,82 +1440,6 @@ async function syncStoreAccount(email, appUserId, subscriber = null) {
   });
 }
 const validAppUserId = (id) => /^[\w$:.@-]{1,120}$/.test(String(id || ''));
-
-async function handleHotmart(req, res) {
-  if (!verifyHotmartWebhook(req)) return send(res, 401, { error: 'Hottok Hotmart invalide.' });
-  const raw = await readRaw(req);
-  let payload = {};
-  try { payload = raw ? JSON.parse(raw) : {}; } catch { return send(res, 400, { error: 'JSON invalide' }); }
-
-  const event = eventName(payload);
-  const email = buyerEmail(payload);
-  if (!email) return send(res, 422, { error: 'Email acheteur introuvable dans le payload Hotmart' });
-
-  const action = await mutateEntitlements((entitlements) => {
-    if (APPROVED_EVENTS.has(event)) {
-      const plan = planFrom(payload);
-      entitlements[email] = {
-        ...(entitlements[email] || {}),
-        status: 'active',
-        plan,
-        orderId: orderId(payload),
-        subscriberCode: subscriptionCode(payload),
-        accessUntil: accessUntilFromHotmart(payload, plan),
-        cancelAtPeriodEnd: false,
-        paymentStatus: 'paid',
-        event,
-        updatedAt: new Date().toISOString(),
-      };
-      return 'granted';
-    }
-    if (event === 'SUBSCRIPTION_CANCELLATION') {
-      const prev = entitlements[email] || {};
-      const explicitUntil = Number(prev.accessUntil || nextChargeFromHotmart(payload) || 0);
-      const activeUntilEnd = explicitUntil > Date.now();
-      entitlements[email] = {
-        ...prev,
-        status: activeUntilEnd ? 'active' : 'revoked',
-        accessUntil: explicitUntil || prev.accessUntil || null,
-        cancelAtPeriodEnd: true,
-        event,
-        updatedAt: new Date().toISOString(),
-      };
-      return activeUntilEnd ? 'cancel_at_period_end' : 'revoked';
-    }
-    if (REVOKED_EVENTS.has(event)) {
-      entitlements[email] = {
-        ...(entitlements[email] || {}),
-        status: 'revoked',
-        event,
-        updatedAt: new Date().toISOString(),
-      };
-      return 'revoked';
-    }
-    if (event === 'PURCHASE_DELAYED') {
-      entitlements[email] = {
-        ...(entitlements[email] || {}),
-        status: 'revoked',
-        paymentStatus: 'delayed',
-        event,
-        updatedAt: new Date().toISOString(),
-      };
-      return 'suspended_payment_delayed';
-    }
-    return 'ignored';
-  });
-
-  await atomicWriteJson(LAST_WEBHOOK_FILE, {
-    receivedAt: new Date().toISOString(),
-    event,
-    action,
-    buyerHash: crypto.createHash('sha256').update(email).digest('hex'),
-    orderId: orderId(payload),
-    payloadBytes: Buffer.byteLength(raw, 'utf8'),
-    hottok: 'validated',
-  });
-
-  return send(res, 200, { ok: true, action, event });
-}
 
 async function dataDirectoryWritable() {
   const probe = path.join(DATA_DIR, `.health-${process.pid}-${Date.now()}.tmp`);
@@ -1688,28 +1484,17 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    if (url.pathname === '/checkout' && req.method === 'GET') {
-      const key = `${url.searchParams.get('plan')}_${url.searchParams.get('period')}`;
-      const target = Object.hasOwn(WEB_CHECKOUTS, key) ? WEB_CHECKOUTS[key] : '';
-      if (!target) return send(res, 404, { error: 'Cette formule n’est pas disponible à l’achat sur le web.' });
-      res.writeHead(302, { Location: target, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
-      return res.end();
-    }
-
     if (url.pathname === '/api/config' && req.method === 'GET') {
       await Promise.race([refreshRates(), new Promise((r) => setTimeout(r, 2500))]);
       return send(res, 200, {
         rates: fx.rates, ratesBase: 'USD', ratesDate: fx.date,
         brand: BRAND_NAME,
-        webCheckout: Object.fromEntries(Object.keys(WEB_CHECKOUTS).map(key => [key, true])),
         locale: 'fr-FR',
         ai: Boolean(AI_ENABLED && OPENAI_API_KEY && OPENAI_MODEL),
         aiPolicy: { subscribersOnly: !AI_ALLOW_GUESTS, dailyUserLimit: AI_USER_DAILY_LIMIT },
         supportEmail: SUPPORT_EMAIL,
-        manageSubscriptionUrl: process.env.MANAGE_SUBSCRIPTION_URL || '',
         revenuecat: { ios: process.env.REVENUECAT_IOS_KEY || '', android: process.env.REVENUECAT_ANDROID_KEY || '' },
         privacyUrl: '/privacy', termsUrl: '/terms',
-        salesUrl: process.env.SALES_URL || 'https://atlasevermore.com/#tarifs',
         appStoreUrl: process.env.APP_STORE_URL || '',
         playStoreUrl: process.env.PLAY_STORE_URL || '',
         trialDays: Number(process.env.TRIAL_DAYS || 7),
@@ -1782,7 +1567,7 @@ const server = http.createServer(async (req, res) => {
         ok: dataWritable,
         backups: backupManager.state,
         aiProvider: aiRuntime,
-        ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && legal,
+        ready: email && accessSecret && ai && persistentPath && dataWritable && storeBilling.serverKey && storeBilling.webhook && storeBilling.ios && storeBilling.android && legal,
         version: '18.0.2',
         revision: process.env.APP_REVISION || 'unknown',
         brand: BRAND_NAME,
@@ -1797,7 +1582,6 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    if (url.pathname === '/api/hotmart/webhook' && req.method === 'POST') return handleHotmart(req, res);
 
     // The timed trial was removed (v9): the free trial is the store's introductory offer.
     if ((url.pathname === '/api/trial/status' || url.pathname === '/api/trial/start') && req.method === 'POST') return send(res, 410, { error: 'gone' });
@@ -1852,25 +1636,10 @@ const server = http.createServer(async (req, res) => {
       const payload = verifyAccessToken(bearer(req));
       const body = await readJson(req);
       if (!validAppUserId(body.appUserId)) return send(res, 400, { error: 'Données invalides' });
-      // v9 — no e-mail needed: the purchase itself (Apple ID / Google account, confirmed by RevenueCat) is the account.
-      // The account key is RevenueCat's original_app_user_id, which stays the same after "Restore purchases"
-      // on a new phone, so data and access follow the person without any login screen.
-      if (!payload) {
-        // Mobile carriers put many phones behind one IP: limit per purchase id, with a generous per-IP ceiling.
-        if (!rateLimit(`iapanon:${clientIp(req)}`, 600, 15 * 60 * 1000) || !rateLimit(`iapid:${String(body.appUserId).slice(0, 120)}`, 20, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
-        const subscriber = await revenueCatSubscriber(String(body.appUserId));
-        const owner = validAppUserId(subscriber?.original_app_user_id) ? String(subscriber.original_app_user_id) : String(body.appUserId);
-        // Reinstall or new phone: RevenueCat may hand out a new anonymous id. Find the account that already
-        // holds this app user id, or the same original purchase, so plans, meals and progress come back.
-        const sigs = new Set(purchaseSignatures(subscriber));
-        const all = await loadEntitlements();
-        const known = Object.entries(all).find(([k, e]) => k.startsWith('store:') && Object.entries(e.storeAccounts || {}).some(([id, a]) => id === String(body.appUserId) || (a.sigs || []).some((x) => sigs.has(x))));
-        const key = known ? known[0] : `store:${owner}`;
-        // Visitors without any purchase: nothing is stored on the server.
-        if (!known && !activeStorePlans(subscriber).plans.length) return send(res, 200, { ok: true, premium: false, email: '', plan: '' });
-        const result = await syncStoreAccount(key, String(body.appUserId), subscriber);
-        return send(res, 200, { ok: true, premium: result.active, email: '', plan: result.plan, token: result.active ? signAccessToken(key) : undefined });
-      }
+      // Store customer IDs are public identifiers; only a verified account may validate its own.
+      if (!payload || !safeEmail(payload.email)) return send(res, 401, {error: 'Confirmez votre compte avant de vérifier un achat.'});
+      const expectedAppUserId = 'np-' + hashKey(`nutripilot:${payload.email.toLowerCase()}`).slice(0,32);
+      if (body.appUserId !== expectedAppUserId) return send(res, 403, {error: 'Cet achat ne correspond pas au compte connecté.'});
       if (!rateLimit(`iap:${clientIp(req)}:${payload.email}`, 30, 15 * 60 * 1000)) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
       const result = await syncStoreAccount(payload.email, String(body.appUserId));
       return send(res, 200, { ok: true, premium: result.active, email: payload.email, plan: result.plan, token: result.active ? signAccessToken(payload.email) : undefined });
@@ -1881,11 +1650,12 @@ const server = http.createServer(async (req, res) => {
       if (!REVENUECAT_WEBHOOK_AUTH || !safeTokenEqual(String(req.headers.authorization || '').replace(/^Bearer\s+/i, ''), REVENUECAT_WEBHOOK_AUTH)) return send(res, 401, { error: 'unauthorized' });
       const body = await readJson(req);
       const event = body?.event || {};
+      if (event.aliases !== undefined && !Array.isArray(event.aliases)) return send(res, 400, {error:'Événement invalide'});
       const ids = new Set([event.app_user_id, event.original_app_user_id, ...(event.aliases || [])].filter(validAppUserId).map(String));
       const entitlements = await loadEntitlements();
       const targets = [];
       for (const [email, entry] of Object.entries(entitlements)) for (const id of Object.keys(entry.storeAccounts || {})) if (ids.has(id)) targets.push([email, id]);
-      for (const [email, id] of targets) { try { await syncStoreAccount(email, id); } catch (error) { console.error('revenuecat sync', error.message); } }
+      for (const [email, id] of targets) await syncStoreAccount(email, id); // Failure returns an error so delivery can be retried.
       return send(res, 200, { ok: true, updated: targets.length });
     }
 
