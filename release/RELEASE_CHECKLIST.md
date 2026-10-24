@@ -6,7 +6,7 @@ Acompanhamento central: https://github.com/AtlasEvermore/nutripilot/issues/5
 
 **Decisão atual: publicação bloqueada.** A preparação do código pode continuar; o site não deve ser declarado pronto enquanto as duas fases abaixo não forem comprovadas.
 
-Escopo atual: site/PWA com vendas Hotmart. App Store/Google Play só entram como requisitos quando esses canais forem selecionados no manifesto. Não inventar dados legais, contas de loja, créditos, backups ou aprovação de testes reais.
+Escopo atual: App Store e Google Play, exclusivamente, com backend compartilhado. Publicar o backend não equivale a publicar nas lojas. Não inventar dados legais, contas, créditos, backups, artefatos assinados nem testes reais.
 
 ## Versões: preparada é diferente de publicada
 
@@ -38,14 +38,14 @@ Todos os itens bloqueiam a publicação até existir evidência válida em `rele
 - [ ] **Retorno e compatibilidade:** selecionar revisão saudável, preservar dados, ensaiar leitura de estado anterior na candidata e documentar qualquer transformação. Rollback de imagem não restaura automaticamente dados.
 - [x] **Trava de CI preparada:** patch Wait for CI revisado; testes e construção da imagem são necessários. Confirmar ativação efetiva após a primeira implantação dessa proteção.
 - [x] **Vencimento da chave:** aviso de renovação preparado antes de 21/01/2027. Manter a validade sob acompanhamento após futuras trocas.
-- [ ] **Transição Hotmart:** acesso ao painel, nova autenticação e sequência de troca coordenados; prever reprocessamento de eventos; evitar janela de compras rejeitadas durante a atualização.
+- [ ] **Configuração nativa:** contas de loja, RevenueCat, produtos e assinatura configurados; IPA/AAB assinados da revisão candidata com evidência.
 
 ## Como registrar a evidência
 
 1. Executar a verificação real; não antecipar aprovação.
 2. No item correspondente do manifesto, definir `status: verified`, data/hora ISO com fuso em `verifiedAt`, responsável em `verifiedBy` e uma ou mais referências em `evidence`.
 3. Referências podem apontar para execução de CI, ticket, relatório privado ou comprovante de teste. Nunca colocar segredos ou dados de clientes no repositório público. A referência registra onde a prova está; a trava não consulta sozinha esses sistemas.
-4. Confirmar a versão e `applicationTree` com `git rev-parse HEAD:nutripilot-france-hotmart-final-v4`. Mudança no código da aplicação invalida o vínculo da evidência; revisar o que precisa ser testado outra vez antes de atualizar o hash.
+4. Confirmar a versão e `applicationTree` com `git rev-parse HEAD:nutripilot-france-hotmart-final-v4`. Conferir também `nativeTree` com `git rev-parse HEAD:native`. Mudança no código da aplicação invalida o vínculo da evidência; revisar o que precisa ser testado outra vez antes de atualizar o hash.
 5. Executar `node ops/release-gate.mjs prepare`. Saída diferente de zero significa **não implantar**.
 
 A trava também recusa código da aplicação alterado ou novo fora da revisão Git aprovada, evidência ausente, antiga, com data futura, sem responsável, com possível segredo ou vinculada a outra árvore da aplicação. Os prazos são por requisito: backup prévio de até 8 horas; restauração ensaiada em até 30 dias; acesso e saldo conferidos em até 24 horas.
@@ -57,7 +57,7 @@ A trava também recusa código da aplicação alterado ou novo fora da revisão 
 3. Revisar todas as mudanças pendentes no Railway. Aplicar somente o conjunto autorizado, incluindo Wait for CI se ainda estiver preparado.
 4. Aguardar SUCCESS. Não confundir pedido aceito, build iniciado ou imagem enviada com implantação concluída.
 5. Conferir `/api/health`: versão, revisão, dados persistentes e integridade. Executar o smoke test da candidata.
-6. Validar a nova autenticação com os provedores, coordenar Hotmart e encerrar as credenciais antigas. Fazer a transição antes de permitir consumo sem controle de chaves potencialmente expostas.
+6. Validar a nova autenticação com os provedores e encerrar as credenciais antigas. Fazer a transição antes de permitir consumo sem controle de chaves potencialmente expostas.
 7. Executar a Fase 2. Se falhar, seguir o plano de retorno e investigar; não anunciar o lançamento como concluído.
 
 ## Fase 2 — aceitação após implantar (`launch`)
@@ -73,7 +73,7 @@ Estes itens são posteriores à implantação: exigi-los como pré-condição da
 - [ ] **Alertas:** confirmar recebimento de incidente e recuperação. O workflow agendado não substitui teste de entrega da notificação.
 - [ ] **CI ativa no Railway:** leitura de configuração confirma `source.checkSuites: true`.
 - [ ] **Páginas legais:** conferir dados reais e rotas no domínio publicado.
-- [ ] **Hotmart:** compra de teste aprovada, duplicata sem ampliar acesso, cancelamento, reembolso e reprocessamento verificados de ponta a ponta, sem alterar compras de clientes reais.
+- [ ] **Lojas:** compra, restauração, expiração e reembolso reais de teste em iOS/Android; aprovação e disponibilidade de cada loja confirmadas antes de anunciar.
 
 Executar `node ops/release-gate.mjs launch` e guardar o resultado junto da implantação. Só depois marcar o lançamento como concluído.
 

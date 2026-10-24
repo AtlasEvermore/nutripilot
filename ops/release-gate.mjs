@@ -29,24 +29,20 @@ export const REQUIREMENTS = {
   ],
 };
 const channelRequirements = {
-  web_hotmart: {
-    prepare: [['hotmart_transition', 'Transição do Hottok e recuperação de eventos coordenadas', 72]],
-    launch: [['hotmart_lifecycle', 'Compra, duplicata, cancelamento e reembolso Hotmart validados', 24]],
-  },
   ios: {
-    prepare: [['ios_configuration', 'App Store e RevenueCat configurados para iOS', 168]],
-    launch: [['ios_purchase', 'Compra e restauração iOS aprovadas no ambiente da loja', 24]],
+    prepare: [['ios_configuration', 'App Store: conta, produtos, assinatura e validação configurados', 168], ['ios_artifact', 'IPA assinado da candidata verificado', 24]],
+    launch: [['ios_purchase', 'Compra e restauração iOS aprovadas no ambiente da loja', 24], ['ios_store_release', 'App Store: aprovação e disponibilidade da candidata confirmadas', 24]],
   },
   android: {
-    prepare: [['android_configuration', 'Google Play e RevenueCat configurados para Android', 168]],
-    launch: [['android_purchase', 'Compra e restauração Android aprovadas no ambiente da loja', 24]],
+    prepare: [['android_configuration', 'Google Play: conta, produtos, assinatura e validação configurados', 168], ['android_artifact', 'AAB assinado da candidata verificado', 24]],
+    launch: [['android_purchase', 'Compra e restauração Android aprovadas no ambiente da loja', 24], ['android_store_release', 'Google Play: aprovação e disponibilidade da candidata confirmadas', 24]],
   },
 };
 export function requirementsFor(phase, channels) {
   return [...(REQUIREMENTS[phase] || []), ...channels.flatMap(c => channelRequirements[c]?.[phase] || [])];
 }
 const secretPattern = /(?:sk-(?:proj-)?[A-Za-z0-9_-]{20,}|re_[A-Za-z0-9_-]{20,})/;
-export function evaluateReadiness(report, { phase = 'prepare', applicationTree, now = Date.now() } = {}) {
+export function evaluateReadiness(report, { phase = 'prepare', applicationTree, nativeTree, now = Date.now() } = {}) {
   const blockers = [];
   if (!Object.hasOwn(REQUIREMENTS, phase)) return { ok: false, phase, blockers: ['Fase inválida; use prepare ou launch.'] };
   if (!report || report.schemaVersion !== 1) return { ok: false, phase, blockers: ['Manifesto de liberação ausente ou inválido.'] };
@@ -54,6 +50,7 @@ export function evaluateReadiness(report, { phase = 'prepare', applicationTree, 
   if (!/^\d+\.\d+\.\d+$/.test(report.version || '')) blockers.push('Versão candidata inválida.');
   const channels = Array.isArray(report.channels) ? report.channels : [];
   if (!channels.length || channels.some(c => !Object.hasOwn(channelRequirements, c))) blockers.push('Canais de venda devem ser definidos explicitamente.');
+  if (channels.some(c => c === 'ios' || c === 'android') && (!/^[a-f0-9]{40}$/.test(nativeTree || '') || report.nativeTree !== nativeTree)) blockers.push('As evidências não correspondem à árvore Git da aplicação nativa.');
   if (new Set(channels).size !== channels.length) blockers.push('Canais de venda duplicados.');
   for (const [id, label, maxHours] of requirementsFor(phase, channels)) {
     const record = report.gates?.[phase]?.[id];
@@ -73,8 +70,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const report = JSON.parse(await fs.readFile(path.join(root, 'release/readiness.json'), 'utf8'));
     const applicationTree = execFileSync('git', ['rev-parse', 'HEAD:nutripilot-france-hotmart-final-v4'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
     const source = await fs.readFile(path.join(root, 'nutripilot-france-hotmart-final-v4/package.json'), 'utf8');
-    const result = evaluateReadiness(report, { phase: process.argv[2] || 'prepare', applicationTree });
-    const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=normal', '--', 'nutripilot-france-hotmart-final-v4'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    const nativeTree = report.channels?.some(c => c === 'ios' || c === 'android') ? execFileSync('git', ['rev-parse', 'HEAD:native'], { cwd: root, encoding: 'utf8', stdio:['ignore','pipe','pipe'] }).trim() : undefined;
+    const result = evaluateReadiness(report, { phase: process.argv[2] || 'prepare', applicationTree, nativeTree });
+    const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=normal', '--', 'nutripilot-france-hotmart-final-v4', ...(nativeTree ? ['native'] : [])], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
     if (dirty) { result.ok = false; result.blockers.push('A aplicação possui alterações fora da revisão Git validada; registre e valide a candidata exata.'); }
     if (JSON.parse(source).version !== report.version) { result.ok = false; result.blockers.push('A versão do pacote não corresponde ao manifesto.'); }
     console.log(JSON.stringify(result, null, 2));

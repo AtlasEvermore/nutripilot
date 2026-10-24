@@ -1,7 +1,7 @@
 {
   "name": "nutripilot-native",
   "private": true,
-  "version": "1.0.0",
+  "version": "18.0.2",
   "description": "iPhone and Android shell for NutriPilot (Capacitor 8). The app content is served by app.atlasevermore.com.",
   "engines": {
     "node": ">=22"
@@ -15,7 +15,8 @@
     "sync": "npx cap sync && node scripts/configure-native.mjs",
     "android": "npx cap open android",
     "ios": "npx cap open ios",
-    "doctor": "node scripts/configure-native.mjs --check"
+    "doctor": "node scripts/configure-native.mjs --check",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@capacitor-community/in-app-review": "^8.0.0",

@@ -20,13 +20,14 @@ async function freePort() {
   const s = net.createServer(); s.listen(0, '127.0.0.1'); await once(s, 'listening');
   const port = s.address().port; await new Promise(r => s.close(r)); return port;
 }
-async function fixture(t, { ai = true, globalLimit = 50, hotmart = '', guests = true, enabled = true, checkout = false } = {}) {
+async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled = true, store = false } = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'np-regression-'));
-  const requests = []; let mode = 'meal'; let calls = 0;
+  const requests = []; let mode = 'meal'; let calls = 0; let subscriber = {subscriptions:{}};
   const provider = http.createServer(async (req, res) => {
     let raw = ''; for await (const part of req) raw += part;
     const body = raw ? JSON.parse(raw) : {}; requests.push(body); calls++;
     res.setHeader('Content-Type', 'application/json');
+    if (req.url.startsWith('/rc/')) return res.end(JSON.stringify({subscriber}));
     if (req.url === '/fx') return res.end(JSON.stringify({ rates: { USD: 1, BRL: 5 } }));
     if (mode === 'failure') { res.statusCode = 400; return res.end(JSON.stringify({ error: { message: 'provider-test-secret-must-not-leak' } })); }
     if (mode === 'quota') { res.statusCode = 429; return res.end(JSON.stringify({ error: { code: 'insufficient_quota', message: 'You have no credits remaining.' } })); }
@@ -41,10 +42,9 @@ async function fixture(t, { ai = true, globalLimit = 50, hotmart = '', guests = 
   const child = spawn(process.execPath, ['server.mjs'], { cwd: root, env: {
     ...process.env, NODE_ENV: 'production', PORT: String(port), APP_URL: url, DATA_DIR: dir,
     ACCESS_TOKEN_SECRET: secret, OPENAI_API_KEY: ai ? 'test-key' : '', OPENAI_MODEL: ai ? 'test-model' : '',
-    WEB_CHECKOUT_ENABLED: String(checkout), HOTMART_CHECKOUT_COMPLETE_MONTHLY: 'https://pay.hotmart.com/R107884011S?off=r3ueswug',
     AI_ENABLED: String(enabled), AI_ALLOW_GUESTS: String(guests), AI_GLOBAL_MONTHLY_LIMIT: '500', AI_USER_DAILY_LIMIT: '10',
     OPENAI_BASE_URL: aiUrl, FX_URL: `${aiUrl}/fx`, FREE_SCANS: '3', AI_GLOBAL_DAILY_LIMIT: String(globalLimit),
-    RESEND_API_KEY: '', REVENUECAT_SECRET_KEY: '', HOTMART_HOTTOK: hotmart, ADMIN_KEY: 'isolated-test-admin-key',
+    RESEND_API_KEY: '', REVENUECAT_SECRET_KEY: store ? 'test-store-secret' : '', REVENUECAT_WEBHOOK_AUTH: store ? 'test-hook-secret' : '', REVENUECAT_API_BASE: `${aiUrl}/rc`, ADMIN_KEY: 'isolated-test-admin-key',
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let logs = ''; child.stdout.on('data', x => { logs += x; }); child.stderr.on('data', x => { logs += x; });
   async function stop() {
@@ -66,6 +66,7 @@ async function fixture(t, { ai = true, globalLimit = 50, hotmart = '', guests = 
   const token = `${payload}.${crypto.createHmac('sha256', secret).update(payload).digest('base64url')}`;
   return {
     url, dir, requests, token, stop,
+    subscriber(value) { subscriber = value; },
     mode(v) { mode = v; calls = 0; requests.length = 0; },
     async post(route, body, { premium = false } = {}) {
       const res = await fetch(url + route, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-NP-Device': 'regression-test-device', 'X-NP-Lang': 'pt', ...(premium ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
@@ -262,25 +263,6 @@ test('Release verification checks public routes and distinguishes unconfigured b
 });
 
 
-test('Hotmart authorization, purchase, duplicate, cancellation and refund preserve access rules', async t => {
-  const f = await fixture(t, { hotmart: 'isolated-test-webhook-secret' });
-  const payload = event => ({ event, data: { buyer: { email: 'tester@example.invalid' }, purchase: { transaction: 'TEST-ORDER', offer: { code: 'r3ueswug' } } } });
-  const hook = async (event, authorized = true) => {
-    const res = await fetch(f.url + '/api/hotmart/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(authorized ? { 'x-hotmart-hottok': 'isolated-test-webhook-secret' } : {}) }, body: JSON.stringify(payload(event)) });
-    return { status: res.status, data: await res.json() };
-  };
-  const entitlements = async () => JSON.parse(await fs.readFile(path.join(f.dir, 'entitlements.json')))['tester@example.invalid'];
-  assert.equal((await hook('PURCHASE_APPROVED', false)).status, 401);
-  assert.equal((await hook('PURCHASE_APPROVED')).data.action, 'granted');
-  const approved = await entitlements(); assert.equal(approved.status, 'active'); assert.equal(approved.plan, 'monthly');
-  assert.equal((await hook('PURCHASE_APPROVED')).data.action, 'granted');
-  assert.equal((await hook('SUBSCRIPTION_CANCELLATION')).data.action, 'cancel_at_period_end');
-  assert.equal((await entitlements()).status, 'active');
-  assert.equal((await hook('PURCHASE_REFUNDED')).data.action, 'revoked');
-  assert.equal((await entitlements()).status, 'revoked');
-  assert.equal((await f.post('/api/coach', { message: 'Oi' }, { premium: true })).status, 401);
-});
-
 test('Corrupt free allowances are preserved and never reset into new free AI usage', async t => {
   const f = await fixture(t);
   for (const corrupt of ['{broken', '[]', '{"devices":null,"ips":{}}', '{"devices":{"test":-1},"ips":{}}']) {
@@ -357,7 +339,7 @@ test('Visitors cannot spend AI credits and public help works without any provide
  assert.equal((await f.post('/api/analyze',{image})).status,401);
  assert.equal((await f.post('/api/coach',{message:'Hello'})).status,401);
  const answer=await f.post('/api/support',{lang:'pt',messages:[{role:'user',text:'Como cancelar minha assinatura?'}]});
- assert.equal(answer.status,200);assert.equal(answer.data.source,'help-center');assert.match(answer.data.answer,/Hotmart/);
+ assert.equal(answer.status,200);assert.equal(answer.data.source,'help-center');assert.match(answer.data.answer,/iPhone/);assert.doesNotMatch(answer.data.answer,/Hotmart/i);
  assert.equal(f.requests.length,0);
  const config=await(await fetch(f.url+'/api/config')).json();assert.equal(config.freeScans,0);assert.equal(config.aiPolicy.subscribersOnly,true);
  assert.equal((await f.post('/api/analyze',{image},{premium:true})).status,200);
@@ -390,21 +372,46 @@ test('Meal entry shows paid access, visible method choices and an inline recover
  ctx.state.premium=true;ctx.config.ai=false;ctx.modal.loading=false;assert.match(ctx.addTab('photo'),/momentanément en pause/);
 });
 
-test('The web purchase route redirects only an enabled exact offer and refuses unknown or prototype keys',async t=>{
- const f=await fixture(t,{checkout:true});
- const config=await(await fetch(f.url+'/api/config')).json();assert.equal(config.webCheckout.complete_monthly,true);
- const get=query=>fetch(f.url+'/checkout?'+query,{redirect:'manual'});
- const result=await get('plan=complete&period=monthly');assert.equal(result.status,302);assert.equal(result.headers.get('location'),'https://pay.hotmart.com/R107884011S?off=r3ueswug');
- for(const query of ['plan=complete&period=annual','plan=training&period=monthly','plan=_&period=proto__','plan=complete&period=monthly&url=https://evil.invalid']){
-  const response=await get(query);if(query.includes('&url='))assert.equal(response.headers.get('location'),'https://pay.hotmart.com/R107884011S?off=r3ueswug');else assert.equal(response.status,404);
- }
- const g=await fixture(t);assert.equal((await fetch(g.url+'/checkout?plan=complete&period=monthly',{redirect:'manual'})).status,404);
-});
-
-test('The web funnel never invents an App Store trial for a Hotmart purchase',()=>{
+test('Browser visitors are never promised an unconfirmed store trial',()=>{
  const a=appSource.indexOf('const Billing = {'),b=appSource.indexOf('\n};',a)+3;
  const ctx=vm.createContext({nativePlatform:()=>false,window:{},config:{trialDays:7}});
  vm.runInContext(appSource.slice(a,b),ctx);
  assert.equal(vm.runInContext('Billing.trialDays()',ctx),0);
  assert.equal(vm.runInContext('Billing.trialFor({annual:{}},"annual")',ctx),0);
+});
+
+test('Only a verified account can validate its own store customer; missing expiry and other payment sources never grant access',async t=>{
+ const f=await fixture(t,{store:true});const email='tester@example.invalid';const id='np-'+crypto.createHash('sha256').update('nutripilot:'+email).digest('hex').slice(0,32);
+ const initial={ [email]:{status:'none'} };await fs.writeFile(path.join(f.dir,'entitlements.json'),JSON.stringify(initial));
+ assert.equal((await f.post('/api/iap/verify',{appUserId:id})).status,401);
+ assert.equal((await f.post('/api/iap/verify',{appUserId:'np-'+'a'.repeat(32)},{premium:true})).status,403);assert.equal(f.requests.length,0);
+ const active={store:'app_store',expires_date:new Date(Date.now()+3600000).toISOString(),original_purchase_date:'2026-10-24T00:00:00Z'};
+ for(const sub of [{...active,expires_date:null},{...active,store:'stripe'},{...active,refunded_at:new Date().toISOString()}]){
+  f.subscriber({subscriptions:{np_complete_monthly:sub}});const r=await f.post('/api/iap/verify',{appUserId:id},{premium:true});assert.equal(r.status,200);assert.equal(r.data.premium,false);
+ }
+ f.subscriber({subscriptions:{np_complete_monthly:active}});const good=await f.post('/api/iap/verify',{appUserId:id},{premium:true});assert.equal(good.data.premium,true);assert.equal(good.data.plan,'complete_monthly');
+ const saved=JSON.parse(await fs.readFile(path.join(f.dir,'entitlements.json')))[email];assert.equal(saved.accessUntil,Date.parse(active.expires_date));
+ f.subscriber({subscriptions:{np_complete_monthly:{...active,expires_date:new Date(Date.now()-60000).toISOString()}}});assert.equal((await f.post('/api/iap/verify',{appUserId:id},{premium:true})).data.premium,false);
+});
+
+test('Removed web checkout and legacy payment routes cannot grant purchases or redirect to external payment',async t=>{
+ const f=await fixture(t);assert.equal((await fetch(f.url+'/checkout?plan=complete&period=monthly',{redirect:'manual'})).status,404);
+ const before=await fs.readFile(path.join(f.dir,'entitlements.json'),'utf8');assert.equal((await f.post('/api/hotmart/webhook',{event:'PURCHASE_APPROVED'},{premium:true})).status,404);assert.equal(await fs.readFile(path.join(f.dir,'entitlements.json'),'utf8'),before);
+ const config=await(await fetch(f.url+'/api/config')).json();assert.equal(config.webCheckout,undefined);assert.equal(config.salesUrl,undefined);
+});
+
+test('Native storefront waits for confirmed products and never advertises a fallback trial',()=>{
+ const a=appSource.indexOf('const Billing = {'),b=appSource.indexOf('\n};',a)+3;const ctx=vm.createContext({nativePlatform:()=>true,window:{},config:{trialDays:7},L:x=>x,appHeader:()=>'',bottom:()=>''});vm.runInContext(appSource.slice(a,b),ctx);
+ const c=appSource.indexOf('function storeLoadingScreen() {'),d=appSource.indexOf('\nfunction ',appSource.indexOf('function paywall()',c)+20);
+ vm.runInContext(appSource.slice(c,d),ctx);assert.equal(vm.runInContext('Billing.trialDays()',ctx),0);assert.equal(vm.runInContext('Billing.trialFor({annual:{}},"annual")',ctx),0);const html=vm.runInContext('paywall()',ctx);assert.match(html,/data-store-retry/);assert.doesNotMatch(html,/data-buy|7 jours|\$\d/);
+});
+
+test('Locked content does not invent a free trial, and incomplete store catalogs cannot display fallback prices',()=>{
+ const ctx=vm.createContext({nativePlatform:()=>true,window:{NutriPilotNative:{purchase:()=>{},products:{month:{price:12}}}},config:{plans:[{tier:'complete',monthly:{storeId:'month'},annual:{storeId:'year'}}]},L:x=>x,icon:()=>'',esc:x=>x,recommendedTier:()=> 'complete',DEFAULT_PLANS:[]});
+ const a=appSource.indexOf('const Billing = {'),b=appSource.indexOf('\n};',a)+3;vm.runInContext(appSource.slice(a,b),ctx);
+ const c=appSource.indexOf('const sellable ='),d=appSource.indexOf('\n',c);vm.runInContext(appSource.slice(c,d),ctx);
+ const e=appSource.indexOf('function trialPitch('),f=appSource.indexOf('function trialSheet()',e);vm.runInContext(appSource.slice(e,f),ctx);
+ assert.equal(vm.runInContext('Billing.plans().length',ctx),0);
+ const html=vm.runInContext('trialPitch()',ctx);assert.doesNotMatch(html,/gratuits|\b3\b|\b7\b/);assert.match(html,/Voir les formules/);
+ ctx.window.NutriPilotNative.products.year={price:100};assert.equal(vm.runInContext('Billing.plans().length',ctx),1);
 });

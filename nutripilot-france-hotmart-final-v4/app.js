@@ -16,8 +16,6 @@ let config = {
   brand: 'NutriPilot',
   ai: false,
   supportEmail: 'support@atlasevermore.com',
-  salesUrl: 'https://atlasevermore.com/#tarifs',
-  manageSubscriptionUrl: '',
   locked: true,
   legal: {},
 };
@@ -921,15 +919,15 @@ function askAiConsent() {
     wrap.setAttribute('aria-modal', 'true');
     wrap.innerHTML = `<div class="consent-card" tabindex="-1">
       <span class="consent-ico">${icon('star')}</span>
-      <h2>${L('Analyse par intelligence artificielle')}</h2>
-      <p>${L('Pour analyser vos repas, répondre à vos questions et créer vos plans, NutriPilot envoie à son fournisseur d’IA, OpenAI, uniquement ce dont la réponse a besoin :')}</p>
+      <h2>${L('Analyser vos photos et messages')}</h2>
+      <p>${L('Avec votre accord, NutriPilot transmet à OpenAI, son prestataire d’analyse automatisée, les données nécessaires pour analyser vos repas, répondre à vos questions et préparer vos plans :')}</p>
       <ul>
         <li>${icon('camera')}<span>${L('les photos de repas et d’étiquettes que vous choisissez d’analyser')}</span></li>
-        <li>${icon('coach')}<span>${L('le texte que vous écrivez ou dictez (repas, questions au coach, au support)')}</span></li>
+        <li>${icon('coach')}<span>${L('le texte que vous écrivez ou dictez pour vos repas et vos échanges avec le coach')}</span></li>
         <li>${icon('user')}<span>${L('les repères de votre profil utiles au calcul : âge, sexe, poids, objectif, calories, préférences et allergies')}</span></li>
       </ul>
-      <p class="fine">${L('Pas de nom ni d’e-mail. OpenAI traite ces données pour produire la réponse et ne les utilise pas pour entraîner ses modèles. Vous pouvez retirer votre accord à tout moment dans Réglages.')}</p>
-      <button class="btn btn-lime btn-wide btn-xl" data-ai-yes>${L('Autoriser l’analyse par IA')}</button>
+      <p class="fine">${L('Votre nom et votre e-mail ne sont pas ajoutés automatiquement. Évitez de saisir des informations identifiantes dans vos messages. Vous pouvez retirer votre accord dans Réglages.')}</p>
+      <button class="btn btn-lime btn-wide btn-xl" data-ai-yes>${L('Autoriser l’analyse')}</button>
       <button class="btn btn-ghost btn-wide" data-ai-no>${L('Pas maintenant')}</button>
       <a class="link-btn center-fine" href="/privacy?lang=${lang()}" target="_blank" rel="noopener">${L('Politique de confidentialité')}</a>
     </div>`;
@@ -954,9 +952,9 @@ class AiConsentError extends Error {}
 async function aiGate(url) {
   const path = String(url).split('?')[0];
   if (!AI_PATHS.includes(path)) return;
-  if (config.ai === false) throw new AiConsentError(L('Analyses IA momentanément en pause'));
+  if (config.ai === false) throw new AiConsentError(L('Analyses momentanément en pause'));
   if (await askAiConsent()) return;
-  throw new AiConsentError(L('Analyse par IA désactivée. Vous pouvez l’activer dans Réglages › Analyse par IA.'));
+  throw new AiConsentError(L('Analyse désactivée. Vous pouvez l’activer dans Réglages › Analyse personnalisée.'));
 }
 // Keeps the session alive: the server sends a fresh token on premium calls (sliding session), and an
 // expired token on the phone is renewed from the store purchase before giving up.
@@ -1888,7 +1886,7 @@ function supportScreen() {
 }
 
 function supportSheet() {
-  const intro = L('Aide automatique, sans IA. Consultez les réponses sur la connexion, les abonnements et vos données.');
+  const intro = L('Aide NutriPilot. Consultez les réponses sur la connexion, les abonnements et vos données.');
   return `<div class="sheet-head"><div><span class="tag">SUPPORT</span><h2>${L('Assistant NutriPilot')}</h2></div><button class="icon-btn" data-close>×</button></div>
     <div class="chat-log" id="support-log">
       <div class="bubble bot">${esc(intro)}</div>
@@ -2228,11 +2226,10 @@ const NativeBilling = {
     this.started = true;
     try {
       await P.configure({ apiKey: key });
-      if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
-      // Like Apple's own apps: a subscriber who reopens or reinstalls the app is recognised silently,
-      // with no login screen (RevenueCat knows the Apple ID / Google account behind the purchase).
-      if (!state.premium) this.silentCheck();
-      P.addCustomerInfoUpdateListener?.(() => { if (!state.premium) this.silentCheck(); });
+      if (this.email() && this.token()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) });
+      // Revalidate purchases only for a previously verified NutriPilot account.
+      if (this.email() && this.token()) this.silentCheck();
+      P.addCustomerInfoUpdateListener?.(() => { if (this.email() && this.token()) this.silentCheck(); });
       const ids = [...new Set(storeCatalog().map((x) => x.id))];
       const res = await P.getProducts({ productIdentifiers: ids, type: 'SUBSCRIPTION' }).catch(() => P.getProducts({ productIdentifiers: ids }));
       const list = res?.products || [];
@@ -2259,15 +2256,15 @@ const NativeBilling = {
         await pullRemoteState();
         saveState(false);
         nav(state.onboarding ? 'app' : 'onboarding');
+      } else if (data?.premium === false) {
+        Object.assign(state, {premium:false,accessToken:'',subscriptionPlan:''});
+        saveState(false); render();
       }
-    } catch { /* offline or not configured yet: stay as is */ }
+    } catch { /* Offline validation does not erase account data. */ }
   },
-  // v9: no account needed to buy. The subscription belongs to the Apple ID / Google account (store
-  // purchase), so it follows the person to any phone with "Restore purchases" — no e-mail, no password.
+  // Verify the account before linking a store purchase; public customer IDs are not authentication.
   needAccount(intent) {
-    return false;
-    // eslint-disable-next-line no-unreachable
-    if (this.token()) return false;
+    if (this.token() && this.email()) return false;
     this.pending = intent || null;
     modal = { type: 'account', step: 'email', email: state.accountEmail || '' };
     renderModal();
@@ -2288,7 +2285,7 @@ const NativeBilling = {
     const P = this.plugin();
     const product = this.products[storeId]?.raw;
     if (!product) throw new Error(L('Cette formule n’est pas encore disponible dans la boutique.'));
-    if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
+    if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) });
     try {
       await P.purchaseStoreProduct({ product });
     } catch (error) {
@@ -2302,9 +2299,9 @@ const NativeBilling = {
     return { token: data.token, email: data.email, plan: data.plan };
   },
   async restore() {
-    if (this.needAccount(null)) return null;
+    if (this.needAccount({action:'restore'})) return null;
     const P = this.plugin();
-    if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) }).catch(() => {});
+    if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) });
     await P.restorePurchases();
     const data = await this.verify();
     return data.premium ? { token: data.token, email: data.email, plan: data.plan } : null;
@@ -2416,7 +2413,7 @@ document.addEventListener('change', async (event) => {
   if (t?.matches?.('[data-cp-patterns-toggle]')) { state.cpPatternsOff = !t.checked; saveState(); return; }
   if (!t?.matches?.('[data-ai-toggle]')) return;
   if (t.checked) { state.aiConsent = null; t.checked = await askAiConsent(); }
-  else { state.aiConsent = false; state.aiConsentAt = new Date().toISOString(); saveState(false); toast(L('Analyse par IA désactivée.')); }
+  else { state.aiConsent = false; state.aiConsentAt = new Date().toISOString(); saveState(false); toast(L('Analyse personnalisée désactivée.')); }
 });
 function pageSheet() {
   return `<div class="sheet-head"><span></span><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
@@ -2424,7 +2421,6 @@ function pageSheet() {
 }
 // Store subscription settings, opened from Settings › Manage my subscription.
 function manageSubscriptionUrl() {
-  if (config.manageSubscriptionUrl) return config.manageSubscriptionUrl;
   const store = window.NutriPilotNative?.store || (/iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) ? 'App Store' : 'Google Play');
   return store === 'App Store' ? 'https://apps.apple.com/account/subscriptions' : 'https://play.google.com/store/account/subscriptions';
 }
@@ -2463,6 +2459,7 @@ async function accountVerify() {
     if (!response.ok) throw new Error(L(data.error || ''));
     state.accountEmail = modal.email;
     state.accountToken = data.token;
+    if (!data.premium) { state.premium = false; state.accessToken = ''; state.premiumEmail = modal.email; }
     if (data.premium) { state.premium = true; state.accessToken = data.token; state.premiumEmail = modal.email; state.subscriptionPlan = data.plan || state.subscriptionPlan; }
     saveState(false);
     modal = null; document.querySelector('.modal-wrap')?.remove();
@@ -2470,6 +2467,7 @@ async function accountVerify() {
     if (data.premium) { toast(L('Accès Premium activé ✓')); return nav(state.onboarding ? 'app' : 'onboarding'); }
     if (afterSignIn === 'trial') { afterSignIn = ''; return beginTrial(); }
     const intent = NativeBilling.pending; NativeBilling.pending = null;
+    if (intent?.action === 'restore') return Billing.restore().catch(e => toast(e?.message || L('Réessayez dans un instant.')));
     if (intent) { const plan = findPlan(intent.tier); if (plan) return Billing.purchase(plan, intent.period).catch((e) => toast(e?.message || L('Paiement interrompu.'))); }
     render();
   } catch (error) { modal.msg = error.message; modal.ok = false; renderModal(); }
@@ -2571,7 +2569,7 @@ const modsFromMix = (tier) => String(tier).replace(/^mix_/, '').split('').map((c
 // The plan for exactly the chosen modules (a module, a themed combination, a composed one or the kit).
 // In the store app, only plans created in App Store Connect / Play Console can be sold: when the exact
 // selection has no product, offer the cheapest available plan that contains every chosen module.
-const sellable = (plan) => !Billing.native() || Boolean(window.NutriPilotNative?.products?.[plan?.monthly?.storeId]);
+const sellable = (plan) => !nativePlatform() || (Billing.native() && Number.isFinite(window.NutriPilotNative?.products?.[plan?.monthly?.storeId]?.price));
 function bestOffer(modules) {
   if (!modules.length) return null;
   const exact = customPlan(modules);
@@ -2650,9 +2648,9 @@ function freeScansLeft() { return state.premium ? Infinity : Math.max(0, freeSca
 const canScan = () => fullAccess() || freeScansLeft() > 0;
 function freeScanBanner() {
   if (state.premium && config.ai !== false) return '';
-  if (!freeScanLimit()) return `<div class="free-scan access-note"><span>${icon('lock')}</span><p><b>${L(state.premium ? 'Analyses IA momentanément en pause' : 'Analyses IA réservées aux abonnés')}</b><small>${L('Code-barres et saisie manuelle disponibles sans IA.')}</small></p></div>`;
+  if (!freeScanLimit()) return `<div class="free-scan access-note"><span>${icon('lock')}</span><p><b>${L(state.premium ? 'Analyses momentanément en pause' : 'Analyses réservées aux abonnés')}</b><small>${L('Code-barres et saisie manuelle toujours disponibles.')}</small></p></div>`;
   const left = freeScansLeft();
-  return `<div class="free-scan ${left ? '' : 'out'}"><span>${icon(left ? 'scan' : 'lock')}</span><p><b>${left ? L('{n} analyses gratuites restantes', { n: left }) : L('Analyses gratuites utilisées')}</b><small>${left ? L('Photographiez votre assiette : calories et macros en quelques secondes. Le code-barres est gratuit et illimité.') : L('Les analyses IA de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</small></p>${left ? '' : `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>`}</div>`;
+  return `<div class="free-scan ${left ? '' : 'out'}"><span>${icon(left ? 'scan' : 'lock')}</span><p><b>${left ? L('{n} analyses gratuites restantes', { n: left }) : L('Analyses gratuites utilisées')}</b><small>${left ? L('Photographiez votre assiette : calories et macros en quelques secondes. Le code-barres est gratuit et illimité.') : L('Les analyses de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</small></p>${left ? '' : `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>`}</div>`;
 }
 function freeScansOut() {
   track('FreeScansOut');
@@ -2747,17 +2745,13 @@ function signInSheet() {
 }
 // The box that explains the free minutes, used on the home screen, in the sheets and on locked apps.
 function trialPitch(kind = 'card', tier = '') {
-  const d = Billing.trialDays() || 3;
-  const plan = findPlan(tier || recommendedTier()) || Billing.plans()[0];
-  const price = plan ? money(lp(plan, 'monthly')) : '';
   return `<div class="trial-box ${kind}"><span class="trial-ico">${icon('star')}</span>
-    <h3>${L('Essayez tout gratuitement pendant {d} jours', { d })}</h3>
-    <p>${L('Accès complet, sans limite de temps pendant l’essai. Paiement sécurisé par l’App Store ou Google Play, sans mot de passe à créer. Annulable en un geste.')}</p>
-    <button class="btn btn-lime btn-wide" data-module-buy="${esc(tier || recommendedTier())}">${L('Commencer mes {n} jours gratuits', { n: d })}</button>
-    ${price ? `<small class="trial-fine">${L('Puis {price} / mois · annulez quand vous voulez', { price })}</small>` : ''}</div>`;
+    <h3>${L('Cette partie est réservée aux abonnés')}</h3>
+    <p>${L('Consultez les prix et les offres disponibles dans votre boutique avant de choisir votre formule.')}</p>
+    <button class="btn btn-lime btn-wide" data-module-buy="${esc(tier || recommendedTier())}">${L('Voir les formules')}</button></div>`;
 }
 function trialSheet() {
-  return `<div class="sheet-head"><div><span class="tag">${L('Test gratuit')}</span><h2>${L('Cette partie est réservée aux abonnés')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
+  return `<div class="sheet-head"><div><span class="tag">${L('Formules')}</span><h2>${L('Cette partie est réservée aux abonnés')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
     ${trialPitch('sheet')}`;
 }
 // Locked app: the real screen stays visible behind a blur, with the trial box on top.
@@ -2951,6 +2945,7 @@ function modulesScreen() {
 }
 // Shown inside a module the person does not have yet (paid users adding a module).
 function moduleLockedScreen(id) {
+  if (nativePlatform() && !storeReady()) return storeLoadingScreen();
   const m = moduleById(id) || MODULES[0];
   const plan = Billing.plans().find((x) => x.tier === m.id);
   const trial = Billing.trialDays();
@@ -2974,21 +2969,21 @@ const Billing = {
   plans() {
     const all = Array.isArray(config.plans) && config.plans.length ? config.plans : DEFAULT_PLANS;
     // In the store app, list only what the store actually sells.
-    const sold = this.native() && Object.keys(window.NutriPilotNative?.products || {}).length ? all.filter((p) => sellable(p)) : all;
-    return sold.length ? sold : all;
+    if (!nativePlatform()) return all;
+    return all.filter((p) => sellable(p) && (!p.annual || sellable({monthly:p.annual})));
   },
   trialDays() {
     // In the store app, show a free trial only if the store really offers one (App Store 3.1.2).
     if (!nativePlatform()) return 0;
     if (this.native() && Object.keys(window.NutriPilotNative?.products || {}).length) return Number(window.NutriPilotNative.trialDays || 0);
-    return Number(config.trialDays || 7);
+    return 0;
   },
   // Trial of one exact product (e.g. 7 days on the annual plan only, none on the monthly).
   trialFor(plan, period) {
     if (!nativePlatform()) return 0;
     if (!plan?.[period]) return 0;
     if (this.native() && Object.keys(window.NutriPilotNative?.products || {}).length) return NativeBilling.introDays(window.NutriPilotNative.products[plan[period].storeId]?.intro);
-    return String(config.trialOn || 'annual').split(',').map((x) => x.trim()).includes(period) ? Number(config.trialDays || 7) : 0;
+    return 0;
   },
   async purchase(plan, period) {
     const option = plan[period];
@@ -3020,8 +3015,7 @@ const Billing = {
       if (this.native()) return this.purchase(plan, period);
       return toast(L('La boutique ne répond pas. Vérifiez votre connexion et réessayez.'));
     }
-    if (config.webCheckout?.[id]) { location.assign(`/checkout?plan=${encodeURIComponent(plan.tier)}&period=${encodeURIComponent(period)}`); return; }
-    // Web checkout opens only for a specifically configured, verified offer.
+    // Browser visitors are directed to the native app, without an external checkout.
     modal = { type: 'store', plan: plan.tier, period };
     return renderModal();
   },
@@ -3039,6 +3033,7 @@ const Billing = {
       haptic('success'); toast(L('Achats restaurés ✓'));
       return nav(state.onboarding ? 'app' : 'onboarding');
     }
+    if (NativeBilling.pending?.action === 'restore') return;
     toast(L('Aucun abonnement actif trouvé.'));
   },
 };
@@ -3208,7 +3203,12 @@ function includedHtml(plan) {
     <div class="pw-also">${ALSO_INCLUDED.map(([ic, t]) => `<span>${icon(ic)}${L(t)}</span>`).join('')}</div>
   </section>`;
 }
+function storeLoadingScreen() {
+  return `<div class="mobile-app">${appHeader('Formules')}<div class="screen"><div class="day-card" role="status"><h2>${L('La boutique est momentanément indisponible.')}</h2><p>${L('Réessayez pour afficher les prix et les offres confirmés par votre boutique.')}</p><button class="btn btn-primary btn-wide" data-store-retry>${L('Réessayer')}</button><button class="btn btn-ghost btn-wide" data-restore>${L('Restaurer mes achats')}</button></div></div>${bottom('')}</div>`;
+}
+function storeReady() { return Billing.native() && Billing.plans().length > 0; }
 function paywall() {
+  if (nativePlatform() && !storeReady()) return storeLoadingScreen();
   const p = state.profile || {};
   const plans = Billing.plans();
   const plan = findPlan(defaultTier()) || plans[0];
@@ -3244,7 +3244,7 @@ function paywall() {
       ${proj ? `<div class="pw-goal">${icon('progress')}<span>${L('Objectif {target} · estimé le {date}', { target: `<b>${kgFmt(p.target)} kg</b>`, date: `<b>${esc(dateFr(proj.end))}</b>` })}</span></div>` : ''}
       ${choices.length > 1 ? `<div class="pw-plans" role="radiogroup">${choices.map((x) => `<button class="pw-plan ${x.tone || ''} ${x.tier === plan.tier ? 'on' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}"><small>${L(x.tier === 'complete' ? 'Tout inclus' : 'Recommandé pour vous')}</small><b>${esc(planName(x))}</b><span class="pwp-mods">${MODULES.filter((m) => x.modules.includes(m.id) || m.free).map((m) => `<i class="${m.tone}" title="${esc(modTitle(m))}">${icon(m.icon)}</i>`).join('')}</span><em>${L('{n} espaces inclus', { n: MODULES.filter((m) => x.modules.includes(m.id) || m.free).length })}</em></button>`).join('')}</div>` : `<div class="pw-plan-one"><b>${esc(planName(plan))}</b><small>${esc(L(plan.sub))}</small></div>`}
       <div class="pw-periods" role="radiogroup">${periods.map(periodCard).join('')}</div>
-      <p class="fine">${L('Les analyses IA de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</p><button class="btn btn-lime btn-wide btn-xl pw-cta-top" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
+      <p class="fine">${L('Les analyses de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</p><button class="btn btn-lime btn-wide btn-xl pw-cta-top" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
       <div class="pw-trust">
         <span>${icon('lock')}${L('Paiement sécurisé par l’App Store / Google Play')}</span>
         <span>${icon('check')}${L('Annulable en un geste, sans engagement')}</span>
@@ -3953,6 +3953,7 @@ function choosePlanBtn(x, mine) {
   return `<button class="btn ${x.kind === 'complete' ? 'btn-lime' : 'btn-primary'}" data-choose-plan="${esc(x.tier)}">${trial ? L('Essayer {n} jours gratuits', { n: trial }) : L('Choisir')}</button>`;
 }
 function plansScreen() {
+  if (nativePlatform() && !storeReady()) return storeLoadingScreen();
   const plans = Billing.plans();
   const owned = ownedModules();
   const ownsAll = state.premium && PAID_MODULES.every((m) => owned.includes(m.id));
@@ -7700,7 +7701,7 @@ function settings() {
       <button class="btn ${planTier() !== 'complete' ? 'btn-lime' : 'btn-ghost'} btn-wide" data-go="plans">${L('Voir les formules')}</button>
       <div class="section-label"><h3>${L('Données & appareil')}</h3></div>
       <label class="rem-row"><span>${icon('sparkle')}<b>${L('Suggestions d’après ma routine')}</b><small>${L('Repère les repas que vous remplacez souvent pour proposer des options plus pratiques')}</small></span><input type="checkbox" class="switch" data-cp-patterns-toggle ${state.cpPatternsOff ? '' : 'checked'}></label>
-      <label class="rem-row ai-row"><span>${icon('star')}<b>${L('Analyse par IA')}</b><small>${L('Photos et textes envoyés à OpenAI pour l’analyse, le coach et les plans')}</small></span><input type="checkbox" class="switch" data-ai-toggle ${state.aiConsent === true ? 'checked' : ''}></label>
+      <label class="rem-row ai-row"><span>${icon('star')}<b>${L('Analyse personnalisée')}</b><small>${L('Gérez le traitement de vos photos et messages.')}</small></span><input type="checkbox" class="switch" data-ai-toggle ${state.aiConsent === true ? 'checked' : ''}></label>
       <button class="btn btn-ghost btn-wide" data-export>${L('Exporter mes données (.json)')}</button>
       ${window.Capacitor?.isNativePlatform?.() ? '' : `<button class="btn btn-ghost btn-wide" data-install>${L('Ajouter NutriPilot à l’écran d’accueil')}</button>`}
       <button class="btn btn-ghost btn-wide" data-go="support">${L('Aide & support')}</button>
@@ -7717,7 +7718,7 @@ function settings() {
 
 function legal() {
   const legalInfo = config.legal || {};
-  return `<div class="mobile-app"><div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Informations')}</h2><span></span></div></div><div class="screen"><h1 class="screen-title">${L('Transparence')}</h1><div class="legal-docs"><a class="btn btn-ghost btn-wide" href="/privacy?lang=${lang()}" target="_blank" rel="noopener">${L('Politique de confidentialité')}</a><a class="btn btn-ghost btn-wide" href="/terms?lang=${lang()}" target="_blank" rel="noopener">${L('Conditions d’utilisation')}</a></div><div class="day-card"><h3>${L('Nature du service')}</h3><p class="screen-sub">${L('{brand} est un outil général de suivi nutritionnel et de bien-être. Les calories, grammes, portions et macros restent des estimations lorsqu’ils ne proviennent pas de données mesurées.', { brand: esc(config.brand) })}</p></div><div class="day-card"><h3>${L('Scanner photo')}</h3><p class="screen-sub">${L('Une photo ne pèse pas un aliment. NutriPilot affiche des estimations et vous permet de corriger les grammes avant enregistrement.')}</p></div><div class="day-card"><h3>${L('Vos données')}</h3><p class="screen-sub">${L('Vos repas, mesures et journaux servent uniquement à votre suivi. Les photos de progression restent sur votre appareil. Pour améliorer l’application, nous comptons de façon anonyme quelques étapes (par exemple « page des formules vue »), sans identifiant ni contenu personnel.')}</p></div><div class="day-card"><h3>${L('Limites de l’IA')}</h3><p class="screen-sub">${L('Le coach et l’analyse photo utilisent une IA qui peut se tromper. Ils ne posent pas de diagnostic et ne prescrivent ni médicament ni traitement hormonal.')}</p></div><div class="day-card"><h3>${L('Abonnement')}</h3><p class="screen-sub">${L('La durée, le prix, le renouvellement et les conditions d’annulation sont présentés avant tout paiement.')}</p></div><div class="day-card"><h3>${L('Éditeur')}</h3><p class="screen-sub"><b>${esc(legalInfo.company || L('À compléter'))}</b><br>${esc(legalInfo.address || L('Adresse à compléter'))}<br>${esc(legalInfo.id || L('Identifiant à compléter'))}<br>${L('Support : {email}', { email: esc(config.supportEmail) })}</p></div></div></div>`;
+  return `<div class="mobile-app"><div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h2>${L('Informations')}</h2><span></span></div></div><div class="screen"><h1 class="screen-title">${L('Transparence')}</h1><div class="legal-docs"><a class="btn btn-ghost btn-wide" href="/privacy?lang=${lang()}" target="_blank" rel="noopener">${L('Politique de confidentialité')}</a><a class="btn btn-ghost btn-wide" href="/terms?lang=${lang()}" target="_blank" rel="noopener">${L('Conditions d’utilisation')}</a></div><div class="day-card"><h3>${L('Nature du service')}</h3><p class="screen-sub">${L('{brand} est un outil général de suivi nutritionnel et de bien-être. Les calories, grammes, portions et macros restent des estimations lorsqu’ils ne proviennent pas de données mesurées.', { brand: esc(config.brand) })}</p></div><div class="day-card"><h3>${L('Scanner photo')}</h3><p class="screen-sub">${L('Une photo ne pèse pas un aliment. NutriPilot affiche des estimations et vous permet de corriger les grammes avant enregistrement.')}</p></div><div class="day-card"><h3>${L('Vos données')}</h3><p class="screen-sub">${L('Vos repas, mesures et journaux servent uniquement à votre suivi. Les photos de progression restent sur votre appareil. Pour améliorer l’application, nous comptons de façon anonyme quelques étapes (par exemple « page des formules vue »), sans identifiant ni contenu personnel.')}</p></div><div class="day-card"><h3>${L('Limites des estimations')}</h3><p class="screen-sub">${L('Les analyses et les réponses du coach sont automatisées et peuvent contenir des erreurs. Elles ne constituent pas un diagnostic ni une prescription.')}</p></div><div class="day-card"><h3>${L('Abonnement')}</h3><p class="screen-sub">${L('La durée, le prix, le renouvellement et les conditions d’annulation sont présentés avant tout paiement.')}</p></div><div class="day-card"><h3>${L('Éditeur')}</h3><p class="screen-sub"><b>${esc(legalInfo.company || L('À compléter'))}</b><br>${esc(legalInfo.address || L('Adresse à compléter'))}<br>${esc(legalInfo.id || L('Identifiant à compléter'))}<br>${L('Support : {email}', { email: esc(config.supportEmail) })}</p></div></div></div>`;
 }
 
 // Login for existing customers only (no marketing "private area"): reached from "Already a customer?".
@@ -7792,7 +7793,7 @@ function addSheet() {
   if (modal.loading) return `<div class="sheet-head"><h2>${L('Analyse en cours…')}</h2><button class="icon-btn" data-close aria-label="${L('Fermer')}">×</button></div><div class="loader" role="status" aria-live="polite"><div class="loader-dots"><i></i><i></i><i></i></div><p>${L('NutriPilot identifie les aliments, estime les portions et prépare les données modifiables.')}</p></div>`;
   if (modal.result) return resultSheet(modal.result);
   const tabs = [...(state.meals.length ? [['recent', 'Récents']] : []), ['photo','Photo'],['text','Texte / voix'],['barcode','Code-barres'],['label','Étiquette'],['manual','Manuel'],['favorites','Favoris']].map(([k, v]) => [k, L(v)]);
-  return `<div class="sheet-head"><div><span class="tag">${L('AJOUTER UN REPAS')}</span><h2>${L('Choisissez la méthode.')}</h2></div><button class="icon-btn" data-close>×</button></div>${freeScanBanner()}${modal.error ? `<div class="analysis-error" role="alert"><strong>${esc(L(modal.error))}</strong><small>${L('Réessayez ou choisissez une méthode sans IA.')}</small></div>` : ''}<div class="meal-methods" role="group" aria-label="${L('Choisissez la méthode.')}">${tabs.map(([key, label]) => `<button type="button" class="tab ${modal.tab === key ? 'active' : ''}" aria-pressed="${modal.tab === key}" data-mtab="${key}">${label}</button>`).join('')}</div><div class="meal-method-content">${addTab(modal.tab)}</div>`;
+  return `<div class="sheet-head"><div><span class="tag">${L('AJOUTER UN REPAS')}</span><h2>${L('Choisissez la méthode.')}</h2></div><button class="icon-btn" data-close>×</button></div>${freeScanBanner()}${modal.error ? `<div class="analysis-error" role="alert"><strong>${esc(L(modal.error))}</strong><small>${L('Réessayez ou choisissez une autre méthode.')}</small></div>` : ''}<div class="meal-methods" role="group" aria-label="${L('Choisissez la méthode.')}">${tabs.map(([key, label]) => `<button type="button" class="tab ${modal.tab === key ? 'active' : ''}" aria-pressed="${modal.tab === key}" data-mtab="${key}">${label}</button>`).join('')}</div><div class="meal-method-content">${addTab(modal.tab)}</div>`;
 }
 
 const localFood = [
@@ -7838,7 +7839,7 @@ async function startBarcodeCamera(root) {
 }
 function addTab(tab) {
   if (tab === 'recent') return recentTab();
-  if (['photo','text','label'].includes(tab) && (!canScan() || config.ai === false)) return `<div class="ai-access-card">${icon('lock')}<h3>${L(state.premium ? 'Analyses IA momentanément en pause' : 'Analyses IA réservées aux abonnés')}</h3><p>${L('Code-barres et saisie manuelle disponibles sans IA.')}</p><div class="access-actions"><button class="btn btn-primary" data-mtab="manual">${L('Manuel')}</button><button class="btn btn-ghost" data-mtab="barcode">${L('Code-barres')}</button>${!state.premium ? `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>` : ''}</div></div>`;
+  if (['photo','text','label'].includes(tab) && (!canScan() || config.ai === false)) return `<div class="ai-access-card">${icon('lock')}<h3>${L(state.premium ? 'Analyses momentanément en pause' : 'Analyses réservées aux abonnés')}</h3><p>${L('Code-barres et saisie manuelle toujours disponibles.')}</p><div class="access-actions"><button class="btn btn-primary" data-mtab="manual">${L('Manuel')}</button><button class="btn btn-ghost" data-mtab="barcode">${L('Code-barres')}</button>${!state.premium ? `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>` : ''}</div></div>`;
   if (state.premium && !hasModule('scanner') && ['photo', 'label'].includes(tab)) {
     return `<div class="mod-upsell m-scan">${icon('scan')}<b>${L('Disponible avec le module Scanner')}</b><p>${L('Photo du repas, code-barres, étiquette, allergènes et comparaison de produits.')}</p><button class="btn btn-lime" data-module-buy="scanner">${Billing.trialDays() ? L('Commencer mes {n} jours gratuits', { n: Billing.trialDays() }) : L('Activer ce module')}</button></div>`;
   }
@@ -7951,12 +7952,12 @@ async function analyze(body) {
     const data = await response.json();
     if (Number.isFinite(Number(data.freeLeft))) { state.freeScansUsed = Math.max(0, freeScanLimit() - Number(data.freeLeft)); saveState(false); }
     if (response.status === 402 || data.code === 'free_limit') { target.loading = false; if (modal === target) freeScansOut(); return; }
-    if (!response.ok) throw new Error(data.error || 'Le service IA est temporairement indisponible.');
+    if (!response.ok) throw new Error(data.error || 'L’analyse est temporairement indisponible.');
     target.result = data;
     pushScan(data, body.mode || (body.image ? 'photo' : 'text'));
     track('MealAnalyzed', { source: data.source || 'unknown' });
   } catch (error) {
-    target.error = error.name === 'AbortError' ? 'Le service IA est temporairement indisponible.' : error.message;
+    target.error = error.name === 'AbortError' ? 'L’analyse est temporairement indisponible.' : error.message;
     if (modal === target) toast(L(target.error));
   } finally {
     clearTimeout(timer);
@@ -8733,6 +8734,7 @@ function bind() {
       button.disabled = false;
       return;
     }
+    if (button.dataset.storeRetry !== undefined) { NativeBilling.started = false; await NativeBilling.start(); return render(); }
     if (button.dataset.restore !== undefined) return Billing.restore();
     if (button.dataset.waitlist !== undefined) return joinWaitlist();
     if (button.dataset.guide) return openLesson(button.dataset.guide);

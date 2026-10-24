@@ -1,100 +1,39 @@
-# Google Play Console — textos e respostas (copiar e colar)
+# NutriPilot 18.0.2 — Google Play
 
-App: **NutriPilot** · Pacote `com.atlasevermore.nutripilot` · **Gratuito** com compras no app
-Categoria: **Saúde e fitness** · Tags: Contador de calorias, Dieta e nutrição, Treino, Saúde da mulher
-E-mail de contato: `SUPPORT_EMAIL` · Site: `https://atlasevermore.com` · Privacidade: `https://app.atlasevermore.com/privacy`
+Rascunho da ficha e instruções. Confirmar catálogo, funcionalidades ativas e textos finais no console antes do envio. Não anunciar análises indisponíveis nem teste grátis sem oferta real. Capturas existentes precisam ser refeitas/conferidas na candidata final.
 
-## Ficha da loja
+Identificador: com.atlasevermore.nutripilot. Contato: endereço real de SUPPORT_EMAIL. Privacidade: https://app.atlasevermore.com/privacy. Exclusão: https://app.atlasevermore.com/delete-account. Conferir funcionamento e dados reais do editor antes de submeter.
 
-### 🇫🇷 Français (langue par défaut)
-- **Titre (30):** `NutriPilot : Nutrition & Sport`
-- **Description courte (80):** `Scannez vos repas, comptez les calories, suivez un plan repas + sport sur mesure`
-- **Description complète:** a mesma de `app-store.md` (FR), substituindo o parágrafo ABONNEMENT por:
-```
-ABONNEMENT
-Kit complet ou formules par thème, mensuelles ou annuelles ; 7 jours d’essai gratuit sur l’abonnement annuel pour les nouveaux abonnés. L’abonnement se renouvelle automatiquement ; annulez à tout moment dans Google Play › Paiements et abonnements. Aucun compte ni mot de passe à créer : vos achats se restaurent avec votre compte Google.
-```
+## Ficha comercial
 
-### 🇧🇷 Português (Brasil)
-- **Título (30):** `NutriPilot: Dieta e Treino`
-- **Descrição curta (80):** `Fotografe refeições, conte calorias e siga um plano de dieta e treino sob medida`
-- **Descrição completa:** a de `app-store.md` (PT), com o parágrafo ASSINATURA:
-```
-ASSINATURA
-Kit completo ou planos por tema, mensais ou anuais; 7 dias de teste grátis no plano anual para novos assinantes. Renova automaticamente; cancele quando quiser em Google Play › Pagamentos e assinaturas. Sem conta nem senha: as compras são restauradas com a sua conta Google.
-```
+| Idioma | Nome | Descrição curta |
+|---|---|---|
+| Português | NutriPilot: Dieta e Treino | Organize refeições, acompanhe calorias e siga seus planos de nutrição e treino |
+| English | NutriPilot: Food & Fitness | Track meals and calories and follow nutrition and workout plans |
+| Français | NutriPilot : Nutrition & Sport | Suivez vos repas et calories, avec vos programmes de nutrition et de sport |
 
-### 🇺🇸 English (US)
-- **Title (30):** `NutriPilot: Food & Fitness`
-- **Short description (80):** `Snap meals, count calories and follow a nutrition + workout plan built for you`
-- **Full description:** the English one from `app-store.md`, with SUBSCRIPTION:
-```
-SUBSCRIPTION
-Complete Kit or themed plans, monthly or yearly; 7-day free trial on the yearly plan for new subscribers. Renews automatically; cancel any time in Google Play › Payments & subscriptions. No account or password: purchases are restored with your Google account.
-```
+Português: NutriPilot reúne diário alimentar, acompanhamento de água e medidas, receitas, planos de refeições e treinos e espaços de bem-estar. Registre por texto, código de barras ou manualmente; a análise de fotos e o coach dependem de disponibilidade, assinatura e limites de uso. Revise as estimativas antes de salvar. As informações apoiam o bem-estar e não substituem orientação médica ou nutricional. Destinado a adultos.
 
-### Recursos gráficos
-- Ícone 512×512: `native/resources/icon.png` (redimensione) · Gráfico de recursos 1024×500: `native/resources/feature-graphic.png`
-- Capturas de telefone: `screenshots/android-phone/<lang>/` (1080×2340), 6 por idioma
-- Tablet (opcional, recomendado): use `screenshots/ipad-13/<lang>/`
+English: NutriPilot brings together a food diary, water and measurement tracking, recipes, meal and workout plans and wellbeing tools. Enter meals by text, barcode or manually; photo analysis and coach availability depend on subscription, service availability and usage limits. Review estimates before saving. General wellbeing information does not replace medical or nutritional advice. For adults.
 
----
+Français : NutriPilot réunit journal alimentaire, suivi de l’eau et des mensurations, recettes, programmes de repas et d’entraînement et outils de bien-être. Saisissez vos repas par texte, code-barres ou manuellement ; les analyses photo et le coach dépendent de la disponibilité du service, de l’abonnement et des limites d’utilisation. Vérifiez les estimations avant de les enregistrer. Informations générales de bien-être, sans remplacer un avis médical ou nutritionnel. Pour adultes.
 
-## Conteúdo do app (Política › Conteúdo do app)
+Assinaturas mensais/anuais compradas exclusivamente nesta loja. Preço, período e eventual oferta introdutória aparecem antes de confirmar a compra. Renovação automática; gerenciar e cancelar nas configurações da loja. Excluir conta/aplicativo não cancela a assinatura. Conta NutriPilot com e-mail confirmado necessária para compra e restauração. Não prometer número fixo de dias grátis ou economia sem conferir os produtos e a elegibilidade.
 
-**Acesso ao app:** "Todas as funcionalidades estão disponíveis sem acesso especial" (não há login).
+## Revisão e acesso de teste
 
-**Anúncios:** Não contém anúncios.
+Há funcionalidades restritas por login e assinatura. Declarar essa restrição; disponibilizar conta e instruções de teste reais no campo privado do console. Não inventar dados e não publicar credenciais no repositório. Validar entrega do código e disponibilidade de acesso para o revisor antes de enviar.
 
-**Classificação de conteúdo (IARC):** categoria **"Todos os outros tipos de app"**.
-Violência, sexo, linguagem, drogas, jogos de azar: Não · Interação entre usuários: Não · Compartilha localização: Não ·
-Compras digitais: **Sim** · Conteúdo gerado por IA: Sim (coach de nutrição/treino).
+Notas em inglês para adaptar após testes:
 
-**Público-alvo:** **18 anos ou mais** (somente). Não atrai crianças.
+NutriPilot requires a verified e-mail account before purchasing or restoring subscriptions. Sign in using the e-mail code, then select a store product. Prices and introductory offers come from the store. Purchases are validated by our server through RevenueCat. Restore purchases is available in Settings and on the plans screen. Provide the verified review account and access instructions in the private review fields.
 
-**Apps de saúde (Declaração de apps de saúde):** marque
-Gestão de nutrição e peso · Atividade física e fitness · Saúde da mulher (menopausa) · Gestão do sono · Gestão do estresse.
-Não é dispositivo médico; não oferece diagnóstico nem tratamento. Política de privacidade acessível no app e na ficha.
+Before sending selected photos, messages and relevant profile data to OpenAI for automated analysis, the app asks for explicit consent naming the provider. Consent can be withdrawn in Settings > Personalized analysis. These features require an active subscription and available service. The app provides estimates and general wellbeing guidance, not diagnosis or treatment. Account deletion is available in Settings and at the deletion URL above.
 
-**Segurança dos dados:**
-- Coleta ou compartilha dados do usuário? **Sim** · Criptografados em trânsito? **Sim** · Usuário pode pedir exclusão? **Sim**
-  (`https://app.atlasevermore.com/delete-account` e no app)
-- Compartilhamento com terceiros: **Não** (OpenAI, RevenueCat e hospedagem atuam como prestadores de serviço — pela definição do Google não é "compartilhamento").
+## Declarações obrigatórias
 
-| Categoria › tipo | Coletado | Opcional? | Finalidade | Efêmero |
-|---|---|---|---|---|
-| Saúde e fitness › Informações de saúde | Sim | Opcional | Funcionalidade do app | Não |
-| Saúde e fitness › Informações de fitness | Sim | Opcional | Funcionalidade do app | Não |
-| Fotos e vídeos › Fotos (refeições, rótulos) | Sim | Opcional | Funcionalidade do app | **Sim** (só para a análise) |
-| Mensagens › Outras mensagens no app (coach) | Sim | Opcional | Funcionalidade do app | Não |
-| Informações pessoais › Nome (apelido) | Sim | Opcional | Funcionalidade do app, Personalização | Não |
-| Informações pessoais › E-mail (login opcional) | Sim | Opcional | Gerenciamento da conta | Não |
-| Informações financeiras › Histórico de compras | Sim | Obrigatório | Funcionalidade do app | Não |
-| IDs do dispositivo ou outros › (ID anônimo de compra) | Sim | Obrigatório | Funcionalidade do app | Não |
-| Atividade no app › Interações no app (contagens anônimas) | Sim | Obrigatório | Análises | Não |
+Preencher com base no aplicativo e nos prestadores efetivamente configurados. A ausência de termos sobre inteligência artificial no marketing não permite responder falsamente sobre conteúdo automatizado, assistentes ou envio de dados a OpenAI.
 
-**Exclusão de conta:** URL `https://app.atlasevermore.com/delete-account` · no app: Configurações › Excluir minha conta.
+Revisar: dados de saúde/fitness, perfil, e-mail para autenticação, refeições e mensagens, fotos selecionadas para análise, identificador da conta e histórico de compras, estatísticas operacionais e permissões de câmera/notificações. Conferir retenção real dos prestadores e as definições da loja antes de classificar processamento como efêmero, não coletado ou isento de compartilhamento. Não assumir isenções por nome do prestador. Confirmar exclusão, criptografia e contratos. Sem publicidade ou rastreamento comercial configurados nesta candidata.
 
-**Política de assinaturas:** preço, período, teste e renovação aparecem no paywall antes da compra; cancelamento pelo Google Play.
-
-**Permissões declaradas:** Câmera (fotos de refeições e código de barras) · Notificações (lembretes) · Cobrança (compras).
-Sem localização, contatos, SMS ou alarmes exatos.
-
----
-
-## Teste fechado (contas pessoais)
-
-1. Testar › **Teste fechado** › criar faixa "beta" › Países: França, Brasil (+ outros).
-2. Testadores: lista de e-mails ou Google Group com **12+ pessoas** (amigos, família, clientes).
-3. Enviar o `.aab` (Codemagic) › revisar e lançar a faixa.
-4. Compartilhe o link de inscrição; cada pessoa precisa **aceitar o convite e instalar**. Manter por **14 dias** seguidos.
-5. Painel › **Solicitar acesso à produção** (perguntas sobre o teste: quantos testadores, feedback recebido, mudanças feitas).
-
-## Lançamento em produção
-Produção › Criar versão › escolher o `.aab` › notas da versão (FR/PT/EN) › Países (França, Bélgica, Suíça, Canadá, Brasil, Portugal…) ›
-Revisar › Iniciar lançamento (pode começar em 20 % e ir para 100 %).
-
-Notas da versão 1.0:
-- FR `Première version : scanner de repas, plans de repas et d’entraînement, espace Ménopause 40+, sommeil et coach.`
-- PT `Primeira versão: scanner de refeições, planos de dieta e treino, espaço Menopausa 40+, sono e coach.`
-- EN `First release: meal scanner, meal and workout plans, Menopause 40+ space, sleep and coach.`
+Preparar capturas reais do aparelho e tamanhos exigidos pelo console atual. Não reutilizar imagens antigas como prova da versão 18.0.2. Aprovação e lançamento continuam pendentes até confirmação explícita da loja.
