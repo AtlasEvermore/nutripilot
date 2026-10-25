@@ -63,8 +63,15 @@ test('Real PostgreSQL: shared transactions, budgets, migration and two applicati
   assert.equal((await a.read('legacy','ai-usage.json',null)).daily,5);
  });
  await t.test('A crashed worker lease expires without resetting consumed attempts',async()=>{
-  await clear();let now=Date.now();const x=createSharedBudget(a,{daily:5,concurrent:1,now:()=>now}),y=createSharedBudget(b,{daily:5,concurrent:1,now:()=>now});
+  await clear();let now=Date.parse('2026-10-24T12:00:00Z');const x=createSharedBudget(a,{daily:5,concurrent:1,now:()=>now}),y=createSharedBudget(b,{daily:5,concurrent:1,now:()=>now});
   await x.reserve();await assert.rejects(y.reserve(),/occupé/);now+=300001;const release=await y.reserve();await release();assert.equal((await a.read('legacy','ai-usage.json',null)).daily,2);
+ });
+ await t.test('Lease recovery across UTC boundaries resets only the applicable period',async()=>{
+  for(const [start,expectedMonth] of [['2026-10-24T23:59:59Z',2],['2026-10-31T23:59:59Z',1]]){
+   await clear();let now=Date.parse(start);const x=createSharedBudget(a,{daily:5,monthly:10,concurrent:1,now:()=>now}),y=createSharedBudget(b,{daily:5,monthly:10,concurrent:1,now:()=>now});
+   await x.reserve();await assert.rejects(y.reserve(),/occupé/);now+=300001;const release=await y.reserve();await release();
+   const state=await a.read('legacy','ai-usage.json',null);assert.equal(state.daily,1);assert.equal(state.monthly,expectedMonth);assert.equal(state.day,new Date(now).toISOString().slice(0,10));assert.deepEqual(state.leases,{});
+  }
  });
  await t.test('Offline import is atomic, validates input and never overwrites an existing destination',async()=>{
   await clear();const content=JSON.stringify({[email]:{status:'active',plan:'complete_annual',accessUntil:Date.now()+3600000}});
