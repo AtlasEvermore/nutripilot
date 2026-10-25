@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "8378ad00fcec039c44b15066df88c8ab84b56269",
+  "applicationTree": "499738adde3ffb1fb55d72a7552c4d388100c41d",
   "channels": [
     "ios",
     "android"
@@ -24,10 +24,11 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-24T23:04:39.246801+00:00",
+        "verifiedAt": "2026-10-25T00:22:03.581991+00:00",
         "verifiedBy": "deployment-agent",
         "evidence": [
-          "private-ops:Downloaded real archive decrypted and restored outside Railway; every restored file matched original content and SHA-256; see release/RECOVERY_EVIDENCE_2026-10-24.md"
+          "private-ops:Downloaded real archive decrypted and restored outside Railway; every restored file matched original content and SHA-256; see release/RECOVERY_EVIDENCE_2026-10-24.md",
+          "private-ops:Revised candidate booted a fresh isolated real-data restore during SITE_AUDIT; original contents remained byte-identical; no format migration"
         ]
       },
       "new_credentials_stored": {
@@ -58,10 +59,11 @@
       },
       "rollback_migration": {
         "status": "verified",
-        "verifiedAt": "2026-10-24T23:04:39.246801+00:00",
+        "verifiedAt": "2026-10-25T00:22:03.581991+00:00",
         "verifiedBy": "deployment-agent",
         "evidence": [
-          "private-ops:18.1.0 and original V12 both booted isolated restorations; original files byte-identical after candidate shutdown; preserve existing service and volume; see release/RECOVERY_EVIDENCE_2026-10-24.md"
+          "private-ops:18.1.0 and original V12 both booted isolated restorations; original files byte-identical after candidate shutdown; preserve existing service and volume; see release/RECOVERY_EVIDENCE_2026-10-24.md",
+          "private-ops:Revised candidate booted a fresh isolated real-data restore during SITE_AUDIT; original contents remained byte-identical; no format migration"
         ]
       },
       "ci_gate_prepared": {

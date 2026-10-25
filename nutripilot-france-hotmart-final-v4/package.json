@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.mjs",
     "dev": "NODE_ENV=development node server.mjs",
-    "check": "node --check server.mjs && node --check app.js && node --check ops/ai-budget.mjs && node --check ops/support-faq.mjs && node --check ops/runtime-guards.mjs && node --check ops/postgres-store.mjs && node --check ops/shared-budget.mjs && node --check ops/postgres-cli.mjs && node --check ops/backup-cli.mjs && node --check ops/smoke.mjs && node scripts/build-i18n.mjs > /dev/null",
+    "check": "node --check server.mjs && node --check app.js && node --check sw.js && node --check ops/ai-budget.mjs && node --check ops/support-faq.mjs && node --check ops/runtime-guards.mjs && node --check ops/postgres-store.mjs && node --check ops/shared-budget.mjs && node --check ops/postgres-cli.mjs && node --check ops/backup-cli.mjs && node --check ops/smoke.mjs && node scripts/build-i18n.mjs > /dev/null",
     "i18n": "node scripts/build-i18n.mjs",
     "test": "node --test tests/*.test.mjs",
     "smoke": "node ops/smoke.mjs",

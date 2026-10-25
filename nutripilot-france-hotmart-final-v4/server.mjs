@@ -111,6 +111,14 @@ const STATIC_FILES = new Set([
 
 
 let entitlementQueue = Promise.resolve();
+// File mode has one process: serialize writes/deletion per account and release idle keys.
+const accountWrites = new Map();
+function withAccountWrite(email, work) {
+  const previous = accountWrites.get(email) || Promise.resolve();
+  const next = previous.catch(() => {}).then(work);
+  accountWrites.set(email, next);
+  return next.finally(() => { if (accountWrites.get(email) === next) accountWrites.delete(email); });
+}
 
 
 function securityHeaders(type = 'application/json; charset=utf-8') {
@@ -1290,12 +1298,19 @@ async function saveUserState(email, data) {
   await loadUserState(email); // Preserve a damaged existing file for recovery instead of overwriting it.
   const clean = { ...(data || {}) };
   delete clean.accessToken;
+  delete clean.accountToken;
   delete clean.premium;
   delete clean.premiumEmail;
   const raw = JSON.stringify(clean);
   if (Buffer.byteLength(raw, 'utf8') > USER_STATE_LIMIT) throw publicError('Données utilisateur trop volumineuses', 413);
   if(storage)return storage.saveUser(email,path.basename(userFile(email),'.json'),clean);
-  await atomicWriteJson(userFile(email), clean);
+  await withAccountWrite(email, async () => {
+    const entry = (await loadEntitlements())[email];
+    if (!entry || entry.status !== 'active' || (entry.accessUntil && Date.now() > Number(entry.accessUntil))) {
+      throw publicError('Session invalide. Connectez-vous à nouveau.', 401);
+    }
+    await atomicWriteJson(userFile(email), clean);
+  });
 }
 
 async function deleteUserState(email) {
@@ -1307,9 +1322,11 @@ async function deleteAccountData(email) {
   if(storage)return storage.deleteAccount(email);
   // Remove the marketing entry on both deletion paths. Fail visibly if a
   // damaged waitlist prevents completing the request; never erase other leads.
-  await mutateWaitlist(email, list => { delete list[email]; });
-  await deleteUserState(email);
-  await mutateEntitlements(email, all => { delete all[email]; });
+  await withAccountWrite(email, async () => {
+    await mutateWaitlist(email, list => { delete list[email]; });
+    await deleteUserState(email);
+    await mutateEntitlements(email, all => { delete all[email]; });
+  });
 }
 
 async function sendAccessEmail(email, code) {
