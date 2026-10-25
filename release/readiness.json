@@ -67,11 +67,11 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-24T03:37:05Z",
+        "verifiedAt": "2026-10-25T22:13:14.644896+00:00",
         "verifiedBy": "deployment-agent",
         "evidence": [
-          "private-ops:Railway staged CI-only patch reviewed; source.checkSuites=true is NOT active yet",
-          "private-ops:Railway auto deploy disabled; UI now offers Connect Environment to Branch"
+          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40237669241: regression and immutable server image for 5a4f67a1b7c8bf86140f381370ef22bd27f418b3 passed",
+          "private-ops:Railway patch 9c88b850-a293-41fc-83ec-000d3cd03de9 reread 2026-10-25; 16 nondestructive changes, source.checkSuites=true still STAGED and not active; same existing service/volume; no automatic branch configured"
         ]
       },
       "expiry_alert": {
@@ -89,10 +89,13 @@
         "evidence": []
       },
       "ios_artifact": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-25T22:13:14.644896+00:00",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40237700794 (attempt 2, SUCCESS, device IPA 18.1.0 build 202)",
+          "release/IOS_ARTIFACT_2026-10-25.json: approved certificate/profile, codesign and exact nativeTree verified; ZIP/IPA checksums and durable owner copy independently checked"
+        ]
       },
       "android_configuration": {
         "status": "pending",
