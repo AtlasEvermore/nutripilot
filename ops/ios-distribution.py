@@ -121,7 +121,7 @@ def verify_ipa(args):
     app = root / roots[0].removesuffix("/Info.plist")
     subprocess.run(["codesign", "--verify", "--deep", "--strict", str(app)], check=True)
     cert_prefix = str(root / "signer-")
-    subprocess.run(["codesign", "-d", "--extract-certificates", cert_prefix, str(app)],
+    subprocess.run(["codesign", "-d", "--extract-certificates=" + cert_prefix, str(app)],
                    check=True, capture_output=True)
     if hashlib.sha256(Path(cert_prefix + "0").read_bytes()).hexdigest() != CERT_SHA256:
         raise ValueError("IPA signed by an unapproved certificate")
@@ -164,5 +164,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     try:
         (profile_command if args.command == "profile" else verify_ipa)(args)
-    except (ValueError, KeyError, subprocess.CalledProcessError, plistlib.InvalidFileException):
-        raise SystemExit("iOS distribution validation failed; no artifact approved.")
+    except ValueError as error:
+        # All ValueErrors above use fixed messages, never credential values.
+        raise SystemExit(f"iOS distribution validation failed: {error}; no artifact approved.")
+    except subprocess.CalledProcessError as error:
+        tool = Path(error.cmd[0]).name
+        raise SystemExit(f"iOS distribution verification tool {tool} failed (exit {error.returncode}); no artifact approved.")
+    except (KeyError, plistlib.InvalidFileException):
+        raise SystemExit("iOS distribution metadata missing or malformed; no artifact approved.")

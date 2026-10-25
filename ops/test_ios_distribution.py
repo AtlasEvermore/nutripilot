@@ -8,6 +8,8 @@ import tempfile
 from types import SimpleNamespace
 import plistlib
 import zipfile
+import subprocess
+import json
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("ios_distribution", Path(__file__).with_name("ios-distribution.py"))
@@ -103,6 +105,48 @@ class AppTargetBoundary(unittest.TestCase):
 
 
 class ArtifactBoundary(unittest.TestCase):
+    def test_codesign_optional_prefix_is_one_argument_and_receipt_requires_all_checks(self):
+        # Simulate the documented Apple CLI contract: a prefix must be attached with '='.
+        data = {'CFBundleIdentifier': signing.BUNDLE, 'CFBundleShortVersionString': '18.1.0',
+                'CFBundleVersion': '101', 'CFBundleSupportedPlatforms': ['iPhoneOS']}
+        fake_profile = plistlib.dumps(profile())
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            ipa = root / 'test.ipa'
+            with zipfile.ZipFile(ipa, 'w') as archive:
+                archive.writestr('Payload/App.app/Info.plist', plistlib.dumps(data))
+                archive.writestr('Payload/App.app/embedded.mobileprovision', fake_profile)
+            args = SimpleNamespace(ipa=str(ipa), version='18.1.0', build='101',
+                                   directory=str(root / 'extract'), receipt=str(root / 'receipt.json'))
+
+            def command(argv, **options):
+                output = b''
+                if argv[0] == 'ditto':
+                    with zipfile.ZipFile(ipa) as archive:
+                        archive.extractall(args.directory)
+                elif any(a.startswith('--extract-certificates') for a in argv):
+                    prefix = [a for a in argv if a.startswith('--extract-certificates=')]
+                    if len(prefix) != 1 or len(argv) != 4:
+                        raise subprocess.CalledProcessError(1, argv)
+                    Path(prefix[0].split('=', 1)[1] + '0').write_bytes(FAKE_CERT)
+                elif argv[0] == 'openssl':
+                    output = fake_profile
+                elif '--entitlements' in argv:
+                    output = plistlib.dumps(profile()['Entitlements'])
+                return subprocess.CompletedProcess(argv, 0, stdout=output, stderr=b'')
+
+            with patch.object(signing.subprocess, 'run', side_effect=command), \
+                    patch.object(signing.subprocess, 'check_output', return_value='a' * 40 + '\n'), \
+                    patch.object(signing, 'CERT_SHA256', hashlib.sha256(FAKE_CERT).hexdigest()), \
+                    patch.object(signing, 'PROFILE_SHA256', hashlib.sha256(fake_profile).hexdigest()), \
+                    patch.dict(signing.os.environ, {'GITHUB_SHA': 'b' * 40}):
+                signing.verify_ipa(args)
+            receipt = json.loads(Path(args.receipt).read_text())
+            self.assertEqual(receipt['nativeTree'], 'a' * 40)
+            self.assertTrue(receipt['signatureVerified'])
+            self.assertFalse(receipt['storeUploaded'])
+            self.assertFalse(receipt['purchasesTested'])
+
     def test_wrong_bundle_version_build_platform_or_unsafe_path_never_reaches_codesign(self):
         baseline = {
             'CFBundleIdentifier': signing.BUNDLE,
