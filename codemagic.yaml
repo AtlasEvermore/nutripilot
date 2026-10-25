@@ -1,8 +1,8 @@
 # Cloud builds for the NutriPilot store apps (no Mac needed) — Capacitor 8.
 # Requirements met here: Node 22, Java 21, Xcode 26 (latest), Android target SDK 36.
 # Before the first run, in the Codemagic dashboard:
-#   - Android: upload the keystore as "nutripilot_keystore"; create the group "google_play" with
-#     GCLOUD_SERVICE_ACCOUNT_CREDENTIALS (Play Console service account JSON).
+#   - Android signed release: upload the keystore as "nutripilot_keystore".
+#     Play Console API credentials are NOT required to create artifacts without distribution.
 #   - iOS: add the App Store Connect API key integration named "NutriPilot ASC key".
 # Every build gets a growing build number ($BUILD_NUMBER), as both stores require.
 workflows:
@@ -16,8 +16,6 @@ workflows:
       java: 21
       android_signing:
         - nutripilot_keystore
-      groups:
-        - google_play # GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
       vars:
         APP_VERSION: "18.1.0"
     scripts:
