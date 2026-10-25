@@ -39,6 +39,7 @@ jobs:
           npm audit --omit=dev --audit-level=high
           node --test ../ops/release-gate.test.mjs
           node --test ../native/tests/*.test.mjs
+          python3 -m unittest discover -s ../ops -p 'test_ios_distribution.py'
           git diff --exit-code -- i18n/
   image:
     if: github.event_name != 'pull_request'
