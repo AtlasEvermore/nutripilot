@@ -504,3 +504,16 @@ test('Shell refresh survives a full cache and falls back on server failure', asy
     assert.equal(writes, status === 200 ? 1 : 0);
   }
 });
+
+
+test('Sync bounds oversized input and concurrent writes without losing a valid saved state', async t => {
+  const f = await fixture(t);
+  const tooLarge = await f.post('/api/user/state', { state: { notes: 'x'.repeat(2600000) } }, { premium: true });
+  assert.equal(tooLarge.status, 413);
+  const state = { profile: { name: 'Synthetic bounded sync' }, notes: 'x'.repeat(600000) };
+  const writes = await Promise.all(Array.from({length:24}, () => f.post('/api/user/state', {state}, {premium:true})));
+  assert.ok(writes.some(r=>r.status===429));assert.ok(writes.some(r=>r.status===200));assert.ok(writes.every(r=>r.status===200||r.status===429));
+  const saved = await (await fetch(f.url + '/api/user/state', {headers:{Authorization:`Bearer ${f.token}`}})).json();
+  assert.equal(saved.state.profile.name, state.profile.name);assert.equal(saved.state.notes.length, state.notes.length);
+  assert.equal((await f.post('/api/user/state', {state:{profile:{name:'Recovered'}}}, {premium:true})).status,200);
+});
