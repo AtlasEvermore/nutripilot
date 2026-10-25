@@ -10,13 +10,11 @@
 - Compras externas desativadas; análises pagas e uso por visitantes desativados, limites globais zero enquanto não existir orçamento autorizado. Isso não ativa foto/coach pagos nem comprova configuração de cobrança.
 - Backup real independente, restauração e ensaio V12/candidata concluídos. Conferir validade do snapshot antes de publicar.
 
-## Preencher no Railway, em privado
+## Dados preparados em privado — confirmar, sem repetir o preenchimento
 
-Abra o serviço nutripilot → Variables. Complete LEGAL_COMPANY_NAME com o nome do responsável real e LEGAL_COMPANY_ADDRESS com o endereço completo real que você está autorizado a usar. O nome técnico da variável não obriga a possuir loja física. Não preencher com nome de fantasia ou endereço inventado para superar a trava.
+O nome legal conhecido e o endereço fornecido pelo proprietário já foram preparados nas variáveis privadas LEGAL_COMPANY_NAME e LEGAL_COMPANY_ADDRESS do patch Railway. Não reproduzir o endereço neste repositório. O proprietário só precisa confirmar se os dados estão corretos e se autoriza a divulgação do endereço nos textos legais; o complemento numérico informado ainda precisa ser confirmado. Nenhum documento de identidade foi verificado por esse preenchimento.
 
-O endereço informado pode ser usado nos textos legais publicados pelo aplicativo; confirme qual endereço pretende divulgar. Não deduzimos seu endereço a partir do e-mail e não temos um endereço confirmado.
-
-Use owner-completion.env.example somente como lista de campos; não envie o arquivo preenchido ao GitHub. Não apague chaves existentes nem substitua valores por campos vazios. Configuração preparada não equivale a aplicação no processo V12.
+O agente cuida da aplicação das configurações após as travas passarem. Não pedir ao proprietário para editar variáveis, certificados ou arquivos técnicos. Use owner-completion.env.example apenas como referência de campos; nunca envie o arquivo preenchido ao GitHub. Configuração preparada ainda não está aplicada ao processo V12.
 
 ## Completar diretamente nas plataformas
 
@@ -34,6 +32,12 @@ Referências oficiais consultadas em 24/10/2026:
 - https://developer.apple.com/help/account/membership/program-enrollment/
 - https://support.google.com/googleplay/android-developer/answer/13628312?hl=pt-BR
 
+## Compilação já concluída, acesso pessoal ainda necessário
+
+Android e iOS foram compilados no workflow Native compilation, execução 40150909303: APK de depuração, AAB sem assinatura de distribuição e aplicativo iOS para simulador. São diagnósticos, não artefatos assinados de loja. Não é necessário contratar Codemagic para repetir esses testes.
+
+A autenticação segura no RevenueCat não foi concluída; não criar conta nem repetir a solicitação recusada sem nova iniciativa do proprietário. As configurações de lojas e assinaturas continuam dependendo de acesso autorizado às contas. Não pedir senhas ou códigos no chat.
+
 ## Antes de aplicar
 
-A publicação continua condicionada a AGENTS.md e ao manifesto readiness.json. Não marcar dados legais, entrega de e-mail, lojas, artefatos ou orçamento como verificados apenas por este guia existir. Executar prepare na candidata limpa; revisar as 13 mudanças preparadas e aplicar somente após todas as evidências exigidas. Não reconectar publicação automática nem ampliar recursos antes disso.
+A publicação continua condicionada a AGENTS.md e ao manifesto readiness.json. Não marcar dados legais, entrega de e-mail, lojas, artefatos ou orçamento como verificados apenas por este guia existir. Executar prepare na candidata limpa; revisar o patch atual (15 mudanças observadas nesta revisão; conferir novamente antes de aplicar) e aplicar somente após todas as evidências exigidas. Não reconectar publicação automática nem ampliar recursos antes disso.
