@@ -215,7 +215,7 @@ test('Offline service worker never substitutes HTML for a missing script', async
   const handlers = {}; let result;
   const html = new Response('<html>offline</html>');
   const ctx = vm.createContext({
-    self: { addEventListener: (name, fn) => { handlers[name] = fn; } }, URL, Response, setTimeout, clearTimeout,
+    self: { addEventListener: (name, fn) => { handlers[name] = fn; } }, URL, Response, AbortController, setTimeout, clearTimeout,
     caches: { match: async req => req === '/index.html' ? html : undefined },
     fetch: async () => { throw new Error('offline'); },
   });
@@ -438,4 +438,82 @@ test('A cold exchange-rate cache shares concurrent fetches and backs off failure
  const failed=await fixture(t,{fxFailure:true});
  const statuses=await Promise.all(Array.from({length:40},async()=> (await fetch(failed.url+'/api/config')).status));
  assert.ok(statuses.every(x=>x===200));assert.equal(failed.fxCalls(),1);
+});
+
+test('Concurrent autosaves cannot recreate user data after account deletion', async t => {
+  const f = await fixture(t);
+  const state = { profile: { name: 'Synthetic deletion race' }, notes: 'x'.repeat(600000) };
+  const saves = Array.from({ length: 8 }, () => f.post('/api/user/state', { state }, { premium: true }));
+  await new Promise(resolve => setTimeout(resolve, 10));
+  const deletion = await fetch(f.url + '/api/account', { method: 'DELETE', headers: { Authorization: `Bearer ${f.token}` } });
+  assert.equal(deletion.status, 200);
+  const results = await Promise.all(saves);
+  assert.ok(results.every(r => r.status === 200 || r.status === 401));
+  const file = path.join(f.dir, 'users', crypto.createHash('sha256').update('tester@example.invalid').digest('hex') + '.json');
+  await assert.rejects(fs.access(file), { code: 'ENOENT' });
+});
+
+
+test('Saved user data excludes client authentication credentials', async t => {
+  const f = await fixture(t);
+  const state = { profile: { name: 'Synthetic profile' }, accessToken: 'must-not-persist', accountToken: 'must-not-persist', premium: true, premiumEmail: 'must-not-persist' };
+  assert.equal((await f.post('/api/user/state', { state }, { premium: true })).status, 200);
+  const saved = await (await fetch(f.url + '/api/user/state', { headers: { Authorization: `Bearer ${f.token}` } })).json();
+  for (const key of ['accessToken', 'accountToken', 'premium', 'premiumEmail']) assert.equal(Object.hasOwn(saved.state, key), false);
+  assert.equal(saved.state.profile.name, state.profile.name);
+});
+
+test('A stalled uncached service-worker request always terminates', async () => {
+  const handlers = {}, timers = new Map(); let next = 0, result, signal;
+  const ctx = vm.createContext({
+    self: { addEventListener: (name, fn) => { handlers[name] = fn; } }, URL, Response, AbortController,
+    setTimeout: fn => { timers.set(++next, fn); return next; }, clearTimeout: id => timers.delete(id),
+    caches: { match: async () => undefined },
+    fetch: (_request, options) => { signal = options?.signal; return new Promise(() => {}); },
+  });
+  vm.runInContext(await fs.readFile(path.join(root, 'sw.js'), 'utf8'), ctx);
+  handlers.fetch({ request: { url: 'https://test.invalid/i18n/new.js', method: 'GET', mode: 'cors' }, respondWith: p => { result = p; } });
+  for (const fn of [...timers.values()]) fn();
+  const response = await Promise.race([result, new Promise(resolve => setTimeout(() => resolve('hung'), 40))]);
+  assert.notEqual(response, 'hung'); assert.equal(response.type, 'error'); assert.equal(signal.aborted, true);
+});
+
+test('Legal and account-deletion pages bypass the service-worker cache', async () => {
+  const handlers = {};
+  const ctx = vm.createContext({ self: { addEventListener: (name, fn) => { handlers[name] = fn; } }, URL, Response, AbortController, setTimeout, clearTimeout });
+  vm.runInContext(await fs.readFile(path.join(root, 'sw.js'), 'utf8'), ctx);
+  for (const route of ['/privacy', '/terms', '/delete-account', '/support']) {
+    let intercepted = false;
+    handlers.fetch({ request: { url: 'https://test.invalid' + route, method: 'GET', mode: 'navigate' }, respondWith: () => { intercepted = true; } });
+    assert.equal(intercepted, false, route);
+  }
+});
+
+test('Shell refresh survives a full cache and falls back on server failure', async () => {
+  for (const status of [200, 503]) {
+    const handlers = {}; let result, writes = 0;
+    const ctx = vm.createContext({
+      self: { addEventListener: (name, fn) => { handlers[name] = fn; } }, URL, Response, AbortController, setTimeout, clearTimeout,
+      caches: { match: async () => new Response('saved shell'), open: async () => ({ put: async () => { writes++; throw new Error('cache full'); } }) },
+      fetch: async () => new Response('fresh shell', { status }),
+    });
+    vm.runInContext(await fs.readFile(path.join(root, 'sw.js'), 'utf8'), ctx);
+    handlers.fetch({ request: { url: 'https://test.invalid/app.js', method: 'GET', mode: 'cors' }, respondWith: p => { result = p; } });
+    assert.equal(await (await result).text(), status === 200 ? 'fresh shell' : 'saved shell');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(writes, status === 200 ? 1 : 0);
+  }
+});
+
+
+test('Sync bounds oversized input and concurrent writes without losing a valid saved state', async t => {
+  const f = await fixture(t);
+  const tooLarge = await f.post('/api/user/state', { state: { notes: 'x'.repeat(2600000) } }, { premium: true });
+  assert.equal(tooLarge.status, 413);
+  const state = { profile: { name: 'Synthetic bounded sync' }, notes: 'x'.repeat(600000) };
+  const writes = await Promise.all(Array.from({length:24}, () => f.post('/api/user/state', {state}, {premium:true})));
+  assert.ok(writes.some(r=>r.status===429));assert.ok(writes.some(r=>r.status===200));assert.ok(writes.every(r=>r.status===200||r.status===429));
+  const saved = await (await fetch(f.url + '/api/user/state', {headers:{Authorization:`Bearer ${f.token}`}})).json();
+  assert.equal(saved.state.profile.name, state.profile.name);assert.equal(saved.state.notes.length, state.notes.length);
+  assert.equal((await f.post('/api/user/state', {state:{profile:{name:'Recovered'}}}, {premium:true})).status,200);
 });

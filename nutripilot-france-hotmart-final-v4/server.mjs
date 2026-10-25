@@ -111,6 +111,15 @@ const STATIC_FILES = new Set([
 
 
 let entitlementQueue = Promise.resolve();
+// File mode has one process: serialize writes/deletion per account and release idle keys.
+const accountWrites = new Map();
+let activeStateWrites = 0;
+function withAccountWrite(email, work) {
+  const previous = accountWrites.get(email) || Promise.resolve();
+  const next = previous.catch(() => {}).then(work);
+  accountWrites.set(email, next);
+  return next.finally(() => { if (accountWrites.get(email) === next) accountWrites.delete(email); });
+}
 
 
 function securityHeaders(type = 'application/json; charset=utf-8') {
@@ -190,6 +199,10 @@ const localRateLimit = createRateLimiter();
 const rateLimit = (...args) => storage ? storage.rateLimit(...args) : localRateLimit(...args);
 
 async function readRaw(req, limit = MAX_JSON_BYTES) {
+  if (Number(req.headers['content-length']) > limit) {
+    req.resume();
+    throw publicError('Payload trop volumineux', 413);
+  }
   const chunks = [];
   let total = 0;
   for await (const chunk of req) {
@@ -204,8 +217,8 @@ async function readRaw(req, limit = MAX_JSON_BYTES) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-async function readJson(req) {
-  const raw = await readRaw(req);
+async function readJson(req, limit = MAX_JSON_BYTES) {
+  const raw = await readRaw(req, limit);
   if (!raw) return {};
   try {
     const body = JSON.parse(raw);
@@ -1290,12 +1303,19 @@ async function saveUserState(email, data) {
   await loadUserState(email); // Preserve a damaged existing file for recovery instead of overwriting it.
   const clean = { ...(data || {}) };
   delete clean.accessToken;
+  delete clean.accountToken;
   delete clean.premium;
   delete clean.premiumEmail;
   const raw = JSON.stringify(clean);
   if (Buffer.byteLength(raw, 'utf8') > USER_STATE_LIMIT) throw publicError('Données utilisateur trop volumineuses', 413);
   if(storage)return storage.saveUser(email,path.basename(userFile(email),'.json'),clean);
-  await atomicWriteJson(userFile(email), clean);
+  await withAccountWrite(email, async () => {
+    const entry = (await loadEntitlements())[email];
+    if (!entry || entry.status !== 'active' || (entry.accessUntil && Date.now() > Number(entry.accessUntil))) {
+      throw publicError('Session invalide. Connectez-vous à nouveau.', 401);
+    }
+    await atomicWriteJson(userFile(email), clean);
+  });
 }
 
 async function deleteUserState(email) {
@@ -1307,9 +1327,11 @@ async function deleteAccountData(email) {
   if(storage)return storage.deleteAccount(email);
   // Remove the marketing entry on both deletion paths. Fail visibly if a
   // damaged waitlist prevents completing the request; never erase other leads.
-  await mutateWaitlist(email, list => { delete list[email]; });
-  await deleteUserState(email);
-  await mutateEntitlements(email, all => { delete all[email]; });
+  await withAccountWrite(email, async () => {
+    await mutateWaitlist(email, list => { delete list[email]; });
+    await deleteUserState(email);
+    await mutateEntitlements(email, all => { delete all[email]; });
+  });
 }
 
 async function sendAccessEmail(email, code) {
@@ -1809,9 +1831,16 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { ok: true, state: await loadUserState(identity.email), plan: identity.plan });
       }
       if (url.pathname === '/api/user/state' && req.method === 'POST') {
-        const body = await readJson(req);
-        await saveUserState(identity.email, body.state || {});
-        return send(res, 200, { ok: true, savedAt: new Date().toISOString() });
+        if (!(await rateLimit(`sync:${identity.email}`, 120, 60000)) || activeStateWrites >= 8) {
+          req.resume();
+          return send(res, 429, { error: 'Synchronisation occupée. Réessayez dans quelques instants.' });
+        }
+        activeStateWrites++;
+        try {
+          const body = await readJson(req, USER_STATE_LIMIT + 1024);
+          await saveUserState(identity.email, body.state || {});
+          return send(res, 200, { ok: true, savedAt: new Date().toISOString() });
+        } finally { activeStateWrites--; }
       }
       if (url.pathname === '/api/user/state' && req.method === 'DELETE') {
         await deleteUserState(identity.email);
