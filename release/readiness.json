@@ -3,8 +3,7 @@
   "version": "18.1.0",
   "applicationTree": "11fdcaa3cac5536a7d6e839714ebd3b2a3e8676e",
   "channels": [
-    "ios",
-    "android"
+    "ios"
   ],
   "gates": {
     "prepare": {
@@ -189,5 +188,8 @@
       }
     }
   },
-  "nativeTree": "39d0f6ebdde9f52a715c46fc9b9de67c7538e24c"
+  "nativeTree": "39d0f6ebdde9f52a715c46fc9b9de67c7538e24c",
+  "deferredChannels": [
+    "android"
+  ]
 }

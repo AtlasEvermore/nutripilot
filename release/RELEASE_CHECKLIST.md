@@ -6,7 +6,7 @@ Acompanhamento central: https://github.com/AtlasEvermore/nutripilot/issues/5
 
 **Decisão atual: publicação bloqueada.** A preparação do código pode continuar; o site não deve ser declarado pronto enquanto as duas fases abaixo não forem comprovadas.
 
-Escopo atual: App Store e Google Play, exclusivamente, com backend compartilhado. Publicar o backend não equivale a publicar nas lojas. Não inventar dados legais, contas, créditos, backups, artefatos assinados nem testes reais.
+Escopo comercial: App Store e Google Play, exclusivamente, com backend compartilhado. Ordem autorizada em 25/10/2026: App Store primeiro; Google Play adiado até a verificação do aparelho e os demais requisitos Android. O manifesto seleciona iOS nesta fase, sem dispensar requisitos comuns ou de iOS. Para liberar Android, selecionar novamente esse canal e validar configuração, artefato assinado, compras e aprovação próprios. Publicar o backend não equivale a publicar nas lojas. Não inventar dados legais, contas, créditos, backups, artefatos assinados nem testes reais.
 
 ## Versões: preparada é diferente de publicada
 
