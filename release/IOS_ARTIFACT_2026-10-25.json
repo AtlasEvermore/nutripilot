@@ -1,0 +1,20 @@
+{
+  "revision": "5a4f67a1b7c8bf86140f381370ef22bd27f418b3",
+  "nativeTree": "39d0f6ebdde9f52a715c46fc9b9de67c7538e24c",
+  "version": "18.1.0",
+  "build": "202",
+  "bundle": "com.atlasevermore.nutripilot",
+  "profileUuid": "95f24e59-cca8-4daf-82c9-81c7394a88d0",
+  "certificateSha256": "7d33f59a893ec51405bc2a4f402cfb97d1eb7e755b57391742df88922f3c7e46",
+  "ipaSha256": "5eea6e77c3cf762683604eb0ac3cd9b3d2d12911e607e4b6faa1d059f68e02cb",
+  "signatureVerified": true,
+  "storeUploaded": false,
+  "purchasesTested": false,
+  "verifiedAt": "2026-10-25T22:13:14.644896+00:00",
+  "run": "https://github.com/AtlasEvermore/nutripilot/actions/runs/40237700794",
+  "runAttempt": 2,
+  "artifactId": 12615878829,
+  "artifactZipSha256": "06b0881dc26a718bbb5419b552d5e807affaf6f23b1666e8d40188df1bf219b4",
+  "artifactZipBytes": 3615927,
+  "verification": "macOS codesign verification passed in CI; downloaded ZIP, inner IPA checksum, receipt and Info.plist independently checked; durable owner copy preserved outside GitHub"
+}
