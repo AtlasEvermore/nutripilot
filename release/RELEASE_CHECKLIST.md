@@ -18,7 +18,7 @@ Escopo atual: App Store e Google Play, exclusivamente, com backend compartilhado
 | Credenciais novas OpenAI e Resend | Guardadas na configuração; ainda não aplicadas ao processo antigo |
 | Publicação automática pelo GitHub | Desativada; ambiente desconectado da branch |
 | Wait for CI no Railway | Preparado em patch; ainda não confirmado ativo |
-| Dados reais e recuperação independente | Sem evidência de backup externo/restauração concluídos |
+| Dados reais e recuperação independente | Snapshot real criptografado salvo fora do Railway; restauração e compatibilidade ensaiadas. Renovar o snapshot se ultrapassar 8 horas antes do deploy; ver RECOVERY_EVIDENCE_2026-10-24.md e SITE_AUDIT.md |
 
 A candidata deve ser obtida da revisão atual do GitHub, com imagem imutável por SHA/digest. Não implantar V13, V14… individualmente. Conferir o histórico e validar eventuais mudanças de formato antes do salto da V12.
 
@@ -29,13 +29,13 @@ Prioridade definida pelo proprietário: corrigir e proteger os dados primeiro; a
 Todos os itens bloqueiam a publicação até existir evidência válida em `release/readiness.json`.
 
 - [ ] **Acesso e continuidade da hospedagem:** Railway confirma liberação; confirmar duração/plano/saldo do serviço. Não presumir que upgrade resolve o bloqueio. Caso haja migração, servidor e domínio devem estar prontos e sob controle do proprietário.
-- [ ] **Backup independente dos dados reais:** incluir permissões de compra e estados de usuários; criptografar; armazenar fora do Railway; guardar chave de recuperação em local independente. Uma cópia só no mesmo volume não atende este requisito.
-- [ ] **Ensaio de restauração:** baixar o backup e recuperar em destino isolado; conferir contagens, permissões de compra e refeições. Medir tempo de recuperação. Não usar apenas os testes sintéticos como prova.
+- [x] **Backup independente dos dados reais:** incluir permissões de compra e estados de usuários; criptografar; armazenar fora do Railway; guardar chave de recuperação em local independente. Uma cópia só no mesmo volume não atende este requisito.
+- [x] **Ensaio de restauração:** baixar o backup e recuperar em destino isolado; conferir contagens, permissões de compra e refeições. Medir tempo de recuperação. Não usar apenas os testes sintéticos como prova.
 - [x] **Novas credenciais guardadas:** OpenAI limitada à Responses API; Resend limitada ao envio pelo domínio verificado. A gravação foi confirmada pelo Railway. Isso não prova a ativação no processo em produção nem conclui a revogação das antigas.
 - [ ] **IA e despesas:** saldo positivo, modelo configurado, limites/alertas revisados e teste autorizado com a credencial nova. Definir orçamento com o proprietário. Não estimar quantidade de análises sem medir consumo real.
 - [ ] **Entrega real de e-mail:** código de acesso chega a uma conta de teste autorizada; confirmar remetente, domínio, prazo e reenvio. Teste de permissão da chave não comprova entrega.
 - [ ] **Dados legais e privacidade:** preencher dados reais da empresa, suporte e políticas; conferir exclusão/retensão de dados e consentimento do coach.
-- [ ] **Retorno e compatibilidade:** selecionar revisão saudável, preservar dados, ensaiar leitura de estado anterior na candidata e documentar qualquer transformação. Rollback de imagem não restaura automaticamente dados.
+- [x] **Retorno e compatibilidade:** selecionar revisão saudável, preservar dados, ensaiar leitura de estado anterior na candidata e documentar qualquer transformação. Rollback de imagem não restaura automaticamente dados.
 - [x] **Trava de CI preparada:** patch Wait for CI revisado; testes e construção da imagem são necessários. Confirmar ativação efetiva após a primeira implantação dessa proteção.
 - [x] **Vencimento da chave:** aviso de renovação preparado antes de 21/01/2027. Manter a validade sob acompanhamento após futuras trocas.
 - [ ] **Configuração nativa:** contas de loja, RevenueCat, produtos e assinatura configurados; IPA/AAB assinados da revisão candidata com evidência.
@@ -79,7 +79,7 @@ Executar `node ops/release-gate.mjs launch` e guardar o resultado junto da impla
 
 ## O que fica bloqueado agora
 
-O manifesto começa com os itens não comprovados em `pending`. O workflow **Production release gate** deve falhar enquanto eles estiverem pendentes; isso é uma restrição intencional de publicação, não falha dos testes do aplicativo.
+O manifesto mantém os itens não comprovados em `pending`; backup real, restauração e compatibilidade já têm evidências registradas, sujeitas à validade. O workflow **Production release gate** deve falhar enquanto eles estiverem pendentes; isso é uma restrição intencional de publicação, não falha dos testes do aplicativo.
 
 O GitHub continua permitindo revisão de código e construção/teste da imagem. A publicação automática no Railway foi desativada: o ambiente está desconectado da branch. Só reconectar após a Fase 1 passar e com Wait for CI revisado. A proteção de CI ainda precisa ser aplicada e confirmada; até lá, manter implantação manual com a verificação local obrigatória em `AGENTS.md`. Não há proteção contra um administrador que ignore deliberadamente as regras ou desative controles.
 
