@@ -1,0 +1,84 @@
+# Technical compilation only. No store login, production keys or store upload.
+name: Native compilation
+on:
+  pull_request:
+    paths:
+      - 'native/**'
+      - 'codemagic.yaml'
+      - '.github/workflows/native-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-validation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  android:
+    # Standard runners in this public repository; do not enable paid private-repo builds implicitly.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: native
+    env:
+      APP_VERSION: '18.1.0'
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npx cap add android
+      - run: npm run assets
+      - run: npx cap sync android && node scripts/configure-native.mjs --platform android && node scripts/configure-native.mjs --check --platform android
+      - name: Compile debug APK and unsigned release bundle
+        run: cd android && ./gradlew --no-daemon --max-workers=2 assembleDebug bundleRelease
+      - name: Record diagnostic artifact checksums
+        run: sha256sum android/app/build/outputs/apk/debug/*.apk android/app/build/outputs/bundle/release/*.aab > native-checksums.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nutripilot-android-diagnostic-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            native/android/app/build/outputs/apk/debug/*.apk
+            native/android/app/build/outputs/bundle/release/*.aab
+            native/native-checksums.txt
+  ios:
+    if: github.event.repository.private == false
+    runs-on: macos-26
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: native
+    env:
+      APP_VERSION: '18.1.0'
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: xcodebuild -version
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npx cap add ios --packagemanager SPM
+      - run: npm run assets
+      - run: npx cap sync ios && node scripts/configure-native.mjs --platform ios && node scripts/configure-native.mjs --check --platform ios
+      - name: Compile iOS simulator without signing or distribution
+        run: xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/ios-simulator CODE_SIGNING_ALLOWED=NO build
+      - name: Archive simulator diagnostic
+        run: ditto -c -k --sequesterRsrc --keepParent build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app ios-simulator.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nutripilot-ios-simulator-diagnostic-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: native/ios-simulator.zip
