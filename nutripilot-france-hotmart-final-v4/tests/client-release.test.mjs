@@ -103,6 +103,7 @@ test('A delayed API response cannot replace the current account token with an ol
 test('A delayed download cannot merge the previous account data into the current account', async () => {
   let finish; let merges = 0;
   const ctx = vm.createContext({
+    AbortSignal,
     state: { accessToken: 'first', premiumEmail: 'first@example.invalid', meals: ['local'] },
     fetch: () => new Promise(resolve => { finish = resolve; }), authHeaders: () => ({}),
     deepMerge(target, remote) { merges++; Object.assign(target, remote); return target; },
@@ -124,7 +125,8 @@ function discoveryContext() {
   });
   const start = source.indexOf('const MODULES = [');
   vm.runInContext(source.slice(start, source.indexOf('\n];', start) + 3) + '\nthis.MODULES = MODULES;', ctx);
-  for (const name of ['moduleArtwork', 'modCard', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'modulesScreen']) load(ctx, name);
+  ctx.APP_SHORT = Object.fromEntries(ctx.MODULES.map(m => [m.id, m.short || m.name]));
+  for (const name of ['moduleArtwork', 'modCard', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'appIcon', 'modulesScreen']) load(ctx, name);
   return ctx;
 }
 
@@ -132,18 +134,27 @@ test('Every module has local artwork, a resource preview and no price, offer or 
   const ctx = discoveryContext();
   for (const m of ctx.MODULES) {
     const html = ctx.modCard(m, false);
-    assert.match(html, new RegExp(`src="/artwork/${m.id}\\.svg"`));
+    assert.match(html, new RegExp(`src="/artwork/${m.id}\\.(?:svg|webp)"`));
     assert.match(html, new RegExp(`data-go="${m.route}"`));
     assert.doesNotMatch(html, /data-module-buy|data-buy|jours gratuits|\/ mois|Économisez|mod-price/);
     const locked = ctx.moduleLockedScreen(m.id);
     assert.match(locked, /Voir les formules/); assert.doesNotMatch(locked, /mod-price|jours gratuits/);
-    const asset = await fs.readFile(new URL(`../artwork/${m.id}.svg`, import.meta.url), 'utf8');
-    assert.match(asset, /viewBox="0 0 480 240"/);
-    assert.doesNotMatch(asset, /<script|<image|href=|https?:\/\/(?!www.w3.org\/2000\/svg)/);
-    assert.ok(Buffer.byteLength(asset) < 5000);
+    const src = html.match(/src="(\/artwork\/[^"\s]+)"/)[1];
+    const asset = await fs.readFile(new URL(`..${src}`, import.meta.url));
+    if (src.endsWith('.svg')) {
+      assert.match(asset.toString(), /viewBox="0 0 480 240"/);
+      assert.doesNotMatch(asset.toString(), /<script|<image|href=|https?:\/\/(?!www.w3.org\/2000\/svg)/);
+      assert.ok(asset.length < 5000);
+    } else {
+      assert.equal(asset.subarray(0, 4).toString(), 'RIFF');
+      assert.equal(asset.subarray(8, 12).toString(), 'WEBP');
+      assert.ok(asset.length < 80000);
+    }
   }
   assert.doesNotMatch(ctx.revoHero(), /jours gratuits|\/ mois|Économisez/);
-  assert.doesNotMatch(ctx.modulesScreen(), /jours gratuits|\/ mois|Économisez|kit-card/);
+  const apps = ctx.modulesScreen();
+  assert.doesNotMatch(apps, /jours gratuits|\/ mois|Économisez|kit-card|mod-cards|revo-hero/);
+  assert.equal((apps.match(/class="app-icon /g) || []).length, 9);
   assert.equal(ctx.moduleArtwork({ id: '../server.mjs' }), '');
 });
 
@@ -160,4 +171,68 @@ test('The web store sheet never promises an unreleased store, a guessed price or
   const ios = ctx.storeSheet();
   assert.match(ios, /href="https:\/\/apps.apple.com\/confirmed-test-link"/);
   assert.doesNotMatch(ios, /Google Play<\/b>|préparation/);
+});
+
+test('Startup preserves saved credentials after temporary failures and clears them only on authoritative rejection', async () => {
+  for (const mode of ['network', 'busy', 'rate', 'malformed', 'expired', 'revoked', 'active']) {
+    const requests = [];
+    const ctx = vm.createContext({
+      state: { premium: true, accessToken: 'saved-test-session', subscriptionPlan: 'complete_annual', premiumEmail: 'test@example.invalid', profile: {}, lastOpen: '' },
+      config: {}, location: { hash: '#app' }, route: 'app', navigator: {}, window: {}, AbortSignal,
+      captureUtms() {}, nativeKitStart() {}, NativeBilling: { start() {} }, guardRoute() {},
+      todayKey: () => '2026-10-26', saveState() {}, loadDict: async () => {}, lang: () => 'en',
+      render() {}, startReminderLoop() {}, reviewMoment() {}, setTimeout() {},
+      fetch: async (url, options = {}) => {
+        requests.push({ url, options });
+        if (url === '/api/config') return { ok: true, json: async () => ({ ai: false }) };
+        if (mode === 'network') throw new TypeError('Temporary offline test');
+        const status = { busy: 503, rate: 429, expired: 401 }[mode] || 200;
+        return { ok: status === 200, status, json: async () => {
+          if (mode === 'malformed') throw new SyntaxError('Incomplete response');
+          return { premium: mode === 'active' };
+        } };
+      },
+      apiFetch: async () => ({ ok: true, json: async () => ({ state: null }) }),
+    });
+    load(ctx, 'init'); await ctx.init();
+    const rejected = ['expired', 'revoked'].includes(mode);
+    assert.equal(ctx.state.accessToken, rejected ? '' : 'saved-test-session', mode);
+    assert.equal(ctx.state.subscriptionPlan, rejected ? '' : 'complete_annual', mode);
+    assert.equal(ctx.state.premium, mode === 'active', 'Unverified state does not grant paid access');
+    assert.ok(requests.every(r => r.options.signal instanceof AbortSignal), 'Startup requests have a deadline');
+  }
+});
+
+test('Hydration and imported daily totals remain finite and non-negative', () => {
+  const ctx = vm.createContext({
+    state: { water: {}, meals: [] }, todayKey: () => '2026-10-26',
+    clamp: (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0)),
+  });
+  for (const name of ['waterToday', 'waterGoal', 'totals']) load(ctx, name);
+  for (const value of [-200, 'broken', Infinity, 'Infinity']) {
+    ctx.state.water['2026-10-26'] = value;
+    assert.equal(ctx.waterToday(), 0);
+  }
+  ctx.state.water['2026-10-26'] = 1250; assert.equal(ctx.waterToday(), 1250);
+  for (const value of [undefined, '', 0, NaN, 'broken', Infinity]) {
+    ctx.state.waterGoal = value; assert.equal(ctx.waterGoal(), 2000);
+  }
+  ctx.state.waterGoal = 9000; assert.equal(ctx.waterGoal(), 5000);
+  ctx.state.waterGoal = -500; assert.equal(ctx.waterGoal(), 1000);
+  ctx.state.meals = [
+    { day: '2026-10-26', total: { kcal: 300, protein: 20 } },
+    { day: '2026-10-26', total: { kcal: -100, protein: 'not-a-number', carbs: Infinity } },
+    { day: '2026-10-26', total: { kcal: '200', fat: 10 } },
+    { day: '2026-10-25', total: { kcal: 999 } },
+  ];
+  const actual = JSON.parse(JSON.stringify(ctx.totals()));
+  assert.deepEqual(actual, { kcal: 500, protein: 20, carbs: 0, fat: 10, fiber: 0 });
+});
+
+test('An incomplete store catalog shows recovery instead of a broken price comparison', () => {
+  const ctx = vm.createContext({
+    state: { premium: false }, nativePlatform: () => false, ownedModules: () => [],
+    Billing: { plans: () => [] }, storeLoadingScreen: () => 'retry-the-store',
+  });
+  load(ctx, 'plansScreen'); assert.equal(ctx.plansScreen(), 'retry-the-store');
 });

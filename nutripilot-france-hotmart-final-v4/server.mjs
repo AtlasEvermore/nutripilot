@@ -82,6 +82,7 @@ const TYPES = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
@@ -91,6 +92,7 @@ const TYPES = {
 
 const STATIC_FILES = new Set([
   ...['nutrition', 'recipes', 'scanner', 'training', 'menopause', 'nutrients', 'supplements', 'sleep', 'coach'].map(id => `/artwork/${id}.svg`),
+  ...['nutrition', 'recipes', 'scanner', 'training', 'menopause', 'sleep'].map(id => `/artwork/${id}.webp`),
   '/index.html',
   '/app.js',
   '/i18n-launch.js',

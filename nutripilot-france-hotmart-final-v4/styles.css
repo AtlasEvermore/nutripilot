@@ -2700,3 +2700,11 @@ html.cosmos ::selection{background:rgba(201,255,59,.35);color:#fff}
 .mod-card>.module-art{margin-bottom:16px}
 .mod-hero>.module-art{margin-bottom:20px}
 @media(prefers-reduced-motion:reduce){.module-art{animation:none}}
+.module-art{display:block}
+.ai-tile>.module-art{position:absolute;inset:0;aspect-ratio:auto;border-radius:inherit;overflow:hidden}
+.launcher .app-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 12px}
+.launcher .app-icon .ai-tile{width:100%;max-width:112px;height:auto;aspect-ratio:1}
+.launcher .app-icon.locked .ai-tile{filter:none;opacity:1}
+.lock-card>.module-art{margin-bottom:16px}
+@media(min-width:700px){.launcher .app-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:1024px){.launcher .app-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}

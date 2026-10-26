@@ -1,14 +1,15 @@
 import { test, expect } from '@playwright/test';
 
 const routes = ['app', 'modules', 'program', 'recipes', 'shopping', 'training', 'menopause', 'scanner', 'nutrients', 'supplements', 'sleep', 'coach', 'progress', 'profile', 'goal', 'settings', 'support', 'plans'];
-const seed = async (page, language = 'pt') => page.addInitScript(({ language }) => {
+const seed = async (page, language = 'pt', session = {}) => page.addInitScript(({ language, session }) => {
   // Synthetic, unsigned guest state; this never grants access to a protected server endpoint.
   localStorage.setItem('nutripilot_v7', JSON.stringify({
     lang: language, basicsDone: true, helloSeen: true, onboarding: true,
     premium: false, accessToken: '', accountToken: '',
     profile: { name: 'Browser Test', age: 35, height: 170, weight: 70, target: 70, goal: 'maintain', sex: 'other', activity: 1.375, goalSet: true },
+    ...session,
   }));
-}, { language });
+}, { language, session });
 
 async function healthyScreen(page, route) {
   await page.goto(`/#${route}`);
@@ -48,15 +49,15 @@ for (const language of ['pt', 'en', 'fr', 'ar']) {
 test('Every module image loads and discovery leads to its own space before Plans', async ({ page }) => {
   await seed(page);
   await page.goto('/#modules');
-  const images = page.locator('.mod-card .module-art img');
+  const images = page.locator('.app-grid .module-art img');
   await expect(images).toHaveCount(9);
   for (const image of await images.all()) {
     await image.scrollIntoViewIfNeeded();
     await expect.poll(() => image.evaluate(el => el.complete && el.naturalWidth > 0)).toBe(true);
   }
-  await expect(page.locator('.mod-price, .kit-card')).toHaveCount(0);
-  await expect(page.locator('.mod-cards')).not.toContainText(/jours gratuits|dias grátis|\/\s*(?:mês|mois)|Économisez/i);
-  await page.locator('.mod-card.m-nut .mc-cta').click();
+  await expect(page.locator('.mod-price, .kit-card, .launcher .mod-cards')).toHaveCount(0);
+  await expect(page.locator('.launcher')).not.toContainText(/jours gratuits|dias grátis|\/\s*(?:mês|mois)|Économisez/i);
+  await page.locator('.app-icon.m-nut').click();
   await expect(page.locator('.lock-overlay')).toBeVisible();
   await page.locator('.lock-overlay [data-module-buy]').click();
   await expect(page.locator('.plans-page')).toBeVisible();
@@ -68,3 +69,16 @@ test('Protected APIs reject the synthetic guest regardless of local display stat
   const response = await page.request.post('/api/user/state', { data: { state: { meals: [{ title: 'synthetic' }] } } });
   expect(response.status()).toBe(401);
 });
+
+for (const status of [503, 401]) {
+  test(`Startup handles access response ${status} without losing local data or granting unverified access`, async ({ page }) => {
+    await seed(page, 'pt', { premium: true, accessToken: 'synthetic-invalid-session', subscriptionPlan: 'complete_annual' });
+    await page.route('**/api/access/status', route => route.fulfill({ status, json: { error: 'synthetic response', premium: false } }));
+    await page.goto('/#modules');
+    await expect(page.locator('.launcher')).toBeVisible();
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('nutripilot_v7')));
+    expect(saved.accessToken).toBe(status === 401 ? '' : 'synthetic-invalid-session');
+    expect(saved.premium).toBe(false);
+    expect(saved.profile.name).toBe('Browser Test');
+  });
+}

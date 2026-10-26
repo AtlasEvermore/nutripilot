@@ -1009,7 +1009,7 @@ async function pullRemoteState() {
   if (!state.accessToken) return;
   const email = state.premiumEmail;
   try {
-    const res = await fetch('/api/user/state', { headers: authHeaders() });
+    const res = await fetch('/api/user/state', { headers: authHeaders(), signal: AbortSignal.timeout(10000) });
     const remote = await res.json();
     if (!res.ok || !remote.state || !state.accessToken || state.premiumEmail !== email) return;
     const localNewer = state.updatedAt && remote.state.updatedAt && String(state.updatedAt) > String(remote.state.updatedAt);
@@ -1155,13 +1155,17 @@ function totals(day = todayKey()) {
   return state.meals
     .filter((meal) => meal.day === day)
     .reduce((acc, meal) => {
-      for (const key of ['kcal', 'protein', 'carbs', 'fat', 'fiber']) acc[key] += Number(meal.total?.[key] || 0);
+      for (const key of ['kcal', 'protein', 'carbs', 'fat', 'fiber']) {
+        const value = Number(meal.total?.[key] || 0);
+        if (Number.isFinite(value)) acc[key] += Math.max(0, value);
+      }
       return acc;
     }, { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 }
 
 function waterToday() {
-  return Number(state.water[todayKey()] || 0);
+  const value = Number(state.water[todayKey()] || 0);
+  return Number.isFinite(value) ? Math.max(0, value) : 0;
 }
 
 function streak() {
@@ -1265,28 +1269,32 @@ async function init() {
     route = 'app';
   }
   try {
-    const response = await fetch('/api/config');
+    const response = await fetch('/api/config', { signal: AbortSignal.timeout(8000) });
     if (response.ok) config = { ...config, ...await response.json() };
   } catch {}
   nativeKitStart();
   NativeBilling.start();
 
   let valid = false;
+  let accessRejected = false;
   if (state.accessToken) {
     try {
       const response = await fetch('/api/access/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: state.accessToken }),
+        signal: AbortSignal.timeout(10000),
       });
+      accessRejected = response.status === 401 || response.status === 403;
       const data = await response.json();
+      if (response.ok && data.premium === false) accessRejected = true;
       if (response.ok && data.premium) {
         valid = true;
         state.premium = true;
         state.premiumEmail = data.email || state.premiumEmail;
         state.subscriptionPlan = data.plan || state.subscriptionPlan;
         try {
-          const remoteResponse = await apiFetch('/api/user/state');
+          const remoteResponse = await apiFetch('/api/user/state', { signal: AbortSignal.timeout(10000) });
           const remote = await remoteResponse.json();
           // Keep edits made on this phone that were not synced yet (offline, closed too fast…).
           const localNewer = state.updatedAt && remote.state?.updatedAt && String(state.updatedAt) > String(remote.state.updatedAt);
@@ -1308,8 +1316,12 @@ async function init() {
 
   if (!valid) {
     state.premium = false;
-    state.accessToken = '';
-    state.subscriptionPlan = '';
+    // A timeout or temporary server error is not evidence of an expired subscription.
+    // Preserve the saved session for the next validation; paid server access still requires verification.
+    if (accessRejected || !state.accessToken) {
+      state.accessToken = '';
+      state.subscriptionPlan = '';
+    }
   }
   if (valid && state.onboarding && ['access', 'plan', 'onboarding', 'paywall', 'welcome'].includes(route)) route = 'app';
   guardRoute();
@@ -2218,7 +2230,8 @@ const modTitle = (m) => L(m.title || m.name);
 // Local, language-neutral artwork: no external image requests or layout shifts.
 function moduleArtwork(m) {
   if (!MODULES.some((item) => item.id === m.id)) return '';
-  return `<div class="module-art" aria-hidden="true"><img src="/artwork/${m.id}.svg" width="480" height="240" alt="" loading="lazy" decoding="async"></div>`;
+  const photo = ['nutrition', 'recipes', 'scanner', 'training', 'menopause', 'sleep'].includes(m.id);
+  return `<span class="module-art" aria-hidden="true"><img src="/artwork/${m.id}.${photo ? 'webp' : 'svg'}" width="${photo ? 600 : 480}" height="${photo ? 600 : 240}" alt="" loading="lazy" decoding="async"></span>`;
 }
 const MODULE_ROUTES = {
   program: 'nutrition', diary: 'nutrition', targets: 'nutrition', shopping: 'nutrition', planner: 'nutrition', guides: 'nutrition', insights: 'nutrition',
@@ -2796,7 +2809,7 @@ function trialSheet() {
 }
 // Locked app: the real screen stays visible behind a blur, with the trial box on top.
 function lockOverlay(m) {
-  return `<div class="lock-overlay" role="dialog" aria-label="${esc(L(m.name))}"><div class="lock-card ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b>${trialPitch('overlay', m.id)}</div></div>`;
+  return `<div class="lock-overlay" role="dialog" aria-label="${esc(L(m.name))}"><div class="lock-card ${m.tone}">${moduleArtwork(m)}<span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b>${trialPitch('overlay', m.id)}</div></div>`;
 }
 
 function hasFeature(feature) {
@@ -2916,7 +2929,7 @@ const APP_SHORT = Object.fromEntries(MODULES.map((m) => [m.id, m.short || m.name
 function appIcon(m, owned) {
   const lock = !owned && !m.free;
   return `<button class="app-icon ${m.tone} ${lock ? 'locked' : ''}" data-go="${m.route}" aria-label="${esc(L(m.name))}${lock ? ` · ${esc(L('Aperçu'))}` : ''}">
-    <span class="ai-tile">${icon(m.icon)}${lock ? `<em class="ai-lock">${icon('lock')}</em>` : ''}</span><b>${L(APP_SHORT[m.id] || m.name)}</b></button>`;
+    <span class="ai-tile">${moduleArtwork(m)}${lock ? `<em class="ai-lock">${icon('lock')}</em>` : ''}</span><b>${L(APP_SHORT[m.id] || m.name)}</b></button>`;
 }
 // v10 · "Révolutionnaire" showcase: what NutriPilot delivers, with live proof numbers.
 function revoHero() {
@@ -2963,10 +2976,9 @@ function modulesScreen() {
       ${state.premium ? `<button class="today-strip" data-go="app"><span class="ts-ico">${icon('home')}</span><span><small>${L('Aujourd’hui')}</small><b>${L('{n} kcal restantes', { n: fmt(left) })}</b></span><span class="ts-meta">${icon('drop')}${fmt(waterToday() / 1000, 1)} L<i></i>${icon('flame')}${L('{n} j', { n: streak() })}</span></button>` : ''}
       <label class="search-box">${icon('search')}<input id="global-search" type="search" placeholder="${L('Rechercher une recette, un exercice, un nutriment…')}" autocomplete="off"></label>
       <div id="gs-results"></div>
-      ${state.premium ? '' : revoHero()}
       ${mine.length ? `<div class="section-label"><h3>${L('Accès rapide')}</h3></div><div class="app-grid">${mine.map((m) => appIcon(m, true)).join('')}</div>` : ''}
-      <div class="section-label"><h3>${L(state.premium ? 'Tous vos espaces' : 'Tout ce qui est inclus')}</h3><button class="link-btn" data-go="plans">${L('Formules')}</button></div>
-      <div class="mod-cards">${modsForMe().map((m) => modCard(m, owned.includes(m.id))).join('')}</div>
+      <div class="section-label"><h3>${L(state.premium ? 'Tous vos espaces' : 'Mes apps')}</h3></div>
+      <div class="app-grid">${modsForMe().filter((m) => !mine.some((item) => item.id === m.id)).map((m) => appIcon(m, owned.includes(m.id))).join('')}</div>
       ${memberCard()}
       <div class="section-label"><h3>${L('Inclus pour tous')}</h3></div>
       <div class="free-row"><button data-go="app">${icon('home')}<span>${L('Aujourd’hui')}</span></button><button data-go="progress">${icon('progress')}<span>${L('Progrès')}</span></button><button data-open-goal>${icon('scale')}<span>${L('Objectif')}</span></button><button data-open-profile>${icon('user')}<span>${L('Profil')}</span></button></div>
@@ -3352,7 +3364,7 @@ function drawerHtml() {
         ${item('plans', 'star', 'Nos formules')}
         <small>${L('Modules')}</small>
         ${MODULES.map((m) => `<button class="drawer-item ${moduleForRoute()?.id === m.id ? 'active' : ''}" data-go="${m.route}">${icon(m.icon)}<span>${L(m.name)}</span>${state.premium && !hasModule(m.id) ? `<em class="dr-lock">${icon('lock')}</em>` : ''}</button>`).join('')}
-        ${item('modules', 'grid', 'Tous les modules')}
+        ${item('modules', 'grid', 'Mes apps')}
         <small>${L('Outils')}</small>
         ${item('add', 'scan', 'Scanner un repas')}
         ${item('planner', 'sparkle', 'Que manger ensuite ?')}
@@ -3459,7 +3471,8 @@ function ringArc(r, value, max, cls, width) {
 }
 
 function waterGoal() {
-  return Number(state.waterGoal || 2000);
+  const value = Number(state.waterGoal || 2000);
+  return Number.isFinite(value) ? clamp(value, 1000, 5000) : 2000;
 }
 
 function bottleSvg(percent) {
@@ -3991,6 +4004,7 @@ function plansScreen() {
   const owned = ownedModules();
   const ownsAll = state.premium && PAID_MODULES.every((m) => owned.includes(m.id));
   const kit = plans.find((x) => x.kind === 'complete');
+  if (!kit) return storeLoadingScreen();
   const bundles = plans.filter((x) => x.kind === 'bundle');
   const mods = plans.filter((x) => x.kind === 'module');
   const isMine = (x) => state.premium && x.modules.every((id) => owned.includes(id));
@@ -4024,7 +4038,7 @@ function plansScreen() {
   return `<div class="mobile-app plans-page">
     ${appHeader('Nos formules')}
     <div class="screen">
-      <p class="pl-sub">${L('Un module, une combinaison ou tout. {n} jours gratuits, sans engagement.', { n: 3 })}</p>
+      <p class="pl-sub">${L('Modules, combinaisons et Kit complet')}</p>
       ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
       ${freeBanner(true)}
       ${locationPicker()}
@@ -4882,7 +4896,7 @@ async function saveReminders(root) {
     setPath(r, el.dataset.remField, v);
   });
   const goal = $('[data-water-goal]', root);
-  if (goal) state.waterGoal = Number(goal.value);
+  if (goal) state.waterGoal = Math.round(clamp(Number(goal.value) || 2000, 1000, 5000));
   state.reminders = r;
   saveState();
   const anyOn = Object.values(r).some((x) => x.on);
@@ -9200,7 +9214,7 @@ function bindModal(root) {
       return renderModal();
     }
     if (button.dataset.recipeId && modal?.type === 'sos') { const recipe = ALL_RECIPES.find((r) => r.id === button.dataset.recipeId); if (recipe) { modal = { type: 'recipe', recipe }; renderModal(); } return; }
-    if (button.dataset.sosWater !== undefined) { const k = todayKey(); state.water[k] = Number(state.water[k] || 0) + 250; saveState(); modal = null; root.remove(); render(); return toast('+250 ml ✓'); }
+    if (button.dataset.sosWater !== undefined) { const k = todayKey(); state.water[k] = clamp(waterToday() + 250, 0, 6000); saveState(); modal = null; root.remove(); render(); return toast('+250 ml ✓'); }
     if (button.dataset.copyYesterday !== undefined) {
       const y = state.meals.filter((m) => m.day === addDays(-1));
       y.forEach((m) => relogMeal(m));
