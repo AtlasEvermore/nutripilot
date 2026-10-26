@@ -1126,7 +1126,8 @@ function totals(day = todayKey()) {
 }
 
 function waterToday() {
-  return Number(state.water[todayKey()] || 0);
+  const value = Number(state.water[todayKey()] || 0);
+  return Number.isFinite(value) ? Math.max(0, value) : 0;
 }
 
 function streak() {
@@ -1748,7 +1749,7 @@ function helloScreen() {
     ${f ? `<ul class="hello-points">${f.points.map(([ico, a, b]) => `<li><span class="mod-ico">${icon(ico)}</span><span><b>${L(a)}</b><small>${L(b)}</small></span></li>`).join('')}</ul>` : ''}
     <div class="hello-cta">
       <button class="btn btn-lime btn-wide btn-xl" data-hello-start>${L('Créer mon plan gratuit')}</button>
-      <p>${L('Gratuit pour découvrir · {n} jours d’essai sur les formules · sans engagement', { n: Billing.trialDays() })}</p>
+      <p>${Billing.trialDays() > 0 ? L('Gratuit pour découvrir · {n} jours d’essai sur les formules · sans engagement', { n: Billing.trialDays() }) : L('Consultez les prix et les offres disponibles dans votre boutique avant de choisir votre formule.')}</p>
     </div>
     <div class="hello-trust">${[['fork', `${ALL_RECIPES.length}`, L('recettes')], ['dumbbell', `${Object.keys(EXERCISES).length}`, L('exercices')], ['globe', `${LANGS.length}`, L('langues')]].map(([ico, n, l]) => `<div>${icon(ico)}<b>${n}</b><span>${l}</span></div>`).join('')}</div>
   </div>`;
@@ -2919,8 +2920,6 @@ function modsForMe() {
 }
 function modulesScreen() {
   const owned = ownedModules();
-  const plans = Billing.plans();
-  const kit = plans.find((x) => x.tier === 'complete');
   const mine = MODULES.filter((m) => owned.includes(m.id) || (m.free && state.premium));
   const t = totals(); const p = state.profile || {};
   const left = Math.max(0, (p.dailyKcal || 0) - t.kcal);
@@ -2930,15 +2929,13 @@ function modulesScreen() {
       ${state.premium ? `<button class="today-strip" data-go="app"><span class="ts-ico">${icon('home')}</span><span><small>${L('Aujourd’hui')}</small><b>${L('{n} kcal restantes', { n: fmt(left) })}</b></span><span class="ts-meta">${icon('drop')}${fmt(waterToday() / 1000, 1)} L<i></i>${icon('flame')}${L('{n} j', { n: streak() })}</span></button>` : ''}
       <label class="search-box">${icon('search')}<input id="global-search" type="search" placeholder="${L('Rechercher une recette, un exercice, un nutriment…')}" autocomplete="off"></label>
       <div id="gs-results"></div>
-      ${state.premium ? '' : revoHero()}
       ${mine.length ? `<div class="section-label"><h3>${L('Accès rapide')}</h3></div><div class="app-grid">${mine.map((m) => appIcon(m, true)).join('')}</div>` : ''}
-      <div class="section-label"><h3>${L(state.premium ? 'Tous vos espaces' : 'Tout ce qui est inclus')}</h3><button class="link-btn" data-go="plans">${L('Formules')}</button></div>
-      <div class="mod-cards">${modsForMe().map((m) => modCard(m, owned.includes(m.id))).join('')}</div>
-      ${!PAID_MODULES.every((m) => owned.includes(m.id)) && kit ? `<button class="kit-card" data-module-buy="complete"><span><small>${L('Kit complet')}</small><b>${L('Les 9 modules pour {price} / mois', { price: money(lp(kit, 'monthly')) })}</b><em>${L('Économisez {n} % par rapport aux modules séparés', { n: planSaving(kit, 'monthly') })}</em></span>${icon('chevron')}</button>` : ''}
+      <div class="section-label"><h3>${L(state.premium ? 'Tous vos espaces' : 'Tout ce qui est inclus')}</h3></div>
+      <div class="app-grid">${modsForMe().filter((m) => !mine.some((x) => x.id === m.id)).map((m) => appIcon(m, owned.includes(m.id))).join('')}</div>
       ${memberCard()}
       <div class="section-label"><h3>${L('Inclus pour tous')}</h3></div>
       <div class="free-row"><button data-go="app">${icon('home')}<span>${L('Aujourd’hui')}</span></button><button data-go="progress">${icon('progress')}<span>${L('Progrès')}</span></button><button data-open-goal>${icon('scale')}<span>${L('Objectif')}</span></button><button data-open-profile>${icon('user')}<span>${L('Profil')}</span></button></div>
-      <button class="plans-link" data-go="plans">${icon('star')}<span><b>${L('Nos formules')}</b><small>${L('Modules, combinaisons et Kit complet')}</small></span>${icon('chevron')}</button>
+      ${!state.premium || !PAID_MODULES.every((m) => owned.includes(m.id)) ? `<button class="plans-link" data-go="plans">${icon('star')}<span><b>${L('Nos formules')}</b><small>${L('Modules, combinaisons et Kit complet')}</small></span>${icon('chevron')}</button>` : ''}
     </div>
     ${bottom('modules')}
   </div>`;
@@ -3325,7 +3322,7 @@ function drawerHtml() {
         ${item('plans', 'star', 'Nos formules')}
         <small>${L('Modules')}</small>
         ${MODULES.map((m) => `<button class="drawer-item ${moduleForRoute()?.id === m.id ? 'active' : ''}" data-go="${m.route}">${icon(m.icon)}<span>${L(m.name)}</span>${state.premium && !hasModule(m.id) ? `<em class="dr-lock">${icon('lock')}</em>` : ''}</button>`).join('')}
-        ${item('modules', 'grid', 'Tous les modules')}
+        ${item('modules', 'grid', 'Mes apps')}
         <small>${L('Outils')}</small>
         ${item('add', 'scan', 'Scanner un repas')}
         ${item('planner', 'sparkle', 'Que manger ensuite ?')}
@@ -3991,7 +3988,7 @@ function plansScreen() {
   return `<div class="mobile-app plans-page">
     ${appHeader('Nos formules')}
     <div class="screen">
-      <p class="pl-sub">${L('Un module, une combinaison ou tout. {n} jours gratuits, sans engagement.', { n: 3 })}</p>
+      <p class="pl-sub">${Billing.trialDays() > 0 ? L('Un module, une combinaison ou tout. {n} jours gratuits, sans engagement.', { n: Billing.trialDays() }) : L('Choisissez votre formule.')}</p>
       ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
       ${freeBanner(true)}
       ${locationPicker()}
