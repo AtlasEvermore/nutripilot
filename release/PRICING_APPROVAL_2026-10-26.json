@@ -1,0 +1,73 @@
+{
+  "approvedBy": "owner",
+  "approvedOn": "2026-10-26",
+  "status": "approved_reference_pending_store_configuration",
+  "baseCurrency": "USD",
+  "individualMonthly": {
+    "nutrition": 7.99,
+    "recipes": 3.99,
+    "training": 9.99,
+    "menopause": 8.99,
+    "nutrients": 2.99,
+    "sleep": 3.99
+  },
+  "complete": {
+    "monthly": 29.9,
+    "annual": 299
+  },
+  "bundles": [
+    {
+      "id": "body",
+      "modules": [
+        "training",
+        "nutrition"
+      ],
+      "monthly": 14.9,
+      "annual": 149
+    },
+    {
+      "id": "women40",
+      "modules": [
+        "menopause",
+        "nutrition"
+      ],
+      "monthly": 13.9,
+      "annual": 139
+    },
+    {
+      "id": "kitchen",
+      "modules": [
+        "nutrition",
+        "recipes"
+      ],
+      "monthly": 9.9,
+      "annual": 99
+    },
+    {
+      "id": "performance",
+      "modules": [
+        "training",
+        "nutrients"
+      ],
+      "monthly": 10.9,
+      "annual": 109
+    },
+    {
+      "id": "wellness",
+      "modules": [
+        "sleep",
+        "nutrients"
+      ],
+      "monthly": 5.9,
+      "annual": 59
+    }
+  ],
+  "annualRule": "USD annual reference is ten times USD monthly; local storefront price points must be checked independently",
+  "localization": "Use Apple storefront currencies and comparable local price points. Display the actual localized StoreKit price. Do not reuse the internal BRL 4.99 illustration as a store exchange-rate policy.",
+  "constraints": [
+    "No approval of new provider spending or automatic recharge",
+    "No automatic sale of unconfigured products",
+    "Languages, territories, metadata and purchase tests are separate release requirements",
+    "No deployment or store publication approved by this pricing record alone"
+  ]
+}
