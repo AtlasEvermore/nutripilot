@@ -2693,3 +2693,20 @@ html.cosmos ::selection{background:rgba(201,255,59,.35);color:#fff}
 .access-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:18px}.access-actions .btn{min-height:48px;white-space:normal}
 .analysis-error{display:grid;gap:6px;margin:12px 0;padding:16px;border-radius:16px;border:1px solid currentColor;line-height:1.45}.analysis-error small{opacity:.8}
 @media(max-width:360px){.meal-methods{grid-template-columns:repeat(2,minmax(0,1fr))}.access-actions .btn{width:100%}}
+
+/* Local editorial artwork keeps every app visually distinct without remote trackers. */
+.module-art{width:100%;aspect-ratio:2;overflow:hidden;border-radius:18px;background:#101c24;isolation:isolate}
+.module-art img{display:block;width:100%;height:100%;object-fit:cover}
+.mod-card>.module-art{margin-bottom:16px}
+.mod-hero>.module-art{margin-bottom:20px}
+@media(prefers-reduced-motion:reduce){.module-art{animation:none}}
+.module-art{display:block}
+.ai-tile>.module-art{position:absolute;inset:0;aspect-ratio:auto;border-radius:inherit;overflow:hidden}
+.launcher .app-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 12px}
+.launcher .app-icon .ai-tile{width:100%;max-width:112px;height:auto;aspect-ratio:1}
+.launcher .app-icon.locked .ai-tile{filter:none;opacity:1}
+.lock-card>.module-art{margin-bottom:16px}
+@media(min-width:700px){.launcher .app-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:1024px){.launcher .app-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+/* Keep tall module previews inside the space above the mobile navigation. */
+.lock-card{min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}

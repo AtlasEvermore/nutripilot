@@ -86,7 +86,7 @@ async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled 
 
 test('Public assets, API validation, access control and state persistence', async t => {
   const f = await fixture(t);
-  for (const file of ['/', '/app.js', '/i18n-launch.js', '/styles.css', '/food.js', '/exercises.js', '/sw.js', '/i18n/pt.js', '/vendor/barcode/barcode-detector.js', '/vendor/barcode/zxing_reader.wasm']) {
+  for (const file of ['/', '/app.js', '/i18n-launch.js', '/styles.css', '/food.js', '/exercises.js', '/sw.js', '/i18n/pt.js', '/vendor/barcode/barcode-detector.js', '/vendor/barcode/zxing_reader.wasm', ...['nutrition','recipes','scanner','training','menopause','nutrients','supplements','sleep','coach'].map(id => `/artwork/${id}.svg`), ...['nutrition','recipes','scanner','training','menopause','sleep'].map(id => `/artwork/${id}.webp`)]) {
     const r = await fetch(f.url + file); assert.equal(r.status, 200, file); assert.ok((await r.arrayBuffer()).byteLength > 0, file);
     if (file.endsWith('.wasm')) assert.match(r.headers.get('content-type'), /application\/wasm/);
   }

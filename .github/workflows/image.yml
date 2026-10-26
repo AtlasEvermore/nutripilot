@@ -41,9 +41,36 @@ jobs:
           node --test ../native/tests/*.test.mjs
           python3 -m unittest discover -s ../ops -p 'test_ios_distribution.py'
           git diff --exit-code -- i18n/
+  browser:
+    name: Clean browser acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test dependencies
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix nutripilot-france-hotmart-final-v4
+          npm ci --ignore-scripts --no-audit --no-fund --prefix ops/browser
+      - name: Install browser engines
+        working-directory: ops/browser
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Verify fresh desktop and mobile sessions using synthetic data
+        working-directory: ops/browser
+        run: npm test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: clean-browser-report
+          path: |
+            ops/browser/playwright-report/
+            ops/browser/test-results/
+          retention-days: 7
   image:
     if: github.event_name != 'pull_request'
-    needs: regression
+    needs: [regression, browser]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

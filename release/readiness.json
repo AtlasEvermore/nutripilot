@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "007eb3cff91004d4901a82a369e006494c3d30e7",
+  "applicationTree": "b0d36bea8f4d2a6143ff87c1b863363a92030177",
   "channels": [
     "ios"
   ],
@@ -26,10 +26,10 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-26T12:00:33.596Z",
+        "verifiedAt": "2026-10-26T21:38:22.536Z",
         "verifiedBy": "deployment-agent",
         "evidence": [
-          "release/VALIDATION_2026-10-26.md: revised candidate restored five actual snapshot files in isolation; public route smoke passed; original files byte-identical after shutdown; snapshot age not renewed"
+          "release/FINAL_REVIEW_2026-10-26.md: consolidated candidate restored five real snapshot files in isolation; smoke passed and original files remained byte-identical after shutdown; snapshot age was not renewed"
         ]
       },
       "new_credentials_stored": {
@@ -64,18 +64,15 @@
         "verifiedBy": "deployment-agent",
         "evidence": [
           "private-ops:18.1.0 and original V12 both booted isolated restorations; original files byte-identical after candidate shutdown; preserve existing service and volume; see release/RECOVERY_EVIDENCE_2026-10-24.md",
-          "private-ops:Revised candidate booted a fresh isolated real-data restore during SITE_AUDIT; original contents remained byte-identical; no format migration"
+          "private-ops:Revised candidate booted a fresh isolated real-data restore during SITE_AUDIT; original contents remained byte-identical; no format migration",
+          "release/FINAL_REVIEW_2026-10-26.md: consolidated candidate reads the same previously V12-tested snapshot without changing original files; no storage format or migration code changed"
         ]
       },
       "ci_gate_prepared": {
-        "status": "verified",
-        "verifiedAt": "2026-10-26T12:09:24.942Z",
-        "verifiedBy": "deployment-agent",
-        "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40320218323: 90 checks passed on b9cba55832e25b785d8527af2b30bf6e25655ebb; PostgreSQL real, native and signing checks passed; container smoke passed",
-          "ghcr.io/atlasevermore/nutripilot@sha256:39176d98079808d9dabdda267f008df2c6c1aa78e11699af2deaab4cb4256b9c: immutable image for b9cba55832e25b785d8527af2b30bf6e25655ebb, application tree 007eb3cff91004d4901a82a369e006494c3d30e7",
-          "private-ops:Railway reread 2026-10-26 confirms patch 9c88b850-a293-41fc-83ec-000d3cd03de9 has 18 STAGED changes including source.checkSuites=true; not applied, autodeploy off"
-        ]
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
       },
       "expiry_alert": {
         "status": "verified",
