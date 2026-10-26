@@ -20,7 +20,7 @@ async function freePort() {
   const s = net.createServer(); s.listen(0, '127.0.0.1'); await once(s, 'listening');
   const port = s.address().port; await new Promise(r => s.close(r)); return port;
 }
-async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled = true, store = false, storeReadKey = '', fxDelay = 0, fxFailure = false } = {}) {
+async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled = true, store = false, storeReadKey = '', fxDelay = 0, fxFailure = false, legalAddress = '' } = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'np-regression-'));
   const requests = []; const storeRequests = []; let mode = 'meal'; let calls = 0; let fxCalls = 0; let subscriber = {subscriptions:{}};
   const provider = http.createServer(async (req, res) => {
@@ -50,7 +50,7 @@ async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled 
   const child = spawn(process.execPath, ['server.mjs'], { cwd: root, env: {
     ...process.env, NODE_ENV: 'production', PORT: String(port), APP_URL: url, DATA_DIR: dir,
     ACCESS_TOKEN_SECRET: secret, OPENAI_API_KEY: ai ? 'test-key' : '', OPENAI_MODEL: ai ? 'test-model' : '',
-    AI_ENABLED: String(enabled), AI_ALLOW_GUESTS: String(guests), AI_GLOBAL_MONTHLY_LIMIT: '500', AI_USER_DAILY_LIMIT: '10',
+    AI_ENABLED: String(enabled), AI_ALLOW_GUESTS: String(guests), AI_GLOBAL_MONTHLY_LIMIT: '500', AI_USER_DAILY_LIMIT: '10', LEGAL_COMPANY_NAME: 'Synthetic operator', LEGAL_COMPANY_ADDRESS: legalAddress,
     OPENAI_BASE_URL: aiUrl, FX_URL: `${aiUrl}/fx`, FREE_SCANS: '3', AI_GLOBAL_DAILY_LIMIT: String(globalLimit),
     RESEND_API_KEY: '', REVENUECAT_READ_KEY: storeReadKey, REVENUECAT_SECRET_KEY: store ? 'test-store-secret' : '', REVENUECAT_WEBHOOK_AUTH: store ? 'test-hook-secret' : '', REVENUECAT_API_BASE: `${aiUrl}/rc`, ADMIN_KEY: 'isolated-test-admin-key',
   }, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -359,8 +359,24 @@ test('The kill switch and a zero global limit refuse paid requests before reachi
  for(const options of [{enabled:false},{globalLimit:0}]) {
   const f=await fixture(t,options);
   assert.equal((await f.post('/api/analyze',{image},{premium:true})).status,429);
+  assert.equal((await(await fetch(f.url+'/api/config')).json()).ai,false);
+  assert.equal((await(await fetch(f.url+'/api/health')).json()).ai,false);
+  assert.equal((await f.post('/api/coach',{message:'Hello'},{premium:true})).status,429);
   assert.equal(f.requests.length,0);
  }
+});
+
+test('The operator address appears on legal pages without duplication in general configuration', async t => {
+ const address='Synthetic address 42, Example City';
+ const f=await fixture(t,{legalAddress:address});
+ const config=await(await fetch(f.url+'/api/config')).json();
+ assert.equal(Object.hasOwn(config.legal,'address'),false);
+ assert.equal(JSON.stringify(config).includes(address),false);
+ for(const route of ['/privacy','/terms']) {
+  const response=await fetch(f.url+route);assert.equal(response.status,200);
+  assert.ok((await response.text()).includes(address),route);
+ }
+ assert.equal(f.requests.length,0);
 });
 
 test('A retry consumes the remaining persistent allowance and cannot exceed the daily cap', async t => {

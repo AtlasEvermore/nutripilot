@@ -1533,7 +1533,7 @@ const server = http.createServer(async (req, res) => {
         rates: fx.rates, ratesBase: 'USD', ratesDate: fx.date,
         brand: BRAND_NAME,
         locale: 'fr-FR',
-        ai: Boolean(AI_ENABLED && OPENAI_API_KEY && OPENAI_MODEL),
+        ai: Boolean(aiGlobalOk() && AI_USER_DAILY_LIMIT > 0 && OPENAI_API_KEY && OPENAI_MODEL),
         aiPolicy: { subscribersOnly: !AI_ALLOW_GUESTS, dailyUserLimit: AI_USER_DAILY_LIMIT },
         supportEmail: SUPPORT_EMAIL,
         revenuecat: { ios: process.env.REVENUECAT_IOS_KEY || '', android: process.env.REVENUECAT_ANDROID_KEY || '' },
@@ -1554,7 +1554,6 @@ const server = http.createServer(async (req, res) => {
         locked: true,
         legal: {
           company: process.env.LEGAL_COMPANY_NAME || '',
-          address: process.env.LEGAL_COMPANY_ADDRESS || '',
           id: process.env.LEGAL_COMPANY_ID || '',
         },
       });
@@ -1601,7 +1600,7 @@ const server = http.createServer(async (req, res) => {
       const dataWritable = await dataDirectoryWritable();
       const email = Boolean(RESEND_API_KEY && RESEND_FROM);
       const accessSecret = Boolean(ACCESS_TOKEN_SECRET && ACCESS_TOKEN_SECRET.length >= 24);
-      const ai = Boolean(AI_ENABLED && OPENAI_API_KEY && OPENAI_MODEL);
+      const ai = Boolean(aiGlobalOk() && AI_USER_DAILY_LIMIT > 0 && OPENAI_API_KEY && OPENAI_MODEL);
       const persistentPath = Boolean(storage) || path.resolve(DATA_DIR) === '/data';
       const storeBilling = { serverKey: Boolean(REVENUECAT_READ_KEY), webhook: Boolean(REVENUECAT_WEBHOOK_AUTH), ios: Boolean(process.env.REVENUECAT_IOS_KEY), android: Boolean(process.env.REVENUECAT_ANDROID_KEY) };
       const legal = Boolean(process.env.LEGAL_COMPANY_NAME && process.env.LEGAL_COMPANY_ADDRESS);

@@ -12,7 +12,7 @@
 
 ## Dados preparados em privado — confirmar, sem repetir o preenchimento
 
-O nome legal conhecido e o endereço fornecido pelo proprietário já foram preparados nas variáveis privadas LEGAL_COMPANY_NAME e LEGAL_COMPANY_ADDRESS do patch Railway. Não reproduzir o endereço neste repositório. O proprietário só precisa confirmar se os dados estão corretos e se autoriza a divulgação do endereço nos textos legais; o complemento numérico informado ainda precisa ser confirmado. Nenhum documento de identidade foi verificado por esse preenchimento.
+O nome legal conhecido e o endereço fornecido pelo proprietário já foram preparados nas variáveis privadas LEGAL_COMPANY_NAME e LEGAL_COMPANY_ADDRESS do patch Railway. Não reproduzir o endereço neste repositório. Em 26/10/2026, o proprietário confirmou os dados já fornecidos e autorizou seu uso público somente quando necessário. Usar exatamente os valores preparados em privado, sem acrescentar ou inferir complemento. Não solicitar novamente essa autorização. Evitar duplicação em configuração geral, telas comerciais e documentação pública; a configuração privada e as páginas legais ainda precisam de conferência operacional. Nenhum documento de identidade foi verificado por esse preenchimento.
 
 O agente cuida da aplicação das configurações após as travas passarem. Não pedir ao proprietário para editar variáveis, certificados ou arquivos técnicos. Use owner-completion.env.example apenas como referência de campos; nunca envie o arquivo preenchido ao GitHub. Configuração preparada ainda não está aplicada ao processo V12.
 
@@ -40,4 +40,10 @@ A autenticação segura no RevenueCat não foi concluída; não criar conta nem 
 
 ## Antes de aplicar
 
-A publicação continua condicionada a AGENTS.md e ao manifesto readiness.json. Não marcar dados legais, entrega de e-mail, lojas, artefatos ou orçamento como verificados apenas por este guia existir. Executar prepare na candidata limpa; revisar o patch atual (15 mudanças observadas nesta revisão; conferir novamente antes de aplicar) e aplicar somente após todas as evidências exigidas. Não reconectar publicação automática nem ampliar recursos antes disso.
+A publicação continua condicionada a AGENTS.md e ao manifesto readiness.json. Não marcar dados legais, entrega de e-mail, lojas, artefatos ou orçamento como verificados apenas por este guia existir. Executar prepare na candidata limpa; revisar o patch atual (18 mudanças observadas nesta revisão; conferir novamente antes de aplicar) e aplicar somente após todas as evidências exigidas. Não reconectar publicação automática nem ampliar recursos antes disso.
+
+## Diretriz de consumo confirmada em 26/10/2026
+
+O proprietário informou que não há orçamento garantido e delegou as escolhas operacionais. Isso não define um teto de gasto nem autoriza uma cobrança ilimitada. Manter AI_ENABLED=false, AI_ALLOW_GUESTS=false, limites globais diário/mensal iguais a zero e FREE_SCANS=0, sem comprar créditos, ativar recarga ou contratar serviços. Valores regravados no patch privado existente, sem implantar. Os recursos locais permanecem disponíveis; análise de fotos e coach remoto continuam indisponíveis. Não vender ou anunciar sua operação como concluída. A evidência de saldo/modelo/teste real continua pendente; a trava de lançamento não foi alterada.
+
+O proprietário ficou responsável pela conexão bancária da Apple. Isso não comprova produtos, validação das assinaturas, contratos ativos, análise DSA ou disponibilidade da loja.
