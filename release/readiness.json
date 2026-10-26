@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "11fdcaa3cac5536a7d6e839714ebd3b2a3e8676e",
+  "applicationTree": "6f5d75bb5f4f0a02d5e08707f06ae27fe3ca0959",
   "channels": [
     "ios"
   ],
@@ -23,11 +23,12 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-25T00:25:04.984617+00:00",
+        "verifiedAt": "2026-10-26T01:50:39.548675+00:00",
         "verifiedBy": "deployment-agent",
         "evidence": [
           "private-ops:Downloaded real archive decrypted and restored outside Railway; every restored file matched original content and SHA-256; see release/RECOVERY_EVIDENCE_2026-10-24.md",
-          "private-ops:Revised candidate booted a fresh isolated real-data restore during SITE_AUDIT; original contents remained byte-identical; no format migration"
+          "private-ops:Revised candidate booted a fresh isolated real-data restore during SITE_AUDIT; original contents remained byte-identical; no format migration",
+          "private-ops:Read-key candidate booted isolated real snapshot; six routes HTTP 200 and all five files unchanged after shutdown; release/REVENUECAT_SERVER.md"
         ]
       },
       "new_credentials_stored": {
@@ -67,11 +68,11 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-25T22:13:14.644896+00:00",
+        "verifiedAt": "2026-10-26T01:53:00.543699+00:00",
         "verifiedBy": "deployment-agent",
         "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40237669241: regression and immutable server image for 5a4f67a1b7c8bf86140f381370ef22bd27f418b3 passed",
-          "private-ops:Railway patch 9c88b850-a293-41fc-83ec-000d3cd03de9 reread 2026-10-25; 16 nondestructive changes, source.checkSuites=true still STAGED and not active; same existing service/volume; no automatic branch configured"
+          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40256251187: complete regression including real PostgreSQL passed for d04f6b9c4f099fc931daed9ebdce98fc1a313166; application/native trees unchanged by this evidence update",
+          "private-ops:Railway patch 9c88b850-a293-41fc-83ec-000d3cd03de9 reread; 18 nondestructive changes, source.checkSuites=true still STAGED, no automatic branch or deployment"
         ]
       },
       "expiry_alert": {
