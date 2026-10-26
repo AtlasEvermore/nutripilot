@@ -1120,7 +1120,10 @@ function totals(day = todayKey()) {
   return state.meals
     .filter((meal) => meal.day === day)
     .reduce((acc, meal) => {
-      for (const key of ['kcal', 'protein', 'carbs', 'fat', 'fiber']) acc[key] += Number(meal.total?.[key] || 0);
+      for (const key of ['kcal', 'protein', 'carbs', 'fat', 'fiber']) {
+        const value = Number(meal.total?.[key] || 0);
+        if (Number.isFinite(value)) acc[key] += Math.max(0, value);
+      }
       return acc;
     }, { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 }
@@ -3429,7 +3432,8 @@ function ringArc(r, value, max, cls, width) {
 }
 
 function waterGoal() {
-  return Number(state.waterGoal || 2000);
+  const value = Number(state.waterGoal);
+  return Number.isFinite(value) ? clamp(value, 1000, 5000) : 2000;
 }
 
 function bottleSvg(percent) {
@@ -3955,6 +3959,8 @@ function plansScreen() {
   const owned = ownedModules();
   const ownsAll = state.premium && PAID_MODULES.every((m) => owned.includes(m.id));
   const kit = plans.find((x) => x.kind === 'complete');
+  // Never render price comparisons against an unavailable store product.
+  if (!kit) return storeLoadingScreen();
   const bundles = plans.filter((x) => x.kind === 'bundle');
   const mods = plans.filter((x) => x.kind === 'module');
   const isMine = (x) => state.premium && x.modules.every((id) => owned.includes(id));
@@ -4848,7 +4854,7 @@ async function saveReminders(root) {
     setPath(r, el.dataset.remField, v);
   });
   const goal = $('[data-water-goal]', root);
-  if (goal) state.waterGoal = Number(goal.value);
+  if (goal) state.waterGoal = Math.round(clamp(Number(goal.value) || 2000, 1000, 5000));
   state.reminders = r;
   saveState();
   const anyOn = Object.values(r).some((x) => x.on);
@@ -9166,7 +9172,7 @@ function bindModal(root) {
       return renderModal();
     }
     if (button.dataset.recipeId && modal?.type === 'sos') { const recipe = ALL_RECIPES.find((r) => r.id === button.dataset.recipeId); if (recipe) { modal = { type: 'recipe', recipe }; renderModal(); } return; }
-    if (button.dataset.sosWater !== undefined) { const k = todayKey(); state.water[k] = Number(state.water[k] || 0) + 250; saveState(); modal = null; root.remove(); render(); return toast('+250 ml ✓'); }
+    if (button.dataset.sosWater !== undefined) { const k = todayKey(); state.water[k] = clamp(waterToday() + 250, 0, 6000); saveState(); modal = null; root.remove(); render(); return toast('+250 ml ✓'); }
     if (button.dataset.copyYesterday !== undefined) {
       const y = state.meals.filter((m) => m.day === addDays(-1));
       y.forEach((m) => relogMeal(m));
