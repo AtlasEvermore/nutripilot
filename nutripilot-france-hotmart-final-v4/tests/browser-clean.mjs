@@ -46,11 +46,18 @@ try {
     assert.ok(await page.locator('.launcher .app-icon').count() >= 8, name + ': app icons');
     assert.equal(await page.locator('.launcher .mod-cards').count(), 0, name + ': sales cards stay out of Apps');
     assert.equal(await page.locator('.launcher [data-go="plans"].plans-link').count(), 1, name + ': one link to Plans');
+    // Route entrance transitions must complete before snapshots are accepted.
+    await page.waitForFunction(() => {
+      const grid = document.querySelector('.launcher .app-grid');
+      return grid && Number(getComputedStyle(grid).opacity) >= 0.98;
+    }, { timeout: 5000 });
     await page.screenshot({ path: join(out, name + '-apps.png'), fullPage: true });
     await page.goto(base + '/#plans', { waitUntil: 'domcontentloaded' });
     await page.locator('.plans-page').waitFor({ timeout: 15000 });
     const prices = await page.locator('.plans-page').innerText();
     assert.doesNotMatch(prices, /\b(?:0|3)\s+dias?\s+gr[aá]tis\b/i, name + ': no invented introductory offer');
+    await page.waitForFunction(() => [...document.querySelectorAll('.plans-page .screen > *')]
+      .every(el => Number(getComputedStyle(el).opacity) >= 0.98), { timeout: 5000 });
     await page.screenshot({ path: join(out, name + '-plans.png'), fullPage: true });
     const layout = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,
