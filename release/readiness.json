@@ -15,20 +15,18 @@
       },
       "independent_backup": {
         "status": "verified",
-        "verifiedAt": "2026-10-24T23:04:39.246801+00:00",
+        "verifiedAt": "2026-10-26T02:41:01.357734+00:00",
         "verifiedBy": "deployment-agent",
         "evidence": [
-          "private-ops:Encrypted real /data snapshot downloaded independently from Railway and durably saved 2026-10-24; recovery key saved separately; see release/RECOVERY_EVIDENCE_2026-10-24.md"
+          "release/RECOVERY_EVIDENCE_2026-10-25.md: fresh real snapshot downloaded independently, hash checked, decrypted/restored, encrypted archive and separate key saved durably for owner"
         ]
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-26T01:50:39.548675+00:00",
+        "verifiedAt": "2026-10-26T02:41:01.357734+00:00",
         "verifiedBy": "deployment-agent",
         "evidence": [
-          "private-ops:Downloaded real archive decrypted and restored outside Railway; every restored file matched original content and SHA-256; see release/RECOVERY_EVIDENCE_2026-10-24.md",
-          "private-ops:Revised candidate booted a fresh isolated real-data restore during SITE_AUDIT; original contents remained byte-identical; no format migration",
-          "private-ops:Read-key candidate booted isolated real snapshot; six routes HTTP 200 and all five files unchanged after shutdown; release/REVENUECAT_SERVER.md"
+          "release/RECOVERY_EVIDENCE_2026-10-25.md: latest candidate booted fresh isolated real-data restore; health OK version 18.1.0, six routes HTTP 200, all five restored files byte-identical after shutdown"
         ]
       },
       "new_credentials_stored": {
@@ -68,11 +66,11 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-26T01:53:00.543699+00:00",
+        "verifiedAt": "2026-10-26T02:41:01.357734+00:00",
         "verifiedBy": "deployment-agent",
         "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40256251187: complete regression including real PostgreSQL passed for d04f6b9c4f099fc931daed9ebdce98fc1a313166; application/native trees unchanged by this evidence update",
-          "private-ops:Railway patch 9c88b850-a293-41fc-83ec-000d3cd03de9 reread; 18 nondestructive changes, source.checkSuites=true still STAGED, no automatic branch or deployment"
+          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40256436471: 85 checks passed on daddab15c145eb4a37144b033bb1cf607091e0eb, immutable image built and smoke tested; application/native trees unchanged by this evidence update",
+          "private-ops:Railway patch 9c88b850-a293-41fc-83ec-000d3cd03de9 reread: 18 nondestructive changes, source.checkSuites=true remains STAGED and autodeploy is off"
         ]
       },
       "expiry_alert": {
