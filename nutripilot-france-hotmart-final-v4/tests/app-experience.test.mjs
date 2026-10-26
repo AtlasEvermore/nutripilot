@@ -46,7 +46,7 @@ test('Hydration entry and store catalog preserve defensive bounds', () => {
 });
 
 test('Module previews link to Plans without showing monthly prices', () => {
-  const preview = slice('function moduleDetailScreen(', 'function ');
+  const preview = slice('function moduleLockedScreen(', 'function ');
   assert.doesNotMatch(preview, /class="mod-price"/);
   assert.match(preview, /data-go="plans"/);
 });
