@@ -8,3 +8,7 @@
 - Pacote criptografado e chave guardados duravelmente em arquivos privados separados do proprietário. Não publicar referências de acesso, conteúdo de clientes ou chave no GitHub.
 
 Esta cópia renova apenas o backup e seu ensaio de restauração. A validade máxima pré-deploy continua em oito horas; não equivale a backup automático recorrente. Preservar o volume e a referência V12 saudável conforme o plano anterior. A publicação continua sujeita às demais exigências do manifesto.
+
+## Liberação da hospedagem
+
+Resposta do suporte Railway em 25/10/2026 06:38:23Z, no pedido existente do NutriPilot, confirma explicitamente que novas implantações são aceitas em todos os planos e que commits enviados durante a pausa não ficaram em fila. O painel atual confirma Hobby ativo, ciclo de uso 24/10–24/11, serviço anterior online, console Connected e ação de deploy habilitada sem o aviso Limited Access. Isso permite encerrar o requisito de acesso da hospedagem; não prova implantação da candidata. Hobby é cobrado por uso e não foi tratado como teto fixo de despesa nem garantia de disponibilidade permanente. Nenhum plano, DNS, volume ou processo foi alterado.

@@ -8,10 +8,13 @@
   "gates": {
     "prepare": {
       "hosting_access": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-26T02:43:11.895167+00:00",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "private-ops:Railway Support email 2026-10-25T06:38:23Z in the existing NutriPilot support thread explicitly confirms new deployments accepted on every plan; paused commits were not queued",
+          "private-ops:Current owner dashboard confirms Active Plan Hobby, usage cycle Oct 24-Nov 24, existing service online and console Connected; deploy action enabled without Limited Access; no production deployment attempted"
+        ]
       },
       "independent_backup": {
         "status": "verified",
