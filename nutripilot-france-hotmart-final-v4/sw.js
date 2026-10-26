@@ -1,4 +1,4 @@
-const CACHE = 'nutripilot-v44-20261024-bounded-offline';
+const CACHE = 'nutripilot-v45-20261026-module-art';
 const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n-launch.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {

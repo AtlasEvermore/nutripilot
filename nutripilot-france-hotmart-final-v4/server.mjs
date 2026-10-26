@@ -90,6 +90,7 @@ const TYPES = {
 };
 
 const STATIC_FILES = new Set([
+  ...['nutrition', 'recipes', 'scanner', 'training', 'menopause', 'nutrients', 'supplements', 'sleep', 'coach'].map(id => `/artwork/${id}.svg`),
   '/index.html',
   '/app.js',
   '/i18n-launch.js',
