@@ -45,8 +45,10 @@ Dados legais conhecidos já estão preparados em privado. É necessária a confi
 
 ## Identidade da candidata consolidada
 
-Árvore da aplicação: `822af8918c64167e69381cba8c0a6f35b486b530`. Shell nativo preservado: `39d0f6ebdde9f52a715c46fc9b9de67c7538e24c`.
+Árvore da aplicação: `b0d36bea8f4d2a6143ff87c1b863363a92030177`. Shell nativo preservado: `39d0f6ebdde9f52a715c46fc9b9de67c7538e24c`.
 
 O manifesto passa a identificar esta árvore. A restauração isolada usa o mesmo snapshot previamente ensaiado com V12 e comprova que a candidata lê os arquivos sem modificá-los; nenhum formato de armazenamento ou rotina de migração foi alterado nesta revisão. A evidência anterior de CI/imagem foi retirada da aprovação da nova candidata e permanece documentada no histórico. Registrar a nova execução aprovada e a imagem imutável após construção; não reaproveitar o digest da versão anterior como prova da nova.
 
 As capturas da suíte de navegador usam somente dados fictícios e são anexadas ao relatório de CI para inspeção visual. Não são aprovação de compra, de loja ou de uso em aparelho físico.
+
+A aceitação WebKit móvel identificou a barra inferior interceptando o botão de Planos numa prévia alta. O cartão agora limita a altura ao espaço disponível e permite rolagem interna; o clique real, sem força, continua obrigatório na suíte. Nova restauração da árvore final em 2026-10-26T21:38:22.536Z: cinco arquivos originais preservados byte a byte; smoke sem issues. A execução dos 36 testes deve ser aprovada após esta correção.

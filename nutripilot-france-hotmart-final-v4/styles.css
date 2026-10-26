@@ -2708,3 +2708,5 @@ html.cosmos ::selection{background:rgba(201,255,59,.35);color:#fff}
 .lock-card>.module-art{margin-bottom:16px}
 @media(min-width:700px){.launcher .app-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(min-width:1024px){.launcher .app-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+/* Keep tall module previews inside the space above the mobile navigation. */
+.lock-card{min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}

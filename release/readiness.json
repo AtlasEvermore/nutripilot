@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "822af8918c64167e69381cba8c0a6f35b486b530",
+  "applicationTree": "b0d36bea8f4d2a6143ff87c1b863363a92030177",
   "channels": [
     "ios"
   ],
@@ -26,7 +26,7 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-26T21:31:20.838Z",
+        "verifiedAt": "2026-10-26T21:38:22.536Z",
         "verifiedBy": "deployment-agent",
         "evidence": [
           "release/FINAL_REVIEW_2026-10-26.md: consolidated candidate restored five real snapshot files in isolation; smoke passed and original files remained byte-identical after shutdown; snapshot age was not renewed"
