@@ -28,7 +28,7 @@ try {
     assert.ok(await page.locator('[data-lang]').count() >= 10, 'Language selection must render');
     await page.screenshot({ path: join(out, name + '-language.png'), fullPage: true });
     await page.locator('[data-lang="pt"]').click();
-    await page.locator('[data-lang-ok]').click();
+    await page.locator('.welcome-cta [data-lang-ok]').click();
     await page.locator('[data-hello-start]').waitFor({ timeout: 15000 });
     const welcome = await page.locator('.hello-cta').innerText();
     assert.doesNotMatch(welcome, /\b0\s+dias?\b/i, 'Never promise a zero-day trial');
