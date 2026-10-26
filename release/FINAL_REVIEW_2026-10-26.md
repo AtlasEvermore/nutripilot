@@ -42,3 +42,11 @@ Railway: projeto e serviço existentes identificados; 18 alterações continuam 
 Dados legais conhecidos já estão preparados em privado. É necessária a confirmação pendente do complemento/endereço e de sua divulgação, sem repetir dados pessoais neste repositório. Orçamento e acesso às configurações comerciais das lojas dependem do proprietário; backup recente e demais testes operacionais devem ser executados quando o corte puder prosseguir. Não há autorização para comprar créditos ou contratar planos.
 
 `AGENTS.md` exige `prepare` aprovado antes do deploy e `launch` após a aceitação. Não remover verificações, marcar evidências pendentes como verificadas ou implantar em outro servidor para contornar a política. O objetivo de uma versão web atualizada e publicação nas lojas continua pendente; esta revisão entrega correções reais e verificadas do código.
+
+## Identidade da candidata consolidada
+
+Árvore da aplicação: `822af8918c64167e69381cba8c0a6f35b486b530`. Shell nativo preservado: `39d0f6ebdde9f52a715c46fc9b9de67c7538e24c`.
+
+O manifesto passa a identificar esta árvore. A restauração isolada usa o mesmo snapshot previamente ensaiado com V12 e comprova que a candidata lê os arquivos sem modificá-los; nenhum formato de armazenamento ou rotina de migração foi alterado nesta revisão. A evidência anterior de CI/imagem foi retirada da aprovação da nova candidata e permanece documentada no histórico. Registrar a nova execução aprovada e a imagem imutável após construção; não reaproveitar o digest da versão anterior como prova da nova.
+
+As capturas da suíte de navegador usam somente dados fictícios e são anexadas ao relatório de CI para inspeção visual. Não são aprovação de compra, de loja ou de uso em aparelho físico.

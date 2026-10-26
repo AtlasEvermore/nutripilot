@@ -46,7 +46,7 @@ for (const language of ['pt', 'en', 'fr', 'ar']) {
   });
 }
 
-test('Every module image loads and discovery leads to its own space before Plans', async ({ page }) => {
+test('Every module image loads and discovery leads to its own space before Plans', async ({ page }, testInfo) => {
   await seed(page);
   await page.goto('/#modules');
   const images = page.locator('.app-grid .module-art img');
@@ -57,10 +57,13 @@ test('Every module image loads and discovery leads to its own space before Plans
   }
   await expect(page.locator('.mod-price, .kit-card, .launcher .mod-cards')).toHaveCount(0);
   await expect(page.locator('.launcher')).not.toContainText(/jours gratuits|dias grátis|\/\s*(?:mês|mois)|Économisez/i);
+  await testInfo.attach('apps', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
   await page.locator('.app-icon.m-nut').click();
   await expect(page.locator('.lock-overlay')).toBeVisible();
+  await testInfo.attach('module-preview', { body: await page.screenshot(), contentType: 'image/png' });
   await page.locator('.lock-overlay [data-module-buy]').click();
   await expect(page.locator('.plans-page')).toBeVisible();
+  await testInfo.attach('plans', { body: await page.screenshot(), contentType: 'image/png' });
 });
 
 test('Protected APIs reject the synthetic guest regardless of local display state', async ({ page }) => {
