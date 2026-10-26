@@ -48,7 +48,7 @@ try {
     await page.goto(base + '/#plans', { waitUntil: 'domcontentloaded' });
     await page.locator('.plans-page').waitFor({ timeout: 15000 });
     const prices = await page.locator('.plans-page').innerText();
-    assert.doesNotMatch(prices, /\\b(?:0|3)\\s+dias?\\s+gr[aá]tis\\b/i, name + ': no invented introductory offer');
+    assert.doesNotMatch(prices, /\b(?:0|3)\s+dias?\s+gr[aá]tis\b/i, name + ': no invented introductory offer');
     await page.screenshot({ path: join(out, name + '-plans.png'), fullPage: true });
     const layout = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,
