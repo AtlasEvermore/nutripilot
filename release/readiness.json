@@ -69,10 +69,14 @@
         ]
       },
       "ci_gate_prepared": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-26T21:47:16Z",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40406707678: 81 application checks with real PostgreSQL, eight release-gate, three native, ten signing and 36 clean-browser checks passed on 5e88a8a10b99820075268137eeecbbccdd0b9887",
+          "ghcr.io/atlasevermore/nutripilot@sha256:eb54e95b43a4772afb5e5314455eef3d9498393480bb310ab88e7c7802ef276f: immutable image passed container smoke, version 18.1.0 and issues empty; application tree b0d36bea8f4d2a6143ff87c1b863363a92030177",
+          "private-ops:Railway reread confirms existing production source remains disconnected from a branch and patch 9c88b850-a293-41fc-83ec-000d3cd03de9 still has 18 staged changes; Wait for CI was reviewed but is not yet applied"
+        ]
       },
       "expiry_alert": {
         "status": "verified",

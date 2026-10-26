@@ -52,3 +52,11 @@ O manifesto passa a identificar esta árvore. A restauração isolada usa o mesm
 As capturas da suíte de navegador usam somente dados fictícios e são anexadas ao relatório de CI para inspeção visual. Não são aprovação de compra, de loja ou de uso em aparelho físico.
 
 A aceitação WebKit móvel identificou a barra inferior interceptando o botão de Planos numa prévia alta. O cartão agora limita a altura ao espaço disponível e permite rolagem interna; o clique real, sem força, continua obrigatório na suíte. Nova restauração da árvore final em 2026-10-26T21:38:22.536Z: cinco arquivos originais preservados byte a byte; smoke sem issues. A execução dos 36 testes deve ser aprovada após esta correção.
+
+## Resultado final integrado
+
+PR #31 integrado como `5e88a8a10b99820075268137eeecbbccdd0b9887`. PR #30 encerrado como substituído, com sua branch e histórico preservados. CI https://github.com/AtlasEvermore/nutripilot/actions/runs/40406707678 aprovado: 81 testes do aplicativo com PostgreSQL real, oito da trava, três nativos, dez de assinatura e 36 testes em navegadores novos: 138 aprovados. O clique móvel que falhava passou sem forçar eventos.
+
+Imagem imutável aprovada após smoke do container: `ghcr.io/atlasevermore/nutripilot@sha256:eb54e95b43a4772afb5e5314455eef3d9498393480bb310ab88e7c7802ef276f`. Versão 18.1.0, revisão 5e88a8a, issues vazio. A imagem corresponde à árvore da aplicação indicada acima. Alterações posteriores somente na evidência e na captura do relatório não substituem esse digest por uma imagem não verificada. Capturas de CI incluem somente dados fictícios; as futuras capturas desativam animações durante a captura para evitar quadros de transição.
+
+A verificação visual das capturas confirmou a grade de Apps com fotos, o acesso ao módulo e o cartão rolável acima da navegação móvel. Isso não equivale a teste em aparelho físico. Nenhuma implantação web ou publicação de loja foi executada. A trava de produção continua recusando: backup real recente, orçamento/modelo/limites, entrega de e-mail pela candidata, confirmação legal e configuração comercial iOS. A renovação da restauração não renova o snapshot antigo.
