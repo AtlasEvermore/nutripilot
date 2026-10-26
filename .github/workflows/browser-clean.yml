@@ -1,0 +1,58 @@
+name: Clean-browser UX smoke
+on:
+  pull_request:
+    paths:
+      - 'nutripilot-france-hotmart-final-v4/app.js'
+      - 'nutripilot-france-hotmart-final-v4/styles.css'
+      - 'nutripilot-france-hotmart-final-v4/tests/browser-clean.mjs'
+      - '.github/workflows/browser-clean.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: nutripilot-france-hotmart-final-v4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked application dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install temporary browser runner (CI only)
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Start isolated service and check clean sessions
+        env:
+          NODE_ENV: development
+          PORT: '3000'
+          APP_URL: http://127.0.0.1:3000
+          DATA_DIR: ${{ runner.temp }}/nutripilot-isolated-data
+          ACCESS_TOKEN_SECRET: github-test-secret-not-for-production
+          AI_ENABLED: 'false'
+          WEB_CHECKOUT_ENABLED: 'false'
+          SCREENSHOTS_DIR: ${{ runner.temp }}/nutripilot-clean-browser
+        run: |
+          node server.mjs > ${{ runner.temp }}/nutripilot-server.log 2>&1 &
+          for i in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:3000/api/health >/dev/null && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3000/api/health
+          node tests/browser-clean.mjs
+      - name: Save screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: isolated-browser-screens
+          path: ${{ runner.temp }}/nutripilot-clean-browser/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Debug server if the smoke fails
+        if: failure()
+        run: cat ${{ runner.temp }}/nutripilot-server.log
