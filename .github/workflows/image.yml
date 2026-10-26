@@ -45,6 +45,10 @@ jobs:
     name: Clean browser acceptance
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    # Match ops/browser/package-lock.json; browsers and system libraries are preinstalled.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --user 1001 --ipc=host
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,9 +58,6 @@ jobs:
         run: |
           npm ci --ignore-scripts --no-audit --no-fund --prefix nutripilot-france-hotmart-final-v4
           npm ci --ignore-scripts --no-audit --no-fund --prefix ops/browser
-      - name: Install browser engines
-        working-directory: ops/browser
-        run: npx playwright install --with-deps chromium firefox webkit
       - name: Verify fresh desktop and mobile sessions using synthetic data
         working-directory: ops/browser
         run: npm test

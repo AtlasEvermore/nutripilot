@@ -27,3 +27,7 @@ A automação de publicação está pausada; não há publicação automática a
 ## Preparação para múltiplas instâncias na 18.1.0
 
 O backend PostgreSQL é opcional e usa transações, dados por conta, lista de interessados por pessoa, limites compartilhados e consumo único de códigos. O padrão continua em arquivos; nenhuma migração de produção foi executada. Seguir POSTGRES_CUTOVER.md antes de ativar, inclusive backup específico do banco e teste de carga. Não ampliar réplicas no modo de arquivos nem declarar capacidade mundial com base apenas nos testes de integração.
+
+## Atualização de autorização — 26/10/2026
+
+Sem orçamento garantido, preservar consumo pago bloqueado e não tratar a possibilidade de uso ilimitado como teto financeiro aprovado. O endereço previamente fornecido está confirmado e autorizado somente para exigências necessárias; não inserir dados pessoais em GitHub, logs ou evidências públicas. A documentação Apple exige contato público de comerciantes na UE e aceita endereço ou caixa postal comprovada para contas individuais: https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements/ . Não contratar endereço alternativo nem alterar territórios sem decisão do proprietário.
