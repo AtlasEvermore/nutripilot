@@ -44,3 +44,14 @@ test('Hydration entry and store catalog preserve defensive bounds', () => {
   assert.match(plans, /if \(!kit\) return storeLoadingScreen\(\)/);
   assert.match(source, /state\.water\[k\] = clamp\(waterToday\(\) \+ 250, 0, 6000\)/);
 });
+
+test('Module previews link to Plans without showing monthly prices', () => {
+  const preview = slice('function moduleDetailScreen(', 'function ');
+  assert.doesNotMatch(preview, /class="mod-price"/);
+  assert.match(preview, /data-go="plans"/);
+});
+
+test('Purchase initiation is not scattered across module showcases', () => {
+  const occurrences = source.match(/data-module-buy=/g) || [];
+  assert.equal(occurrences.length, 0);
+});
