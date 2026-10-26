@@ -68,10 +68,14 @@
         ]
       },
       "ci_gate_prepared": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-26T12:09:24.942Z",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40320218323: 90 checks passed on b9cba55832e25b785d8527af2b30bf6e25655ebb; PostgreSQL real, native and signing checks passed; container smoke passed",
+          "ghcr.io/atlasevermore/nutripilot@sha256:39176d98079808d9dabdda267f008df2c6c1aa78e11699af2deaab4cb4256b9c: immutable image for b9cba55832e25b785d8527af2b30bf6e25655ebb, application tree 007eb3cff91004d4901a82a369e006494c3d30e7",
+          "private-ops:Railway reread 2026-10-26 confirms patch 9c88b850-a293-41fc-83ec-000d3cd03de9 has 18 STAGED changes including source.checkSuites=true; not applied, autodeploy off"
+        ]
       },
       "expiry_alert": {
         "status": "verified",

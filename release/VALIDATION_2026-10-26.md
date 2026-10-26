@@ -23,3 +23,11 @@
 ## Decisão
 
 Não publicar enquanto `prepare` falhar. Não registrar saldo, orçamento, configuração completa das lojas, entrega na candidata, backup recente ou identidade legal como verificados a partir dessas evidências parciais. O ensaio com uma restauração antiga não renova a idade do snapshot: é necessário novo backup real de até oito horas antes do corte. Não comprar créditos, iniciar builds pagos, trocar DNS/volume ou liberar Android.
+
+## CI e imagem aprovados
+
+- PR de correções: https://github.com/AtlasEvermore/nutripilot/pull/28, integrado como b9cba55832e25b785d8527af2b30bf6e25655ebb.
+- CI https://github.com/AtlasEvermore/nutripilot/actions/runs/40320218323: 69 verificações do aplicativo (PostgreSQL real incluído), oito da trava, três nativas e dez da assinatura: 90 aprovadas, nenhuma omitida ou reprovada. Auditoria de dependências também passou.
+- Imagem imutável `ghcr.io/atlasevermore/nutripilot@sha256:39176d98079808d9dabdda267f008df2c6c1aa78e11699af2deaab4cb4256b9c`, publicada no registro após smoke do container: versão 18.1.0, issues vazio. Isso não é deploy no Railway nem envio à App Store.
+- Leitura direta do domínio em 2026-10-26T12:08:35.730Z confirmou V12.0.0; arquivos de código de barras da candidata ausentes na versão antiga (HTTP 404). Uma requisição do smoke expirou; isso não identifica a causa de uma indisponibilidade geral. A imagem candidata passou nessas rotas em ambiente isolado.
+- O commit que acrescenta esta evidência altera apenas documentação/manifesto. As árvores da aplicação e do shell nativo permanecem as indicadas acima. Backup recente, orçamento, entrega no processo candidato, configuração legal completa e configuração da loja continuam pendentes; nenhuma trava foi dispensada.
