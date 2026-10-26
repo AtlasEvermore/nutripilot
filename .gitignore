@@ -6,3 +6,6 @@ node_modules/
 *.npbak
 *.key
 *.pem
+ops/browser/test-results/
+ops/browser/playwright-report/
+__pycache__/
