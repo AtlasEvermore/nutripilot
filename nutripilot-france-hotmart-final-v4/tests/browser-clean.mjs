@@ -40,6 +40,8 @@ try {
       meals: [], water: {}, waterGoal: 2000,
     })));
     await page.goto(base + '/#modules', { waitUntil: 'domcontentloaded' });
+    // Hash-only navigation retains the in-memory state; reload to read test storage.
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await page.locator('.launcher .app-icon').first().waitFor({ timeout: 15000 });
     assert.ok(await page.locator('.launcher .app-icon').count() >= 8, name + ': app icons');
     assert.equal(await page.locator('.launcher .mod-cards').count(), 0, name + ': sales cards stay out of Apps');
