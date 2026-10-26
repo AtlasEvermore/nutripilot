@@ -30,3 +30,17 @@ test('Water counters reject negative or non-finite saved values', () => {
   assert.match(water, /Number\.isFinite\(value\)/);
   assert.match(water, /Math\.max\(0, value\)/);
 });
+
+test('Imported meal data cannot turn daily totals into NaN or negative calories', () => {
+  const totals = slice('function totals(', 'function waterToday() {');
+  assert.match(totals, /Number\.isFinite\(value\)/);
+  assert.match(totals, /Math\.max\(0, value\)/);
+});
+
+test('Hydration entry and store catalog preserve defensive bounds', () => {
+  const goal = slice('function waterGoal() {', 'function bottleSvg(');
+  const plans = slice('function plansScreen() {', 'function ');
+  assert.match(goal, /clamp\(value, 1000, 5000\)/);
+  assert.match(plans, /if \(!kit\) return storeLoadingScreen\(\)/);
+  assert.match(source, /state\.water\[k\] = clamp\(waterToday\(\) \+ 250, 0, 6000\)/);
+});
