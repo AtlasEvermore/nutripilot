@@ -33,6 +33,23 @@ try {
     const welcome = await page.locator('.hello-cta').innerText();
     assert.doesNotMatch(welcome, /\b0\s+dias?\b/i, 'Never promise a zero-day trial');
     await page.screenshot({ path: join(out, name + '-welcome.png'), fullPage: true });
+    // Synthetic visitor setup in this same disposable context, never a real account.
+    await page.evaluate(() => localStorage.setItem('nutripilot_v7', JSON.stringify({
+      lang: 'pt', basicsDone: true, helloSeen: true,
+      profile: { name: 'Visitante de teste', dailyKcal: 1800, protein: 110, carbs: 210, fat: 55, fiber: 25 },
+      meals: [], water: {}, waterGoal: 2000,
+    })));
+    await page.goto(base + '/#modules', { waitUntil: 'domcontentloaded' });
+    await page.locator('.launcher .app-icon').first().waitFor({ timeout: 15000 });
+    assert.ok(await page.locator('.launcher .app-icon').count() >= 8, name + ': app icons');
+    assert.equal(await page.locator('.launcher .mod-cards').count(), 0, name + ': sales cards stay out of Apps');
+    assert.equal(await page.locator('.launcher [data-go="plans"].plans-link').count(), 1, name + ': one link to Plans');
+    await page.screenshot({ path: join(out, name + '-apps.png'), fullPage: true });
+    await page.goto(base + '/#plans', { waitUntil: 'domcontentloaded' });
+    await page.locator('.plans-page').waitFor({ timeout: 15000 });
+    const prices = await page.locator('.plans-page').innerText();
+    assert.doesNotMatch(prices, /\\b(?:0|3)\\s+dias?\\s+gr[aá]tis\\b/i, name + ': no invented introductory offer');
+    await page.screenshot({ path: join(out, name + '-plans.png'), fullPage: true });
     const layout = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,
       viewport: window.innerWidth,
