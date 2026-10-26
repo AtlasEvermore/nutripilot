@@ -4735,7 +4735,7 @@ function hubScreen() {
         <h1>${L(FOCI[currentFocus()]?.title || 'Nutrition, entraînement et bien-être, dans une seule app.')}</h1>
         <div class="hh-stats"><div><b>${ALL_RECIPES.length}</b><span>${L('recettes')}</span></div><div><b>${Object.keys(EXERCISES).length}</b><span>${L('exercices')}</span></div><div><b>${allPrograms().filter((x) => !x.custom).length}</b><span>${L('programmes')}</span></div><div><b>${LANGS.length}</b><span>${L('langues')}</span></div></div>
         ${!state.premium && freeScansLeft() > 0 ? `<button class="btn btn-glass btn-wide" data-open-add>${icon('scan')} ${L('Analyser mon repas gratuitement')}<em class="fs-count">${L('{n} offertes', { n: freeScansLeft() })}</em></button>` : ''}
-        ${FOCI[currentFocus()] ? `<button class="btn btn-lime btn-wide" data-choose-plan="${FOCI[currentFocus()].tier}">${L('Essayer {n} jours gratuits', { n: Billing.trialDays() })}</button><button class="link-btn hub-all" data-go="plans">${L('Voir les formules')}</button>` : `<button class="btn btn-lime btn-wide" data-go="plans">${L('Voir les formules')}</button>`}
+        ${FOCI[currentFocus()] ? `<button class="btn btn-lime btn-wide" data-go="plans">${L('Essayer {n} jours gratuits', { n: Billing.trialDays() })}</button><button class="link-btn hub-all" data-go="plans">${L('Voir les formules')}</button>` : `<button class="btn btn-lime btn-wide" data-go="plans">${L('Voir les formules')}</button>`}
       </section>
       ${hasPlan ? `<button class="today-card hub-plan" data-go="plan"><small>${esc(t('myProgram'))}</small><b>${fmt(p.dailyKcal)} kcal · ${p.protein} g prot.</b>${proj ? `<span>${kgFmt(p.weight)} → ${kgFmt(p.target)} kg · ${esc(dateFr(proj.end))}</span>` : ''}<em>${esc(t('seePlan'))} →</em></button>` : ''}
 
@@ -4747,7 +4747,7 @@ function hubScreen() {
       <p class="screen-sub guide-sub">${L('Un plan complet et individuel pour votre objectif — pas une simple appli de calories.')}</p>
       <div class="mod-cards">${modsForMe().map((m) => modCard(m, hasModule(m.id))).join('')}</div>
       <div class="section-label"><h3>${L('Nos formules')}</h3><button class="link-btn" data-go="plans">${L('Comparer →')}</button></div>
-      <div class="plan-strip">${plans.filter((x) => x.kind !== 'module').map((x) => `<button class="plan-mini ${x.tone}" data-choose-plan="${esc(x.tier)}"><span class="mod-ico">${icon(x.icon)}</span><b>${esc(L(x.label))}</b><small>${esc(L(x.tagline))}</small>${modChips(x.modules, true)}<em>${L('dès {p} / mois', { p: money(lp(x, 'monthly')) })}</em></button>`).join('')}</div>
+      <div class="plan-strip">${plans.filter((x) => x.kind !== 'module').map((x) => `<button class="plan-mini ${x.tone}" data-go="plans"><span class="mod-ico">${icon(x.icon)}</span><b>${esc(L(x.label))}</b><small>${esc(L(x.tagline))}</small>${modChips(x.modules, true)}<em>${L('dès {p} / mois', { p: money(lp(x, 'monthly')) })}</em></button>`).join('')}</div>
 
       <div class="section-label"><h3>${esc(t('hubQuiz'))}</h3></div>
       <p class="screen-sub guide-sub">${esc(t('hubQuizSub'))}</p>
