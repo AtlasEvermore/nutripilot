@@ -20,9 +20,9 @@ async function freePort() {
   const s = net.createServer(); s.listen(0, '127.0.0.1'); await once(s, 'listening');
   const port = s.address().port; await new Promise(r => s.close(r)); return port;
 }
-async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled = true, store = false, fxDelay = 0, fxFailure = false } = {}) {
+async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled = true, store = false, storeReadKey = '', fxDelay = 0, fxFailure = false } = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'np-regression-'));
-  const requests = []; let mode = 'meal'; let calls = 0; let fxCalls = 0; let subscriber = {subscriptions:{}};
+  const requests = []; const storeRequests = []; let mode = 'meal'; let calls = 0; let fxCalls = 0; let subscriber = {subscriptions:{}};
   const provider = http.createServer(async (req, res) => {
     let raw = ''; for await (const part of req) raw += part;
     if (req.url === '/fx') {
@@ -32,7 +32,11 @@ async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled 
     }
     const body = raw ? JSON.parse(raw) : {}; requests.push(body); calls++;
     res.setHeader('Content-Type', 'application/json');
-    if (req.url.startsWith('/rc/')) return res.end(JSON.stringify({subscriber}));
+    if (req.url.startsWith('/rc/')) {
+      storeRequests.push({url:req.url,authorization:req.headers.authorization});
+      if(mode === 'store-failure') { res.statusCode=503; return res.end('{}'); }
+      return res.end(JSON.stringify({subscriber}));
+    }
     if (mode === 'failure') { res.statusCode = 400; return res.end(JSON.stringify({ error: { message: 'provider-test-secret-must-not-leak' } })); }
     if (mode === 'quota') { res.statusCode = 429; return res.end(JSON.stringify({ error: { code: 'insufficient_quota', message: 'You have no credits remaining.' } })); }
     if (mode === 'retry' && calls === 1) { res.statusCode = 503; return res.end('{}'); }
@@ -48,7 +52,7 @@ async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled 
     ACCESS_TOKEN_SECRET: secret, OPENAI_API_KEY: ai ? 'test-key' : '', OPENAI_MODEL: ai ? 'test-model' : '',
     AI_ENABLED: String(enabled), AI_ALLOW_GUESTS: String(guests), AI_GLOBAL_MONTHLY_LIMIT: '500', AI_USER_DAILY_LIMIT: '10',
     OPENAI_BASE_URL: aiUrl, FX_URL: `${aiUrl}/fx`, FREE_SCANS: '3', AI_GLOBAL_DAILY_LIMIT: String(globalLimit),
-    RESEND_API_KEY: '', REVENUECAT_SECRET_KEY: store ? 'test-store-secret' : '', REVENUECAT_WEBHOOK_AUTH: store ? 'test-hook-secret' : '', REVENUECAT_API_BASE: `${aiUrl}/rc`, ADMIN_KEY: 'isolated-test-admin-key',
+    RESEND_API_KEY: '', REVENUECAT_READ_KEY: storeReadKey, REVENUECAT_SECRET_KEY: store ? 'test-store-secret' : '', REVENUECAT_WEBHOOK_AUTH: store ? 'test-hook-secret' : '', REVENUECAT_API_BASE: `${aiUrl}/rc`, ADMIN_KEY: 'isolated-test-admin-key',
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let logs = ''; child.stdout.on('data', x => { logs += x; }); child.stderr.on('data', x => { logs += x; });
   async function stop() {
@@ -69,7 +73,7 @@ async function fixture(t, { ai = true, globalLimit = 50, guests = true, enabled 
   const payload = Buffer.from(JSON.stringify({ email: 'tester@example.invalid', exp: Math.floor(Date.now()/1000)+3600 })).toString('base64url');
   const token = `${payload}.${crypto.createHmac('sha256', secret).update(payload).digest('base64url')}`;
   return {
-    url, dir, requests, token, stop,
+    url, dir, requests, storeRequests, token, stop,
     fxCalls() { return fxCalls; },
     subscriber(value) { subscriber = value; },
     mode(v) { mode = v; calls = 0; requests.length = 0; },
@@ -516,4 +520,39 @@ test('Sync bounds oversized input and concurrent writes without losing a valid s
   const saved = await (await fetch(f.url + '/api/user/state', {headers:{Authorization:`Bearer ${f.token}`}})).json();
   assert.equal(saved.state.profile.name, state.profile.name);assert.equal(saved.state.notes.length, state.notes.length);
   assert.equal((await f.post('/api/user/state', {state:{profile:{name:'Recovered'}}}, {premium:true})).status,200);
+});
+
+
+test('Subscription status uses an explicit read key, with no administrative credential required',async t=>{
+ const f=await fixture(t,{storeReadKey:'appl_synthetic_read_key'});
+ const email='tester@example.invalid';const id='np-'+crypto.createHash('sha256').update('nutripilot:'+email).digest('hex').slice(0,32);
+ f.subscriber({subscriptions:{np_complete_monthly:{store:'app_store',expires_date:new Date(Date.now()+3600000).toISOString()}}});
+ const result=await f.post('/api/iap/verify',{appUserId:id},{premium:true});
+ assert.equal(result.status,200);assert.equal(result.data.premium,true);
+ assert.deepEqual(f.storeRequests,[{url:'/rc/v1/subscribers/'+id,authorization:'Bearer appl_synthetic_read_key'}]);
+});
+
+test('Webhook authentication and authoritative status resist forged events and preserve data on provider failure',async t=>{
+ const f=await fixture(t,{store:true,storeReadKey:'appl_synthetic_read_key'});
+ const email='tester@example.invalid',id='np-synthetic-hook';const file=path.join(f.dir,'entitlements.json');
+ await fs.writeFile(file,JSON.stringify({[email]:{status:'none',storeAccounts:{[id]:{until:0,plans:[]}}}}));
+ const original=await fs.readFile(file,'utf8');
+ const hook=(auth,event)=>fetch(f.url+'/api/revenuecat/webhook',{method:'POST',headers:{'Content-Type':'application/json',...(auth?{Authorization:auth}:{})},body:JSON.stringify({event})});
+ for(const auth of [null,'Bearer forged-token',f.token]) assert.equal((await hook(auth,{app_user_id:id})).status,401);
+ assert.equal(await fs.readFile(file,'utf8'),original);assert.equal(f.storeRequests.length,0);
+ assert.equal((await hook('Bearer test-hook-secret',{app_user_id:id,aliases:'bad'})).status,400);
+ assert.equal((await hook('Bearer test-hook-secret',{app_user_id:'unlinked-customer',type:'INITIAL_PURCHASE'})).status,200);
+ assert.equal(await fs.readFile(file,'utf8'),original);assert.equal(f.storeRequests.length,0);
+ assert.equal((await hook('Bearer test-hook-secret',{app_user_id:id,type:'INITIAL_PURCHASE',expiration_at_ms:Date.now()+999999999})).status,200);
+ assert.notEqual(JSON.parse(await fs.readFile(file,'utf8'))[email].status,'active');
+ const sub={store:'app_store',expires_date:new Date(Date.now()+3600000).toISOString()};
+ f.subscriber({subscriptions:{np_complete_monthly:sub}});
+ assert.equal((await hook('Bearer test-hook-secret',{app_user_id:id,type:'RENEWAL'})).status,200);
+ let saved=await fs.readFile(file,'utf8');assert.equal(JSON.parse(saved)[email].status,'active');
+ assert.equal(f.storeRequests.at(-1).authorization,'Bearer appl_synthetic_read_key');
+ f.mode('store-failure');assert.equal((await hook('Bearer test-hook-secret',{app_user_id:id,type:'EXPIRATION'})).status,502);
+ assert.equal(await fs.readFile(file,'utf8'),saved);
+ f.mode('meal');f.subscriber({subscriptions:{np_complete_monthly:{...sub,expires_date:new Date(Date.now()-60000).toISOString()}}});
+ assert.equal((await hook('Bearer test-hook-secret',{app_user_id:id,type:'RENEWAL'})).status,200);
+ assert.equal(JSON.parse(await fs.readFile(file,'utf8'))[email].status,'revoked');
 });

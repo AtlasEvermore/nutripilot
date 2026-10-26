@@ -52,7 +52,8 @@ const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@atlasevermore.com';
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || (process.env.NODE_ENV === 'development' ? 'dev-only-change-me' : '');
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const USERS_DIR = path.join(DATA_DIR, 'users');
-const REVENUECAT_SECRET_KEY = process.env.REVENUECAT_SECRET_KEY || '';
+// Subscription-status reads accept a public SDK key; avoid granting administrative API access.
+const REVENUECAT_READ_KEY = process.env.REVENUECAT_READ_KEY || process.env.REVENUECAT_SECRET_KEY || '';
 const REVENUECAT_WEBHOOK_AUTH = process.env.REVENUECAT_WEBHOOK_AUTH || '';
 const ENTITLEMENTS_FILE = path.join(DATA_DIR, 'entitlements.json');
 const AI_ENABLED = process.env.AI_ENABLED === 'true';
@@ -1422,8 +1423,8 @@ function storeTier(productId = '') {
   return /^[a-z0-9_]{2,40}_(monthly|annual)$/.test(id) ? id : '';
 }
 async function revenueCatSubscriber(appUserId) {
-  if (!REVENUECAT_SECRET_KEY) throw publicError('Les achats dans l’application ne sont pas encore configurés.', 503);
-  const { response, data } = await fetchJson(`${process.env.REVENUECAT_API_BASE || 'https://api.revenuecat.com'}/v1/subscribers/${encodeURIComponent(appUserId)}`, { headers: { Authorization: `Bearer ${REVENUECAT_SECRET_KEY}`, Accept: 'application/json' } }, 15_000);
+  if (!REVENUECAT_READ_KEY) throw publicError('Les achats dans l’application ne sont pas encore configurés.', 503);
+  const { response, data } = await fetchJson(`${process.env.REVENUECAT_API_BASE || 'https://api.revenuecat.com'}/v1/subscribers/${encodeURIComponent(appUserId)}`, { headers: { Authorization: `Bearer ${REVENUECAT_READ_KEY}`, Accept: 'application/json' } }, 15_000);
   if (!response.ok) throw publicError('Vérification de l’achat impossible pour le moment. Réessayez.', 502);
   return data?.subscriber || {};
 }
@@ -1599,7 +1600,7 @@ const server = http.createServer(async (req, res) => {
       const accessSecret = Boolean(ACCESS_TOKEN_SECRET && ACCESS_TOKEN_SECRET.length >= 24);
       const ai = Boolean(AI_ENABLED && OPENAI_API_KEY && OPENAI_MODEL);
       const persistentPath = Boolean(storage) || path.resolve(DATA_DIR) === '/data';
-      const storeBilling = { serverKey: Boolean(REVENUECAT_SECRET_KEY), webhook: Boolean(REVENUECAT_WEBHOOK_AUTH), ios: Boolean(process.env.REVENUECAT_IOS_KEY), android: Boolean(process.env.REVENUECAT_ANDROID_KEY) };
+      const storeBilling = { serverKey: Boolean(REVENUECAT_READ_KEY), webhook: Boolean(REVENUECAT_WEBHOOK_AUTH), ios: Boolean(process.env.REVENUECAT_IOS_KEY), android: Boolean(process.env.REVENUECAT_ANDROID_KEY) };
       const legal = Boolean(process.env.LEGAL_COMPANY_NAME && process.env.LEGAL_COMPANY_ADDRESS);
       const stores = { appStoreUrl: Boolean(process.env.APP_STORE_URL), playStoreUrl: Boolean(process.env.PLAY_STORE_URL) };
       return send(res, dataWritable ? 200 : 503, {

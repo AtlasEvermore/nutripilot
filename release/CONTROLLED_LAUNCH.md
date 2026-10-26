@@ -16,13 +16,13 @@ Fotos e mensagens exigem autorização explícita, identificando OpenAI e os dad
 
 Testes automatizados cobrem falhas de foto/chat, isolamento de conta, validade e fonte da assinatura, corrupção e persistência de dados, backup/restore sintético, limites de consumo e bloqueios de publicação. Eles não substituem backup dos dados reais, aparelhos físicos, entrega de e-mail, compra sandbox nem aprovação das lojas.
 
-O doctor nativo falha se faltarem projetos, versão, número de build ou configurações. A geração e configuração dos dois projetos foram verificadas em cópia temporária. Não foram produzidos binários assinados. Codemagic está configurado apenas para gerar artefatos; não inicia ou distribui automaticamente.
+O doctor nativo falha se faltarem projetos, versão, número de build ou configurações. A geração e configuração dos dois projetos foram verificadas em cópia temporária. O IPA iOS 18.1.0 build 202 foi assinado e verificado; ver IOS_ARTIFACT_2026-10-25.json. Não foi enviado à loja. Codemagic está configurado apenas para gerar artefatos; não inicia ou distribui automaticamente.
 
 ## Publicação
 
 Respeitar AGENTS.md, RELEASE_CHECKLIST.md e readiness.json. `prepare` exige evidências atuais e a árvore exata da aplicação e do shell nativo. Builds podem ser preparados antes; deploy/produção e distribuição ficam bloqueados até os requisitos reais passarem. O manifesto registra atestações e referências, não verifica sozinho assinatura ou aprovação nos sistemas externos.
 
-A automação existente pode verificar a liberação e executar o deploy autorizado quando todos os requisitos passarem. Não há envio automático às lojas sem contas, artefatos e validação. Implantar somente a candidata consolidada mais recente; nunca publicar versões intermediárias em sequência.
+A automação de publicação está pausada; não há publicação automática ativa. Só poderá executar o deploy autorizado quando todos os requisitos passarem. Não há envio automático às lojas sem contas, artefatos e validação. Implantar somente a candidata consolidada mais recente; nunca publicar versões intermediárias em sequência.
 
 ## Preparação para múltiplas instâncias na 18.1.0
 
