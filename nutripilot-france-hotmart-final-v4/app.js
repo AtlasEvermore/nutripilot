@@ -2442,7 +2442,7 @@ async function accountSend() {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { modal.msg = L('Saisissez un e-mail valide.'); modal.ok = false; return renderModal(); }
   modal.email = email; modal.msg = L('Envoi…'); renderModal();
   try {
-    const response = await fetch('/api/access/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, purpose: 'signup' }) });
+    const response = await fetch('/api/access/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, purpose: 'signup', lang: lang() }) });
     const data = await response.json();
     if (!response.ok) throw new Error(L(data.error || ''));
     modal.step = 'code'; modal.ok = true;
@@ -8148,7 +8148,7 @@ async function requestCode() {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast('Saisissez un e-mail valide.');
   message.innerHTML = `<div class="fine loading-line">${L('Vérification de votre achat…')}</div>`;
   try {
-    const response = await fetch('/api/access/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+    const response = await fetch('/api/access/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, lang: lang() }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
     state.premiumEmail = email;

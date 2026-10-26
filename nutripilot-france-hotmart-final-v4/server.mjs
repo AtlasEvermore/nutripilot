@@ -5,6 +5,7 @@ import { supportFaq } from './ops/support-faq.mjs';
 import { createRateLimiter, singleFlight } from './ops/runtime-guards.mjs';
 import { createPostgresStore } from './ops/postgres-store.mjs';
 import { createSharedBudget } from './ops/shared-budget.mjs';
+import { accessEmailContent } from './ops/access-email.mjs';
 import { AsyncLocalStorage } from 'node:async_hooks';
 const requestLang = new AsyncLocalStorage();
 import fs from 'node:fs/promises';
@@ -1335,7 +1336,7 @@ async function deleteAccountData(email) {
   });
 }
 
-async function sendAccessEmail(email, code) {
+async function sendAccessEmail(email, code, language) {
   if (!RESEND_API_KEY || !RESEND_FROM) return false;
   const { response } = await fetchJson('https://api.resend.com/emails', {
     method: 'POST',
@@ -1343,14 +1344,13 @@ async function sendAccessEmail(email, code) {
     body: JSON.stringify({
       from: RESEND_FROM,
       to: [email],
-      subject: `Votre code d’accès ${BRAND_NAME}`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto"><h2>${BRAND_NAME}</h2><p>Votre code d’accès est :</p><p style="font-size:30px;font-weight:800;letter-spacing:5px">${code}</p><p>Ce code expire dans 15 minutes.</p><p style="color:#6b756e">Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail.</p></div>`,
+      ...accessEmailContent(code, language, BRAND_NAME),
     }),
   }, 15_000);
   return response.ok;
 }
 
-async function requestAccessCode(email, purpose = 'login') {
+async function requestAccessCode(email, purpose = 'login', language = 'fr') {
   if (REVIEW_EMAIL && email === REVIEW_EMAIL && /^\d{6}$/.test(REVIEW_CODE)) return { ok: true, mailed: true };
   const result = await mutateEntitlements(email, async (entitlements) => {
     let entry = entitlements[email];
@@ -1365,7 +1365,7 @@ async function requestAccessCode(email, purpose = 'login') {
     return { ok: true, code };
   });
   if (!result?.ok) return { ok: false };
-  const mailed = await sendAccessEmail(email, result.code);
+  const mailed = await sendAccessEmail(email, result.code, language);
   if (!mailed && process.env.NODE_ENV !== 'development') {
     return { ok: true, mailed: false, emailUnavailable: true };
   }
@@ -1646,7 +1646,7 @@ const server = http.createServer(async (req, res) => {
       const email = safeEmail(body.email);
       if (!email) return send(res, 400, { error: 'Email invalide' });
       if (!(await rateLimit(`code:${clientIp(req)}:${email}`, 5, 15 * 60 * 1000))) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
-      const result = await requestAccessCode(email, body.purpose === 'signup' ? 'signup' : 'login');
+      const result = await requestAccessCode(email, body.purpose === 'signup' ? 'signup' : 'login', body.lang);
       if (!result.ok) return send(res, 404, { error: 'Aucun achat actif trouvé pour cet e-mail.' });
       if (result.emailUnavailable) return send(res, 503, { error: `L’envoi d’e-mail n’est pas encore configuré. Contactez ${SUPPORT_EMAIL}.` });
       return send(res, 200, { ok: true, mailed: result.mailed, devCode: result.devCode });

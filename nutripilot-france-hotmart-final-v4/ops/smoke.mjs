@@ -17,7 +17,11 @@ export async function checkApplication(base, { expectedVersion, operational = fa
       if (health.aiProvider?.status === 'unavailable') issues.push('AI provider reported a failure; inspect billing and credentials');
       const b = health.backups;
       if (!b?.enabled || !b.offsiteConfigured || !b.lastOffsiteAt) issues.push('Independent backup is not verified');
-      else if (Date.now() - Date.parse(b.lastOffsiteAt) > 8 * 3600000 || b.lastErrorAt) issues.push('Independent backup is stale or failing');
+      else {
+        const uploadedAt = typeof b.lastOffsiteAt === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(b.lastOffsiteAt) ? Date.parse(b.lastOffsiteAt) : NaN;
+        const now = Date.now();
+        if (!Number.isFinite(uploadedAt) || uploadedAt > now + 300000 || now - uploadedAt > 8 * 3600000 || b.lastErrorAt) issues.push('Independent backup is stale or failing');
+      }
       if (health.persistence?.configured !== true) issues.push('Persistent data location is not configured');
     }
   } catch (e) { issues.push(e.message); }

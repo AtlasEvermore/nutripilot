@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "6f5d75bb5f4f0a02d5e08707f06ae27fe3ca0959",
+  "applicationTree": "007eb3cff91004d4901a82a369e006494c3d30e7",
   "channels": [
     "ios"
   ],
@@ -26,10 +26,10 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-26T02:41:01.357734+00:00",
+        "verifiedAt": "2026-10-26T12:00:33.596Z",
         "verifiedBy": "deployment-agent",
         "evidence": [
-          "release/RECOVERY_EVIDENCE_2026-10-25.md: latest candidate booted fresh isolated real-data restore; health OK version 18.1.0, six routes HTTP 200, all five restored files byte-identical after shutdown"
+          "release/VALIDATION_2026-10-26.md: revised candidate restored five actual snapshot files in isolation; public route smoke passed; original files byte-identical after shutdown; snapshot age not renewed"
         ]
       },
       "new_credentials_stored": {
@@ -68,13 +68,10 @@
         ]
       },
       "ci_gate_prepared": {
-        "status": "verified",
-        "verifiedAt": "2026-10-26T02:41:01.357734+00:00",
-        "verifiedBy": "deployment-agent",
-        "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40256436471: 85 checks passed on daddab15c145eb4a37144b033bb1cf607091e0eb, immutable image built and smoke tested; application/native trees unchanged by this evidence update",
-          "private-ops:Railway patch 9c88b850-a293-41fc-83ec-000d3cd03de9 reread: 18 nondestructive changes, source.checkSuites=true remains STAGED and autodeploy is off"
-        ]
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
       },
       "expiry_alert": {
         "status": "verified",
