@@ -2654,7 +2654,7 @@ function freeScanBanner() {
   if (state.premium && config.ai !== false) return '';
   if (!freeScanLimit()) return `<div class="free-scan access-note"><span>${icon('lock')}</span><p><b>${L(state.premium ? 'Analyses momentanément en pause' : 'Analyses réservées aux abonnés')}</b><small>${L('Code-barres et saisie manuelle toujours disponibles.')}</small></p></div>`;
   const left = freeScansLeft();
-  return `<div class="free-scan ${left ? '' : 'out'}"><span>${icon(left ? 'scan' : 'lock')}</span><p><b>${left ? L('{n} analyses gratuites restantes', { n: left }) : L('Analyses gratuites utilisées')}</b><small>${left ? L('Photographiez votre assiette : calories et macros en quelques secondes. Le code-barres est gratuit et illimité.') : L('Les analyses de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</small></p>${left ? '' : `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>`}</div>`;
+  return `<div class="free-scan ${left ? '' : 'out'}"><span>${icon(left ? 'scan' : 'lock')}</span><p><b>${left ? L('{n} analyses gratuites restantes', { n: left }) : L('Analyses gratuites utilisées')}</b><small>${left ? L('Photographiez votre assiette : calories et macros en quelques secondes. Le code-barres est gratuit et illimité.') : L('Les analyses de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</small></p>${left ? '' : `<button class="btn btn-lime" data-go="plans">${L('Voir les formules')}</button>`}</div>`;
 }
 function freeScansOut() {
   track('FreeScansOut');
@@ -2752,7 +2752,7 @@ function trialPitch(kind = 'card', tier = '') {
   return `<div class="trial-box ${kind}"><span class="trial-ico">${icon('star')}</span>
     <h3>${L('Cette partie est réservée aux abonnés')}</h3>
     <p>${L('Consultez les prix et les offres disponibles dans votre boutique avant de choisir votre formule.')}</p>
-    <button class="btn btn-lime btn-wide" data-module-buy="${esc(tier || recommendedTier())}">${L('Voir les formules')}</button></div>`;
+    <button class="btn btn-lime btn-wide" data-go="plans">${L('Voir les formules')}</button></div>`;
 }
 function trialSheet() {
   return `<div class="sheet-head"><div><span class="tag">${L('Formules')}</span><h2>${L('Cette partie est réservée aux abonnés')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
@@ -2788,7 +2788,7 @@ function moduleBar(id) {
   const m = moduleById(id);
   if (!m) return '';
   const owned = hasModule(id);
-  return `<div class="mod-bar ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><span class="mod-name"><b>${modTitle(m)}</b><small>${owned ? L('Module activé') : L('Aperçu du module')}</small></span>${owned ? `<button class="mod-all" data-go="modules">${L('Apps')}</button>` : m.free ? `<button class="mod-cta" data-go="plans">${L('Offert avec toute formule')}</button>` : `<button class="mod-cta" data-module-buy="${m.id}">${Billing.trialDays() ? L('Essai gratuit') : L('Débloquer')}</button>`}</div>`;
+  return `<div class="mod-bar ${m.tone}"><span class="mod-ico">${icon(m.icon)}</span><span class="mod-name"><b>${modTitle(m)}</b><small>${owned ? L('Module activé') : L('Aperçu du module')}</small></span>${owned ? `<button class="mod-all" data-go="modules">${L('Apps')}</button>` : m.free ? `<button class="mod-cta" data-go="plans">${L('Offert avec toute formule')}</button>` : `<button class="mod-cta" data-go="plans">${Billing.trialDays() ? L('Essai gratuit') : L('Débloquer')}</button>`}</div>`;
 }
 // ---- App complex: each module opens as its own app --------------------------------
 // An owned module gets its own header identity and its own tab bar (3 main sections + "More"),
@@ -2892,7 +2892,7 @@ function revoHero() {
     <h1>${L('Le programme santé complet, dans une seule app.')}</h1>
     <p>${L('Plan alimentaire individuel, recettes du monde, entraînement, ménopause 40+ et sommeil : tout s’adapte à votre objectif — perdre du poids, prendre du muscle ou vivre la ménopause sereinement.')}</p>
     <div class="revo-stats"><div><b>${v.r}</b><span>${L('recettes')}</span></div><div><b>${v.c}</b><span>${L('cuisines du monde')}</span></div><div><b>${v.e}</b><span>${L('exercices')}</span></div><div><b>${v.p}</b><span>${L('programmes')}</span></div></div>
-    ${state.premium ? '' : `<button class="btn btn-lime btn-wide btn-xl" data-module-buy="${esc(recommendedTier())}">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Choisir ma formule')}</button>
+    ${state.premium ? '' : `<button class="btn btn-lime btn-wide btn-xl" data-go="plans">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Choisir ma formule')}</button>
     ${freeScansLeft() > 0 ? `<button class="btn btn-glass btn-wide" data-open-add>${icon('scan')} ${L('Analyser mon repas gratuitement')}</button>` : ''}
     <small class="revo-fine">${trial ? L('Sans engagement · annulable en un geste') : L('Annulable à tout moment')}</small>`}
   </section>`;
@@ -2906,7 +2906,7 @@ function modCard(m, owned) {
       : `<span class="mc-status">${trial ? L('{n} jours gratuits', { n: trial }) : L('Découvrir')}</span>`;
   const cta = open ? `<button class="mc-cta" data-go="${m.route}">${L('Ouvrir')}${icon('chevron')}</button>`
     : m.free ? `<button class="mc-cta" data-go="${m.route}">${L('Découvrir')}${icon('chevron')}</button>`
-      : `<button class="mc-cta" data-module-buy="${m.id}">${trial ? L('Essayer {n} jours gratuits', { n: trial }) : L('Activer ce module')}${icon('chevron')}</button>`;
+      : `<button class="mc-cta" data-go="plans">${trial ? L('Essayer {n} jours gratuits', { n: trial }) : L('Activer ce module')}${icon('chevron')}</button>`;
   return `<article class="mod-card ${m.tone}">
     <button class="mc-top" data-go="${m.route}" aria-label="${esc(modTitle(m))}"><span class="mc-ico">${icon(m.icon)}</span>${status}</button>
     <h3>${modTitle(m)}</h3>
@@ -2954,9 +2954,9 @@ function moduleLockedScreen(id) {
     <div class="screen">
       <section class="mod-hero ${m.tone}"><span class="mod-ico big">${icon(m.icon)}</span><h1>${modTitle(m)}</h1><p>${L(m.sub, MV())}</p>
         <ul>${m.features.map((f) => `<li>${icon('check')}<span>${L(f, MV())}</span></li>`).join('')}</ul>
-        ${plan ? `<div class="mod-price"><b>${money(lp(plan, 'monthly'))}</b><small>${L('/ mois')} · ${L('Annuel')} : ${money(lp(plan, 'annual'))}</small></div>` : ''}
-        <button class="btn btn-lime btn-wide btn-xl" data-module-buy="${m.id}">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Activer ce module')}</button>
-        <button class="link-btn" data-module-buy="complete">${L('Ou tous les modules avec le Kit complet')}</button>
+        <p class="mod-plan-hint">${L('Découvrez les formules disponibles dans la rubrique Plans.')}</p>
+        <button class="btn btn-lime btn-wide btn-xl" data-go="plans">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Activer ce module')}</button>
+        <button class="link-btn" data-go="plans">${L('Ou tous les modules avec le Kit complet')}</button>
       </section>
     </div>
     ${bottom('modules')}
@@ -4163,7 +4163,7 @@ function missionScreen() {
           <div><small>${L('Recettes')}</small><b data-count="${v.r}">${v.r}</b><span>${L('{c} cuisines', { c: v.c })}</span></div>
           <div><small>${L('Exercices')}</small><b data-count="${v.e}">${v.e}</b><span>${L('{p} programmes', { p: v.p })}</span></div>
         </div>
-        <button class="btn btn-lime btn-wide btn-xl mx-cta" data-module-buy="${esc(recommendedTier())}">${trial ? L('Activer mon programme · {n} jours gratuits', { n: trial }) : L('Activer mon programme')}</button>
+        <button class="btn btn-lime btn-wide btn-xl mx-cta" data-go="plans">${trial ? L('Activer mon programme · {n} jours gratuits', { n: trial }) : L('Activer mon programme')}</button>
         ${left > 0 ? `<button class="btn btn-glass btn-wide" data-open-add>${icon('scan')} ${L('Analyser mon repas gratuitement')}<em class="fs-count">${L('{n} offertes', { n: left })}</em></button>` : `<button class="btn btn-glass btn-wide" data-open-add>${icon('scan')} ${L('Scanner un code-barres')}<em class="fs-count">${L('Gratuit')}</em></button>`}
       </section>
 
@@ -4203,7 +4203,7 @@ function missionScreen() {
 
       <section class="mx-final">
         <h2>${L('Tout NutriPilot travaille pour vous dès aujourd’hui.')}</h2>
-        <button class="btn btn-lime btn-wide btn-xl" data-module-buy="${esc(recommendedTier())}">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Choisir ma formule')}</button>
+        <button class="btn btn-lime btn-wide btn-xl" data-go="plans">${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Choisir ma formule')}</button>
         <small>${trial ? L('Sans engagement · annulable en un geste') : L('Annulable à tout moment')}</small>
         <div class="mx-links"><button class="link-btn" data-go="plans">${L('Comparer les formules')}</button>${loginLink(undefined, 'link-btn')}</div>
       </section>
@@ -6950,7 +6950,7 @@ function profileHero() {
     <div class="pf-plan">
       <h2>${L('Votre plan NutriPilot')}</h2>
       <ul>${plan.map(([ico, text, id]) => `<li class="${owned(id) ? 'ok' : ''}"><span class="pp-ico">${icon(ico)}</span><span>${esc(text)}</span>${owned(id) ? icon('check') : icon('lock')}</li>`).join('')}</ul>
-      ${state.premium ? `<button class="btn btn-lime btn-wide" data-go="app">${L('Voir ma journée')}</button>` : `<button class="btn btn-lime btn-wide btn-xl" data-module-buy="${recommendedTier()}">${trial ? L('Débloquer mon plan · {n} jours gratuits', { n: trial }) : L('Débloquer mon plan')}</button><p class="pf-fine">${L('Sans engagement : annulez quand vous voulez.')}</p>`}
+      ${state.premium ? `<button class="btn btn-lime btn-wide" data-go="app">${L('Voir ma journée')}</button>` : `<button class="btn btn-lime btn-wide btn-xl" data-go="plans">${trial ? L('Débloquer mon plan · {n} jours gratuits', { n: trial }) : L('Débloquer mon plan')}</button><p class="pf-fine">${L('Sans engagement : annulez quand vous voulez.')}</p>`}
     </div>
   </section>`;
 }
@@ -7842,9 +7842,9 @@ async function startBarcodeCamera(root) {
 }
 function addTab(tab) {
   if (tab === 'recent') return recentTab();
-  if (['photo','text','label'].includes(tab) && (!canScan() || config.ai === false)) return `<div class="ai-access-card">${icon('lock')}<h3>${L(state.premium ? 'Analyses momentanément en pause' : 'Analyses réservées aux abonnés')}</h3><p>${L('Code-barres et saisie manuelle toujours disponibles.')}</p><div class="access-actions"><button class="btn btn-primary" data-mtab="manual">${L('Manuel')}</button><button class="btn btn-ghost" data-mtab="barcode">${L('Code-barres')}</button>${!state.premium ? `<button class="btn btn-lime" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>` : ''}</div></div>`;
+  if (['photo','text','label'].includes(tab) && (!canScan() || config.ai === false)) return `<div class="ai-access-card">${icon('lock')}<h3>${L(state.premium ? 'Analyses momentanément en pause' : 'Analyses réservées aux abonnés')}</h3><p>${L('Code-barres et saisie manuelle toujours disponibles.')}</p><div class="access-actions"><button class="btn btn-primary" data-mtab="manual">${L('Manuel')}</button><button class="btn btn-ghost" data-mtab="barcode">${L('Code-barres')}</button>${!state.premium ? `<button class="btn btn-lime" data-go="plans">${L('Voir les formules')}</button>` : ''}</div></div>`;
   if (state.premium && !hasModule('scanner') && ['photo', 'label'].includes(tab)) {
-    return `<div class="mod-upsell m-scan">${icon('scan')}<b>${L('Disponible avec le module Scanner')}</b><p>${L('Photo du repas, code-barres, étiquette, allergènes et comparaison de produits.')}</p><button class="btn btn-lime" data-module-buy="scanner">${Billing.trialDays() ? L('Commencer mes {n} jours gratuits', { n: Billing.trialDays() }) : L('Activer ce module')}</button></div>`;
+    return `<div class="mod-upsell m-scan">${icon('scan')}<b>${L('Disponible avec le module Scanner')}</b><p>${L('Photo du repas, code-barres, étiquette, allergènes et comparaison de produits.')}</p><button class="btn btn-lime" data-go="plans">${Billing.trialDays() ? L('Commencer mes {n} jours gratuits', { n: Billing.trialDays() }) : L('Activer ce module')}</button></div>`;
   }
   if (tab === 'photo' || tab === 'label') return `<label class="upload"><input id="meal-image" type="file" accept="image/*" capture="environment"><div class="camera-ico">${tab === 'label' ? '▤' : '📸'}</div><h3>${L(tab === 'label' ? 'Photographier l’étiquette' : 'Photographier mon repas')}</h3><p>${L(tab === 'label' ? 'Cadrez les valeurs nutritionnelles et la portion.' : 'Une photo donne une estimation. Vous pourrez corriger chaque quantité avant de l’enregistrer.')}</p><span class="btn btn-primary">${L('Choisir une photo')}</span></label>`;
   if (tab === 'text') return `<div class="field"><label>${L('Décrivez votre repas')}</label><textarea class="textarea" id="meal-text" placeholder="${L('Ex. 150 g de poulet, 120 g de riz, courgettes et 1 c. à café d’huile d’olive')}"></textarea></div><div class="inline-actions"><button class="voice-btn" data-voice ${window.SpeechRecognition || window.webkitSpeechRecognition ? '' : 'hidden'}>${L('🎙 Dicter')}</button><button class="btn btn-primary" data-analyze-text>${L('Analyser →')}</button></div>`;
