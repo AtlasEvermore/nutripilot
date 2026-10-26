@@ -67,10 +67,13 @@
         ]
       },
       "ci_gate_prepared": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-26T01:53:00.543699+00:00",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40256251187: complete regression including real PostgreSQL passed for d04f6b9c4f099fc931daed9ebdce98fc1a313166; application/native trees unchanged by this evidence update",
+          "private-ops:Railway patch 9c88b850-a293-41fc-83ec-000d3cd03de9 reread; 18 nondestructive changes, source.checkSuites=true still STAGED, no automatic branch or deployment"
+        ]
       },
       "expiry_alert": {
         "status": "verified",
