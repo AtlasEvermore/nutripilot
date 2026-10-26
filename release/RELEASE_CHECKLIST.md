@@ -28,12 +28,14 @@ Prioridade definida pelo proprietário: corrigir e proteger os dados primeiro; a
 
 Todos os itens bloqueiam a publicação até existir evidência válida em `release/readiness.json`.
 
-- [ ] **Acesso e continuidade da hospedagem:** Railway confirma liberação; confirmar duração/plano/saldo do serviço. Não presumir que upgrade resolve o bloqueio. Caso haja migração, servidor e domínio devem estar prontos e sob controle do proprietário.
+- [x] **Acesso e continuidade da hospedagem:** suporte Railway confirmou liberação e painel confirmou Hobby ativo; evidências em RECOVERY_EVIDENCE_2026-10-25.md. Renovar a leitura no prazo do manifesto antes do corte; upgrade não é prova isolada de liberação.
 - [x] **Backup independente dos dados reais:** incluir permissões de compra e estados de usuários; criptografar; armazenar fora do Railway; guardar chave de recuperação em local independente. Uma cópia só no mesmo volume não atende este requisito.
 - [x] **Ensaio de restauração:** baixar o backup e recuperar em destino isolado; conferir contagens, permissões de compra e refeições. Medir tempo de recuperação. Não usar apenas os testes sintéticos como prova.
 - [x] **Novas credenciais guardadas:** OpenAI limitada à Responses API; Resend limitada ao envio pelo domínio verificado. A gravação foi confirmada pelo Railway. Isso não prova a ativação no processo em produção nem conclui a revogação das antigas.
 - [ ] **IA e despesas:** saldo positivo, modelo configurado, limites/alertas revisados e teste autorizado com a credencial nova. Definir orçamento com o proprietário. Não estimar quantidade de análises sem medir consumo real.
 - [ ] **Entrega real de e-mail:** código de acesso chega a uma conta de teste autorizada; confirmar remetente, domínio, prazo e reenvio. Teste de permissão da chave não comprova entrega.
+
+  Entrega de uma mensagem pelo processo antigo V12 foi confirmada em 26/10; a entrega e ativação na candidata continuam pendentes. Ver VALIDATION_2026-10-26.md.
 - [ ] **Dados legais e privacidade:** preencher dados reais da empresa, suporte e políticas; conferir exclusão/retensão de dados e consentimento do coach.
 - [x] **Retorno e compatibilidade:** selecionar revisão saudável, preservar dados, ensaiar leitura de estado anterior na candidata e documentar qualquer transformação. Rollback de imagem não restaura automaticamente dados.
 - [x] **Trava de CI preparada:** patch Wait for CI revisado; testes e construção da imagem são necessários. Confirmar ativação efetiva após a primeira implantação dessa proteção.
