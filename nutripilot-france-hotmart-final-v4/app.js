@@ -1363,6 +1363,7 @@ new MutationObserver(() => {
 window.addEventListener('popstate', () => {
   if (!overlayOpen()) return;
   if (document.querySelector('.drawer-wrap')) closeDrawer();
+  if(modal?.type==='command')return closeCommand();
   if (document.querySelector('.modal-wrap')) { const refresh = modal?.refresh; modal = null; document.querySelector('.modal-wrap')?.remove(); if (refresh) render(); }
 });
 
@@ -1790,7 +1791,7 @@ function helloScreen() {
       <h1>${L(title)}</h1>
       <p>${L(sub)}</p>
     </div>
-    ${showcase(fk)}
+    <div class="welcome-flight">${missionControl()}</div>
     <div class="hello-pick" role="radiogroup" aria-label="${L('Votre objectif')}">${Object.entries(FOCI).map(([id, x]) => `<button class="${x.tone} ${fk === id ? 'on' : ''}" role="radio" aria-checked="${fk === id}" data-focus="${id}"><span class="mod-ico">${icon(x.ico)}</span>${L(x.kicker)}</button>`).join('')}</div>
     ${f ? `<ul class="hello-points">${f.points.map(([ico, a, b]) => `<li><span class="mod-ico">${icon(ico)}</span><span><b>${L(a)}</b><small>${L(b)}</small></span></li>`).join('')}</ul>` : ''}
     <div class="hello-cta">
@@ -2929,6 +2930,99 @@ function memberCard() {
 }
 // Launcher: every module is an app on a home screen. The person's apps first, the others to discover.
 const APP_SHORT = Object.fromEntries(MODULES.map((m) => [m.id, m.short || m.name]));
+let missionFocus = 'nutrition';
+let commandReturnFocus = null;
+let commandInertBefore = false;
+let commandIndex = 0;
+function missionControl() {
+  const catalog = MV();
+  const id = ['nutrition','training','sleep'].includes(missionFocus) ? missionFocus : 'nutrition';
+  const m = moduleById(id);
+  const value = id === 'nutrition' ? catalog.r : id === 'training' ? catalog.e : SLEEP_NIGHTS.length;
+  const unit = id === 'nutrition' ? 'recettes' : id === 'training' ? 'exercices' : 'nuits';
+  return `<section class="mission-control focus-${id}" aria-labelledby="mission-heading">
+    <div class="mission-intro"><span class="orbit-eyebrow"><i></i>NUTRIPILOT / ${L('Aujourd’hui')}</span><h1 id="mission-heading">${L('Votre quotidien, réinventé.')}</h1><p>${L('Un objectif. Des actions connectées.')}</p>
+      <div class="mission-launch"><button class="btn btn-lime" data-go="${m.route}">${L('Découvrir')} ${L(m.name)}${icon('chevron')}</button><button class="mission-command" data-open-command>${icon('grid')}${L('Changer d’espace')}</button></div>
+      <div class="mission-path"><span>01 / ${L('Manger')}</span><span>02 / ${L('Bouger')}</span><span>03 / ${L('Récupérer')}</span></div>
+    </div>
+    <div class="mission-console"><div class="console-caption"><span>NP / ${String(MODULES.indexOf(m)+1).padStart(2,'0')}</span><span>${L('Bibliothèque disponible')}</span></div>
+      <div class="mission-stage"><div class="mission-halo" aria-hidden="true"></div><svg class="mission-sphere" viewBox="0 0 400 340" aria-hidden="true"><defs><linearGradient id="mission-light"><stop stop-color="#baff8b"/><stop offset=".5" stop-color="#79dcff"/><stop offset="1" stop-color="#9f94ff"/></linearGradient></defs><g fill="none" stroke="url(#mission-light)"><ellipse cx="200" cy="170" rx="143" ry="134"/><ellipse cx="200" cy="170" rx="143" ry="44"/><ellipse cx="200" cy="170" rx="143" ry="89"/><ellipse cx="200" cy="170" rx="49" ry="134"/><ellipse cx="200" cy="170" rx="98" ry="134"/><path d="M57 170h286M200 36v268"/><ellipse class="mission-orbit" cx="200" cy="170" rx="187" ry="75" transform="rotate(-24 200 170)"/></g><g class="mission-nodes" fill="#baff8b"><circle cx="65" cy="102" r="4"/><circle cx="335" cy="237" r="4"/><circle cx="200" cy="36" r="3"/></g></svg>
+        <div class="mission-reading" role="status" aria-live="polite"><span class="mission-symbol ${m.tone}">${icon(m.icon)}</span><strong>${fmt(value)}</strong><span>${L(unit)}</span></div>
+        <span class="console-coordinate cc-left" aria-hidden="true">N / P</span><span class="console-coordinate cc-right" aria-hidden="true">+ 01</span>
+      </div>
+      <div class="mission-selector" role="group" aria-label="${L('Votre parcours')}">${[['nutrition','Nutrition','fork'],['training','Entraînement','dumbbell'],['sleep','Sommeil','moon']].map(([key,label,ico]) => `<button data-mission-focus="${key}" aria-pressed="${id===key}">${icon(ico)}<span>${L(label)}</span></button>`).join('')}</div>
+      <div class="console-detail"><span>${L(m.sub,catalog)}</span><button data-go="${m.route}" aria-label="${esc(L(m.name))}">${icon('chevron')}</button></div>
+    </div>
+  </section>`;
+}
+function workspaceBanner(m) {
+  return `<section class="workspace-banner ${m.tone}"><div><span class="orbit-eyebrow">NUTRIPILOT / ${L(m.name)}</span><h1>${modTitle(m)}</h1><p>${L(m.sub,MV())}</p></div><span class="workspace-emblem" aria-hidden="true">${icon(m.icon)}<i></i><i></i></span></section>`;
+}
+function commandEntries(query = '') {
+  const fold = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase();
+  const q = fold(query.trim()).slice(0,80);
+  const entries = [
+    { route:'app',label:'Aujourd’hui',sub:'Mon jour maintenant',icon:'home',tone:'m-nut' },
+    { route:'modules',label:'Mes apps',sub:'Tous vos espaces',icon:'grid',tone:'m-scan' },
+    ...MODULES.map(m => ({route:m.route,label:m.name,sub:m.sub,icon:m.icon,tone:m.tone})),
+    { route:'progress',label:'Progrès',sub:'Courbe de poids',icon:'progress',tone:'m-vit' },
+    { route:'goal',label:'Mon objectif',sub:'Objectif de poids',icon:'scale',tone:'m-nut' },
+    { route:'profile',label:'Mon profil',sub:'Mes réponses',icon:'user',tone:'m-coach' },
+    { route:'settings',label:'Réglages',sub:'Données & appareil',icon:'settings',tone:'m-scan' },
+    { route:'support',label:'Aide & support',sub:'Questions fréquentes',icon:'help',tone:'m-coach' },
+    { route:'plans',label:'Nos formules',sub:'Formules',icon:'star',tone:'m-nut' },
+  ];
+  return entries.filter(e => !q || fold(`${L(e.label)} ${L(e.sub,MV())}`).includes(q));
+}
+function commandResults(query = '') {
+  const entries = commandEntries(query);
+  return entries.length ? entries.map((e,i) => `<button id="command-option-${i}" class="command-result ${e.tone}" role="option" aria-selected="${i===0}" data-command-go="${e.route}"><span class="command-result-icon">${icon(e.icon)}</span><span><b>${esc(L(e.label))}</b><small>${esc(L(e.sub,MV()))}</small></span>${icon('chevron')}</button>`).join('') : `<p class="command-empty">${L('Aucun résultat pour « {q} ».',{q:esc(query)})}</p>`;
+}
+function commandSheet() {
+  return `<section class="command-sheet"><div class="sheet-head"><div><span class="orbit-eyebrow">NUTRIPILOT / ${L('Mes apps')}</span><h2 id="command-title">${L('Centre de navigation')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div><p>${L('Accédez à vos espaces sans perdre le fil.')}</p><label class="command-search">${icon('search')}<input id="command-search" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="command-results" aria-activedescendant="command-option-0" aria-label="${L('Trouvez un espace ou une action.')}" placeholder="${L('Trouvez un espace ou une action.')}" maxlength="80" autocomplete="off" autocapitalize="off"></label><div id="command-results" role="listbox" aria-label="${L('Mes apps')}">${commandResults()}</div><div class="command-footer"><span id="command-count" role="status">${L('{n} résultats',{n:commandEntries().length})}</span><span>↑ ↓ · Enter · Esc</span></div></section>`;
+}
+function openCommand() {
+  if (modal?.type==='command') return closeCommand();
+  if (overlayOpen() || document.querySelector('.consent-wrap') || ['lang','hello','basics','saving','onboarding','analyzing','paywall','upgrade','access'].includes(route)) return;
+  commandReturnFocus = document.activeElement;
+  commandInertBefore = app.inert;
+  modal = {type:'command'};renderModal();app.inert=true;
+}
+function closeCommand(restore = true) {
+  if (modal?.type!=='command') return;
+  modal=null;document.querySelector('.modal-wrap')?.remove();app.inert=commandInertBefore;
+  if (restore && commandReturnFocus?.isConnected) commandReturnFocus.focus({preventScroll:true});
+  commandReturnFocus=null;
+}
+function bindCommand(wrap) {
+  wrap.setAttribute('aria-labelledby','command-title');
+  const input=wrap.querySelector('#command-search');const list=wrap.querySelector('#command-results');
+  commandIndex=0;
+  const select = index => {
+    const options=[...list.querySelectorAll('[data-command-go]')];
+    if(!options.length){input.removeAttribute('aria-activedescendant');return;}
+    commandIndex=(index+options.length)%options.length;
+    options.forEach((el,i)=>el.setAttribute('aria-selected',String(i===commandIndex)));
+    input.setAttribute('aria-activedescendant',options[commandIndex].id);
+    options[commandIndex].scrollIntoView({block:'nearest',behavior:'instant'});
+  };
+  input.addEventListener('input',()=>{list.innerHTML=commandResults(input.value);commandIndex=0;select(0);wrap.querySelector('#command-count').textContent=L('{n} résultats',{n:commandEntries(input.value).length});});
+  wrap.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){event.preventDefault();return closeCommand();}
+    if(event.target===input && ['ArrowDown','ArrowUp','Enter'].includes(event.key)){
+      event.preventDefault();if(event.key==='Enter')return list.querySelectorAll('[data-command-go]')[commandIndex]?.click();
+      select(commandIndex+(event.key==='ArrowDown'?1:-1));return;
+    }
+    if(event.key==='Tab'){
+      const focus=[...wrap.querySelectorAll('button,input')].filter(el=>!el.disabled && el.getClientRects().length);
+      if(event.shiftKey && document.activeElement===focus[0]){event.preventDefault();focus.at(-1)?.focus();}
+      else if(!event.shiftKey && document.activeElement===focus.at(-1)){event.preventDefault();focus[0]?.focus();}
+    }
+  });
+  wrap.addEventListener('click',event=>{if(event.target===wrap)closeCommand();});
+  input.focus({preventScroll:true});
+}
+
 let discoveryFilter = 'all';
 function discoveryCategory(id) {
   return ['training', 'menopause'].includes(id) ? 'move' : ['sleep', 'coach'].includes(id) ? 'restore' : 'nourish';
@@ -3683,9 +3777,9 @@ function dashboard() {
       ${weekDots()}
       ${todayTabsHtml()}
       ${todayTab === 'summary' ? `
-      ${myDayCard()}
       ${welcomeBackCard()}
-      <section class="hero-ring-card">
+      <section class="hero-ring-card daily-flight">
+        <div class="daily-flight-head"><span class="orbit-eyebrow">NUTRIPILOT / ${L('Mon jour maintenant')}</span><span>${L('Aujourd’hui')}</span></div>
         <div class="ring-wrap">
           <svg class="day-ring" viewBox="0 0 220 220" role="img" aria-label="${L('{n} kcal restantes', { n: fmt(left) })}">
             ${ringArc(98, t.kcal, p.dailyKcal, 'kcal', 14)}
@@ -3701,9 +3795,10 @@ function dashboard() {
           ${macroMeter('Glucides', 'carb', t.carbs, p.carbs)}
           ${macroMeter('Lipides', 'fat', t.fat, p.fat)}
         </div>
-        <button class="btn btn-lime btn-wide scan-main" data-add-tab="photo">${icon('scan')}<span>${L('Scanner mon repas')}</span></button>
+        <button class="btn btn-lime btn-wide scan-main" data-add-tab="${config.ai ? 'photo' : 'manual'}">${icon(config.ai ? 'scan' : 'plus')}<span>${L(config.ai ? 'Scanner mon repas' : 'Ajouter un repas')}</span></button>
       </section>
 
+      ${myDayCard()}
       <div class="duo">
         <section class="water-tile">
           ${bottleSvg(water / wGoal * 100)}
@@ -4224,7 +4319,7 @@ function missionScreen() {
     <div class="space-bg" aria-hidden="true"><i class="st s1"></i><i class="st s2"></i><i class="st s3"></i><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
     <header class="app-head mx-head"><div class="app-head-row"><button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${(LANGS.find((x) => x[0] === lang()) || [])[2] || '🌐'}</button></div></div></header>
     <div class="screen mx">
-      ${discoveryHero('home')}
+      ${missionControl()}
 
       <section class="mx-card mx-menu">
         <div class="mx-title"><span class="mx-ico m-nut">${icon('fork')}</span><div><small>${L('Plan alimentaire sur mesure')}</small><h2>${L('Aperçu')} · ${L('Votre menu d’aujourd’hui')}</h2></div><em>${L('Selon votre profil')}</em></div>
@@ -7829,12 +7924,13 @@ function renderModal() {
   if (trialActive()) { if (modal.type === 'recipe') trialFound('recipe'); if (['session', 'exercise'].includes(modal.type)) trialFound('workout'); }
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'signin' ? signInSheet() : ['trial', 'trial-started', 'trial-ended', 'trial-guide', 'trial-5min'].includes(modal.type) ? trialSheet(modal.type) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : modal.type === 'copilot' ? copilotSheet() : modal.type === 'cp-history' ? cpHistorySheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'command' ? commandSheet() : modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'signin' ? signInSheet() : ['trial', 'trial-started', 'trial-ended', 'trial-guide', 'trial-5min'].includes(modal.type) ? trialSheet(modal.type) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : modal.type === 'copilot' ? copilotSheet() : modal.type === 'cp-history' ? cpHistorySheet() : addSheet()}</div>`;
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
   a11yPass(wrap);
   bindModal(wrap);
+  if(modal.type==='command') bindCommand(wrap);
   if (modal.type === 'ex-picker') {
     $('#picker-search', wrap)?.addEventListener('input', (event) => {
       pickerState.query = event.target.value;
@@ -8285,6 +8381,7 @@ function ensureProfileDefaults() {
 }
 
 function render() {
+  if(modal?.type==='command') closeCommand(false);
   document.querySelector('.modal-wrap')?.remove();
   if (route !== 'sleep' && relaxRun) stopRelax();
   stopBarcodeCamera();
@@ -8348,6 +8445,17 @@ function render() {
   if (locked) html = html.replace('<div class="screen', '<div inert aria-hidden="true" class="locked-blur screen').replace('<div class="in-app mobile-app', '<div class="in-app locked-app mobile-app') + lockOverlay(modHere);
   const noFab = state.premium || locked || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
+  const workspace=app.querySelector('.mobile-app');
+  if(workspace){
+    workspace.classList.add('quantum-workspace');workspace.dataset.workspace=modHere?.id || route;
+    const introduction=app.querySelector('.story-overlay');if(introduction){introduction.classList.add('quantum-workspace');introduction.dataset.workspace=modHere?.id || route;}
+    const row=workspace.querySelector('.app-head-row');
+    if(row && !['paywall','upgrade','access','basics','onboarding','analyzing'].includes(route)) row.insertAdjacentHTML('beforeend',`<button class="icon-btn workspace-command" data-open-command aria-label="${L('Centre de navigation')}" title="${L('Centre de navigation')}">${icon('grid')}</button>`);
+    const landing=APP_SHELL[modHere?.id]?.route || modHere?.route;
+    if(modHere && !locked && hasModule(modHere.id) && route===landing){
+      const screen=workspace.querySelector(':scope > .screen');screen?.insertAdjacentHTML('afterbegin',workspaceBanner(modHere));
+    }
+  }
   // Paywall: the floating "Start" bar appears only once the main button has scrolled out of view.
   const pwTop = $('.pw-cta-top'); const pwBar = $('.pw-bar');
   if (pwTop && pwBar && 'IntersectionObserver' in window) new IntersectionObserver(([e]) => pwBar.classList.toggle('show', !e.isIntersecting && e.boundingClientRect.top < 0)).observe(pwTop);
@@ -8439,6 +8547,8 @@ function bind() {
       app.querySelector(`[data-discovery-filter="${value}"]`)?.focus({preventScroll:true});
       return;
     }
+    if(button.dataset.openCommand!==undefined)return openCommand();
+    if(button.dataset.missionFocus!==undefined){const value=button.dataset.missionFocus;if(!['nutrition','training','sleep'].includes(value))return;missionFocus=value;const y=scrollY;render();scrollTo({top:y,behavior:'instant'});app.querySelector(`[data-mission-focus="${value}"]`)?.focus({preventScroll:true});return;}
     const freeScanTap = button.dataset.openAdd !== undefined || ['photo', 'text', 'label', 'recent', 'barcode'].includes(button.dataset.addTab);
     if (!fullAccess() && !freeScanTap && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
       track('PaywallFromFeature', { feature: PREMIUM_ACTIONS.find((key) => button.dataset[key] !== undefined) });
@@ -9208,6 +9318,10 @@ function bindModal(root) {
   root.onclick = async (event) => {
     const button = event.target.closest('button');
     if (!button) return;
+    if(modal?.type==='command'){
+      if(button.dataset.close!==undefined)return closeCommand();
+      if(button.dataset.commandGo){const destination=button.dataset.commandGo;if(commandEntries().some(e=>e.route===destination)){closeCommand(false);nav(destination);}return;}
+    }
     if (modal?.type === 'copilot' && copilotClick(button, root)) return;
     if (button.dataset.cpUndo) { modal = null; root.remove(); return cpUndo(button.dataset.cpUndo); }
 
@@ -9466,3 +9580,7 @@ window.addEventListener('error', (e) => { if (e.error) softFail(e.error); });
 window.addEventListener('unhandledrejection', (e) => softFail(e.reason));
 
 init();
+
+// Local command palette; no provider request or account-state mutation.
+document.addEventListener('keydown',event=>{if((event.metaKey||event.ctrlKey) && event.key.toLowerCase()==='k' && !event.isComposing){event.preventDefault();openCommand();}});
+document.addEventListener('visibilitychange',()=>document.documentElement.classList.toggle('workspace-suspended',document.hidden));

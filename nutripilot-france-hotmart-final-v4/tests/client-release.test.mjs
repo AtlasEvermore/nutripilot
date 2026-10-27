@@ -243,3 +243,24 @@ test('An incomplete store catalog shows recovery instead of a broken price compa
   });
   load(ctx, 'plansScreen'); assert.equal(ctx.plansScreen(), 'retry-the-store');
 });
+
+test('Local navigation searches translated accents, escapes unknown text and never writes account data',()=>{
+ const ctx=discoveryContext();load(ctx,'esc');load(ctx,'commandEntries');load(ctx,'commandResults');
+ const original=ctx.L;ctx.L=(s,v)=>original(s==='Nutrition'?'Nutrição':s,v);
+ const before=JSON.stringify(ctx.state);
+ assert.ok(ctx.commandEntries('NUTRICAO').some(e=>e.route==='program'));
+ assert.equal(ctx.commandEntries('https://untrusted.invalid').length,0);
+ const html=ctx.commandResults('<img src=x onerror=alert(1)>');
+ assert.doesNotMatch(html,/<img|data-command-go=/);assert.match(html,/&lt;img/);
+ assert.equal(JSON.stringify(ctx.state),before);
+});
+
+test('The mission interface reflects real catalog counts when its local focus changes',()=>{
+ const ctx=discoveryContext();ctx.missionFocus='nutrition';ctx.SLEEP_NIGHTS=Array(7);ctx.fmt=String;load(ctx,'missionControl');
+ for(const [focus,count] of [['nutrition',300],['training',100],['sleep',7]]){
+  ctx.missionFocus=focus;const html=ctx.missionControl();
+  assert.ok(html.includes(`<strong>${count}</strong>`));
+  assert.ok(html.includes(`data-mission-focus="${focus}" aria-pressed="true"`));
+  assert.doesNotMatch(html,/data-buy|data-choose-plan|data-module-buy|%/);
+ }
+});

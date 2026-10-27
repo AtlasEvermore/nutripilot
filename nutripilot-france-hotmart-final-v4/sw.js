@@ -1,4 +1,4 @@
-const CACHE = 'nutripilot-v47-20261026-orbital-experience';
+const CACHE = 'nutripilot-v48-20261026-mission-workspaces';
 const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n-launch.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {
