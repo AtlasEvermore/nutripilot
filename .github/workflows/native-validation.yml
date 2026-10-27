@@ -87,3 +87,28 @@ jobs:
           retention-days: 1
           if-no-files-found: error
           path: native/ios-simulator.zip
+      - name: Prepare an offline candidate fixture for Duo visual review
+        run: |
+          node ../ops/prepare-duo-fixture.mjs
+          npx cap sync ios
+          /usr/libexec/PlistBuddy -c 'Add :WKAppBoundDomains:0 string localhost' ios/App/App/Info.plist
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/duo-fixture CODE_SIGNING_ALLOWED=NO build
+      - name: Boot the actual Duo simulator and capture the bundled candidate
+        run: |
+          set -euo pipefail
+          DUO_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(x["udid"] for xs in d["devices"].values() for x in xs if x["name"] == "iPhone Duo"))')
+          xcrun simctl boot "$DUO_ID"
+          xcrun simctl bootstatus "$DUO_ID" -b
+          xcrun simctl install "$DUO_ID" build/duo-fixture/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch "$DUO_ID" com.atlasevermore.nutripilot
+          sleep 8
+          mkdir -p duo-review
+          xcrun simctl io "$DUO_ID" screenshot duo-review/duo-candidate.png
+          printf '%s\n' 'Actual Xcode 27.1 Duo simulator; bundled candidate UI; synthetic guest; no production backend; visual review required; no store submission or full fold/unfold certification.' > duo-review/README.txt
+          shasum -a 256 duo-review/duo-candidate.png > duo-review/SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nutripilot-duo-real-simulator-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: native/duo-review/
