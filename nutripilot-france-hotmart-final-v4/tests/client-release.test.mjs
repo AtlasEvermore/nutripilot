@@ -308,7 +308,7 @@ test('A confirmed water command records once and refuses a switched identity or 
 });
 test('Meal scenarios scale real recipe quantities and macros without altering the recipe or diary',()=>{
  const ctx=vm.createContext({});load(ctx,'mealScenario');const recipe={id:'test',kcal:400,protein:30,carbs:50,fat:9,fiber:6,ingredients:[['Rice',100]]};const original=JSON.stringify(recipe);
- const result=ctx.mealScenario(recipe,1.5,{kcal:200},{kcal:2000});assert.equal(result.recipe.kcal,600);assert.equal(result.recipe.protein,45);assert.equal(result.recipe.ingredients[0][1],150);assert.equal(result.rows[0].after,800);assert.equal(JSON.stringify(recipe),original);
+ const result=ctx.mealScenario(recipe,1.5,{kcal:200},{dailyKcal:2000});assert.equal(result.recipe.kcal,600);assert.equal(result.recipe.protein,45);assert.equal(result.recipe.ingredients[0][1],150);assert.equal(result.rows[0].after,800);assert.equal(result.rows[0].target,2000);assert.equal(JSON.stringify(recipe),original);
  assert.equal(ctx.mealScenario(recipe,Infinity).factor,1);assert.equal(ctx.mealScenario(recipe,20).factor,2);assert.equal(ctx.mealScenario(recipe,-1).factor,.5);
 });
 test('Sleep duration rejects malformed or identical times instead of fabricating a full night',()=>{

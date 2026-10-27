@@ -1075,5 +1075,20 @@ export const LAUNCH_DICT = {
     "zh": "在此设备本地处理",
     "ar": "معالجة محلية على هذا الجهاز",
     "id": "Diproses lokal di perangkat ini"
+},
+  "1 repas enregistré": {
+    "en": "1 meal logged",
+    "es": "1 comida registrada",
+    "pt": "1 refeição registrada",
+    "de": "1 Mahlzeit erfasst",
+    "it": "1 pasto registrato",
+    "nl": "1 maaltijd vastgelegd",
+    "pl": "1 zapisany posiłek",
+    "tr": "1 öğün kaydedildi",
+    "ja": "食事記録 1 件",
+    "ko": "식사 기록 1개",
+    "zh": "已记录 1 餐",
+    "ar": "تم تسجيل وجبة واحدة",
+    "id": "1 makanan tercatat"
 }
 };

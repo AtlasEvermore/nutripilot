@@ -578,13 +578,13 @@ function mealScenario(recipe, factor, current = {}, targets = {}) {
   const scaled={...recipe,ingredients:(recipe.ingredients || []).map(([name,grams])=>[name,Math.round(finite(grams)*scale*10)/10])};
   const rows=['kcal','protein','carbs','fat','fiber'].map(key=>{
     const added=Math.round(finite(recipe[key])*scale*(key==='kcal'?1:10))/(key==='kcal'?1:10);scaled[key]=added;
-    const before=finite(current[key]),target=finite(targets[key]);return {key,before,added,after:Math.round((before+added)*10)/10,target};
+    const before=finite(current[key]),target=finite(targets[key==='kcal'?'dailyKcal':key]);return {key,before,added,after:Math.round((before+added)*10)/10,target};
   });
   return {factor:scale,recipe:scaled,rows};
 }
 function mealScenarioResult(recipe, factor) {
   const scenario=mealScenario(recipe,factor,totals(),state.profile);
-  return `<div class="scenario-caption"><span>${L('Avant')}</span><span>${L('Avec cette portion')}</span></div><div class="scenario-bars">${scenario.rows.slice(0,2).map(row=>`<div class="scenario-row"><div><b>${L(row.key==='kcal'?'Calories':'Protéines')}</b><span>${fmt(row.before)} ${row.key==='kcal'?'kcal':'g'} ${icon('chevron')} <strong>${fmt(row.after)} ${row.key==='kcal'?'kcal':'g'}</strong></span></div><div class="scenario-track" aria-hidden="true"><i style="width:${Math.min(100,row.before/Math.max(1,row.target,row.after)*100)}%"></i><b style="width:${Math.min(100,row.added/Math.max(1,row.target,row.after)*100)}%"></b></div><small>+${fmt(row.added)} ${row.key==='kcal'?'kcal':'g'} · ${L('Objectif')} ${fmt(row.target)}</small></div>`).join('')}</div>`;
+  return `<div class="scenario-caption"><span>${L('Avant')}</span><span>${L('Avec cette portion')}</span></div><div class="scenario-bars">${scenario.rows.slice(0,2).map(row=>`<div class="scenario-row"><div><b>${L(row.key==='kcal'?'Calories':'Protéines')}</b><span>${fmt(row.before)} ${row.key==='kcal'?'kcal':'g'} ${icon('chevron')} <strong>${fmt(row.after)} ${row.key==='kcal'?'kcal':'g'}</strong></span></div><div class="scenario-track" aria-hidden="true"><i style="width:${Math.min(100,row.before/Math.max(1,row.target,row.after)*100)}%"></i><b style="width:${Math.min(100,row.added/Math.max(1,row.target,row.after)*100)}%"></b></div><small>+${fmt(row.added)} ${row.key==='kcal'?'kcal':'g'} · ${L('Objectif')} ${row.target?fmt(row.target):'—'}</small></div>`).join('')}</div>`;
 }
 function mealScenarioPanel(recipe) {
   return `<details class="scenario-panel"><summary>${icon('sparkle')}<span>${L('Simuler avant d’enregistrer')}</span>${icon('chevron')}</summary><p>${L('Explorez une portion et voyez son effet sur vos totaux enregistrés.')}</p><label class="scenario-slider"><span>${L('Portion')} <output id="scenario-portion">${fmt(modal?.impactFactor || 1,2)} ×</output></span><input id="scenario-factor" type="range" min="0.5" max="2" step="0.25" value="${modal?.impactFactor || 1}" aria-label="${L('Portion')}"></label><div id="scenario-result" aria-live="polite">${mealScenarioResult(recipe,modal?.impactFactor || 1)}</div><p class="scenario-note">${L('Simulation locale. Aucun enregistrement automatique.')}</p><button class="btn btn-primary btn-wide" data-scenario-add>${L('Enregistrer cette portion')}</button></details>`;
@@ -3831,7 +3831,7 @@ function routineSignals(input) {
   const meals = Math.floor(safe(input.mealCount,1000));
   const water = safe(input.waterMl,20000), goal = safe(input.waterGoalMl,5000);
   const signals = [
-    {id:'meals',icon:'fork',label:'Nutrition',value:meals ? L('{n} repas enregistrés',{n:meals}) : L('Aucun repas enregistré aujourd’hui.'),reason:'Vos repas enregistrés permettent de suivre votre journée.',action:'Ajouter un repas',priority:meals?30:90},
+    {id:'meals',icon:'fork',label:'Nutrition',value:meals ? (meals===1?L('1 repas enregistré'):L('{n} repas enregistrés',{n:meals})) : L('Aucun repas enregistré aujourd’hui.'),reason:'Vos repas enregistrés permettent de suivre votre journée.',action:'Ajouter un repas',priority:meals?30:90},
     {id:'water',icon:'drop',label:'Hydratation',value:`${fmt(water)}${goal?` / ${fmt(goal)}`:''} ml`,reason:'Ce compteur utilise uniquement l’eau que vous avez enregistrée.',action:'Voir mon suivi',priority:water?20:70},
   ];
   if(input.trainingAvailable) signals.push({id:'training',icon:'dumbbell',label:'Entraînement',value:L(input.trainingDone ? 'Séance enregistrée' : input.trainingPlanned ? 'Séance prévue' : input.trainingConfigured ? 'Repos' : 'Choisir comment m’entraîner'),reason:input.trainingPlanned?'Cette action suit votre programme de la journée.':'Vous choisissez votre programme et votre rythme.',action:'Ouvrir',priority:input.trainingDone?10:input.trainingPlanned?65:35});
@@ -4071,7 +4071,7 @@ function routineHistory() {
   return days;
 }
 function historyDayDetail(day) {
-  return `<div class="history-day-title">${esc(dateFr(new Date(`${day.day}T12:00:00`),true))}</div><div class="history-values">${[['fork','Nutrition',day.meals?L('{n} repas enregistrés',{n:day.meals}):L('Sans enregistrement')],['drop','Hydratation',day.water?`${fmt(day.waterMl)} ml`:L('Sans enregistrement')],['dumbbell','Entraînement',day.training?`${day.training} ${L('Séances')}`:L('Sans enregistrement')],['moon','Sommeil',day.sleep?`${fmt(day.sleep,1)} h`:L('Sans enregistrement')]].map(([ico,label,value])=>`<div>${icon(ico)}<span><b>${L(label)}</b><small>${esc(value)}</small></span></div>`).join('')}</div>`;
+  return `<div class="history-day-title">${esc(dateFr(new Date(`${day.day}T12:00:00`),true))}</div><div class="history-values">${[['fork','Nutrition',day.meals?(day.meals===1?L('1 repas enregistré'):L('{n} repas enregistrés',{n:day.meals})):L('Sans enregistrement')],['drop','Hydratation',day.water?`${fmt(day.waterMl)} ml`:L('Sans enregistrement')],['dumbbell','Entraînement',day.training?(day.training===1?L('Séance enregistrée'):`${day.training} ${L('Séances')}`):L('Sans enregistrement')],['moon','Sommeil',day.sleep?`${fmt(day.sleep,1)} h`:L('Sans enregistrement')]].map(([ico,label,value])=>`<div>${icon(ico)}<span><b>${L(label)}</b><small>${esc(value)}</small></span></div>`).join('')}</div>`;
 }
 function historyPanel() {
   const days=routineHistory(),week=days.slice(-7),selected=week.find(d=>d.day===historyFocus) || week.at(-1),evidence=historyEvidence(days);

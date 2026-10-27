@@ -290,6 +290,8 @@ test('Meal scenario previews preserve records until explicitly saving the simula
  await page.locator('.scenario-panel summary').click();
  await page.locator('#scenario-factor').evaluate(el=>{el.value='1.5';el.dispatchEvent(new Event('input',{bubbles:true}));});
  await expect(page.locator('#scenario-portion')).toContainText('1,50');
+ await expect(page.locator('.scenario-row').first()).not.toContainText('Meta 0');
+ await expect(page.locator('.scenario-row').first()).toContainText(/Meta [1-9]/);
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('nutripilot_v7')).meals)).toHaveLength(0);
  await page.locator('.scenario-panel').scrollIntoViewIfNeeded();const shot=testInfo.outputPath(`${testInfo.project.name}-meal-scenario.png`);await page.screenshot({path:shot,animations:'disabled'});await testInfo.attach('meal-scenario',{path:shot,contentType:'image/png'});
  await page.locator('[data-scenario-add]').click();
@@ -302,7 +304,7 @@ test('PULSE explores real dated records and compares coverage without inventing 
  await page.goto('/#progress');await expect(page.locator('[data-history-day]')).toHaveCount(7);
  await page.locator(`[data-history-day="${today}"]`).click();await expect(page.locator('#history-detail')).toContainText('500 ml');await expect(page.locator('#history-detail')).toContainText('8,0 h');
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('nutripilot_v7')).profile);
- await page.locator(`[data-history-day="${yesterday}"]`).click();await expect(page.locator('#history-detail')).toContainText('1 refeições registradas');await expect(page.locator('#history-detail')).toContainText('Sem registro');
+ await page.locator(`[data-history-day="${yesterday}"]`).click();await expect(page.locator('#history-detail')).toContainText('1 refeição registrada');await expect(page.locator('#history-detail')).toContainText('Sem registro');
  await page.locator('.history-evidence summary').click();await expect(page.locator('.history-comparison strong').first()).toHaveText('1/7');
  await page.locator('.history-panel').scrollIntoViewIfNeeded();const shot=testInfo.outputPath(`${testInfo.project.name}-pulse-history.png`);await page.screenshot({path:shot,animations:'disabled'});await testInfo.attach('pulse-history',{path:shot,contentType:'image/png'});
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('nutripilot_v7')).profile)).toEqual(before);await expect(page).toHaveURL(/#progress$/);
