@@ -2942,7 +2942,7 @@ function missionControl() {
   const unit = id === 'nutrition' ? 'recettes' : id === 'training' ? 'exercices' : 'nuits';
   return `<section class="mission-control focus-${id}" aria-labelledby="mission-heading">
     <div class="mission-intro"><span class="orbit-eyebrow"><i></i>NUTRIPILOT / ${L('Aujourd’hui')}</span><h1 id="mission-heading">${L('Votre quotidien, réinventé.')}</h1><p>${L('Un objectif. Des actions connectées.')}</p>
-      <div class="mission-launch"><button class="btn btn-lime" data-go="${m.route}">${L('Découvrir')} ${L(m.name)}${icon('chevron')}</button><button class="mission-command" data-open-command>${icon('grid')}${L('Changer d’espace')}</button></div>
+      <div class="mission-launch"><button class="btn btn-lime" data-go="${m.route}">${L('Découvrir')} ${L(m.name)}${icon('chevron')}</button><button class="mission-command" data-open-command aria-label="${L('Changer d’espace')}">${icon('grid')}<span>${L('Changer d’espace')}</span></button></div>
       <div class="mission-path"><span>01 / ${L('Manger')}</span><span>02 / ${L('Bouger')}</span><span>03 / ${L('Récupérer')}</span></div>
     </div>
     <div class="mission-console"><div class="console-caption"><span>NP / ${String(MODULES.indexOf(m)+1).padStart(2,'0')}</span><span>${L('Bibliothèque disponible')}</span></div>
@@ -8548,7 +8548,7 @@ function bind() {
       return;
     }
     if(button.dataset.openCommand!==undefined)return openCommand();
-    if(button.dataset.missionFocus!==undefined){const value=button.dataset.missionFocus;if(!['nutrition','training','sleep'].includes(value))return;missionFocus=value;const y=scrollY;render();scrollTo({top:y,behavior:'instant'});app.querySelector(`[data-mission-focus="${value}"]`)?.focus({preventScroll:true});return;}
+    if(button.dataset.missionFocus!==undefined){const value=button.dataset.missionFocus;if(!['nutrition','training','sleep'].includes(value))return;missionFocus=value;const y=scrollY;render();scrollTo({top:y,behavior:'instant'});const choice=app.querySelector(`[data-mission-focus="${value}"]`);choice?.focus({preventScroll:true});if(choice){const bounds=choice.getBoundingClientRect();const dock=app.querySelector('.bottom-nav')?.getBoundingClientRect();const head=app.querySelector('.app-head')?.getBoundingClientRect();if(bounds.bottom>(dock && dock.width>dock.height ? dock.top-16 : innerHeight-20) || bounds.top<(head?.bottom || 0)+12)choice.scrollIntoView({block:'center',behavior:'instant'});}return;}
     const freeScanTap = button.dataset.openAdd !== undefined || ['photo', 'text', 'label', 'recent', 'barcode'].includes(button.dataset.addTab);
     if (!fullAccess() && !freeScanTap && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
       track('PaywallFromFeature', { feature: PREMIUM_ACTIONS.find((key) => button.dataset[key] !== undefined) });
