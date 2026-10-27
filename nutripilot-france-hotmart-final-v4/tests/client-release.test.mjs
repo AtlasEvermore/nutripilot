@@ -318,3 +318,17 @@ test('Sleep duration rejects malformed or identical times instead of fabricating
 test('Historical evidence compares record coverage and distinguishes absent data from a real zero',()=>{
  const ctx=vm.createContext({});load(ctx,'historyEvidence');const days=Array.from({length:14},(_,i)=>({meals:i%2?1:0,water:i===13,training:i===3,sleep:0}));const original=JSON.stringify(days);const evidence=ctx.historyEvidence(days);assert.equal(evidence.find(e=>e.key==='water').current,1);assert.equal(evidence.find(e=>e.key==='water').previous,0);assert.equal(evidence.find(e=>e.key==='training').current,0);assert.equal(evidence.find(e=>e.key==='training').previous,1);assert.equal(JSON.stringify(days),original);
 });
+
+test('Paused provider panels preserve forms as disabled previews and offer working local destinations',()=>{
+ const ctx=vm.createContext({config:{ai:false},L:s=>s,icon:()=>''});load(ctx,'providerAvailability');load(ctx,'providerPanel');
+ const input='<button data-compose>Generate</button>';const paused=ctx.providerPanel(input);assert.match(paused,/<fieldset[^>]*disabled/);assert.ok(paused.includes(input));assert.match(paused,/data-open-command/);assert.match(paused,/data-go="recipes"/);assert.doesNotMatch(paused,/data-buy|data-module-buy|\/ mois/);
+ ctx.config.ai=true;assert.equal(ctx.providerPanel(input),input);ctx.config.ai=undefined;assert.equal(ctx.providerPanel(input),input);
+});
+test('A paused provider never advertises a leftover guest scan allowance',()=>{
+ const ctx=vm.createContext({config:{ai:false},state:{premium:false},L:s=>s,icon:()=>'',freeScanLimit:()=>100,freeScansLeft:()=>100});load(ctx,'freeScanBanner');const html=ctx.freeScanBanner();assert.match(html,/Analyses momentanément en pause/);assert.doesNotMatch(html,/gratuites restantes|100|data-module-buy/);
+});
+
+
+test('Focus descriptors retain link elements rather than confusing their native origin/hash properties with metadata',()=>{
+ const ctx=vm.createContext({CSS:{escape:s=>s},location:{hash:'#settings'}});load(ctx,'overlayFocusDescriptor');const link={id:'privacy-link',origin:'https://example.invalid',hash:'#privacy'};const descriptor=ctx.overlayFocusDescriptor(link);assert.equal(descriptor.origin,link);assert.equal(descriptor.hash,'#settings');assert.equal(descriptor.selector,'#privacy-link');assert.equal(ctx.overlayFocusDescriptor(descriptor),descriptor);
+});

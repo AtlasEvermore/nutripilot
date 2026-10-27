@@ -1090,5 +1090,20 @@ export const LAUNCH_DICT = {
     "zh": "已记录 1 餐",
     "ar": "تم تسجيل وجبة واحدة",
     "id": "1 makanan tercatat"
+},
+  "Vos outils locaux restent disponibles : recettes, journal et navigation.": {
+    "en": "Your local tools remain available: recipes, journal and navigation.",
+    "es": "Tus herramientas locales siguen disponibles: recetas, diario y navegación.",
+    "pt": "Suas ferramentas locais continuam disponíveis: receitas, diário e navegação.",
+    "de": "Deine lokalen Werkzeuge bleiben verfügbar: Rezepte, Tagebuch und Navigation.",
+    "it": "Gli strumenti locali restano disponibili: ricette, diario e navigazione.",
+    "nl": "Je lokale tools blijven beschikbaar: recepten, dagboek en navigatie.",
+    "pl": "Lokalne narzędzia pozostają dostępne: przepisy, dziennik i nawigacja.",
+    "tr": "Yerel araçlarınız kullanılabilir: tarifler, günlük ve gezinme.",
+    "ja": "端末内のレシピ、日誌、ナビゲーションは引き続き利用できます。",
+    "ko": "레시피, 일지, 탐색 등 기기 내 기능은 계속 사용할 수 있습니다.",
+    "zh": "本地功能仍可使用：食谱、日记和导航。",
+    "ar": "تظل أدواتك المحلية متاحة: الوصفات واليوميات والتنقل.",
+    "id": "Alat lokal tetap tersedia: resep, jurnal, dan navigasi."
 }
 };

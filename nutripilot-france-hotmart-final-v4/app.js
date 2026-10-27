@@ -1383,7 +1383,7 @@ window.addEventListener('popstate', () => {
   if (!overlayOpen()) return;
   if (document.querySelector('.drawer-wrap')) closeDrawer();
   if(modal?.type==='command')return closeCommand();
-  if (document.querySelector('.modal-wrap')) { const refresh = modal?.refresh; modal = null; document.querySelector('.modal-wrap')?.remove(); if (refresh) render(); }
+  if (document.querySelector('.modal-wrap')) { const root=document.querySelector('.modal-wrap');const refresh = modal?.refresh; modal = null; root.remove(); if (refresh) render(); restoreOverlayFocus(root); }
 });
 
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -2720,6 +2720,7 @@ const freeScanLimit = () => Math.max(0, Number(config.freeScans ?? 0) || 0);
 function freeScansLeft() { return state.premium ? Infinity : Math.max(0, freeScanLimit() - Number(state.freeScansUsed || 0)); }
 const canScan = () => fullAccess() || freeScansLeft() > 0;
 function freeScanBanner() {
+  if(config.ai===false)return `<div class="free-scan access-note"><span>${icon('help')}</span><p><b>${L('Analyses momentanément en pause')}</b><small>${L('Code-barres et saisie manuelle toujours disponibles.')}</small></p></div>`;
   if (state.premium && config.ai !== false) return '';
   if (!freeScanLimit()) return `<div class="free-scan access-note"><span>${icon('lock')}</span><p><b>${L(state.premium ? 'Analyses momentanément en pause' : 'Analyses réservées aux abonnés')}</b><small>${L('Code-barres et saisie manuelle toujours disponibles.')}</small></p></div>`;
   const left = freeScansLeft();
@@ -2949,6 +2950,56 @@ function memberCard() {
 }
 // Launcher: every module is an app on a home screen. The person's apps first, the others to discover.
 const APP_SHORT = Object.fromEntries(MODULES.map((m) => [m.id, m.short || m.name]));
+const overlayFocusOrigins = new WeakMap();
+let pendingOverlayFocus = null;
+function overlayFocusDescriptor(origin) {
+  // DOM links also expose origin/hash strings; only reuse our explicit descriptor object.
+  if(origin && typeof origin.selector==='string' && typeof origin.hash==='string' && Object.hasOwn(origin,'origin'))return origin;
+  let selector='';
+  if(origin?.id)selector=`#${CSS.escape(origin.id)}`;
+  else if(origin?.hasAttribute?.('data-drawer'))selector='[data-drawer]';
+  else if(origin?.hasAttribute?.('data-recipe-id'))selector=`[data-recipe-id="${CSS.escape(origin.getAttribute('data-recipe-id'))}"]`;
+  return {origin,selector,hash:location.hash};
+}
+function flushOverlayFocus() {
+  const pending=pendingOverlayFocus;if(!pending)return;
+  if(Date.now()>pending.expires || location.hash!==pending.hash){pendingOverlayFocus=null;return;}
+  if(overlayOpen())return;
+  const target=pending.origin?.isConnected?pending.origin:pending.selector?app.querySelector(pending.selector):null;
+  if(!target || target.closest('.modal-wrap,.drawer-wrap'))return;
+  const active=document.activeElement;
+  if(active && active!==document.body && active!==document.documentElement && active!==target && active.isConnected){pendingOverlayFocus=null;return;}
+  target.focus({preventScroll:true});
+}
+function restoreOverlayFocus(root) {
+  const origin=overlayFocusOrigins.get(root);overlayFocusOrigins.delete(root);if(!origin)return;
+  const pending={...origin,expires:Date.now()+1500};pendingOverlayFocus=pending;
+  requestAnimationFrame(flushOverlayFocus);
+  setTimeout(()=>{if(pendingOverlayFocus===pending)pendingOverlayFocus=null;},1500);
+}
+window.addEventListener('popstate',()=>requestAnimationFrame(flushOverlayFocus));
+function bindOverlayFocus(root, origin, preferred = '') {
+  overlayFocusOrigins.set(root,overlayFocusDescriptor(origin));
+  const dialog=root.matches('[role="dialog"]')?root:root.querySelector('[role="dialog"]');
+  dialog?.setAttribute('aria-modal','true');
+  const heading=root.querySelector('.sheet-head h2');
+  if(dialog && heading && !dialog.hasAttribute('aria-label') && !dialog.hasAttribute('aria-labelledby')){heading.id ||= 'np-dialog-title';dialog.setAttribute('aria-labelledby',heading.id);}
+  const focusable=()=>[...root.querySelectorAll('button,a[href],input,select,textarea,[tabindex]')].filter(el=>el.tabIndex>=0 && !el.matches(':disabled') && el.getClientRects().length);
+  root.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){const close=root.querySelector('[data-close],[data-drawer-close]');if(close){event.preventDefault();event.stopPropagation();close.click();}return;}
+    if(event.key!=='Tab')return;
+    const items=focusable();if(!items.length){event.preventDefault();return;}
+    if(event.shiftKey && document.activeElement===items[0]){event.preventDefault();items.at(-1).focus();}
+    else if(!event.shiftKey && document.activeElement===items.at(-1)){event.preventDefault();items[0].focus();}
+  });
+  queueMicrotask(()=>{if(root.isConnected && !root.contains(document.activeElement))((preferred && root.querySelector(preferred)) || root.querySelector('[data-close],[data-drawer-close]') || focusable()[0])?.focus({preventScroll:true});});
+}
+function providerAvailability() {
+  return `<section class="provider-availability" role="status"><span class="provider-ico">${icon('help')}</span><div><span class="orbit-eyebrow">NUTRIPILOT</span><h2>${L('Analyses momentanément en pause')}</h2><p>${L('Vos outils locaux restent disponibles : recettes, journal et navigation.')}</p><div class="provider-actions"><button class="btn btn-primary" data-open-command>${icon('grid')}${L('Centre de navigation')}</button><button class="btn btn-ghost" data-go="recipes">${L('Recettes')}${icon('chevron')}</button></div></div></section>`;
+}
+function providerPanel(content) {
+  return config.ai===false ? `${providerAvailability()}<fieldset class="paused-controls" disabled aria-label="${L('Analyses momentanément en pause')}">${content}</fieldset>` : content;
+}
 let missionFocus = 'nutrition';
 let commandReturnFocus = null;
 let commandInertBefore = false;
@@ -3011,7 +3062,7 @@ function runLocalCommand(query) {
     if(!fullAccess() || waterToday()+intent.amount>6000)return;
     modal.pendingWater={amount:intent.amount,day:todayKey(),account:state.accessToken || ''};return renderModal();
   }
-  closeCommand(false);
+  closeCommand(intent.kind==='meal');
   if(intent.kind==='meal')return openAdd('manual');
   if(intent.kind==='recipes'){recipeQuery=intent.query;recipeView='explore';recipeCuisine='all';recipeRegion='all';recipeGoal='';recipeFilter='all';recipeType='all';return nav('recipes');}
   if(intent.kind==='sleep'){sleepTab='sleep';return nav('sleep');}
@@ -3141,7 +3192,7 @@ function appIcon(m, owned) {
   const lock = !owned && !m.free;
   return `<button class="app-icon discovery-card ${m.tone} ${lock ? 'locked' : ''}" data-go="${m.route}" aria-label="${esc(L(m.name))}${lock ? ` · ${esc(L('Aperçu'))}` : ''}">
     <span class="ai-tile">${moduleArtwork(m)}<span class="discovery-number" aria-hidden="true">${String(MODULES.indexOf(m)+1).padStart(2,'0')}</span></span>
-    <span class="discovery-card-copy"><span class="discovery-card-meta">${icon(m.icon)}${L(owned ? 'Activé' : 'Découvrir')}</span><b>${L(APP_SHORT[m.id] || m.name)}</b><span class="discovery-card-description">${L(m.sub,MV())}</span><span class="discovery-card-next">${L('Ouvrir')}${icon('chevron')}</span></span></button>`;
+    <span class="discovery-card-copy"><span class="discovery-card-meta">${icon(m.icon)}${L(owned ? 'Activé' : 'Découvrir')}</span><b>${L(APP_SHORT[m.id] || m.name)}</b><span class="discovery-card-description">${L(m.sub,MV())}</span>${['scanner','coach'].includes(m.id) && config.ai===false?`<span class="module-availability">${L('Analyses momentanément en pause')}</span>`:''}<span class="discovery-card-next">${L('Ouvrir')}${icon('chevron')}</span></span></button>`;
 }
 // v10 · "Révolutionnaire" showcase: what NutriPilot delivers, with live proof numbers.
 function revoHero() {
@@ -3579,12 +3630,13 @@ function drawerHtml() {
   </div>`;
 }
 
-function openDrawer() {
+function openDrawer(focusOrigin = document.activeElement) {
   closeDrawer(true);
   const wrap = document.createElement('div');
   wrap.innerHTML = drawerHtml();
   const el = wrap.firstElementChild;
   document.body.appendChild(el);
+  bindOverlayFocus(el,focusOrigin);
   requestAnimationFrame(() => el.classList.add('open'));
   el.addEventListener('click', (event) => {
     const btn = event.target.closest('button');
@@ -3602,9 +3654,9 @@ function closeDrawer(instant = false) {
   const el = document.querySelector('.drawer-wrap');
   document.removeEventListener('keydown', drawerEsc);
   if (!el) return;
-  if (instant) return el.remove();
+  if (instant){el.remove();restoreOverlayFocus(el);return;}
   el.classList.remove('open');
-  setTimeout(() => el.remove(), 260);
+  setTimeout(() => {el.remove();restoreOverlayFocus(el);}, 260);
 }
 
 function menoFocus() {
@@ -4488,7 +4540,7 @@ function missionScreen() {
       </section>
 
       <section class="mx-card mx-grid">
-        ${[['flower', 'm-meno', 'Programme Ménopause 40+', '8 semaines guidées'], ['moon', 'm-sleep', 'Sommeil & anti-stress', 'Respirations guidées'], ['leaf', 'm-vit', 'Vitamines & minéraux', 'Ce qui manque à votre assiette'], ['coach', 'm-coach', 'Coach 24 h/24', 'Une réponse à toute heure']].map(([ic, tone, ti, sub]) => `<div class="mg-item ${tone}"><span class="mx-ico ${tone}">${icon(ic)}</span><b>${L(ti)}</b><small>${L(sub)}</small></div>`).join('')}
+        ${[['flower', 'm-meno', 'Programme Ménopause 40+', '8 semaines guidées'], ['moon', 'm-sleep', 'Sommeil & anti-stress', 'Respirations guidées'], ['leaf', 'm-vit', 'Vitamines & minéraux', 'Ce qui manque à votre assiette'], ['coach', 'm-coach', config.ai===false?'Coach':'Coach 24 h/24', config.ai===false?'Analyses momentanément en pause':'Une réponse à toute heure']].map(([ic, tone, ti, sub]) => `<div class="mg-item ${tone}"><span class="mx-ico ${tone}">${icon(ic)}</span><b>${L(ti)}</b><small>${L(sub)}</small></div>`).join('')}
       </section>
 
       <section class="mx-tracks">
@@ -6916,10 +6968,10 @@ function planner() {
 
 function plannerPanel(mode, left, proteinLeft) {
   const p = state.profile;
-  if (mode === 'fridge') return `<div class="day-card planner-panel"><h3>${L('Que pouvez-vous cuisiner avec ce que vous avez ?')}</h3><p class="screen-sub">${L('Listez quelques ingrédients. NutriPilot cherchera à utiliser en priorité ce qui est déjà chez vous.')}</p><div class="field"><label>${L('Dans mon frigo / placard')}</label><textarea class="textarea compact" id="fridge-input" placeholder="${L('Ex. poulet, courgettes, riz, tomates, yaourt…')}"></textarea></div><button class="btn btn-primary btn-wide" data-fridge data-remaining="${left}">${L('Créer 3 repas avec ça →')}</button><div id="fridge-results"></div></div>`;
-  if (mode === 'restaurant') return `<div class="day-card planner-panel"><h3>${L('Je mange à l’extérieur.')}</h3><p class="screen-sub">${L('Indiquez le type de restaurant, une enseigne ou le plat qui vous tente. Sans données officielles, NutriPilot ne prétend pas connaître les calories exactes.')}</p><div class="field"><label>${L('Où / quoi ?')}</label><input id="restaurant-input" placeholder="${L('Ex. restaurant italien, burger, sushi…')}"></div><button class="btn btn-primary btn-wide" data-restaurant data-remaining="${left}">${L('M’aider à choisir →')}</button><div id="restaurant-results"></div></div>`;
-  if (mode === 'pleasure') return `<div class="day-card planner-panel"><h3>${L('Gardez le repas que vous voulez.')}</h3><p class="screen-sub">${L('NutriPilot propose des adaptations possibles sans transformer un repas plaisir en punition.')}</p><div class="field"><label>${L('Repas à adapter')}</label><input id="swap-meal" placeholder="${L('Ex. pizza 4 fromages, burger-frites…')}"></div><button class="btn btn-primary btn-wide" data-smart-swap data-remaining="${left}">${L('Adapter ce repas à ma journée →')}</button><div id="swap-results"></div></div>`;
-  return `<div class="day-card planner-panel"><div class="field"><label>${L('Une envie particulière ?')}</label><input id="craving" placeholder="${L('Ex. pâtes, burger, quelque chose de frais…')}"></div><div class="field"><label>${L('Style')}</label><select id="preference"><option value="${esc(p.diet)}">${L('Ma préférence habituelle')}</option><option value="protein">${L('Riche en protéines')}</option><option value="quick">${L('Rapide')}</option><option value="vegetarian">${L('Végétarien')}</option><option value="light">${L('Léger')}</option></select></div><button class="btn btn-primary btn-wide" data-compose data-remaining="${left}" data-protein-left="${proteinLeft}">${L('Générer 3 options adaptées →')}</button><div id="compose-results"></div></div>`;
+  if (mode === 'fridge') return providerPanel(`<div class="day-card planner-panel"><h3>${L('Que pouvez-vous cuisiner avec ce que vous avez ?')}</h3><p class="screen-sub">${L('Listez quelques ingrédients. NutriPilot cherchera à utiliser en priorité ce qui est déjà chez vous.')}</p><div class="field"><label>${L('Dans mon frigo / placard')}</label><textarea class="textarea compact" id="fridge-input" placeholder="${L('Ex. poulet, courgettes, riz, tomates, yaourt…')}"></textarea></div><button class="btn btn-primary btn-wide" data-fridge data-remaining="${left}">${L('Créer 3 repas avec ça →')}</button><div id="fridge-results"></div></div>`);
+  if (mode === 'restaurant') return providerPanel(`<div class="day-card planner-panel"><h3>${L('Je mange à l’extérieur.')}</h3><p class="screen-sub">${L('Indiquez le type de restaurant, une enseigne ou le plat qui vous tente. Sans données officielles, NutriPilot ne prétend pas connaître les calories exactes.')}</p><div class="field"><label>${L('Où / quoi ?')}</label><input id="restaurant-input" placeholder="${L('Ex. restaurant italien, burger, sushi…')}"></div><button class="btn btn-primary btn-wide" data-restaurant data-remaining="${left}">${L('M’aider à choisir →')}</button><div id="restaurant-results"></div></div>`);
+  if (mode === 'pleasure') return providerPanel(`<div class="day-card planner-panel"><h3>${L('Gardez le repas que vous voulez.')}</h3><p class="screen-sub">${L('NutriPilot propose des adaptations possibles sans transformer un repas plaisir en punition.')}</p><div class="field"><label>${L('Repas à adapter')}</label><input id="swap-meal" placeholder="${L('Ex. pizza 4 fromages, burger-frites…')}"></div><button class="btn btn-primary btn-wide" data-smart-swap data-remaining="${left}">${L('Adapter ce repas à ma journée →')}</button><div id="swap-results"></div></div>`);
+  return providerPanel(`<div class="day-card planner-panel"><div class="field"><label>${L('Une envie particulière ?')}</label><input id="craving" placeholder="${L('Ex. pâtes, burger, quelque chose de frais…')}"></div><div class="field"><label>${L('Style')}</label><select id="preference"><option value="${esc(p.diet)}">${L('Ma préférence habituelle')}</option><option value="protein">${L('Riche en protéines')}</option><option value="quick">${L('Rapide')}</option><option value="vegetarian">${L('Végétarien')}</option><option value="light">${L('Léger')}</option></select></div><button class="btn btn-primary btn-wide" data-compose data-remaining="${left}" data-protein-left="${proteinLeft}">${L('Générer 3 options adaptées →')}</button><div id="compose-results"></div></div>`);
 }
 
 function suggestionHtml(options = []) {
@@ -7022,10 +7074,11 @@ function coachScreen() {
   return `<div class="mobile-app">
     ${appHeader('Coach')}
     <div class="screen coach-screen">
+      ${config.ai===false?providerAvailability():''}
       <div class="tab-scroll mod-tabs coach-modes">${COACH_TABS.map(([k, label, ico]) => `<button class="${coachMode === k ? 'active' : ''}" data-coach-mode="${k}">${icon(ico)} ${L(label)}</button>`).join('')}</div>
-      <div class="quick-prompts">${tab[3].map((q) => `<button data-quick-coach="${esc(L(q))}">${esc(L(q))}</button>`).join('')}</div>
-      <div class="chat" id="chat" aria-live="polite">${msgs.length ? msgs.map((m, i) => m.pending ? `<div class="bubble ai typing" role="status" aria-label="${L('Le coach écrit…')}"><i></i><i></i><i></i></div>` : `<div class="bubble ${m.role === 'user' ? 'user' : 'ai'}${m.kind ? ' note' : ''}">${coachText(m.text)}${m.kind === 'local' && m.q ? `<button class="chip-retry" data-coach-retry="${state.coach.length - msgs.length + i}">↻ ${L('Réessayer')}</button>` : ''}${m.kind === 'auth' ? (Billing.native() ? `<button class="chip-retry" data-restore>${L('Restaurer mes achats')}</button>` : `<button class="chip-retry" data-go="access">${L('Se connecter')}</button>`) : ''}${m.role !== 'user' && !m.kind && i === msgs.length - 1 && state.premium ? `<span class="fb"><button data-coach-fb="up" aria-label="${L('Utile')}">👍</button><button data-coach-fb="down" aria-label="${L('Pas adapté')}">👎</button></span>` : ''}</div>`).join('') : `<div class="bubble ai">${L('Bonjour {name} 👋 Je connais votre objectif, votre journée et vos préférences. Posez votre question ou choisissez une idée ci-dessus.', { name: esc(p.name || '') })}</div>`}</div>
-      <div class="chatbar"><input id="coach-input" value="${esc(coachDraft)}" placeholder="${L('Posez votre question…')}" enterkeyhint="send"><button class="btn btn-primary" data-coach-send ${coachBusy ? 'disabled' : ''} aria-label="${L('Envoyer')}"><span class="flip-rtl">→</span></button></div>
+      <div class="quick-prompts">${tab[3].map((q) => `<button data-quick-coach="${esc(L(q))}" ${config.ai===false?'disabled':''}>${esc(L(q))}</button>`).join('')}</div>
+      <div class="chat" id="chat" aria-live="polite">${msgs.length ? msgs.map((m, i) => m.pending ? `<div class="bubble ai typing" role="status" aria-label="${L('Le coach écrit…')}"><i></i><i></i><i></i></div>` : `<div class="bubble ${m.role === 'user' ? 'user' : 'ai'}${m.kind ? ' note' : ''}">${coachText(m.text)}${m.kind === 'local' && m.q ? `<button class="chip-retry" data-coach-retry="${state.coach.length - msgs.length + i}">↻ ${L('Réessayer')}</button>` : ''}${m.kind === 'auth' ? (Billing.native() ? `<button class="chip-retry" data-restore>${L('Restaurer mes achats')}</button>` : `<button class="chip-retry" data-go="access">${L('Se connecter')}</button>`) : ''}${m.role !== 'user' && !m.kind && i === msgs.length - 1 && state.premium ? `<span class="fb"><button data-coach-fb="up" aria-label="${L('Utile')}">👍</button><button data-coach-fb="down" aria-label="${L('Pas adapté')}">👎</button></span>` : ''}</div>`).join('') : `<div class="bubble ai">${L(config.ai===false?'Analyses momentanément en pause':state.coachUsesData===false?'Posez votre question…':'Bonjour {name} 👋 Je connais votre objectif, votre journée et vos préférences. Posez votre question ou choisissez une idée ci-dessus.', { name: esc(p.name || '') })}</div>`}</div>
+      <div class="chatbar"><input id="coach-input" value="${esc(coachDraft)}" placeholder="${L('Posez votre question…')}" enterkeyhint="send"><button class="btn btn-primary" data-coach-send ${coachBusy || config.ai===false ? 'disabled' : ''} aria-label="${L('Envoyer')}"><span class="flip-rtl">→</span></button></div>
       <div class="coach-ctl"><label><input type="checkbox" id="coach-data" ${state.coachUsesData === false ? '' : 'checked'}> ${L('Utiliser mes données (repas, séances, sommeil) pour personnaliser')}</label>${state.coach.length ? `<button class="link-btn" data-coach-clear>${L('Effacer la conversation')}</button>` : ''}</div>
       <div class="fine">${L('Réponses générées automatiquement : elles peuvent contenir des erreurs. Le coach ne pose pas de diagnostic et ne prescrit ni médicament ni hormone. En cas de symptôme ou de question médicale, consultez un professionnel.')}</div>
     </div>
@@ -8047,7 +8100,11 @@ function openAdd(tab = 'photo') {
 
 function renderModal() {
   stopBarcodeCamera();
-  document.querySelector('.modal-wrap')?.remove();
+  const previous=document.querySelector('.modal-wrap');
+  const focusOrigin=previous ? overlayFocusOrigins.get(previous) : document.activeElement;
+  const active=document.activeElement;let preferred='';
+  if(previous?.contains(active)){if(active.id)preferred=`#${CSS.escape(active.id)}`;else for(const name of ['data-servings','data-mtab'])if(active.hasAttribute(name)){preferred=`[${name}="${CSS.escape(active.getAttribute(name))}"]`;break;}}
+  previous?.remove();
   if (!modal) return;
   // Recipes, exercises and lessons opened from anywhere stay locked outside the free minutes.
   if (!fullAccess() && ['recipe', 'exercise', 'guide', 'lesson'].includes(modal.type) && !modal.recipe?.custom) modal = { type: 'trial' };
@@ -8061,6 +8118,7 @@ function renderModal() {
   a11yPass(wrap);
   bindModal(wrap);
   if(modal.type==='command') bindCommand(wrap);
+  else bindOverlayFocus(wrap,focusOrigin,preferred);
   if (modal.type === 'ex-picker') {
     $('#picker-search', wrap)?.addEventListener('input', (event) => {
       pickerState.query = event.target.value;
@@ -8706,7 +8764,7 @@ function bind() {
       selectedTier = moduleForRoute()?.id || (button.dataset.openAdd !== undefined || button.dataset.addTab ? 'scanner' : 'complete');
       modal = { type: 'trial' }; return renderModal();
     }
-    if (button.dataset.drawer !== undefined) return openDrawer();
+    if (button.dataset.drawer !== undefined) return openDrawer(button);
     if (myDayClick(button)) return;
     if (button.dataset.navBack !== undefined) {
       let prev = navStack.pop();
@@ -9492,6 +9550,7 @@ function bindModal(root) {
       modal = null;
       root.remove();
       if (refresh) render();
+      restoreOverlayFocus(root);
       return;
     }
     if (button.dataset.accSend !== undefined) return accountSend();
