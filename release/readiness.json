@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "78ee5e8b3e18acadc6c35b3f2a73127fce970cdf",
+  "applicationTree": "183fd2c2bf3f628353c0004f663df170f48b2b11",
   "channels": [
     "ios"
   ],
@@ -17,7 +17,7 @@
       },
       "independent_backup": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T12:23:47.540806+00:00",
+        "verifiedAt": "2026-10-27T11:55:12.942Z",
         "verifiedBy": "development-agent",
         "evidence": [
           "release/ACCOUNT_READINESS_2026-10-27.md: fresh real snapshot created 2026-10-27T11:55:12.942Z; five files; encrypted download SHA256 matched; authenticated decryption and isolated restore passed; encrypted archive and recovery key durably saved as separate private owner files outside Railway"
@@ -25,10 +25,10 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T17:19:40.750Z",
+        "verifiedAt": "2026-10-27T18:23:51.515Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: repeated isolated restore passed for unchanged application tree; five original file hashes matched before and after shutdown; 18.1.0 smoke issues empty; production snapshot timestamp remains 2026-10-27T11:55:12.942Z"
+          "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: frozen final tree 183fd2c restored the real 11:55Z production snapshot in isolation; five original hashes preserved; smoke 18.1.0 issues empty; backup creation time is not renewed"
         ]
       },
       "new_credentials_stored": {
@@ -50,15 +50,15 @@
         "verifiedAt": "2026-10-27T17:24:51.937556Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/CANDIDATE_EMAIL_CHECK_2026-10-27.json: isolated production-mode candidate access/signup request returned HTTP 200 and mailed=true; authenticated Resend list independently confirmed Delivered for the new Portuguese access-code message sent only to the authorized owner; no OTP read, no production data modified"
+          "release/CANDIDATE_EMAIL_CHECK_2026-10-27.json: original actual delivered Portuguese candidate access email retained at its original timestamp; final-tree applicability checked against identical server blob b04e08bb933fe1f7e95eb75dbc826a3d6398a986 and auth blob 2cfe486d389270ac4f7a689f0cab9bd4bd4de5de; only frontend price/CSS changed. Automatic review blocked a second test before transmission. No second delivery or renewed delivery timestamp is claimed."
         ]
       },
       "legal_configuration": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T12:17:44.076Z",
+        "verifiedAt": "2026-10-27T18:23:51.892Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/ACCOUNT_READINESS_2026-10-27.md: existing privately authorized operator name, address and support contact loaded from prepared configuration only; isolated candidate privacy, terms and support routes returned HTTP 200, expected fields present and no unresolved templates; three account-deletion/cache regressions passed; launch legal_pages remains pending until deployed-domain verification"
+          "release/LEGAL_CONFIGURATION_CHECK_2026-10-27.json: final tree 183fd2c privacy, terms and support returned HTTP 200 with authorized operator/contact fields and no unresolved templates in isolation; public-domain launch verification remains pending"
         ]
       },
       "rollback_migration": {

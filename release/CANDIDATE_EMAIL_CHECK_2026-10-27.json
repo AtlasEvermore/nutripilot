@@ -41,5 +41,18 @@
     "deliveryObservedAt": "2026-10-27T17:24:51.937556Z",
     "evidence": "Authenticated Resend Sending list: new Portuguese access-code message marked Delivered, just now; body and code not opened."
   },
-  "providerInferenceEnabled": false
+  "providerInferenceEnabled": false,
+  "applicabilityToFinalCandidate": {
+    "checkedAt": "2026-10-27T18:27:19.622737Z",
+    "applicationTree": "183fd2c2bf3f628353c0004f663df170f48b2b11",
+    "unchangedServerBlob": "b04e08bb933fe1f7e95eb75dbc826a3d6398a986",
+    "unchangedAuthBlob": "2cfe486d389270ac4f7a689f0cab9bd4bd4de5de",
+    "applicationDiffSinceDeliveredCandidate": [
+      "app.js (approved monthly and annual reference prices only)",
+      "styles.css (asymmetric iOS safe regions)"
+    ],
+    "newDeliveryClaimed": false,
+    "secondTestTransmission": "blocked by automatic approval review; no second email sent",
+    "originalDeliveryTimestampRetained": true
+  }
 }

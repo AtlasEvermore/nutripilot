@@ -109,6 +109,12 @@ jobs:
           printf '%s\n' 'Actual Xcode 27.1 Duo simulator; bundled candidate UI; synthetic guest; no production backend; visual review required; no store submission or full fold/unfold certification.' > duo-review/README.txt
           shasum -a 256 duo-review/*.png > duo-review/SHA256.txt
           xcrun simctl shutdown "$DUO_ID"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nutripilot-duo-real-simulator-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: native/duo-review/
       - name: Capture the required iPhone and iPad store formats with the same candidate
         timeout-minutes: 15
         run: |
@@ -126,7 +132,7 @@ jobs:
           shasum -a 256 duo-review/*.png > duo-review/SHA256.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: nutripilot-duo-real-simulator-${{ github.sha }}
+          name: nutripilot-ios-store-real-${{ github.sha }}
           retention-days: 1
           if-no-files-found: error
           path: native/duo-review/

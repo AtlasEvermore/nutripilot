@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-10-27T12:17:44.076Z",
-  "applicationTree": "78ee5e8b3e18acadc6c35b3f2a73127fce970cdf",
+  "checkedAt": "2026-10-27T18:23:51.892Z",
+  "applicationTree": "183fd2c2bf3f628353c0004f663df170f48b2b11",
   "isolated": true,
   "productionChanged": false,
   "legalPages": [
@@ -32,10 +32,5 @@
       "hasAddress": null
     }
   ],
-  "email": {
-    "status": "not_attempted",
-    "deliveryConfirmed": false,
-    "reason": "Current credential unavailable for authorized scoped test; no mail sent"
-  },
   "providerInferenceEnabled": false
 }

@@ -15,7 +15,7 @@ PR [#36](https://github.com/AtlasEvermore/nutripilot/pull/36) is merged as `8f52
 
 PR run [40451471240](https://github.com/AtlasEvermore/nutripilot/actions/runs/40451471240) and merged-main run [40495854814](https://github.com/AtlasEvermore/nutripilot/actions/runs/40495854814) both passed 215 checks: 98 application/PostgreSQL, eight release-gate, three native configuration, ten signing-script and 96 clean-browser tests. The main workflow also built and smoke-tested the container (18.1.0, empty issues) and pushed the SHA tag successfully at 2026-10-27T11:28:58Z.
 
-Prepared immutable server image:
+Historical immutable server image for the preceding application tree (not the final safe-area candidate):
 
 `ghcr.io/atlasevermore/nutripilot@sha256:ca9c550b1355bdb68ede36b5a8d151f4a4721f8ef87e8c0fc37a921f49468bfd`
 
@@ -64,7 +64,7 @@ External release evidence still required: current hosting/billing continuity, a 
 
 After correcting the evidence binding, `node ops/release-gate.mjs prepare` still exits 1 with seven operational blockers: expired hosting continuity, expired independent backup, pending provider controls, candidate email delivery, operational legal configuration, iOS commercial configuration and expired IPA evidence. The obsolete-application-tree blocker is resolved. All eight release-gate tests passed again locally and `git diff --check` passed. Application/native source trees were not changed during this evidence-only completion.
 
-## Current completion — resizable iPhone preparation and delivered email
+## Earlier completion — before actual Duo visual review
 
 The owner authorized the monthly US$29.99 sale price and the scoped email test. Monthly product `np_complete_monthly` now has a saved initial US price of $29.99; Apple-calculated examples observed were Brazil R$199.90 and France €34.99. No subscription was sold or app published. A proposed availability selection across 175 countries was **not applied**: automatic approval review rejected that broad commercial scope as requiring specific authorization; the dialog was cancelled. Annual product np_complete_annual subsequently saved the exact existing US$299.00 reference using Apple additional price points; examples observed were Brazil R$1,999.90 and France €349.00. Both initial price schedules persisted after confirmation. Final availability remains incomplete.
 
@@ -81,3 +81,23 @@ The current prepare gate reports three pending groups: intelligence-provider fun
 ### Duo simulator capture diagnosis
 
 Native run 40552404121 built both the normal wrapper and the bundled candidate successfully. The actual Duo simulator booted and launched com.atlasevermore.nutripilot (PID recorded). Capture failed with NSPOSIXErrorDomain code 22 because the simulator has two displays: display 3 (2007x2853 inner) and display 1 (1398x2034 outer). No image was produced or claimed from that attempt. The capture command now explicitly selects each observed display. The fixture rebuild reuses the same derived-data directory after archiving the original normal wrapper, and quiet compiler output keeps diagnostic logs readable. The boot/capture step has a ten-minute timeout. No application/native source, production configuration or signing safeguard was changed by this capture fix.
+
+## Safe-area candidate, before annual-reference correction
+
+The actual Duo capture exposed controls under the vertical system region on the active outer display; the inactive inner display was black. This was not accepted as visual sign-off or uploaded as a ready store asset. Web CSS now honors asymmetric native/CSS safe-area insets in the page, sticky header, floating bottom navigation, long sheets and drawers, and updates on window changes. The web monthly reference was aligned to the owner-approved $29.99; the annual reference remains $299.00. No backend, authentication, data format, premium entitlement or provider implementation changed.
+
+Application tree is now `c89c144a556501035eaba14210d9d538d798b392`, native tree `be0680febad4748045991bbcee2238dc8525824e`. Revision `1305af6e2266cf90dd95b663c3a722aa2d96de81` passed 224 checks in run [40556857030](https://github.com/AtlasEvermore/nutripilot/actions/runs/40556857030): 98 application/PostgreSQL, eight release-gate, four native-configuration, ten signing safeguards and 104 browsers. The new asymmetric-inset check passed in all four browsers. The browser report has 104 expected, zero unexpected/flaky/skipped; its ZIP SHA256 matches the artifact digest `44abdf9d00aa89ed9e7b18120df400fc4bbd005f9dd9d451ca4affa646338e63`. Forty final-tree raw captures were extracted and new readable mobile/desktop panels assembled from those actual pixels.
+
+An isolated final-tree restore passed at 18:06:29Z using the unchanged real 11:55Z source backup; all five original hashes were preserved, smoke had no issues, and no new backup timestamp is claimed. Isolated legal checks passed again at 18:10:26Z without exposing approved operator details.
+
+Automatic approval review blocked a second email transmission because only one test was authorized. No second mail was sent. The actual earlier delivery remains the evidence, at its original time. Final-tree applicability is independently grounded in unchanged server/auth blobs and a complete application diff containing only the frontend monthly constant and CSS. No new delivery is fabricated or timestamp renewed.
+
+Read-only live health verification returned HTTP 200, version 12.0.0, ready=false. This is the existing production state, not the candidate. The historical registry image for tree 78ee5e8 is not a final-tree image. A new immutable image for c89c144 still requires a verified build; no production launch is claimed.
+
+## Frozen pricing and safe-area candidate
+
+Visual review of the c89c144 browser panel revealed that the generic ten-month annual formula had changed the complete annual reference to $299.90 after changing the monthly price. The annual complete reference is now explicitly independent at the owner-approved $299.00; monthly remains $29.99. The c89c144 Plans image showing $299.90 was rejected for final delivery. No module/combo pricing rule or actual store charge was altered by the annual correction.
+
+Final application tree is `183fd2c2bf3f628353c0004f663df170f48b2b11`; native tree remains `be0680febad4748045991bbcee2238dc8525824e`. The native workflow now publishes Duo captures before beginning the additional required iPhone/iPad formats, so a slow secondary simulator cannot hide the Duo visual evidence. This changes diagnostic artifact ordering, not acceptance or release controls. The final pricing revision requires its own CI and screenshot confirmation; no prior incorrect price image is presented as its final result.
+
+Restoration and legal checks passed again at 18:23:51Z for this exact tree. The real source snapshot is still the 11:55:12Z copy. Independent-backup freshness is now anchored directly to that source creation timestamp, rather than the later verification timestamp. Email evidence retains the original delivery and its unchanged executable backend hashes; no second email was sent.

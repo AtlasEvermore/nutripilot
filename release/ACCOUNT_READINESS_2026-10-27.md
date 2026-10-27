@@ -1,6 +1,7 @@
 # NutriPilot — account and operational completion, 27 October 2026
 
-Application tree remains `78ee5e8b3e18acadc6c35b3f2a73127fce970cdf`; historical native tree was `39d0f6ebdde9f52a715c46fc9b9de67c7538e24c` (superseded by the resizable-iPhone update below). No web application code, production deployment, volume or paid service was changed; native configuration was subsequently updated as recorded in FINAL_POLISH_2026-10-27.md. This report supersedes the earlier account/backup observations where explicitly stated. The owner requested completion of all feasible preparation and subsequently deferred the final commercial name; the current display name was not changed or propagated to new locales.
+Current application tree: `183fd2c2bf3f628353c0004f663df170f48b2b11`; native tree: `be0680febad4748045991bbcee2238dc8525824e`. The final correction adds asymmetric iOS safe areas and aligns the monthly frontend reference to the saved $29.99. Backend/authentication, production, volume and paid services remain unchanged. Later final-candidate entries supersede the earlier observations below. Final commercial naming remains deferred at the owner's request.
+
 
 ## Completed and verified
 
@@ -42,3 +43,5 @@ The final display name is deferred at the owner's request; do not propagate the 
 Monthly US$29.99 and annual US$299.00 pricing are now saved; annual price uses the exact pre-existing product reference, not US$299.99. Real candidate email is Delivered and recorded in CANDIDATE_EMAIL_CHECK_2026-10-27.json. Xcode 27.1/iOS 27.1 native compilation and 220 checks passed; native tree is now be0680febad4748045991bbcee2238dc8525824e. A new exact-revision signed IPA is therefore mandatory. A repeat restoration passed using the same 11:55Z real backup, without renewing its creation time. See FINAL_POLISH_2026-10-27.md for current evidence and release boundaries.
 
 The Apple login was securely renewed after session expiry. Availability in 175 countries was rejected by automatic approval review because that specific commercial scope was not authorized; selection was cancelled. No availability setting is claimed applied. No legal publication agreement was accepted. Funded provider access, Apple banking/commercial completion, privacy final confirmation and current signed-IPA acceptance remain external requirements.
+
+The final complete annual frontend reference is explicitly $299.00 and monthly $29.99, matching the saved Apple schedules. Final source is 183fd2c; original delivered-email timestamps and production backup creation time are retained. A second test transmission was blocked by automatic review and was not executed; backend server/auth hashes are unchanged. See the frozen-candidate section in FINAL_POLISH_2026-10-27.md.

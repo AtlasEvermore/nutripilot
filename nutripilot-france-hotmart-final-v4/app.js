@@ -2557,6 +2557,7 @@ async function accountVerify() {
 const r2 = (v) => Math.round(v * 100) / 100;
 const MONTHLY_PRICE = { nutrition: 7.99, recipes: 3.99, training: 9.99, menopause: 8.99, nutrients: 2.99, sleep: 3.99 };
 const KIT_MONTHLY = 29.99;
+const KIT_ANNUAL = 299;
 const COMBO_OFF = { 2: 0.15, 3: 0.15, 4: 0.15, 5: 0.15 };
 const annualOf = (monthly) => r2(monthly * 10);
 const PAID_MODULES = MODULES.filter((m) => !m.free);
@@ -2585,7 +2586,7 @@ function comboMonthly(mods) {
   comboMemo.set(key, price);
   return price;
 }
-const MODULE_PRICES = Object.fromEntries([...PAID_IDS.map((id) => [id, [MONTHLY_PRICE[id], annualOf(MONTHLY_PRICE[id])]]), ['complete', [KIT_MONTHLY, annualOf(KIT_MONTHLY)]]]);
+const MODULE_PRICES = Object.fromEntries([...PAID_IDS.map((id) => [id, [MONTHLY_PRICE[id], annualOf(MONTHLY_PRICE[id])]]), ['complete', [KIT_MONTHLY, KIT_ANNUAL]]]);
 // Themed combinations, priced with the same rule as any combination the person composes.
 const BUNDLES = [
   { id: 'body', name: 'Corps en forme', sub: 'Entraînement + Nutrition', tagline: 'Perdre du gras et prendre du muscle, repas et séances accordés.', icon: 'dumbbell', tone: 'm-train', modules: ['training', 'nutrition'], badge: 'Le plus choisi' },
