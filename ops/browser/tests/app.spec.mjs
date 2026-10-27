@@ -61,9 +61,13 @@ test('Every module image loads and discovery leads to its own space before Plans
   await testInfo.attach('apps', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
   await page.locator('.app-icon.m-nut').click();
   await expect(page.locator('.lock-overlay')).toBeVisible();
+  const previewImage=page.locator('.lock-overlay .story-visual img');
+  await expect(previewImage).toBeVisible();
+  await expect.poll(()=>previewImage.evaluate(el=>el.complete && el.naturalWidth>0)).toBe(true);
   await testInfo.attach('module-preview', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
   await page.locator('.lock-overlay [data-module-buy]').click();
   await expect(page.locator('.plans-page')).toBeVisible();
+  await expect(page.locator('[data-plans-tab="modules"]')).toHaveAttribute('aria-selected','true');
   await testInfo.attach('plans', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
 });
 
@@ -108,6 +112,14 @@ test('Purpose filters narrow discovery without losing modules, keyboard focus or
 
 test('Monthly choice stays monthly through comparison, selection and the confirmation page',async({page},testInfo)=>{
   await seed(page);await page.goto('/#plans');
+  await page.locator('.plan-location > summary').click();
+  await page.locator('[data-country]').selectOption('BR');
+  await expect(page.locator('[data-country]')).toHaveValue('BR');
+  await expect(page.locator('.plan-location')).toHaveAttribute('open','');
+  await expect(page.locator('.plan-location > summary')).toContainText('BRL');
+  await page.locator('[data-currency]').selectOption('USD');
+  await expect(page.locator('.plan-location > summary')).toContainText('USD');
+  await page.locator('.plan-location > summary').click();
   await page.locator('[data-period="monthly"]').click();
   await expect(page.locator('[data-period="monthly"]')).toHaveClass(/active/);
   await page.locator('[data-plans-tab="modules"]').click();

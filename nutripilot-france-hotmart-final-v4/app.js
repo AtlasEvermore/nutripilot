@@ -1877,7 +1877,7 @@ function startSaving() {
 
 
 function exploreBanner() {
-  if (fullAccess() || route === 'modules') return '';
+  if (fullAccess() || ['modules','plans','paywall','upgrade'].includes(route)) return '';
   return `<button class="explore-banner" data-go="plans">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button>`;
 }
 
@@ -2938,7 +2938,7 @@ function discoveryHero(kind = 'apps') {
       <h1 id="discovery-title">${L('Votre routine, une nouvelle dimension.')}</h1>
       <p>${L('Nutrition, mouvement, équilibre. Un parcours qui vous ressemble.')}</p>
       <div class="discovery-actions"><button class="btn btn-lime" data-go="${primary.route}">${L('Découvrir')} ${L(primary.name)} ${icon('chevron')}</button><button class="discovery-secondary" data-go="${kind === 'home' ? 'modules' : 'app'}">${L(kind === 'home' ? 'Tous vos espaces' : 'Aujourd’hui')}${icon('chevron')}</button></div>
-      <div class="discovery-proof"><span><b>${v.r}</b>${L('recettes')}</span><span><b>${v.e}</b>${L('exercices')}</span><span><b>09</b>${L('Modules')}</span></div>
+      <div class="discovery-proof"><span><b>${v.r}</b>${L('recettes')}</span><span><b>${v.e}</b>${L('exercices')}</span><span><b>${String(MODULES.length).padStart(2,'0')}</b>${L('Modules')}</span></div>
     </div>
     <div class="orbit-scene"><div class="orbit-track track-a" aria-hidden="true"></div><div class="orbit-track track-b" aria-hidden="true"></div><div class="orbit-track track-c" aria-hidden="true"></div>
       <div class="orbit-core ${primary.tone}">${moduleArtwork(primary)}<span class="orbit-core-label">${icon(primary.icon)}${L(primary.name)}</span></div>
@@ -3997,6 +3997,7 @@ async function compressImage(file, maxSide) {
 // ---- Plans page ---------------------------------------------------------------
 // Complete kit on top, then themed bundles, single modules and a "compose my plan" builder.
 let plansTab = 'bundles';
+let planLocationOpen = false;
 let buildSel = null;
 function planName(x) {
   return x.kind === 'custom' ? x.parts.map((t) => L(moduleById(t)?.name || findPlan(t)?.label || t)).join(' + ') : L(x.label);
@@ -4014,6 +4015,7 @@ function viewModulePlans(tier) {
   selectedTier = tier;
   const plan = findPlan(tier) || findPlan(recommendedTier());
   buildSel = plan ? [...plan.modules] : null;
+  plansTab = plan?.kind === 'module' ? 'modules' : 'bundles';
   track('ViewPlans', { module: tier });
   return nav('plans');
 }
@@ -4029,7 +4031,7 @@ function plansScreen() {
   const kit = plans.find((x) => x.kind === 'complete');
   if (!kit) return storeLoadingScreen();
   const bundles = plans.filter((x) => x.kind === 'bundle');
-  const mods = plans.filter((x) => x.kind === 'module');
+  const mods = plans.filter((x) => x.kind === 'module').sort((a,b) => Number(b.tier === selectedTier) - Number(a.tier === selectedTier));
   const isMine = (x) => state.premium && x.modules.every((id) => owned.includes(id));
   if (!buildSel) buildSel = [...(findPlan(recommendedTier())?.modules || ['nutrition', 'training'])];
   const best = bestOffer(buildSel);
@@ -4040,12 +4042,13 @@ function plansScreen() {
   // One compact, fully tappable row per plan.
   const row = (x) => {
     const mine = isMine(x);
-    return `<button class="pl-row plan-choice ${x.tone} ${mine ? 'mine' : ''}" ${mine ? 'disabled' : `data-choose-plan="${esc(x.tier)}"`}>
+    return `<button class="pl-row plan-choice ${x.tone} ${x.tier === selectedTier ? 'focused' : ''} ${mine ? 'mine' : ''}" ${mine ? 'disabled' : `data-choose-plan="${esc(x.tier)}"`}>
       <span class="plan-choice-heading"><span class="mod-ico">${icon(x.icon)}</span><span class="pl-txt"><b>${esc(L(x.label))}</b>${x.tier === reco && !mine ? `<i class="pl-reco">${L('Recommandé')}</i>` : ''}</span></span>
       <span class="plan-choice-content">${x.kind === 'module' ? `<span>${esc(L(x.sub))}</span>` : modChips(x.modules,true)}</span>
       <span class="plan-choice-bottom"><span class="pl-price">${mine ? `<em class="pl-mine">${icon('check')} ${L('Activé')}</em>` : `<b>${per(lp(x,selectedPeriod))}</b><small>${unit}</small>`}</span><span class="plan-choice-action">${L(mine ? 'Votre formule' : 'Choisir')}${icon(mine ? 'check' : 'chevron')}</span></span>
     </button>`;
   };
+  const picker = locationPicker();
   const oneOf = `<p class="pl-oneof">${icon('check')}<span>${L('Chaque option est un abonnement à part : choisissez-en une. Pour tout avoir, le Kit complet coûte {p}.', { p: `${per(lp(kit, selectedPeriod))} ${unit}` })}</span></p>`;
   const body = plansTab === 'modules'
     ? `<div class="pl-list">${mods.map(row).join('')}</div>`
@@ -4062,8 +4065,7 @@ function plansScreen() {
     <div class="screen">
       <section class="plans-intro"><span class="orbit-eyebrow">NUTRIPILOT / ${L('Formules')}</span><h1>${L('Un seul choix. Votre rythme.')}</h1><p>${L('Choisissez vos espaces. La boutique confirme le prix avant tout paiement.')}</p><div class="plans-steps"><span><i>01</i>${L('Choisir')}</span><span><i>02</i>${L('Votre compte NutriPilot')}</span><span><i>03</i>${L('Votre boutique')}</span></div></section>
       ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
-      <section class="plans-config"><div><h2>${L('Modules, combinaisons et Kit complet')}</h2><p>${L('Chaque option est un abonnement à part : choisissez-en une.')}</p></div>${locationPicker()}</section>
-      ${freeBanner(true)}
+      <section class="plans-config"><p>${L('Chaque option est un abonnement à part : choisissez-en une.')}</p>${picker ? `<details class="plan-location" ${planLocationOpen ? 'open' : ''}><summary>${L('Pays')} / ${L('Devise de paiement')} <b>${esc(currency())}</b></summary>${picker}</details>` : ''}</section>
       <div class="period-toggle slim" role="tablist">
         <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')}</button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
@@ -4072,6 +4074,7 @@ function plansScreen() {
         <span class="kr-txt"><small>${L('Kit complet')} · ${esc(L(kit.badge))}</small><b>${L('Les 9 modules et le coach')}</b><span class="kit-modules">${PAID_MODULES.map(m => `<i>${icon(m.icon)}${L(m.short || m.name)}</i>`).join('')}</span><span class="kit-action">${L(ownsAll ? 'Votre formule' : 'Choisir cette formule')}${icon('chevron')}</span></span>
         <span class="kr-price">${ownsAll ? `<em>${icon('check')} ${L('Activé')}</em>` : `<s>${per(refPrice(kit, selectedPeriod))}</s><b>${per(lp(kit, selectedPeriod))}</b><small>${unit}</small>`}</span>
       </button>` : ''}
+      ${freeBanner(true)}
       <div class="plans-tabs" role="tablist">${tab('bundles', 'Combinaisons')}${tab('modules', 'Modules')}${tab('builder', 'Composer')}</div>
       ${body}
       <details class="pl-more"><summary>${L('Le calcul de chaque formule')}</summary>
@@ -8376,9 +8379,11 @@ function a11yPass(root) {
 }
 
 function bind() {
+  app.querySelector('.plan-location')?.addEventListener('toggle',event => { planLocationOpen = event.target.open; });
   app.querySelectorAll('details[data-pf-sec]').forEach((el) => el.addEventListener('toggle', () => { if (el.open) pfOpen.add(el.dataset.pfSec); else pfOpen.delete(el.dataset.pfSec); }));
   app.onchange = (event) => {
     const el = event.target;
+    if (el.closest('.plan-location')) planLocationOpen = el.closest('.plan-location').open;
     if (el.matches('[data-currency]')) { state.currency = rates()[el.value] ? el.value : ''; saveState(); track('SelectCurrency', { source: state.currency || 'auto' }); return render(); }
     if (el.matches('[data-country]')) { state.country = CC_CUR[el.value] ? el.value : ''; state.currency = ''; saveState(); return render(); }
     if (el.matches('[data-plan-focus]')) {
