@@ -3023,6 +3023,33 @@ function bindCommand(wrap) {
   input.focus({preventScroll:true});
 }
 
+// A local map of real destinations. Selection never changes health data or access rights.
+let constellationFocus = 'nutrition';
+function constellationModule(id = constellationFocus) {
+  return MODULES.find(m => m.id === id) || MODULES[0];
+}
+function constellationDetail(id = constellationFocus) {
+  const m = constellationModule(id);
+  const category = discoveryCategory(m.id);
+  const label = category === 'move' ? 'Bouger' : category === 'restore' ? 'Récupérer' : 'Manger';
+  return `<div class="constellation-copy ${m.tone}"><span class="constellation-category">${L(label)} / ${String(MODULES.indexOf(m)+1).padStart(2,'0')}</span><h2>${esc(L(m.name))}</h2><p>${L(m.sub,MV())}</p>${['scanner','coach'].includes(m.id) && !config.ai ? `<small class="constellation-availability">${icon('help')}${L('Analyses momentanément en pause')}</small>` : ''}<button class="btn btn-primary" data-go="${m.route}">${L('Découvrir')} ${icon('chevron')}</button></div>`;
+}
+function constellationMap() {
+  const selected = constellationModule();
+  return `<section class="constellation" aria-label="${L('Carte de votre routine')}"><div class="constellation-head"><span class="orbit-eyebrow">NUTRIPILOT / ATLAS</span><span>${String(MODULES.length).padStart(2,'0')} ${L('Modules')}</span></div><p class="constellation-hint">${L('Choisissez un espace. Tracez votre parcours.')}</p><div class="constellation-stage"><svg class="constellation-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="48" rx="34" ry="36"/>${MODULES.map((m,i)=>{const a=(-90+i*40)*Math.PI/180;return `<path data-atlas-path="${m.id}" class="${m.id===selected.id?'on':''}" d="M50 48L${(50+34*Math.cos(a)).toFixed(2)} ${(48+36*Math.sin(a)).toFixed(2)}"/>`;}).join('')}</svg><div class="orbit-core constellation-core ${selected.tone}" aria-hidden="true">${icon('sparkle')}<span>NP</span></div><div class="constellation-nodes" role="group" aria-label="${L('Tous vos espaces')}">${MODULES.map((m,i)=>{const a=(-90+i*40)*Math.PI/180;return `<button class="constellation-node ${m.tone}" style="--atlas-x:${(50+34*Math.cos(a)).toFixed(2)}%;--atlas-y:${(48+36*Math.sin(a)).toFixed(2)}%" data-atlas-select="${m.id}" aria-pressed="${m.id===selected.id}" aria-controls="constellation-detail" aria-label="${esc(L(m.name))}"><span>${icon(m.icon)}</span><b>${esc(L(APP_SHORT[m.id]))}</b></button>`;}).join('')}</div></div><div id="constellation-detail" aria-live="polite" aria-atomic="true">${constellationDetail()}</div></section>`;
+}
+function selectConstellation(id) {
+  if (!MODULES.some(m => m.id === id)) return;
+  constellationFocus = id;
+  const map = app.querySelector('.constellation');
+  if (!map) return;
+  map.querySelectorAll('[data-atlas-select]').forEach(el => el.setAttribute('aria-pressed',String(el.dataset.atlasSelect===id)));
+  map.querySelectorAll('[data-atlas-path]').forEach(el => el.classList.toggle('on',el.dataset.atlasPath===id));
+  map.querySelector('#constellation-detail').innerHTML = constellationDetail(id);
+  const core = map.querySelector('.constellation-core');
+  if(core) core.className = `orbit-core constellation-core ${constellationModule(id).tone}`;
+}
+
 let discoveryFilter = 'all';
 function discoveryCategory(id) {
   return ['training', 'menopause'].includes(id) ? 'move' : ['sleep', 'coach'].includes(id) ? 'restore' : 'nourish';
@@ -3037,12 +3064,7 @@ function discoveryHero(kind = 'apps') {
       <div class="discovery-actions"><button class="btn btn-lime" data-go="${primary.route}">${L('Découvrir')} ${L(primary.name)} ${icon('chevron')}</button><button class="discovery-secondary" data-go="${kind === 'home' ? 'modules' : 'app'}">${L(kind === 'home' ? 'Tous vos espaces' : 'Aujourd’hui')}${icon('chevron')}</button></div>
       <div class="discovery-proof"><span><b>${v.r}</b>${L('recettes')}</span><span><b>${v.e}</b>${L('exercices')}</span><span><b>${String(MODULES.length).padStart(2,'0')}</b>${L('Modules')}</span></div>
     </div>
-    <div class="orbit-scene"><div class="orbit-track track-a" aria-hidden="true"></div><div class="orbit-track track-b" aria-hidden="true"></div><div class="orbit-track track-c" aria-hidden="true"></div>
-      <div class="orbit-core ${primary.tone}">${moduleArtwork(primary)}<span class="orbit-core-label">${icon(primary.icon)}${L(primary.name)}</span></div>
-      <button class="orbit-satellite sat-move" data-go="training">${icon('dumbbell')}<span>${L('Entraînement')}</span></button>
-      <button class="orbit-satellite sat-rest" data-go="sleep">${icon('moon')}<span>${L('Sommeil')}</span></button>
-      <span class="orbit-coordinate" aria-hidden="true">N / P — 01</span><span class="orbit-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-    </div>
+    ${constellationMap()}
   </section>`;
 }
 function discoveryFilters() {
@@ -3746,6 +3768,39 @@ function todayTabsHtml() {
   const tabs = [['summary', 'Résumé', ''], ['missions', 'Missions', `${done[0]}/${done[1]}`], ['foryou', 'Pour vous', '']];
   return `<div class="today-tabs" role="tablist">${tabs.map(([k, label, badge]) => `<button role="tab" aria-selected="${todayTab === k}" class="${todayTab === k ? 'active' : ''}" data-today-tab="${k}">${L(label)}${badge ? `<em>${badge}</em>` : ''}</button>`).join('')}</div>`;
 }
+// NEXUS orders navigation tasks, never clinical urgency or inferred health. Pure and offline.
+let routineFocus = '';
+function routineSignals(input) {
+  const safe = (v,max) => Number.isFinite(Number(v)) ? Math.max(0,Math.min(max,Number(v))) : 0;
+  const meals = Math.floor(safe(input.mealCount,1000));
+  const water = safe(input.waterMl,20000), goal = safe(input.waterGoalMl,5000);
+  const signals = [
+    {id:'meals',icon:'fork',label:'Nutrition',value:meals ? L('{n} repas enregistrés',{n:meals}) : L('Aucun repas enregistré aujourd’hui.'),reason:'Vos repas enregistrés permettent de suivre votre journée.',action:'Ajouter un repas',priority:meals?30:90},
+    {id:'water',icon:'drop',label:'Hydratation',value:`${fmt(water)}${goal?` / ${fmt(goal)}`:''} ml`,reason:'Ce compteur utilise uniquement l’eau que vous avez enregistrée.',action:'Voir mon suivi',priority:water?20:70},
+  ];
+  if(input.trainingAvailable) signals.push({id:'training',icon:'dumbbell',label:'Entraînement',value:L(input.trainingDone ? 'Séance enregistrée' : input.trainingPlanned ? 'Séance prévue' : input.trainingConfigured ? 'Repos' : 'Choisir comment m’entraîner'),reason:input.trainingPlanned?'Cette action suit votre programme de la journée.':'Vous choisissez votre programme et votre rythme.',action:'Ouvrir',priority:input.trainingDone?10:input.trainingPlanned?65:35});
+  if(input.sleepAvailable){const hours=safe(input.sleepHours,24);signals.push({id:'sleep',icon:'moon',label:'Sommeil',value:hours?`${fmt(hours,1)} h`:L('Aucune nuit enregistrée'),reason:hours?'Durée calculée à partir des horaires que vous avez saisis.':'Ajoutez votre nuit pour compléter votre journal.',action:hours?'Ouvrir':'Noter ma nuit',priority:hours?10:55});}
+  return signals.sort((a,b)=>b.priority-a.priority);
+}
+function routineSnapshot() {
+  return {mealCount:state.meals.filter(m=>m.day===todayKey()).length,waterMl:waterToday(),waterGoalMl:waterGoal(),trainingAvailable:hasFeature('training'),trainingPlanned:Boolean(todaySession()),trainingConfigured:hasTrainingPlan(),trainingDone:doneOn(todayKey()),sleepAvailable:hasFeature('sleep'),sleepHours:sleepDuration(state.sleepLog?.[todayKey()])};
+}
+function routineDetail(signal) {
+  return `<div class="nexus-detail"><span class="nexus-detail-icon" aria-hidden="true">${icon(signal.icon)}</span><div><span class="orbit-eyebrow">${L('Votre prochaine décision')}</span><h3>${esc(L(signal.label))}</h3><p>${esc(signal.value)}</p></div><button class="btn btn-primary" data-signal-action="${signal.id}">${L(signal.action)}${icon('chevron')}</button></div><details class="nexus-why"><summary>${L('Pourquoi cette action ?')}</summary><p>${L(signal.reason)}</p><small>${L('Priorité de navigation, pas une évaluation de santé.')}</small></details>`;
+}
+function routinePanel() {
+  const signals = routineSignals(routineSnapshot());
+  const selected = signals.find(s=>s.id===routineFocus) || signals[0];
+  const order=['meals','water','training','sleep'];
+  return `<section class="nexus-panel" aria-labelledby="nexus-title"><div class="nexus-head"><span class="orbit-eyebrow"><i></i>NUTRIPILOT / NEXUS</span><span>${icon('check')}${L('D’après vos enregistrements')}</span></div><h2 id="nexus-title">${L('Votre routine, connectée.')}</h2><div class="nexus-signals" role="group" aria-label="${L('Vue d’ensemble')}">${signals.slice().sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id)).map(signal=>`<button data-signal-select="${signal.id}" aria-pressed="${selected.id===signal.id}" aria-controls="nexus-focus">${icon(signal.icon)}<b>${L(signal.label)}</b><small>${esc(signal.value)}</small></button>`).join('')}</div><div id="nexus-focus" aria-live="polite" aria-atomic="true">${routineDetail(selected)}</div></section>`;
+}
+function selectRoutineSignal(id) {
+  const signal=routineSignals(routineSnapshot()).find(s=>s.id===id);
+  const panel=app.querySelector('.nexus-panel');if(!signal || !panel)return;
+  routineFocus=id;panel.querySelectorAll('[data-signal-select]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.signalSelect===id)));
+  panel.querySelector('#nexus-focus').innerHTML=routineDetail(signal);
+}
+
 function dashboard() {
   const t = totals();
   const p = state.profile;
@@ -3778,6 +3833,7 @@ function dashboard() {
       ${todayTabsHtml()}
       ${todayTab === 'summary' ? `
       ${welcomeBackCard()}
+      ${routinePanel()}
       <section class="hero-ring-card daily-flight">
         <div class="daily-flight-head"><span class="orbit-eyebrow">NUTRIPILOT / ${L('Mon jour maintenant')}</span><span>${L('Aujourd’hui')}</span></div>
         <div class="ring-wrap">
@@ -4338,8 +4394,8 @@ function missionScreen() {
       ${copilotDemo(meals)}
 
       <section class="mx-card mx-scan">
-        <div class="mx-title"><span class="mx-ico m-scan">${icon('scan')}</span><div><small>${L('Scanner de repas')}</small><h2>${L('Une photo. Les calories en secondes.')}</h2></div></div>
-        <div class="scan-demo" aria-hidden="true">
+        <div class="mx-title"><span class="mx-ico m-scan">${icon('scan')}</span><div><small>${L('Scanner de repas')}</small><h2>${L(config.ai ? 'Une photo. Les calories en secondes.' : 'Code-barres et saisie manuelle toujours disponibles.')}</h2></div></div>
+        <div class="scan-demo" aria-hidden="true" ${config.ai ? '' : 'hidden'}>
           <div class="sd-frame"><span class="sd-plate">🥗</span><i class="sd-line"></i><b class="c1"></b><b class="c2"></b><b class="c3"></b><b class="c4"></b></div>
           <div class="sd-out"><span class="sd-chip k">520 kcal</span><span class="sd-chip">${L('Protéines')} 38 g</span><span class="sd-chip">${L('Glucides')} 41 g</span><span class="sd-chip">${L('Lipides')} 19 g</span></div>
         </div>
@@ -8481,6 +8537,16 @@ function a11yPass(root) {
 }
 
 function bind() {
+  app.querySelector('.constellation-nodes')?.addEventListener('keydown',event=>{
+    if(!['ArrowRight','ArrowLeft','ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
+    const nodes=[...event.currentTarget.querySelectorAll('[data-atlas-select]')];
+    const current=nodes.indexOf(document.activeElement);if(current<0)return;
+    event.preventDefault();
+    const rtl=document.documentElement.dir==='rtl';
+    const forward=event.key==='ArrowDown' || event.key===(rtl?'ArrowLeft':'ArrowRight');
+    const index=event.key==='Home'?0:event.key==='End'?nodes.length-1:(current+(forward?1:-1)+nodes.length)%nodes.length;
+    nodes[index].focus({preventScroll:true});selectConstellation(nodes[index].dataset.atlasSelect);
+  });
   app.querySelector('.plan-location')?.addEventListener('toggle',event => { planLocationOpen = event.target.open; });
   app.querySelectorAll('details[data-pf-sec]').forEach((el) => el.addEventListener('toggle', () => { if (el.open) pfOpen.add(el.dataset.pfSec); else pfOpen.delete(el.dataset.pfSec); }));
   app.onchange = (event) => {
@@ -8538,6 +8604,16 @@ function bind() {
       return;
     }
     if(button.dataset.openCommand!==undefined)return openCommand();
+    if(button.dataset.atlasSelect!==undefined)return selectConstellation(button.dataset.atlasSelect);
+    if(button.dataset.signalSelect!==undefined)return selectRoutineSignal(button.dataset.signalSelect);
+    if(button.dataset.signalAction!==undefined){
+      const id=button.dataset.signalAction;
+      if(!routineSignals(routineSnapshot()).some(s=>s.id===id))return;
+      if(id==='meals')return openAdd('manual');
+      if(id==='water'){const tile=app.querySelector('.water-tile');if(tile){tile.scrollIntoView({block:'center',behavior:AURA_REDUCED?'instant':'smooth'});tile.querySelector('button')?.focus({preventScroll:true});}return;}
+      if(id==='sleep'){sleepTab='sleep';return nav('sleep');}
+      if(id==='training')return nav('training');
+    }
     if(button.dataset.missionFocus!==undefined){const value=button.dataset.missionFocus;if(!['nutrition','training','sleep'].includes(value))return;missionFocus=value;const y=scrollY;render();scrollTo({top:y,behavior:'instant'});const choice=app.querySelector(`[data-mission-focus="${value}"]`);choice?.focus({preventScroll:true});if(choice){const bounds=choice.getBoundingClientRect();const dock=app.querySelector('.bottom-nav')?.getBoundingClientRect();const head=app.querySelector('.app-head')?.getBoundingClientRect();if(bounds.bottom>(dock && dock.width>dock.height ? dock.top-16 : innerHeight-20) || bounds.top<(head?.bottom || 0)+12)choice.scrollIntoView({block:'center',behavior:'instant'});}return;}
     const freeScanTap = button.dataset.openAdd !== undefined || ['photo', 'text', 'label', 'recent', 'barcode'].includes(button.dataset.addTab);
     if (!fullAccess() && !freeScanTap && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {

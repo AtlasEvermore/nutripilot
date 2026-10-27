@@ -206,3 +206,59 @@ test('Authenticated UI workspaces render without granting a synthetic account se
   expect(errors).toEqual([]);
   expect((await page.request.post('/api/user/state',{data:{state:{meals:[]}}})).status()).toBe(401);
 });
+
+
+test('Atlas maps nine real modules with touch, keyboard and no profile mutation',async({page},testInfo)=>{
+ await seed(page);await page.goto('/#modules');
+ await expect(page.locator('[data-atlas-select]')).toHaveCount(9);
+ const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('nutripilot_v7')).profile);
+ const selected=page.locator('[data-atlas-select="nutrition"]');await selected.click();
+ await selected.press('End');await expect(page.locator('[data-atlas-select="coach"]')).toBeFocused();
+ await expect(page.locator('[data-atlas-select="coach"]')).toHaveAttribute('aria-pressed','true');
+ await selected.focus();await selected.press('ArrowRight');
+ await expect(page.locator('[data-atlas-select="recipes"]')).toBeFocused();
+ await expect(page.locator('#constellation-detail [data-go="recipes"]')).toBeVisible();
+ await page.locator('[data-atlas-select="training"]').click();
+ await expect(page.locator('[data-atlas-path="training"]')).toHaveClass('on');
+ await page.locator('.constellation').scrollIntoViewIfNeeded();
+ const capture=testInfo.outputPath(`${testInfo.project.name}-atlas.png`);
+ await page.screenshot({path:capture,animations:'disabled'});await testInfo.attach('atlas',{path:capture,contentType:'image/png'});
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('nutripilot_v7')).profile)).toEqual(before);
+ await expect(page).toHaveURL(/#modules$/);
+ await page.locator('#constellation-detail [data-go="training"]').click();
+ await expect(page).toHaveURL(/#training$/);await expect(page.locator('.lock-overlay')).toBeVisible();
+});
+
+test('Atlas stays inside narrow screens, respects reduced motion and reverses RTL arrow navigation',async({page})=>{
+ await page.emulateMedia({reducedMotion:'reduce'});await seed(page,'ar');await page.goto('/#modules');
+ for(const width of [320,390,820,1440]){
+  await page.setViewportSize({width,height:900});
+  const outside=await page.locator('.constellation,.constellation-node,.constellation-copy>.btn').evaluateAll(els=>els.some(el=>{const r=el.getBoundingClientRect();return r.left < -1 || r.right>document.documentElement.clientWidth+1;}));
+  expect(outside,`Atlas bounds at ${width}`).toBe(false);
+ }
+ const first=page.locator('[data-atlas-select="nutrition"]');await first.focus();await first.press('ArrowLeft');
+ await expect(page.locator('[data-atlas-select="recipes"]')).toBeFocused();
+ expect(await page.locator('.constellation-core').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+ expect(await page.locator('.constellation-lines path.on').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+});
+
+test('NEXUS derives live actions from logs, explains them and preserves manual entry',async({page},testInfo)=>{
+ await seed(page,'pt',{premium:true,accessToken:'synthetic-interface-only',subscriptionPlan:'complete_annual'});
+ await page.route('**/api/access/status',r=>r.fulfill({status:200,json:{premium:true,plan:'complete_annual',email:'interface@example.invalid'}}));
+ await page.route('**/api/user/state',r=>r.fulfill({status:200,json:{state:null}}));
+ await page.goto('/#app');await expect(page.locator('.nexus-panel')).toBeVisible();
+ await expect(page.locator('[data-signal-select]')).toHaveCount(4);
+ await expect(page.locator('[data-signal-select="meals"]')).toHaveAttribute('aria-pressed','true');
+ await page.locator('.nexus-why summary').click();await expect(page.locator('.nexus-why p')).toContainText('refeições');
+ await actualCapture(page,testInfo,'nexus');
+ await page.locator('[data-signal-action="meals"]').click();await expect(page.locator('#manual-search')).toBeVisible();
+ await page.locator('.modal-wrap [data-close]').first().click();
+ await page.locator('[data-signal-select="water"]').click();await page.locator('[data-signal-action="water"]').click();
+ await expect(page.locator('.water-tile')).toBeInViewport();
+ await page.locator('.water-actions [data-water="250"]').click();
+ await expect(page.locator('[data-signal-select="water"] small')).toContainText('250');
+ const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('nutripilot_v7')));expect(state.meals).toHaveLength(0);
+ await page.locator('[data-signal-select="sleep"]').click();await expect(page.locator('#nexus-focus p')).toContainText('Nenhuma noite');
+ await page.locator('[data-signal-action="sleep"]').click();await expect(page).toHaveURL(/#sleep$/);await expect(page.locator('#sl-bed')).toBeVisible();
+ expect((await page.request.post('/api/user/state',{data:{state:{meals:[]}}})).status()).toBe(401);
+});

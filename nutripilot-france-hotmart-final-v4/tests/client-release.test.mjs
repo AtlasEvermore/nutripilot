@@ -116,7 +116,7 @@ test('A delayed download cannot merge the previous account data into the current
 
 function discoveryContext() {
   const ctx = vm.createContext({
-    state: { premium: false }, config: {}, discoveryFilter: "all",
+    state: { premium: false }, config: {}, discoveryFilter: "all", constellationFocus: "nutrition",
     L: (s, values = {}) => s.replace(/\{(\w+)\}/g, (_, k) => values[k] ?? ''),
     esc: String, icon: () => '', modTitle: m => m.name, MV: () => ({ r: 300, c: 20, e: 100, p: 10 }),
     freeScansLeft: () => 0, appHeader: () => '', bottom: () => '', ownedModules: () => [], totals: () => ({ kcal: 0 }), memberCard: () => '',
@@ -126,7 +126,7 @@ function discoveryContext() {
   const start = source.indexOf('const MODULES = [');
   vm.runInContext(source.slice(start, source.indexOf('\n];', start) + 3) + '\nthis.MODULES = MODULES;', ctx);
   ctx.APP_SHORT = Object.fromEntries(ctx.MODULES.map(m => [m.id, m.short || m.name]));
-  for (const name of ['moduleArtwork', 'modCard', 'modulePreview', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'discoveryCategory', 'discoveryHero', 'discoveryFilters', 'appIcon', 'modulesScreen']) load(ctx, name);
+  for (const name of ['moduleArtwork', 'modCard', 'modulePreview', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'discoveryCategory', 'constellationModule', 'constellationDetail', 'constellationMap', 'discoveryHero', 'discoveryFilters', 'appIcon', 'modulesScreen']) load(ctx, name);
   return ctx;
 }
 
@@ -272,4 +272,24 @@ test('Metric arrival never animates a health value through incorrect intermediat
  load(ctx,'runMetricArrival');ctx.runMetricArrival();
  assert.deepEqual(values.map(el=>el.textContent),['71,0','1.700']);assert.equal(animated,2);
  ctx.window.matchMedia=()=>({matches:true});ctx.runMetricArrival();assert.equal(animated,2);
+});
+
+
+test('The constellation maps only real destinations and selection details never grant access or write health data',()=>{
+ const ctx=discoveryContext();const before=JSON.stringify(ctx.state);
+ const map=ctx.constellationMap();assert.equal((map.match(/data-atlas-select=/g)||[]).length,9);
+ for(const m of ctx.MODULES){const detail=ctx.constellationDetail(m.id);assert.ok(detail.includes(`data-go="${m.route}"`));assert.doesNotMatch(detail,/data-buy|data-module-buy|%|mod-price/);}
+ assert.equal(ctx.constellationModule('<img>').id,'nutrition');
+ assert.equal(JSON.stringify(ctx.state),before);
+ assert.match(ctx.constellationDetail('scanner'),/Analyses momentanément en pause/);
+});
+
+
+test('NEXUS adapts to recorded data, omits unavailable modules and never mutates its input',()=>{
+ const ctx=vm.createContext({L:(s,v={})=>s.replace(/\{(\w+)\}/g,(_,k)=>v[k]??''),fmt:String});load(ctx,'routineSignals');
+ const input={mealCount:0,waterMl:0,waterGoalMl:2000,trainingAvailable:true,trainingConfigured:true,trainingPlanned:true,trainingDone:false,sleepAvailable:true,sleepHours:0};const before=JSON.stringify(input);
+ const signals=ctx.routineSignals(input);assert.equal(signals[0].id,'meals');assert.equal(signals.length,4);assert.match(signals.find(s=>s.id==='sleep').value,/Aucune nuit/);assert.equal(JSON.stringify(input),before);
+ const complete=ctx.routineSignals({...input,mealCount:3,waterMl:2000,trainingDone:true,sleepHours:8});assert.equal(complete[0].id,'meals');assert.equal(complete.find(s=>s.id==='training').value,'Séance enregistrée');assert.equal(complete.find(s=>s.id==='sleep').value,'8 h');
+ const restricted=ctx.routineSignals({...input,trainingAvailable:false,sleepAvailable:false});assert.equal(restricted.length,2);
+ const invalid=ctx.routineSignals({...input,mealCount:Infinity,waterMl:-50,sleepHours:'broken'});assert.match(invalid.find(s=>s.id==='water').value,/^0 \/ 2000 ml$/);assert.ok(invalid.every(s=>!/[Nn]a[Nn]|Infinity|%/.test(s.value)));
 });
