@@ -25,10 +25,12 @@
         ]
       },
       "restore_drill": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-27T00:12:05.301Z",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "release/ORBITAL_REVIEW_2026-10-26.md: final orbital candidate restored five original snapshot files in isolation; smoke 18.1.0 passed and originals remained byte-identical; old snapshot not renewed"
+        ]
       },
       "new_credentials_stored": {
         "status": "verified",
@@ -63,14 +65,19 @@
         "evidence": [
           "private-ops:18.1.0 and original V12 both booted isolated restorations; original files byte-identical after candidate shutdown; preserve existing service and volume; see release/RECOVERY_EVIDENCE_2026-10-24.md",
           "private-ops:Revised candidate booted a fresh isolated real-data restore during SITE_AUDIT; original contents remained byte-identical; no format migration",
-          "release/FINAL_REVIEW_2026-10-26.md: consolidated candidate reads the same previously V12-tested snapshot without changing original files; no storage format or migration code changed"
+          "release/FINAL_REVIEW_2026-10-26.md: consolidated candidate reads the same previously V12-tested snapshot without changing original files; no storage format or migration code changed",
+          "release/ORBITAL_REVIEW_2026-10-26.md: isolated restore of final UI candidate preserved the same original files; backend and data format unchanged"
         ]
       },
       "ci_gate_prepared": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-27T00:19:44.088317+00:00",
+        "verifiedBy": "deployment-agent",
+        "evidence": [
+          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40425309441: main 5a2c4be734dd2f666b5f26baf5b20397371e2a96 passed 82 application/PostgreSQL, eight gate, three native, ten signing and 48 clean-browser checks",
+          "ghcr.io/atlasevermore/nutripilot@sha256:a8838a5a315688897805fa258f82785b62814eba7fe794184d3818720c9c3967: immutable image smoke passed, version 18.1.0 and empty issues; application tree 12b6ca5c62cef4fa311941ca810a8c336099c7e9",
+          "private-ops:Wait for CI remains reviewed in existing Railway staged patch 9c88b850-a293-41fc-83ec-000d3cd03de9; no production deployment or automatic branch connection performed"
+        ]
       },
       "expiry_alert": {
         "status": "verified",
