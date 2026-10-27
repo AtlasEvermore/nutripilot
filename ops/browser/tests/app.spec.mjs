@@ -378,6 +378,6 @@ test('Asymmetric iOS safe regions keep navigation and modal controls reachable a
   for(const locator of [page.locator('.app-head-row'),page.locator('.bottom-nav')]){
    const b=await locator.boundingBox();expect(b.x).toBeGreaterThanOrEqual(insets.left-1);expect(b.x+b.width).toBeLessThanOrEqual(viewport.width-insets.right+1);
   }
-  const opener=page.locator('.recipe-grid [data-recipe-id]').first();await opener.click();const close=page.locator('.modal-wrap .sheet-head [data-close]').first();await expect(close).toBeInViewport();const b=await close.boundingBox();expect(b.x+b.width).toBeLessThanOrEqual(viewport.width-insets.right+1);expect(b.y).toBeGreaterThanOrEqual(insets.top-1);await page.keyboard.press('Escape');await expect(opener).toBeFocused();
+  const opener=page.locator('.recipe-grid [data-recipe-id]').first();await page.locator('#recipe-search').focus();await opener.click();const close=page.locator('.modal-wrap .sheet-head [data-close]').first();await expect(close).toBeInViewport();const b=await close.boundingBox();expect(b.x+b.width).toBeLessThanOrEqual(viewport.width-insets.right+1);expect(b.y).toBeGreaterThanOrEqual(insets.top-1);await page.keyboard.press('Escape');await expect(opener).toBeFocused();
  }
 });
