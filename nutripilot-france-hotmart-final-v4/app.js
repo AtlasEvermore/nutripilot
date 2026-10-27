@@ -2953,7 +2953,8 @@ const APP_SHORT = Object.fromEntries(MODULES.map((m) => [m.id, m.short || m.name
 const overlayFocusOrigins = new WeakMap();
 let pendingOverlayFocus = null;
 function overlayFocusDescriptor(origin) {
-  if(origin?.origin)return origin;
+  // DOM links also expose origin/hash strings; only reuse our explicit descriptor object.
+  if(origin && typeof origin.selector==='string' && typeof origin.hash==='string' && Object.hasOwn(origin,'origin'))return origin;
   let selector='';
   if(origin?.id)selector=`#${CSS.escape(origin.id)}`;
   else if(origin?.hasAttribute?.('data-drawer'))selector='[data-drawer]';

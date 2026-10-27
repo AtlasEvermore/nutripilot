@@ -327,3 +327,8 @@ test('Paused provider panels preserve forms as disabled previews and offer worki
 test('A paused provider never advertises a leftover guest scan allowance',()=>{
  const ctx=vm.createContext({config:{ai:false},state:{premium:false},L:s=>s,icon:()=>'',freeScanLimit:()=>100,freeScansLeft:()=>100});load(ctx,'freeScanBanner');const html=ctx.freeScanBanner();assert.match(html,/Analyses momentanément en pause/);assert.doesNotMatch(html,/gratuites restantes|100|data-module-buy/);
 });
+
+
+test('Focus descriptors retain link elements rather than confusing their native origin/hash properties with metadata',()=>{
+ const ctx=vm.createContext({CSS:{escape:s=>s},location:{hash:'#settings'}});load(ctx,'overlayFocusDescriptor');const link={id:'privacy-link',origin:'https://example.invalid',hash:'#privacy'};const descriptor=ctx.overlayFocusDescriptor(link);assert.equal(descriptor.origin,link);assert.equal(descriptor.hash,'#settings');assert.equal(descriptor.selector,'#privacy-link');assert.equal(ctx.overlayFocusDescriptor(descriptor),descriptor);
+});
