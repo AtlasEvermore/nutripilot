@@ -2811,6 +2811,9 @@ function trialSheet() {
 function lockOverlay(m) {
   return `<div class="lock-overlay story-overlay" role="dialog" aria-label="${esc(L(m.name))}">${modulePreview(m)}</div>`;
 }
+function previewShell(m) {
+  return `<div class="mobile-app">${appHeader(m.name)}<div class="screen"></div>${bottom('modules')}</div>`;
+}
 
 function hasFeature(feature) {
   if (!state.premium) return trialActive();
@@ -8300,6 +8303,7 @@ function render() {
   else if (route === 'onboarding') html = onboarding();
   else if (route === 'analyzing') html = analyzing();
   else if (route === 'paywall' || route === 'upgrade') html = paywall();
+  else if (!fullAccess() && moduleForRoute() && moduleForRoute().id !== 'scanner') html = previewShell(moduleForRoute());
   else if (state.premium && moduleForRoute() && !hasModule(moduleForRoute().id)) html = moduleLockedScreen(moduleForRoute().id);
   else if (route === 'modules') html = modulesScreen();
   else if (route === 'training') html = trainingScreen();
@@ -8339,7 +8343,7 @@ function render() {
       .replace(/<nav class="bottom-nav">[\s\S]*?<\/nav>/, () => appTabBar(shellId))
       .replace('<div class="mobile-app', '<div class="in-app mobile-app');
   } else if (modHere && html.includes('</header>')) html = html.replace(/<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, `</header>${moduleBar(modHere.id)}`);
-  // Visitors without free minutes left see each app behind a blur, with the trial box on top.
+  // Restricted content is never constructed for the discovery route; the empty shell receives its introduction.
   const locked = !fullAccess() && modHere && !['plans', 'paywall', 'upgrade'].includes(route) && modHere.id !== 'scanner';
   if (locked) html = html.replace('<div class="screen', '<div inert aria-hidden="true" class="locked-blur screen').replace('<div class="in-app mobile-app', '<div class="in-app locked-app mobile-app') + lockOverlay(modHere);
   const noFab = state.premium || locked || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);

@@ -15,3 +15,9 @@ Profundidade azul-escura, verde cítrico e ciano; melhor hierarquia, espaçament
 Sintaxe e suíte local: 71 aprovados, um PostgreSQL real omitido por ausência de banco local. CI deve executar PostgreSQL e 48 verificações de navegador: rotas em quatro idiomas, filtros, escolha mensal, limites de layout entre 320 e 1440 pixels e redução de movimento. As capturas usam somente dados fictícios e serão examinadas antes da entrega. A revisão visual pode exigir ajustes; não tratar código escrito como aceitação concluída.
 
 Árvore inicial da aplicação: b416428c0108319116af08b091f03711574125d4. Evidências de CI/restauração reabertas no manifesto. NativeTree preservado; nova árvore de interface não é publicação da loja. Respeitar AGENTS.md e as duas fases da trava.
+
+## Ajustes após revisão visual
+
+Planos traz o valor e a escolha antes do detalhamento, recolhe país/moeda sem perder o estado dos controles e remove o aviso redundante de bloqueio nessa rota. Entrar pela apresentação de um módulo mantém seu contexto e destaca a opção correspondente. A confirmação mostra o nome do plano escolhido; alternativas ficam sob demanda. A prévia agora usa uma estrutura vazia e a introdução do módulo, sem construir a tela restrita por trás: menos DOM e processamento ao explorar.
+
+As duas rodadas anteriores passaram pela regressão real e pelos 48 casos de navegador. A árvore refinada final 12b6ca5c62cef4fa311941ca810a8c336099c7e9 exige a última execução e inspeção das suas capturas. Nenhum requisito operacional de publicação foi dispensado.

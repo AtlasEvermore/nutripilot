@@ -61,6 +61,7 @@ test('Every module image loads and discovery leads to its own space before Plans
   await testInfo.attach('apps', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
   await page.locator('.app-icon.m-nut').click();
   await expect(page.locator('.lock-overlay')).toBeVisible();
+  await expect(page.locator('.locked-blur')).toBeEmpty();
   const previewImage=page.locator('.lock-overlay .story-visual img');
   await expect(previewImage).toBeVisible();
   await expect.poll(()=>previewImage.evaluate(el=>el.complete && el.naturalWidth>0)).toBe(true);
