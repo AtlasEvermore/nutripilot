@@ -57,12 +57,18 @@ test('Every module image loads and discovery leads to its own space before Plans
   }
   await expect(page.locator('.mod-price, .kit-card, .launcher .mod-cards')).toHaveCount(0);
   await expect(page.locator('.launcher')).not.toContainText(/jours gratuits|dias grátis|\/\s*(?:mês|mois)|Économisez/i);
-  await testInfo.attach('apps', { body: await page.screenshot({ fullPage: true, animations: 'disabled' }), contentType: 'image/png' });
+  await page.evaluate(() => window.scrollTo(0,0));
+  await testInfo.attach('apps', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
   await page.locator('.app-icon.m-nut').click();
   await expect(page.locator('.lock-overlay')).toBeVisible();
+  await expect(page.locator('.locked-blur')).toBeEmpty();
+  const previewImage=page.locator('.lock-overlay .story-visual img');
+  await expect(previewImage).toBeVisible();
+  await expect.poll(()=>previewImage.evaluate(el=>el.complete && el.naturalWidth>0)).toBe(true);
   await testInfo.attach('module-preview', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
   await page.locator('.lock-overlay [data-module-buy]').click();
   await expect(page.locator('.plans-page')).toBeVisible();
+  await expect(page.locator('[data-plans-tab="modules"]')).toHaveAttribute('aria-selected','true');
   await testInfo.attach('plans', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
 });
 
@@ -85,3 +91,57 @@ for (const status of [503, 401]) {
     expect(saved.profile.name).toBe('Browser Test');
   });
 }
+
+test('Purpose filters narrow discovery without losing modules, keyboard focus or navigation', async ({page},testInfo) => {
+  await seed(page);await page.goto('/#modules');
+  for(const [category,count] of [['nourish',5],['move',2],['restore',2],['all',9]]) {
+    const button=page.locator(`[data-discovery-filter="${category}"]`);
+    await button.click();
+    await expect(button).toHaveAttribute('aria-pressed','true');
+    await expect(button).toBeFocused();
+    await expect(page.locator('.app-grid .app-icon')).toHaveCount(count);
+    if(category==='move') {
+      await expect(page.locator('.app-grid .m-train')).toBeVisible();
+      await expect(page.locator('.app-grid .m-sleep')).toHaveCount(0);
+    }
+  }
+  await page.locator('.discovery-library').scrollIntoViewIfNeeded();
+  await testInfo.attach('module-journeys',{body:await page.screenshot({animations:'disabled'}),contentType:'image/png'});
+  await page.goto('/#app');
+  await testInfo.attach('today',{body:await page.screenshot({animations:'disabled'}),contentType:'image/png'});
+});
+
+test('Monthly choice stays monthly through comparison, selection and the confirmation page',async({page},testInfo)=>{
+  await seed(page);await page.goto('/#plans');
+  await page.locator('.plan-location > summary').click();
+  await page.locator('[data-country]').selectOption('BR');
+  await expect(page.locator('[data-country]')).toHaveValue('BR');
+  await expect(page.locator('.plan-location')).toHaveAttribute('open','');
+  await expect(page.locator('.plan-location > summary')).toContainText('BRL');
+  await page.locator('[data-currency]').selectOption('USD');
+  await expect(page.locator('.plan-location > summary')).toContainText('USD');
+  await page.locator('.plan-location > summary').click();
+  await page.locator('[data-period="monthly"]').click();
+  await expect(page.locator('[data-period="monthly"]')).toHaveClass(/active/);
+  await page.locator('[data-plans-tab="modules"]').click();
+  await expect(page.locator('.plan-choice')).toHaveCount(6);
+  await testInfo.attach('plan-comparison',{body:await page.screenshot({fullPage:true,animations:'disabled'}),contentType:'image/png'});
+  await page.locator('.plan-choice[data-choose-plan="nutrition"]').click();
+  await expect(page.locator('.pw-period[data-period="monthly"]')).toHaveAttribute('aria-checked','true');
+  await expect(page.locator('.pw-period[data-period="annual"]')).toHaveAttribute('aria-checked','false');
+  await testInfo.attach('plan-confirmation',{body:await page.screenshot({animations:'disabled'}),contentType:'image/png'});
+});
+
+test('Journeys and plans adapt at narrow phone, large phone, tablet and desktop widths with motion reduced',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});await seed(page);
+  for(const width of [320,390,820,1440]) {
+    await page.setViewportSize({width,height:900});
+    for(const route of ['modules','plans']) {
+      await healthyScreen(page,route);
+      const overflow=await page.locator('.discovery-hero,.discovery-card,.discovery-filters,.plans-intro,.kit-row,.plan-choice,.plans-tabs').evaluateAll(els=>els.some(el=>{const r=el.getBoundingClientRect();return r.left < -1 || r.right > document.documentElement.clientWidth+1;}));
+      expect(overflow,`${route} at ${width}`).toBe(false);
+    }
+  }
+  await page.goto('/#modules');
+  expect(await page.locator('.orbit-core').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+});

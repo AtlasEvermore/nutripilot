@@ -116,7 +116,7 @@ test('A delayed download cannot merge the previous account data into the current
 
 function discoveryContext() {
   const ctx = vm.createContext({
-    state: { premium: false }, config: {},
+    state: { premium: false }, config: {}, discoveryFilter: "all",
     L: (s, values = {}) => s.replace(/\{(\w+)\}/g, (_, k) => values[k] ?? ''),
     esc: String, icon: () => '', modTitle: m => m.name, MV: () => ({ r: 300, c: 20, e: 100, p: 10 }),
     freeScansLeft: () => 0, appHeader: () => '', bottom: () => '', ownedModules: () => [], totals: () => ({ kcal: 0 }), memberCard: () => '',
@@ -126,7 +126,7 @@ function discoveryContext() {
   const start = source.indexOf('const MODULES = [');
   vm.runInContext(source.slice(start, source.indexOf('\n];', start) + 3) + '\nthis.MODULES = MODULES;', ctx);
   ctx.APP_SHORT = Object.fromEntries(ctx.MODULES.map(m => [m.id, m.short || m.name]));
-  for (const name of ['moduleArtwork', 'modCard', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'appIcon', 'modulesScreen']) load(ctx, name);
+  for (const name of ['moduleArtwork', 'modCard', 'modulePreview', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'discoveryCategory', 'discoveryHero', 'discoveryFilters', 'appIcon', 'modulesScreen']) load(ctx, name);
   return ctx;
 }
 
@@ -155,6 +155,13 @@ test('Every module has local artwork, a resource preview and no price, offer or 
   const apps = ctx.modulesScreen();
   assert.doesNotMatch(apps, /jours gratuits|\/ mois|Économisez|kit-card|mod-cards|revo-hero/);
   assert.equal((apps.match(/class="app-icon /g) || []).length, 9);
+  for (const category of ['nourish','move','restore']) {
+    ctx.discoveryFilter=category; const filtered=ctx.modulesScreen();
+    const expected=ctx.MODULES.filter(m=>ctx.discoveryCategory(m.id)===category).length;
+    assert.equal((filtered.match(/class="app-icon /g)||[]).length,expected);
+    assert.match(filtered,new RegExp('data-discovery-filter="'+category+'" aria-pressed="true"'));
+  }
+  ctx.discoveryFilter='all';
   assert.equal(ctx.moduleArtwork({ id: '../server.mjs' }), '');
 });
 

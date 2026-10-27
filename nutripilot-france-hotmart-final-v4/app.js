@@ -1877,7 +1877,7 @@ function startSaving() {
 
 
 function exploreBanner() {
-  if (fullAccess() || route === 'modules') return '';
+  if (fullAccess() || ['modules','plans','paywall','upgrade'].includes(route)) return '';
   return `<button class="explore-banner" data-go="plans">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button>`;
 }
 
@@ -2809,7 +2809,10 @@ function trialSheet() {
 }
 // Locked app: the real screen stays visible behind a blur, with the trial box on top.
 function lockOverlay(m) {
-  return `<div class="lock-overlay" role="dialog" aria-label="${esc(L(m.name))}"><div class="lock-card ${m.tone}">${moduleArtwork(m)}<span class="mod-ico">${icon(m.icon)}</span><b>${L(m.name)}</b>${trialPitch('overlay', m.id)}</div></div>`;
+  return `<div class="lock-overlay story-overlay" role="dialog" aria-label="${esc(L(m.name))}">${modulePreview(m)}</div>`;
+}
+function previewShell(m) {
+  return `<div class="mobile-app">${appHeader(m.name)}<div class="screen"></div>${bottom('modules')}</div>`;
 }
 
 function hasFeature(feature) {
@@ -2926,10 +2929,47 @@ function memberCard() {
 }
 // Launcher: every module is an app on a home screen. The person's apps first, the others to discover.
 const APP_SHORT = Object.fromEntries(MODULES.map((m) => [m.id, m.short || m.name]));
+let discoveryFilter = 'all';
+function discoveryCategory(id) {
+  return ['training', 'menopause'].includes(id) ? 'move' : ['sleep', 'coach'].includes(id) ? 'restore' : 'nourish';
+}
+function discoveryHero(kind = 'apps') {
+  const primary = moduleById(state.profile?.track === 'menopause' ? 'menopause' : state.profile?.track === 'muscle' ? 'training' : 'nutrition');
+  const v = MV();
+  return `<section class="discovery-hero" aria-labelledby="discovery-title">
+    <div class="discovery-copy"><span class="orbit-eyebrow"><i></i> NUTRIPILOT / ${L(kind === 'home' ? 'Aujourd’hui' : 'Votre parcours')}</span>
+      <h1 id="discovery-title">${L('Votre routine, une nouvelle dimension.')}</h1>
+      <p>${L('Nutrition, mouvement, équilibre. Un parcours qui vous ressemble.')}</p>
+      <div class="discovery-actions"><button class="btn btn-lime" data-go="${primary.route}">${L('Découvrir')} ${L(primary.name)} ${icon('chevron')}</button><button class="discovery-secondary" data-go="${kind === 'home' ? 'modules' : 'app'}">${L(kind === 'home' ? 'Tous vos espaces' : 'Aujourd’hui')}${icon('chevron')}</button></div>
+      <div class="discovery-proof"><span><b>${v.r}</b>${L('recettes')}</span><span><b>${v.e}</b>${L('exercices')}</span><span><b>${String(MODULES.length).padStart(2,'0')}</b>${L('Modules')}</span></div>
+    </div>
+    <div class="orbit-scene"><div class="orbit-track track-a" aria-hidden="true"></div><div class="orbit-track track-b" aria-hidden="true"></div><div class="orbit-track track-c" aria-hidden="true"></div>
+      <div class="orbit-core ${primary.tone}">${moduleArtwork(primary)}<span class="orbit-core-label">${icon(primary.icon)}${L(primary.name)}</span></div>
+      <button class="orbit-satellite sat-move" data-go="training">${icon('dumbbell')}<span>${L('Entraînement')}</span></button>
+      <button class="orbit-satellite sat-rest" data-go="sleep">${icon('moon')}<span>${L('Sommeil')}</span></button>
+      <span class="orbit-coordinate" aria-hidden="true">N / P — 01</span><span class="orbit-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+    </div>
+  </section>`;
+}
+function discoveryFilters() {
+  return `<div class="discovery-filters" role="group" aria-label="${esc(L('Tous vos espaces'))}">${[['all','Tous vos espaces'],['nourish','Manger'],['move','Bouger'],['restore','Récupérer']].map(([id,label]) => `<button data-discovery-filter="${id}" aria-pressed="${discoveryFilter === id}">${L(label)}</button>`).join('')}</div>`;
+}
+function modulePreview(m) {
+  return `<article class="lock-card module-story ${m.tone}" aria-labelledby="preview-title">
+    <div class="story-visual">${moduleArtwork(m)}<div class="story-coordinate" aria-hidden="true">NUTRIPILOT / ${String(MODULES.indexOf(m) + 1).padStart(2,'0')}</div><span class="story-identity">${icon(m.icon)}${L(m.name)}</span></div>
+    <div class="story-copy"><span class="orbit-eyebrow">${L('Aperçu')} / ${L('Votre parcours')}</span><h1 id="preview-title">${modTitle(m)}</h1><p>${L(m.sub, MV())}</p>
+      <ol class="story-features">${m.features.map((f,i) => `<li><span>${String(i+1).padStart(2,'0')}</span><b>${L(f, MV())}</b></li>`).join('')}</ol>
+      ${['coach','scanner'].includes(m.id) && !config.ai ? `<p class="story-availability">${icon('help')}${L('Analyses momentanément en pause')}</p>` : ''}
+      <div class="story-actions"><button class="btn btn-lime" data-module-buy="${m.id}">${L('Voir les formules')}${icon('chevron')}</button><button class="discovery-secondary" data-go="modules">${L('Toutes mes apps')}</button></div>
+    </div>
+  </article>`;
+}
+
 function appIcon(m, owned) {
   const lock = !owned && !m.free;
-  return `<button class="app-icon ${m.tone} ${lock ? 'locked' : ''}" data-go="${m.route}" aria-label="${esc(L(m.name))}${lock ? ` · ${esc(L('Aperçu'))}` : ''}">
-    <span class="ai-tile">${moduleArtwork(m)}${lock ? `<em class="ai-lock">${icon('lock')}</em>` : ''}</span><b>${L(APP_SHORT[m.id] || m.name)}</b></button>`;
+  return `<button class="app-icon discovery-card ${m.tone} ${lock ? 'locked' : ''}" data-go="${m.route}" aria-label="${esc(L(m.name))}${lock ? ` · ${esc(L('Aperçu'))}` : ''}">
+    <span class="ai-tile">${moduleArtwork(m)}<span class="discovery-number" aria-hidden="true">${String(MODULES.indexOf(m)+1).padStart(2,'0')}</span></span>
+    <span class="discovery-card-copy"><span class="discovery-card-meta">${icon(m.icon)}${L(owned ? 'Activé' : 'Découvrir')}</span><b>${L(APP_SHORT[m.id] || m.name)}</b><span class="discovery-card-description">${L(m.sub,MV())}</span><span class="discovery-card-next">${L('Ouvrir')}${icon('chevron')}</span></span></button>`;
 }
 // v10 · "Révolutionnaire" showcase: what NutriPilot delivers, with live proof numbers.
 function revoHero() {
@@ -2968,38 +3008,25 @@ function modsForMe() {
 function modulesScreen() {
   const owned = ownedModules();
   const mine = MODULES.filter((m) => owned.includes(m.id) || (m.free && state.premium));
-  const t = totals(); const p = state.profile || {};
-  const left = Math.max(0, (p.dailyKcal || 0) - t.kcal);
-  return `<div class="mobile-app launcher">
-    ${appHeader('Mes apps')}
-    <div class="screen">
-      ${state.premium ? `<button class="today-strip" data-go="app"><span class="ts-ico">${icon('home')}</span><span><small>${L('Aujourd’hui')}</small><b>${L('{n} kcal restantes', { n: fmt(left) })}</b></span><span class="ts-meta">${icon('drop')}${fmt(waterToday() / 1000, 1)} L<i></i>${icon('flame')}${L('{n} j', { n: streak() })}</span></button>` : ''}
-      <label class="search-box">${icon('search')}<input id="global-search" type="search" placeholder="${L('Rechercher une recette, un exercice, un nutriment…')}" autocomplete="off"></label>
-      <div id="gs-results"></div>
-      ${mine.length ? `<div class="section-label"><h3>${L('Accès rapide')}</h3></div><div class="app-grid">${mine.map((m) => appIcon(m, true)).join('')}</div>` : ''}
-      <div class="section-label"><h3>${L(state.premium ? 'Tous vos espaces' : 'Mes apps')}</h3></div>
-      <div class="app-grid">${modsForMe().filter((m) => !mine.some((item) => item.id === m.id)).map((m) => appIcon(m, owned.includes(m.id))).join('')}</div>
+  const other = modsForMe().filter(m => !mine.some(item => item.id === m.id));
+  const groups = [['nourish','Manger','fork'],['move','Bouger','dumbbell'],['restore','Récupérer','moon']];
+  return `<div class="mobile-app launcher experience-reload">
+    ${appHeader('Mes apps')}<div class="screen">
+      ${discoveryHero()}
+      <section class="discovery-library" aria-label="${esc(L('Tous vos espaces'))}">
+        <div class="discovery-library-head"><div><span class="orbit-eyebrow">02 / ${L('Modules')}</span><h2>${L('Les essentiels, connectés.')}</h2></div><label class="search-box">${icon('search')}<input id="global-search" type="search" placeholder="${L('Rechercher une recette, un exercice, un nutriment…')}" aria-label="${L('Rechercher une recette, un exercice, un nutriment…')}" autocomplete="off"></label></div><div id="gs-results"></div>
+        ${discoveryFilters()}
+        ${mine.length && discoveryFilter === 'all' ? `<section class="discovery-group"><div class="section-label"><h3>${L('Accès rapide')}</h3></div><div class="app-grid">${mine.map(m => appIcon(m,true)).join('')}</div></section>` : ''}
+        ${groups.filter(([id]) => discoveryFilter === 'all' || discoveryFilter === id).map(([id,label,ico]) => { const list=(discoveryFilter === 'all' ? other : modsForMe()).filter(m => discoveryCategory(m.id) === id); return list.length ? `<section class="discovery-group"><div class="discovery-group-title">${icon(ico)}<h3>${L(label)}</h3><span>${String(list.length).padStart(2,'0')}</span></div><div class="app-grid">${list.map(m => appIcon(m,owned.includes(m.id))).join('')}</div></section>` : ''; }).join('')}
+      </section>
       ${memberCard()}
-      <div class="section-label"><h3>${L('Inclus pour tous')}</h3></div>
-      <div class="free-row"><button data-go="app">${icon('home')}<span>${L('Aujourd’hui')}</span></button><button data-go="progress">${icon('progress')}<span>${L('Progrès')}</span></button><button data-open-goal>${icon('scale')}<span>${L('Objectif')}</span></button><button data-open-profile>${icon('user')}<span>${L('Profil')}</span></button></div>
-      <button class="plans-link" data-go="plans">${icon('star')}<span><b>${L('Nos formules')}</b><small>${L('Modules, combinaisons et Kit complet')}</small></span>${icon('chevron')}</button>
-    </div>
-    ${bottom('modules')}
-  </div>`;
+      <section class="discovery-tools"><div><span class="orbit-eyebrow">03 / ${L('Aujourd’hui')}</span><h2>${L('Votre prochaine décision')}</h2></div><div class="free-row"><button data-go="app">${icon('home')}<span>${L('Aujourd’hui')}</span></button><button data-go="progress">${icon('progress')}<span>${L('Progrès')}</span></button><button data-open-goal>${icon('scale')}<span>${L('Objectif')}</span></button><button data-open-profile>${icon('user')}<span>${L('Profil')}</span></button></div></section>
+    </div>${bottom('modules')}</div>`;
 }
 // Shown inside a module the person does not have yet (paid users adding a module).
 function moduleLockedScreen(id) {
   const m = moduleById(id) || MODULES[0];
-  return `<div class="mobile-app">
-    ${appHeader(m.name)}
-    <div class="screen">
-      <section class="mod-hero ${m.tone}">${moduleArtwork(m)}<span class="mod-ico big">${icon(m.icon)}</span><h1>${modTitle(m)}</h1><p>${L(m.sub, MV())}</p>
-        <ul>${m.features.map((f) => `<li>${icon('check')}<span>${L(f, MV())}</span></li>`).join('')}</ul>
-        <button class="btn btn-lime btn-wide btn-xl" data-module-buy="${m.id}">${L('Voir les formules')}</button>
-      </section>
-    </div>
-    ${bottom('modules')}
-  </div>`;
+  return `<div class="mobile-app">${appHeader(m.name)}<div class="screen module-preview-screen">${modulePreview(m)}</div>${bottom('modules')}</div>`;
 }
 
 const Billing = {
@@ -3278,10 +3305,9 @@ function paywall() {
   return `<div class="mobile-app no-nav paywall pw2">
     <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button>${logo()}${loginLink('Se connecter')}</div></div>
     <div class="screen">
-      <span class="revo-kicker">${icon('star')}${L('Révolutionnaire')}</span>
-      <h1 class="screen-title">${p.name ? L('{name}, débloquez votre programme complet.', { name: esc(p.name) }) : L('Débloquez votre programme complet.')}</h1>
+      <section class="checkout-intro"><span class="orbit-eyebrow">NUTRIPILOT / ${L('Votre formule')}</span><h1 class="screen-title">${esc(planName(plan))}</h1><p>${L('Choisissez vos espaces. La boutique confirme le prix avant tout paiement.')}</p></section>
       ${proj ? `<div class="pw-goal">${icon('progress')}<span>${L('Objectif {target} · estimé le {date}', { target: `<b>${kgFmt(p.target)} kg</b>`, date: `<b>${esc(dateFr(proj.end))}</b>` })}</span></div>` : ''}
-      ${choices.length > 1 ? `<div class="pw-plans" role="radiogroup">${choices.map((x) => `<button class="pw-plan ${x.tone || ''} ${x.tier === plan.tier ? 'on' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}"><small>${L(x.tier === 'complete' ? 'Tout inclus' : 'Recommandé pour vous')}</small><b>${esc(planName(x))}</b><span class="pwp-mods">${MODULES.filter((m) => x.modules.includes(m.id) || m.free).map((m) => `<i class="${m.tone}" title="${esc(modTitle(m))}">${icon(m.icon)}</i>`).join('')}</span><em>${L('{n} espaces inclus', { n: MODULES.filter((m) => x.modules.includes(m.id) || m.free).length })}</em></button>`).join('')}</div>` : `<div class="pw-plan-one"><b>${esc(planName(plan))}</b><small>${esc(L(plan.sub))}</small></div>`}
+      ${choices.length > 1 ? `<details class="checkout-alternatives"><summary>${L('Comparer les formules')}</summary><div class="pw-plans" role="radiogroup">${choices.map((x) => `<button class="pw-plan ${x.tone || ''} ${x.tier === plan.tier ? 'on' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}"><small>${L(x.tier === 'complete' ? 'Tout inclus' : 'Recommandé pour vous')}</small><b>${esc(planName(x))}</b><span class="pwp-mods">${MODULES.filter((m) => x.modules.includes(m.id) || m.free).map((m) => `<i class="${m.tone}" title="${esc(modTitle(m))}">${icon(m.icon)}</i>`).join('')}</span><em>${L('{n} espaces inclus', { n: MODULES.filter((m) => x.modules.includes(m.id) || m.free).length })}</em></button>`).join('')}</div></details>` : `<div class="pw-plan-one"><b>${esc(planName(plan))}</b><small>${esc(L(plan.sub))}</small></div>`}
       <div class="pw-periods" role="radiogroup">${periods.map(periodCard).join('')}</div>
       <p class="fine">${L('Les analyses de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</p><button class="btn btn-lime btn-wide btn-xl pw-cta-top" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
       <div class="pw-trust">
@@ -3974,6 +4000,7 @@ async function compressImage(file, maxSide) {
 // ---- Plans page ---------------------------------------------------------------
 // Complete kit on top, then themed bundles, single modules and a "compose my plan" builder.
 let plansTab = 'bundles';
+let planLocationOpen = false;
 let buildSel = null;
 function planName(x) {
   return x.kind === 'custom' ? x.parts.map((t) => L(moduleById(t)?.name || findPlan(t)?.label || t)).join(' + ') : L(x.label);
@@ -3991,6 +4018,7 @@ function viewModulePlans(tier) {
   selectedTier = tier;
   const plan = findPlan(tier) || findPlan(recommendedTier());
   buildSel = plan ? [...plan.modules] : null;
+  plansTab = plan?.kind === 'module' ? 'modules' : 'bundles';
   track('ViewPlans', { module: tier });
   return nav('plans');
 }
@@ -4006,7 +4034,7 @@ function plansScreen() {
   const kit = plans.find((x) => x.kind === 'complete');
   if (!kit) return storeLoadingScreen();
   const bundles = plans.filter((x) => x.kind === 'bundle');
-  const mods = plans.filter((x) => x.kind === 'module');
+  const mods = plans.filter((x) => x.kind === 'module').sort((a,b) => Number(b.tier === selectedTier) - Number(a.tier === selectedTier));
   const isMine = (x) => state.premium && x.modules.every((id) => owned.includes(id));
   if (!buildSel) buildSel = [...(findPlan(recommendedTier())?.modules || ['nutrition', 'training'])];
   const best = bestOffer(buildSel);
@@ -4017,16 +4045,16 @@ function plansScreen() {
   // One compact, fully tappable row per plan.
   const row = (x) => {
     const mine = isMine(x);
-    const save = planSaving(x, selectedPeriod);
-    return `<button class="pl-row ${x.tone} ${mine ? 'mine' : ''}" ${mine ? 'disabled' : `data-choose-plan="${esc(x.tier)}"`}>
-      <span class="mod-ico">${icon(x.icon)}</span>
-      <span class="pl-txt"><b>${esc(L(x.label))}${x.tier === reco && !mine ? ` <i class="pl-reco">${L('Recommandé')}</i>` : ''}</b>${x.kind === 'module' ? `<small>${esc(L(x.sub))}</small>` : modChips(x.modules, true)}${kit && !mine && !ownsAll ? `<em class="pl-kitup">${L('Tous les modules : Kit complet pour {p} de plus', { p: per(r2(lp(kit, selectedPeriod) - lp(x, selectedPeriod))) })}</em>` : ''}</span>
-      <span class="pl-price">${mine ? `<em class="pl-mine">${icon('check')} ${L('Activé')}</em>` : `<b>${per(lp(x, selectedPeriod))}</b><small>${unit}</small>${compareHtml(x, selectedPeriod)}`}</span>
+    return `<button class="pl-row plan-choice ${x.tone} ${x.tier === selectedTier ? 'focused' : ''} ${mine ? 'mine' : ''}" ${mine ? 'disabled' : `data-choose-plan="${esc(x.tier)}"`}>
+      <span class="plan-choice-heading"><span class="mod-ico">${icon(x.icon)}</span><span class="pl-txt"><b>${esc(L(x.label))}</b>${x.tier === reco && !mine ? `<i class="pl-reco">${L('Recommandé')}</i>` : ''}</span></span>
+      <span class="plan-choice-content">${x.kind === 'module' ? `<span>${esc(L(x.sub))}</span>` : modChips(x.modules,true)}</span>
+      <span class="plan-choice-bottom"><span class="pl-price">${mine ? `<em class="pl-mine">${icon('check')} ${L('Activé')}</em>` : `<b>${per(lp(x,selectedPeriod))}</b><small>${unit}</small>`}</span><span class="plan-choice-action">${L(mine ? 'Votre formule' : 'Choisir')}${icon(mine ? 'check' : 'chevron')}</span></span>
     </button>`;
   };
+  const picker = locationPicker();
   const oneOf = `<p class="pl-oneof">${icon('check')}<span>${L('Chaque option est un abonnement à part : choisissez-en une. Pour tout avoir, le Kit complet coûte {p}.', { p: `${per(lp(kit, selectedPeriod))} ${unit}` })}</span></p>`;
   const body = plansTab === 'modules'
-    ? `${oneOf}<div class="pl-list">${mods.map(row).join('')}</div>`
+    ? `<div class="pl-list">${mods.map(row).join('')}</div>`
     : plansTab === 'builder'
       ? `<div class="bd-grid">${PAID_MODULES.map((m) => `<button class="bd-mod ${m.tone} ${buildSel.includes(m.id) ? 'on' : ''}" data-build-mod="${m.id}" aria-pressed="${buildSel.includes(m.id)}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.name))}</b><i class="bd-check">${icon('check')}</i></button>`).join('')}</div>
         ${best ? `<div class="bd-best compact"><small>${L('Le prix de votre sélection')}</small><b>${esc(planName(best))}</b>
@@ -4034,22 +4062,22 @@ function plansScreen() {
           ${best.kind === 'complete' && buildSel.length < PAID_IDS.length ? `<p class="bd-up">${L('Pour ce prix, le Kit complet vous donne tous les modules : c’est la meilleure option pour votre sélection.')}</p>` : ''}
           ${best.kind !== 'complete' && kit ? `<p class="bd-up">${L('Pour {p} de plus, prenez le Kit complet : les 9 modules.', { p: `${per(r2(lp(kit, selectedPeriod) - lp(best, selectedPeriod)))} ${unit}` })}</p>` : ''}
           <button class="btn btn-lime btn-wide" data-choose-plan="${esc(best.tier)}">${L('Choisir cette formule')}</button></div>` : `<div class="empty">${L('Choisissez au moins un module.')}</div>`}`
-      : `${oneOf}<div class="pl-list">${bundles.map(row).join('')}</div>`;
+      : `<div class="pl-list">${bundles.map(row).join('')}</div>`;
   return `<div class="mobile-app plans-page">
     ${appHeader('Nos formules')}
     <div class="screen">
-      <p class="pl-sub">${L('Modules, combinaisons et Kit complet')}</p>
+      <section class="plans-intro"><span class="orbit-eyebrow">NUTRIPILOT / ${L('Formules')}</span><h1>${L('Un seul choix. Votre rythme.')}</h1><p>${L('Choisissez vos espaces. La boutique confirme le prix avant tout paiement.')}</p><div class="plans-steps"><span><i>01</i>${L('Choisir')}</span><span><i>02</i>${L('Votre compte NutriPilot')}</span><span><i>03</i>${L('Votre boutique')}</span></div></section>
       ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
-      ${freeBanner(true)}
-      ${locationPicker()}
+      <section class="plans-config"><p>${L('Chaque option est un abonnement à part : choisissez-en une.')}</p>${picker ? `<details class="plan-location" ${planLocationOpen ? 'open' : ''}><summary>${L('Pays')} / ${L('Devise de paiement')} <b>${esc(currency())}</b></summary>${picker}</details>` : ''}</section>
       <div class="period-toggle slim" role="tablist">
         <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')}</button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
       </div>
       ${kit ? `<button class="kit-row" ${ownsAll ? 'disabled' : `data-choose-plan="complete"`}>
-        <span class="kr-txt"><small>${L('Kit complet')} · ${esc(L(kit.badge))}</small><b>${L('Les 9 modules et le coach')}</b></span>
+        <span class="kr-txt"><small>${L('Kit complet')} · ${esc(L(kit.badge))}</small><b>${L('Les 9 modules et le coach')}</b><span class="kit-modules">${PAID_MODULES.map(m => `<i>${icon(m.icon)}${L(m.short || m.name)}</i>`).join('')}</span><span class="kit-action">${L(ownsAll ? 'Votre formule' : 'Choisir cette formule')}${icon('chevron')}</span></span>
         <span class="kr-price">${ownsAll ? `<em>${icon('check')} ${L('Activé')}</em>` : `<s>${per(refPrice(kit, selectedPeriod))}</s><b>${per(lp(kit, selectedPeriod))}</b><small>${unit}</small>`}</span>
       </button>` : ''}
+      ${freeBanner(true)}
       <div class="plans-tabs" role="tablist">${tab('bundles', 'Combinaisons')}${tab('modules', 'Modules')}${tab('builder', 'Composer')}</div>
       ${body}
       <details class="pl-more"><summary>${L('Le calcul de chaque formule')}</summary>
@@ -4192,26 +4220,14 @@ function missionScreen() {
   const left = freeScansLeft();
   const tracks = t('tracks');
   const name = p.name ? esc(p.name) : '';
-  return `<div class="mobile-app space">
+  return `<div class="mobile-app space mission-reload">
     <div class="space-bg" aria-hidden="true"><i class="st s1"></i><i class="st s2"></i><i class="st s3"></i><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
     <header class="app-head mx-head"><div class="app-head-row"><button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${(LANGS.find((x) => x[0] === lang()) || [])[2] || '🌐'}</button></div></div></header>
     <div class="screen mx">
-      <section class="mx-hero">
-        <div class="mx-statusbar"><span class="revo-kicker">${icon('star')}${L('Révolutionnaire')}</span><span class="mx-live"><i></i>${L('Système NutriPilot · en ligne')}</span></div>
-        <h1>${name ? L('{name}, votre programme est calibré.', { name }) : L('Votre corps. Votre plan. Calculé au gramme près.')}</h1>
-        <p>${L('Plan alimentaire, entraînement, sommeil et suivi : un seul système qui s’ajuste à vous chaque jour.')}</p>
-        ${orbitGauge(p)}
-        <div class="mx-metrics">
-          ${proj ? `<div><small>${L('Objectif')}</small><b>${kgFmt(p.target)} kg</b><span>${esc(dateFr(proj.end))}</span></div>` : `<div><small>${L('Objectif')}</small><b>${L('Sur mesure')}</b><span>${L('selon votre profil')}</span></div>`}
-          <div><small>${L('Recettes')}</small><b data-count="${v.r}">${v.r}</b><span>${L('{c} cuisines', { c: v.c })}</span></div>
-          <div><small>${L('Exercices')}</small><b data-count="${v.e}">${v.e}</b><span>${L('{p} programmes', { p: v.p })}</span></div>
-        </div>
-        <button class="btn btn-lime btn-wide btn-xl mx-cta" data-module-buy="${esc(recommendedTier())}">${L('Voir les formules')}</button>
-        ${left > 0 ? `<button class="btn btn-glass btn-wide" data-open-add>${icon('scan')} ${L('Analyser mon repas gratuitement')}<em class="fs-count">${L('{n} offertes', { n: left })}</em></button>` : `<button class="btn btn-glass btn-wide" data-open-add>${icon('scan')} ${L('Scanner un code-barres')}<em class="fs-count">${L('Gratuit')}</em></button>`}
-      </section>
+      ${discoveryHero('home')}
 
       <section class="mx-card mx-menu">
-        <div class="mx-title"><span class="mx-ico m-nut">${icon('fork')}</span><div><small>${L('Plan alimentaire sur mesure')}</small><h2>${L('Votre menu d’aujourd’hui')}</h2></div><em>${L('Calculé pour vous')}</em></div>
+        <div class="mx-title"><span class="mx-ico m-nut">${icon('fork')}</span><div><small>${L('Plan alimentaire sur mesure')}</small><h2>${L('Aperçu')} · ${L('Votre menu d’aujourd’hui')}</h2></div><em>${L('Selon votre profil')}</em></div>
         <div class="mx-meals">${meals.map((m) => `<button class="mx-meal" data-recipe-id="${esc(m.recipeId)}"><span class="mm-flag">${CUISINE_FLAG[m.cuisine] || '🍽️'}</span><span class="mm-txt"><small>${L(m.type)}</small><b>${esc(L(m.name))}</b></span><span class="mm-kcal"><b>${fmt(m.kcal)}</b><small>kcal · ${m.protein} g P</small></span></button>`).join('')}</div>
         <div class="mx-sum">${icon('check')}<span>${L('{k} kcal et {p} g de protéines : exactement votre repère, avec la cuisine que vous aimez.', { k: fmt(total.kcal), p: total.protein })}</span></div>
       </section>
@@ -8287,6 +8303,7 @@ function render() {
   else if (route === 'onboarding') html = onboarding();
   else if (route === 'analyzing') html = analyzing();
   else if (route === 'paywall' || route === 'upgrade') html = paywall();
+  else if (!fullAccess() && moduleForRoute() && moduleForRoute().id !== 'scanner') html = previewShell(moduleForRoute());
   else if (state.premium && moduleForRoute() && !hasModule(moduleForRoute().id)) html = moduleLockedScreen(moduleForRoute().id);
   else if (route === 'modules') html = modulesScreen();
   else if (route === 'training') html = trainingScreen();
@@ -8326,7 +8343,7 @@ function render() {
       .replace(/<nav class="bottom-nav">[\s\S]*?<\/nav>/, () => appTabBar(shellId))
       .replace('<div class="mobile-app', '<div class="in-app mobile-app');
   } else if (modHere && html.includes('</header>')) html = html.replace(/<\/header>(<button class="explore-banner"[\s\S]*?<\/button>)?/, `</header>${moduleBar(modHere.id)}`);
-  // Visitors without free minutes left see each app behind a blur, with the trial box on top.
+  // Restricted content is never constructed for the discovery route; the empty shell receives its introduction.
   const locked = !fullAccess() && modHere && !['plans', 'paywall', 'upgrade'].includes(route) && modHere.id !== 'scanner';
   if (locked) html = html.replace('<div class="screen', '<div inert aria-hidden="true" class="locked-blur screen').replace('<div class="in-app mobile-app', '<div class="in-app locked-app mobile-app') + lockOverlay(modHere);
   const noFab = state.premium || locked || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
@@ -8366,9 +8383,11 @@ function a11yPass(root) {
 }
 
 function bind() {
+  app.querySelector('.plan-location')?.addEventListener('toggle',event => { planLocationOpen = event.target.open; });
   app.querySelectorAll('details[data-pf-sec]').forEach((el) => el.addEventListener('toggle', () => { if (el.open) pfOpen.add(el.dataset.pfSec); else pfOpen.delete(el.dataset.pfSec); }));
   app.onchange = (event) => {
     const el = event.target;
+    if (el.closest('.plan-location')) planLocationOpen = el.closest('.plan-location').open;
     if (el.matches('[data-currency]')) { state.currency = rates()[el.value] ? el.value : ''; saveState(); track('SelectCurrency', { source: state.currency || 'auto' }); return render(); }
     if (el.matches('[data-country]')) { state.country = CC_CUR[el.value] ? el.value : ''; state.currency = ''; saveState(); return render(); }
     if (el.matches('[data-plan-focus]')) {
@@ -8412,6 +8431,14 @@ function bind() {
     const button = event.target.closest('button, [role="button"]');
     if (!button) return;
 
+    if (button.dataset.discoveryFilter !== undefined) {
+      const value = button.dataset.discoveryFilter;
+      if (!['all','nourish','move','restore'].includes(value)) return;
+      discoveryFilter = value;
+      const y = scrollY; render(); scrollTo(0,y);
+      app.querySelector(`[data-discovery-filter="${value}"]`)?.focus({preventScroll:true});
+      return;
+    }
     const freeScanTap = button.dataset.openAdd !== undefined || ['photo', 'text', 'label', 'recent', 'barcode'].includes(button.dataset.addTab);
     if (!fullAccess() && !freeScanTap && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
       track('PaywallFromFeature', { feature: PREMIUM_ACTIONS.find((key) => button.dataset[key] !== undefined) });
@@ -8896,7 +8923,7 @@ function bind() {
       return render();
     }
     if (button.dataset.goBuilder !== undefined) { plansTab = 'builder'; buildSel = [...(findPlan(defaultTier())?.modules || [])]; return nav('plans'); }
-    if (button.dataset.choosePlan) { selectedTier = button.dataset.choosePlan; selectedPeriod = 'annual'; track('PlanChosen', { plan: selectedTier }); return nav(state.premium ? 'upgrade' : 'paywall'); }
+    if (button.dataset.choosePlan) { selectedTier = button.dataset.choosePlan; track('PlanChosen', { plan: selectedTier, period: selectedPeriod }); return nav(state.premium ? 'upgrade' : 'paywall'); }
     if (button.dataset.scroll) {
       const id = button.dataset.scroll;
       if (id === 'checkin' && !document.getElementById(id)) { todayTab = 'missions'; render(); }

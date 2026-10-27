@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "13c7db1c8d720a6e8ba6c9ac12373d9da3f6debf",
+  "applicationTree": "12b6ca5c62cef4fa311941ca810a8c336099c7e9",
   "channels": [
     "ios"
   ],
@@ -25,12 +25,10 @@
         ]
       },
       "restore_drill": {
-        "status": "verified",
-        "verifiedAt": "2026-10-26T23:10:23.729Z",
-        "verifiedBy": "deployment-agent",
-        "evidence": [
-          "release/FINAL_REVIEW_2026-10-26.md: final spending/privacy revision restored five original snapshot files in isolation; smoke passed, originals unchanged; no snapshot renewal"
-        ]
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
       },
       "new_credentials_stored": {
         "status": "verified",
@@ -69,14 +67,10 @@
         ]
       },
       "ci_gate_prepared": {
-        "status": "verified",
-        "verifiedAt": "2026-10-26T23:34:54.727670+00:00",
-        "verifiedBy": "deployment-agent",
-        "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40420350434: main 0ed5c6cc3200ed6b2d15b4fd39d54008887b74a2 passed 82 application checks with PostgreSQL, eight release-gate, three native, ten signing and 36 fresh-browser checks",
-          "ghcr.io/atlasevermore/nutripilot@sha256:f9ae7c58ba3e3682f9f9c71bb4390e59e983daaecea619c121b3f9a2849516b8: verified container smoke version 18.1.0 and empty issues; application tree 13c7db1c8d720a6e8ba6c9ac12373d9da3f6debf",
-          "private-ops:Railway existing source remains disconnected from a branch; Wait for CI remains reviewed in staged patch 9c88b850-a293-41fc-83ec-000d3cd03de9, not deployed"
-        ]
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
+        "evidence": []
       },
       "expiry_alert": {
         "status": "verified",
