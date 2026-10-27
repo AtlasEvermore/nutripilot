@@ -264,3 +264,12 @@ test('The mission interface reflects real catalog counts when its local focus ch
   assert.doesNotMatch(html,/data-buy|data-choose-plan|data-module-buy|%/);
  }
 });
+
+test('Metric arrival never animates a health value through incorrect intermediate numbers',()=>{
+ const values=[{textContent:'71,0',dataset:{count:'71.0'}},{textContent:'1.700',dataset:{count:'1700'}}];let animated=0;
+ for(const el of values)el.classList={add(){animated++;}};
+ const ctx=vm.createContext({window:{matchMedia:()=>({matches:false})},document:{querySelectorAll:()=>values}});
+ load(ctx,'runMetricArrival');ctx.runMetricArrival();
+ assert.deepEqual(values.map(el=>el.textContent),['71,0','1.700']);assert.equal(animated,2);
+ ctx.window.matchMedia=()=>({matches:true});ctx.runMetricArrival();assert.equal(animated,2);
+});

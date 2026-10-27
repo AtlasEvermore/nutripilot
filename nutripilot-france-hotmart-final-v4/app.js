@@ -4934,20 +4934,10 @@ function bindTilt() {
     apply(Math.max(-1, Math.min(1, e.gamma / 30)), Math.max(-1, Math.min(1, (e.beta - 45) / 30)));
   }, { passive: true });
 }
-function runCountUps() {
+function runMetricArrival() {
+  // Health numbers remain accurate at every frame; animate their presentation, never the values.
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-  document.querySelectorAll('[data-count]').forEach((el) => {
-    const target = Number(el.dataset.count || 0);
-    if (!target) return;
-    const start = performance.now();
-    const step = (now) => {
-      const k = Math.min(1, (now - start) / 900);
-      const dec = (String(el.dataset.count).split('.')[1] || '').length;
-      el.textContent = fmt(target * (1 - Math.pow(1 - k, 3)), Math.min(1, dec));
-      if (k < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  });
+  document.querySelectorAll('[data-count]').forEach(el => el.classList.add('metric-arrive'));
 }
 
 // Small celebration for real achievements (session done, goal saved, programme finished…).
@@ -8472,7 +8462,7 @@ function render() {
   bind();
   auraAfterRender();
   if (route === 'analyzing' && !analyzingTimer) startAnalyzing();
-  if (entered || (route === 'app' && !window.__npCounted)) { runCountUps(); window.__npCounted = true; }
+  if (entered || (route === 'app' && !window.__npCounted)) { runMetricArrival(); window.__npCounted = true; }
   if (document.querySelector('[data-tilt]')) bindTilt();
   if (route === 'progress') renderPhotos();
   if (route === 'saving' && !savingTimer) startSaving();
