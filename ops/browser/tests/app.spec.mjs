@@ -309,15 +309,15 @@ test('PULSE explores real dated records and compares coverage without inventing 
 });
 
 test('Every module subtab remains reachable and renders after the technology expansion',async({page})=>{
- test.setTimeout(120000);await authenticatedUI(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));let visited=0;
+ test.setTimeout(120000);page.setDefaultTimeout(8000);await authenticatedUI(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));let visited=0;
  for(const [id,route] of [['nutrition','program'],['recipes','recipes'],['training','training'],['menopause','menopause'],['nutrients','nutrients'],['supplements','supplements'],['sleep','sleep']]){
-  await page.goto(`/#${route}`);await expect(page.locator('.error-state')).toHaveCount(0);
+  await page.goto(`/#${route}`);await expect(page.locator('#app .bottom-nav')).toBeVisible();await expect(page.locator('.error-state')).toHaveCount(0);
   let keys;
   const more=page.locator(`.bottom-nav [data-app-more="${id}"]`);
-  if(await more.count()){await more.click();keys=await page.locator('.modal-wrap [data-app-tab]').evaluateAll(els=>els.map(e=>e.dataset.appTab));await page.locator('.modal-wrap [data-close]').first().click();}
-  else keys=await page.locator('.bottom-nav [data-app-tab]').evaluateAll(els=>els.map(e=>e.dataset.appTab));
+  if(await more.isVisible()){await more.click();keys=await page.locator('.modal-wrap [data-app-tab]').evaluateAll(els=>els.map(e=>e.dataset.appTab));await page.locator('.modal-wrap [data-close]').first().click();}
+  else keys=await page.locator('.bottom-nav [data-app-tab]:visible').evaluateAll(els=>els.map(e=>e.dataset.appTab));
   for(const key of keys){
-   const direct=page.locator(`.bottom-nav [data-app-tab="${key}"]`);
+   const direct=page.locator(`.bottom-nav [data-app-tab="${key}"]:visible`);
    if(await direct.count())await direct.click();else{await page.locator(`.bottom-nav [data-app-more="${id}"]`).click();await page.locator(`.modal-wrap [data-app-tab="${key}"]`).click();}
    await expect(page.locator('.error-state')).toHaveCount(0);await expect(page.locator('#app .screen')).not.toBeEmpty();
    const outside=await page.locator('#app .mobile-app,#app .screen,#app .app-head').evaluateAll(els=>els.some(el=>{const r=el.getBoundingClientRect();return r.left < -1 || r.right > document.documentElement.clientWidth+1;}));expect(outside,key).toBe(false);visited++;

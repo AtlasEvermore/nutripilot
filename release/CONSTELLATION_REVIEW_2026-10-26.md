@@ -21,3 +21,12 @@ Scenario arithmetic uses actual recipe macros/ingredients plus current logged to
 The structural audit identified synchronous level-9 gzip on the first asset read. It now uses asynchronous shared compression, gzip level 6/Brotli quality 5, bounded cache (32 MiB / 128 entries), encoding quality/refusal negotiation and weak validators across equivalent representations. Personal API responses retain no-store and authorization. No framework migration or database replacement was needed. References: Node.js zlib documentation (threadpool and compression), RFC 9110 sections 8.8 and 12.5.3.
 
 The UI acceptance suite now includes all 37 advertised module subtabs as well as the original 18 main routes, in four browser/device projects. These are render/navigation checks; real provider billing, commercial store purchase and production email acceptance remain separate operational requirements. No service budget or infrastructure tier has changed.
+
+
+## Intermediate verification
+
+Run 40443223693 passed all 95 application tests with real PostgreSQL, eight release-gate tests, three native configuration tests and ten signing-script tests; dependency audit reported zero vulnerabilities. All 84 existing/main/new-feature browser cases passed. Four newly added comprehensive subtab sweeps were blocked by the test selecting hidden desktop/mobile navigation alternatives; their selectors now choose the actually visible navigation and use the More menu on phones. The sweep remains required and is being rerun; it was not removed or forced through.
+
+Read-only Railway inspection confirms the existing service is Online (one running replica), its volume remains mounted at /data, no recent deployment failure occurred in the last 24 hours, and 18 configuration changes remain STAGED. The latest attempted deployment listed by inventory is a historical failed attempt, whereas the settled active deployment is SUCCESS. No patch was accepted, source branch reconnected, volume altered or infrastructure purchased. Current platform status does not itself renew billing-continuity or backup evidence.
+
+Local transfer measurements for this candidate: app.js 793,485 bytes raw / 245,745 gzip / 216,629 Brotli; styles.css 394,798 / 80,823 / 76,410; Portuguese base dictionary 365,946 / 125,637 / 114,493. These are byte counts, not a measured production startup-time claim.
