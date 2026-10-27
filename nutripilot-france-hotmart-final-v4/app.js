@@ -2556,7 +2556,7 @@ async function accountVerify() {
 // Annual = exactly 10 × monthly (2 months free), in every currency.
 const r2 = (v) => Math.round(v * 100) / 100;
 const MONTHLY_PRICE = { nutrition: 7.99, recipes: 3.99, training: 9.99, menopause: 8.99, nutrients: 2.99, sleep: 3.99 };
-const KIT_MONTHLY = 29.9;
+const KIT_MONTHLY = 29.99;
 const COMBO_OFF = { 2: 0.15, 3: 0.15, 4: 0.15, 5: 0.15 };
 const annualOf = (monthly) => r2(monthly * 10);
 const PAID_MODULES = MODULES.filter((m) => !m.free);

@@ -108,6 +108,22 @@ jobs:
           xcrun simctl io "$DUO_ID" screenshot --display=1 duo-review/duo-outer-candidate.png
           printf '%s\n' 'Actual Xcode 27.1 Duo simulator; bundled candidate UI; synthetic guest; no production backend; visual review required; no store submission or full fold/unfold certification.' > duo-review/README.txt
           shasum -a 256 duo-review/*.png > duo-review/SHA256.txt
+          xcrun simctl shutdown "$DUO_ID"
+      - name: Capture the required iPhone and iPad store formats with the same candidate
+        timeout-minutes: 15
+        run: |
+          set -euo pipefail
+          for DEVICE_KIND in iphone ipad; do
+            DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; kind=sys.argv[1]; devices=[x for xs in json.load(sys.stdin)["devices"].values() for x in xs]; print(next(x["udid"] for x in devices if (x["name"] == "iPhone 17" if kind == "iphone" else "iPad Pro 13-inch" in x["name"])))' "$DEVICE_KIND")
+            xcrun simctl boot "$DEVICE_ID"
+            xcrun simctl bootstatus "$DEVICE_ID" -b
+            xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+            xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
+            sleep 8
+            xcrun simctl io "$DEVICE_ID" screenshot "duo-review/$DEVICE_KIND-candidate.png"
+            xcrun simctl shutdown "$DEVICE_ID"
+          done
+          shasum -a 256 duo-review/*.png > duo-review/SHA256.txt
       - uses: actions/upload-artifact@v4
         with:
           name: nutripilot-duo-real-simulator-${{ github.sha }}

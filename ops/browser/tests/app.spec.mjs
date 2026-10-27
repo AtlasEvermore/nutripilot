@@ -369,3 +369,14 @@ test('Live window resizing preserves a draft, open recipe and keyboard return pa
  }
  await page.keyboard.press('Escape');await expect(opener).toBeFocused();expect(errors).toEqual([]);
 });
+
+test('Asymmetric iOS safe regions keep navigation and modal controls reachable after resizing',async({page})=>{
+ await authenticatedUI(page);await page.goto('/#recipes');
+ for(const [viewport,insets] of [[{width:466,height:678},{left:0,right:64,top:0,bottom:24}],[{width:820,height:720},{left:30,right:0,top:24,bottom:24}],[{width:1200,height:820},{left:30,right:64,top:24,bottom:24}]]){
+  await page.setViewportSize(viewport);await page.evaluate(insets=>{document.documentElement.classList.add('cap-ios');for(const [side,value]of Object.entries(insets))document.documentElement.style.setProperty(`--safe-area-inset-${side}`,`${value}px`);},insets);
+  for(const locator of [page.locator('.app-head-row'),page.locator('.bottom-nav')]){
+   const b=await locator.boundingBox();expect(b.x).toBeGreaterThanOrEqual(insets.left-1);expect(b.x+b.width).toBeLessThanOrEqual(viewport.width-insets.right+1);
+  }
+  const opener=page.locator('.recipe-grid [data-recipe-id]').first();await opener.click();const close=page.locator('.modal-wrap .sheet-head [data-close]').first();await expect(close).toBeInViewport();const b=await close.boundingBox();expect(b.x+b.width).toBeLessThanOrEqual(viewport.width-insets.right+1);expect(b.y).toBeGreaterThanOrEqual(insets.top-1);await page.keyboard.press('Escape');await expect(opener).toBeFocused();
+ }
+});
