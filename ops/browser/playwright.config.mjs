@@ -18,7 +18,8 @@ export default defineConfig({
     { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } } },
     { name: 'mobile-chromium', use: { browserName: 'chromium', viewport: { width: 360, height: 800 }, isMobile: true, hasTouch: true } },
     { name: 'desktop-firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'mobile-webkit', use: { ...devices['iPhone 13'] } },
+    // WebKit's visual tests compete for rendering time on the shared CI CPU. Keep all checks and timeouts unchanged.
+    { name: 'mobile-webkit', workers: 1, use: { ...devices['iPhone 13'] } },
   ],
   webServer: {
     command: 'node ../../nutripilot-france-hotmart-final-v4/server.mjs',

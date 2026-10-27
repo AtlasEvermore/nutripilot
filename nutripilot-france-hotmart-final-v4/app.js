@@ -2975,6 +2975,7 @@ function flushOverlayFocus() {
 function restoreOverlayFocus(root) {
   const origin=overlayFocusOrigins.get(root);overlayFocusOrigins.delete(root);if(!origin)return;
   const pending={...origin,expires:Date.now()+1500};pendingOverlayFocus=pending;
+  flushOverlayFocus();
   requestAnimationFrame(flushOverlayFocus);
   setTimeout(()=>{if(pendingOverlayFocus===pending)pendingOverlayFocus=null;},1500);
 }
@@ -8100,10 +8101,10 @@ function openAdd(tab = 'photo') {
   renderModal();
 }
 
-function renderModal() {
+function renderModal(focusTrigger = document.activeElement) {
   stopBarcodeCamera();
   const previous=document.querySelector('.modal-wrap');
-  const focusOrigin=previous ? overlayFocusOrigins.get(previous) : document.activeElement;
+  const focusOrigin=previous ? overlayFocusOrigins.get(previous) : focusTrigger;
   const active=document.activeElement;let preferred='';
   if(previous?.contains(active)){if(active.id)preferred=`#${CSS.escape(active.id)}`;else for(const name of ['data-servings','data-mtab'])if(active.hasAttribute(name)){preferred=`[${name}="${CSS.escape(active.getAttribute(name))}"]`;break;}}
   previous?.remove();
@@ -9412,7 +9413,7 @@ function bind() {
     if (button.dataset.sos !== undefined) { track('SosOpen'); modal = { type: 'sos' }; return renderModal(); }
     if (button.dataset.recipeId && !event.target.closest('[data-fav-recipe]')) {
       const recipe = ALL_RECIPES.find((r) => r.id === button.dataset.recipeId);
-      if (recipe) { modal = { type: 'recipe', recipe }; renderModal(); }
+      if (recipe) { modal = { type: 'recipe', recipe }; renderModal(button); }
       return;
     }
     if (button.dataset.favRecipe) {
