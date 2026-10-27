@@ -9,27 +9,26 @@
     "prepare": {
       "hosting_access": {
         "status": "verified",
-        "verifiedAt": "2026-10-26T02:43:11.895167+00:00",
-        "verifiedBy": "deployment-agent",
+        "verifiedAt": "2026-10-27T12:23:47.540806+00:00",
+        "verifiedBy": "development-agent",
         "evidence": [
-          "private-ops:Railway Support email 2026-10-25T06:38:23Z in the existing NutriPilot support thread explicitly confirms new deployments accepted on every plan; paused commits were not queued",
-          "private-ops:Current owner dashboard confirms Active Plan Hobby, usage cycle Oct 24-Nov 24, existing service online and console Connected; deploy action enabled without Limited Access; no production deployment attempted"
+          "release/ACCOUNT_READINESS_2026-10-27.md: authenticated Railway Billing shows Active Plan Hobby and attached payment method; service remains online, console Connected and deployment control available without Limited Access; historical support confirmation retained in RECOVERY_EVIDENCE_2026-10-25.md; no charge or plan change"
         ]
       },
       "independent_backup": {
         "status": "verified",
-        "verifiedAt": "2026-10-26T02:41:01.357734+00:00",
-        "verifiedBy": "deployment-agent",
+        "verifiedAt": "2026-10-27T12:23:47.540806+00:00",
+        "verifiedBy": "development-agent",
         "evidence": [
-          "release/RECOVERY_EVIDENCE_2026-10-25.md: fresh real snapshot downloaded independently, hash checked, decrypted/restored, encrypted archive and separate key saved durably for owner"
+          "release/ACCOUNT_READINESS_2026-10-27.md: fresh real snapshot created 2026-10-27T11:55:12.942Z; five files; encrypted download SHA256 matched; authenticated decryption and isolated restore passed; encrypted archive and recovery key durably saved as separate private owner files outside Railway"
         ]
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T11:35:22.834Z",
+        "verifiedAt": "2026-10-27T11:58:45.200Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/FINAL_POLISH_2026-10-27.md: exact merged application restored five original files from the existing encrypted snapshot in a new isolated directory; hashes match before/after graceful shutdown and 18.1.0 smoke has no issues; snapshot remains dated 2026-10-26T02:18:56.327Z, not a fresh production backup"
+          "release/ACCOUNT_READINESS_2026-10-27.md: final application tree restored fresh real snapshot in a new isolated directory; five file hashes matched before and after graceful shutdown; version 18.1.0 smoke returned no issues; see FINAL_POLISH_RESTORE_FRESH_2026-10-27.json"
         ]
       },
       "new_credentials_stored": {
@@ -53,10 +52,12 @@
         "evidence": []
       },
       "legal_configuration": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-27T12:17:44.076Z",
+        "verifiedBy": "development-agent",
+        "evidence": [
+          "release/ACCOUNT_READINESS_2026-10-27.md: existing privately authorized operator name, address and support contact loaded from prepared configuration only; isolated candidate privacy, terms and support routes returned HTTP 200, expected fields present and no unresolved templates; three account-deletion/cache regressions passed; launch legal_pages remains pending until deployed-domain verification"
+        ]
       },
       "rollback_migration": {
         "status": "verified",
@@ -69,7 +70,8 @@
           "release/ORBITAL_REVIEW_2026-10-26.md: isolated restore of final UI candidate preserved the same original files; backend and data format unchanged",
           "release/WORKSPACES_REVIEW_2026-10-26.md: final workspace candidate preserves original files in isolated restore; backend and data format remain unchanged",
           "release/CONSTELLATION_REVIEW_2026-10-26.md: final candidate and asynchronous static delivery preserve original restored files; no storage format or migration change",
-          "release/FINAL_POLISH_2026-10-27.md: final merged application tree 78ee5e8b3e18acadc6c35b3f2a73127fce970cdf repeated isolated restore and preserved all five original files; no backend/storage-format change in PR 36; original V12 rollback rehearsal remains historical"
+          "release/FINAL_POLISH_2026-10-27.md: final merged application tree 78ee5e8b3e18acadc6c35b3f2a73127fce970cdf repeated isolated restore and preserved all five original files; no backend/storage-format change in PR 36; original V12 rollback rehearsal remains historical",
+          "release/ACCOUNT_READINESS_2026-10-27.md: exact final application booted the fresh 2026-10-27 real-data snapshot and preserved all five original files; storage/native source unchanged; prior V12 rollback rehearsal remains historical"
         ]
       },
       "ci_gate_prepared": {
