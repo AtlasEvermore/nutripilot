@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "d3e4834862a43529d6ed8466541e857c70e8b41d",
+  "applicationTree": "78ee5e8b3e18acadc6c35b3f2a73127fce970cdf",
   "channels": [
     "ios"
   ],
@@ -26,10 +26,10 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T03:34:08.925Z",
+        "verifiedAt": "2026-10-27T11:35:22.834Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/CONSTELLATION_REVIEW_2026-10-26.md: exact final application restored five original files in isolation; smoke 18.1.0 passed and original contents remained byte-identical; snapshot age not renewed"
+          "release/FINAL_POLISH_2026-10-27.md: exact merged application restored five original files from the existing encrypted snapshot in a new isolated directory; hashes match before/after graceful shutdown and 18.1.0 smoke has no issues; snapshot remains dated 2026-10-26T02:18:56.327Z, not a fresh production backup"
         ]
       },
       "new_credentials_stored": {
@@ -68,17 +68,18 @@
           "release/FINAL_REVIEW_2026-10-26.md: consolidated candidate reads the same previously V12-tested snapshot without changing original files; no storage format or migration code changed",
           "release/ORBITAL_REVIEW_2026-10-26.md: isolated restore of final UI candidate preserved the same original files; backend and data format unchanged",
           "release/WORKSPACES_REVIEW_2026-10-26.md: final workspace candidate preserves original files in isolated restore; backend and data format remain unchanged",
-          "release/CONSTELLATION_REVIEW_2026-10-26.md: final candidate and asynchronous static delivery preserve original restored files; no storage format or migration change"
+          "release/CONSTELLATION_REVIEW_2026-10-26.md: final candidate and asynchronous static delivery preserve original restored files; no storage format or migration change",
+          "release/FINAL_POLISH_2026-10-27.md: final merged application tree 78ee5e8b3e18acadc6c35b3f2a73127fce970cdf repeated isolated restore and preserved all five original files; no backend/storage-format change in PR 36; original V12 rollback rehearsal remains historical"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T03:43:43.706782+00:00",
+        "verifiedAt": "2026-10-27T11:28:58.587Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40445156036: merged main 513d5835e9d38a4e44ef9678d22b1acdfec99d2c passed 95 application/PostgreSQL, eight gate, three native configuration, ten signing-script and 88 clean-browser checks; all 37 module subtabs tested in each browser project",
-          "ghcr.io/atlasevermore/nutripilot@sha256:fe03b72c989ae544e0cba9689c3137b3d19529f3b206450c309d0aced0bedb2b: immutable image smoke passed, version 18.1.0 and empty issues; application tree d3e4834862a43529d6ed8466541e857c70e8b41d",
-          "private-ops:existing Railway Wait for CI patch remains staged, not applied; read-only inspection confirms production service Online and original volume retained; no deployment or branch reconnection performed"
+          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40495854814: exact merged revision 8f5286abdad36e08766c5a12d7c77e732959bf9e passed 98 application/PostgreSQL, eight gate, three native configuration, ten signing-script and 96 browser tests; container smoke version 18.1.0, empty issues; immutable image pushed successfully",
+          "ghcr.io/atlasevermore/nutripilot@sha256:ca9c550b1355bdb68ede36b5a8d151f4a4721f8ef87e8c0fc37a921f49468bfd: registry manifest digest from successful SHA-tag push, not the local image config digest",
+          "release/FINAL_POLISH_2026-10-27.md: read-only Railway configuration inspection confirms Wait for CI remains staged, 18 unapplied changes, one replica and existing data volume; no deployment/branch reconnection"
         ]
       },
       "expiry_alert": {

@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-27T11:35:22.834Z",
+  "applicationTree": "78ee5e8b3e18acadc6c35b3f2a73127fce970cdf",
+  "snapshotCreatedAt": "2026-10-26T02:18:56.327Z",
+  "snapshotSha256": "22edd6a21dc2d15293cc40847fa37d19da957dfcf90c8fb1ce642b43554e04d8",
+  "originalFiles": 5,
+  "restoredHashesMatch": true,
+  "originalFilesPreserved": true,
+  "smoke": {
+    "checkedAt": "2026-10-27T11:35:22.826Z",
+    "version": "18.1.0",
+    "issues": []
+  },
+  "elapsedSeconds": 0.296,
+  "productionAccessed": false,
+  "freshBackupCreated": false
+}
