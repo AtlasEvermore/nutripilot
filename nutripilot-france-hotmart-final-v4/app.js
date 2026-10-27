@@ -2951,12 +2951,34 @@ function memberCard() {
 // Launcher: every module is an app on a home screen. The person's apps first, the others to discover.
 const APP_SHORT = Object.fromEntries(MODULES.map((m) => [m.id, m.short || m.name]));
 const overlayFocusOrigins = new WeakMap();
-function restoreOverlayFocus(root) {
-  const origin=overlayFocusOrigins.get(root);overlayFocusOrigins.delete(root);
-  if(origin?.isConnected && !origin.closest('.modal-wrap,.drawer-wrap'))origin.focus({preventScroll:true});
+let pendingOverlayFocus = null;
+function overlayFocusDescriptor(origin) {
+  if(origin?.origin)return origin;
+  let selector='';
+  if(origin?.id)selector=`#${CSS.escape(origin.id)}`;
+  else if(origin?.hasAttribute?.('data-drawer'))selector='[data-drawer]';
+  else if(origin?.hasAttribute?.('data-recipe-id'))selector=`[data-recipe-id="${CSS.escape(origin.getAttribute('data-recipe-id'))}"]`;
+  return {origin,selector,hash:location.hash};
 }
+function flushOverlayFocus() {
+  const pending=pendingOverlayFocus;if(!pending)return;
+  if(Date.now()>pending.expires || location.hash!==pending.hash){pendingOverlayFocus=null;return;}
+  if(overlayOpen())return;
+  const target=pending.origin?.isConnected?pending.origin:pending.selector?app.querySelector(pending.selector):null;
+  if(!target || target.closest('.modal-wrap,.drawer-wrap'))return;
+  const active=document.activeElement;
+  if(active && active!==document.body && active!==document.documentElement && active!==target && active.isConnected){pendingOverlayFocus=null;return;}
+  target.focus({preventScroll:true});
+}
+function restoreOverlayFocus(root) {
+  const origin=overlayFocusOrigins.get(root);overlayFocusOrigins.delete(root);if(!origin)return;
+  const pending={...origin,expires:Date.now()+1500};pendingOverlayFocus=pending;
+  requestAnimationFrame(flushOverlayFocus);
+  setTimeout(()=>{if(pendingOverlayFocus===pending)pendingOverlayFocus=null;},1500);
+}
+window.addEventListener('popstate',()=>requestAnimationFrame(flushOverlayFocus));
 function bindOverlayFocus(root, origin, preferred = '') {
-  overlayFocusOrigins.set(root,origin);
+  overlayFocusOrigins.set(root,overlayFocusDescriptor(origin));
   const dialog=root.matches('[role="dialog"]')?root:root.querySelector('[role="dialog"]');
   dialog?.setAttribute('aria-modal','true');
   const heading=root.querySelector('.sheet-head h2');
