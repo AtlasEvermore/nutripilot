@@ -314,7 +314,7 @@ test('PULSE explores real dated records and compares coverage without inventing 
 test('Every module subtab remains reachable and renders after the technology expansion',async({page})=>{
  test.setTimeout(120000);page.setDefaultTimeout(8000);await authenticatedUI(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));let visited=0;
  for(const [id,route] of [['nutrition','program'],['recipes','recipes'],['training','training'],['menopause','menopause'],['nutrients','nutrients'],['supplements','supplements'],['sleep','sleep']]){
-  await page.goto(`/#${route}`);await expect(page.locator('#app .bottom-nav')).toBeVisible();await expect(page.locator('.error-state')).toHaveCount(0);
+  await page.goto(`/#${route}`);await expect(page.locator('.mobile-app.quantum-workspace')).toHaveAttribute('data-workspace',id);await expect(page.locator(`.bottom-nav [data-app-tab^="${id}:"]:visible`).first()).toBeVisible();await expect(page.locator('.error-state')).toHaveCount(0);
   let keys;
   const more=page.locator(`.bottom-nav [data-app-more="${id}"]`);
   if(await more.isVisible()){await more.click();keys=await page.locator('.modal-wrap [data-app-tab]').evaluateAll(els=>els.map(e=>e.dataset.appTab));await page.locator('.modal-wrap [data-close]').first().click();}

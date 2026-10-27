@@ -3607,8 +3607,7 @@ function drawerHtml() {
   </div>`;
 }
 
-function openDrawer() {
-  const focusOrigin=document.activeElement;
+function openDrawer(focusOrigin = document.activeElement) {
   closeDrawer(true);
   const wrap = document.createElement('div');
   wrap.innerHTML = drawerHtml();
@@ -8742,7 +8741,7 @@ function bind() {
       selectedTier = moduleForRoute()?.id || (button.dataset.openAdd !== undefined || button.dataset.addTab ? 'scanner' : 'complete');
       modal = { type: 'trial' }; return renderModal();
     }
-    if (button.dataset.drawer !== undefined) return openDrawer();
+    if (button.dataset.drawer !== undefined) return openDrawer(button);
     if (myDayClick(button)) return;
     if (button.dataset.navBack !== undefined) {
       let prev = navStack.pop();
