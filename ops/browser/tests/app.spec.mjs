@@ -282,6 +282,7 @@ test('Local commands require explicit water confirmation, support undo and open 
  await page.locator('.np-undo button').click();expect(await page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('nutripilot_v7')).water))).toHaveLength(0);
  await page.locator('.workspace-command').click();await page.locator('#command-search').fill('receitas com frango');await page.locator('#command-search').press('Enter');
  await expect(page).toHaveURL(/#recipes$/);await expect(page.locator('#recipe-search')).toHaveValue('frango');
+ await page.locator('.workspace-command').click();await page.locator('#command-search').fill('registrar refeição');await page.locator('#command-search').press('Enter');await expect(page.locator('#manual-search')).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('.workspace-command')).toBeFocused();
 });
 
 test('Meal scenario previews preserve records until explicitly saving the simulated portion',async({page},testInfo)=>{
@@ -326,4 +327,27 @@ test('Every module subtab remains reachable and renders after the technology exp
   }
  }
  expect(visited).toBeGreaterThanOrEqual(37);expect(errors).toEqual([]);expect(await page.evaluate(()=>window.__npErrors || [])).toEqual([]);
+});
+
+test('Recipe sheets retain their close control, contain keyboard focus and return to the opener',async({page},testInfo)=>{
+ await authenticatedUI(page);await page.goto('/#recipes');const opener=page.locator('.recipe-grid [data-recipe-id]').first();await opener.click();
+ const close=page.locator('.modal-wrap .sheet-head [data-close]').first();await expect(close).toBeFocused();
+ await page.keyboard.press('Shift+Tab');await expect(page.locator('.modal-wrap :focus')).toHaveCount(1);await page.keyboard.press('Tab');await expect(close).toBeFocused();
+ await page.locator('[data-servings="1"]').click();await expect(page.locator('[data-servings="1"]')).toBeFocused();
+ await page.locator('.scenario-panel summary').click();await page.locator('.modal-wrap .sheet').evaluate(el=>{el.scrollTop=el.scrollHeight;});
+ await expect(close).toBeInViewport();const closeBounds=await close.boundingBox();expect(closeBounds.y).toBeGreaterThanOrEqual(0);
+ const shot=testInfo.outputPath(`${testInfo.project.name}-recipe-sheet-final.png`);await page.screenshot({path:shot,animations:'disabled'});await testInfo.attach('recipe-sheet-final',{path:shot,contentType:'image/png'});
+ await page.keyboard.press('Escape');await expect(page.locator('.modal-wrap')).toHaveCount(0);await expect(opener).toBeFocused();
+ await page.goto('/#app');const menu=page.locator('[data-drawer]').first();await menu.click();await expect(page.locator('.drawer-wrap [data-drawer-close]')).toBeFocused();
+ await page.keyboard.press('Shift+Tab');await expect(page.locator('.drawer-wrap :focus')).toHaveCount(1);await page.keyboard.press('Escape');await expect(page.locator('.drawer-wrap')).toHaveCount(0);await expect(menu).toBeFocused();
+});
+
+test('Paused services explain availability, preserve a coach draft and keep local tools accessible',async({page},testInfo)=>{
+ await authenticatedUI(page);let providerRequests=0;page.on('request',r=>{if(/\/api\/(coach|compose|fridge|restaurant|smart-swap)$/.test(new URL(r.url()).pathname))providerRequests++;});
+ await page.goto('/#coach');await expect(page.locator('.provider-availability')).toBeVisible();await expect(page.locator('[data-coach-send]')).toBeDisabled();
+ await page.locator('#coach-input').fill('Rascunho local de teste');await page.locator('[data-coach-mode="training"]').click();await expect(page.locator('#coach-input')).toHaveValue('Rascunho local de teste');
+ const shot=testInfo.outputPath(`${testInfo.project.name}-local-tools-final.png`);await page.screenshot({path:shot,animations:'disabled'});await testInfo.attach('local-tools-final',{path:shot,contentType:'image/png'});
+ await page.locator('.provider-availability [data-open-command]').click();await page.keyboard.press('Escape');await expect(page.locator('.provider-availability [data-open-command]')).toBeFocused();
+ await page.goto('/#planner');await expect(page.locator('.provider-availability')).toBeVisible();await expect(page.locator('[data-compose]')).toBeDisabled();
+ await page.locator('.provider-availability [data-go="recipes"]').click();await expect(page.locator('#recipe-grid')).not.toBeEmpty();expect(providerRequests).toBe(0);
 });
