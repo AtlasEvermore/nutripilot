@@ -25,10 +25,10 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T11:58:45.200Z",
+        "verifiedAt": "2026-10-27T17:19:40.750Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/ACCOUNT_READINESS_2026-10-27.md: final application tree restored fresh real snapshot in a new isolated directory; five file hashes matched before and after graceful shutdown; version 18.1.0 smoke returned no issues; see FINAL_POLISH_RESTORE_FRESH_2026-10-27.json"
+          "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: repeated isolated restore passed for unchanged application tree; five original file hashes matched before and after shutdown; 18.1.0 smoke issues empty; production snapshot timestamp remains 2026-10-27T11:55:12.942Z"
         ]
       },
       "new_credentials_stored": {
@@ -46,10 +46,12 @@
         "evidence": []
       },
       "email_delivery": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-27T17:24:51.937556Z",
+        "verifiedBy": "development-agent",
+        "evidence": [
+          "release/CANDIDATE_EMAIL_CHECK_2026-10-27.json: isolated production-mode candidate access/signup request returned HTTP 200 and mailed=true; authenticated Resend list independently confirmed Delivered for the new Portuguese access-code message sent only to the authorized owner; no OTP read, no production data modified"
+        ]
       },
       "legal_configuration": {
         "status": "verified",
@@ -99,12 +101,11 @@
         "evidence": []
       },
       "ios_artifact": {
-        "status": "verified",
-        "verifiedAt": "2026-10-25T22:13:14.644896+00:00",
-        "verifiedBy": "deployment-agent",
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
         "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40237700794 (attempt 2, SUCCESS, device IPA 18.1.0 build 202)",
-          "release/IOS_ARTIFACT_2026-10-25.json: approved certificate/profile, codesign and exact nativeTree verified; ZIP/IPA checksums and durable owner copy independently checked"
+          "Native source changed for resizable orientations; historical IPA native tree does not match the new candidate. New exact-revision signed build and independent signature verification required; protected signing approval remains intact."
         ]
       },
       "android_configuration": {
@@ -201,7 +202,7 @@
       }
     }
   },
-  "nativeTree": "39d0f6ebdde9f52a715c46fc9b9de67c7538e24c",
+  "nativeTree": "be0680febad4748045991bbcee2238dc8525824e",
   "deferredChannels": [
     "android"
   ]

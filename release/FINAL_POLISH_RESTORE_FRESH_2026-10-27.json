@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-27T11:58:45.200Z",
+  "checkedAt": "2026-10-27T17:19:40.750Z",
   "applicationTree": "78ee5e8b3e18acadc6c35b3f2a73127fce970cdf",
   "snapshotCreatedAt": "2026-10-27T11:55:12.942Z",
   "snapshotSha256": "6fd4b0ae4806262b102d1cc3582e05db461aeb650bceb64989865b257297468b",
@@ -7,12 +7,12 @@
   "restoredHashesMatch": true,
   "originalFilesPreserved": true,
   "smoke": {
-    "checkedAt": "2026-10-27T11:58:45.192Z",
+    "checkedAt": "2026-10-27T17:19:40.720Z",
     "version": "18.1.0",
     "issues": []
   },
-  "elapsedSeconds": 0.343,
+  "elapsedSeconds": 1.18,
   "productionAccessed": false,
-  "freshBackupCreated": true,
-  "scope": "Isolated restore drill only; fresh snapshot was read from production separately without modifying original data."
+  "freshBackupCreated": false,
+  "scope": "Repeated isolated restore of the real snapshot created at snapshotCreatedAt; no new production snapshot in this repeat; original source timestamp retained."
 }

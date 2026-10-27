@@ -1,6 +1,6 @@
 # NutriPilot — account and operational completion, 27 October 2026
 
-Application tree remains `78ee5e8b3e18acadc6c35b3f2a73127fce970cdf`; native tree remains `39d0f6ebdde9f52a715c46fc9b9de67c7538e24c`. No application code, production deployment, volume or paid service was changed. This report supersedes the earlier account/backup observations where explicitly stated. The owner requested completion of all feasible preparation and subsequently deferred the final commercial name; the current display name was not changed or propagated to new locales.
+Application tree remains `78ee5e8b3e18acadc6c35b3f2a73127fce970cdf`; historical native tree was `39d0f6ebdde9f52a715c46fc9b9de67c7538e24c` (superseded by the resizable-iPhone update below). No web application code, production deployment, volume or paid service was changed; native configuration was subsequently updated as recorded in FINAL_POLISH_2026-10-27.md. This report supersedes the earlier account/backup observations where explicitly stated. The owner requested completion of all feasible preparation and subsequently deferred the final commercial name; the current display name was not changed or propagated to new locales.
 
 ## Completed and verified
 
@@ -36,3 +36,9 @@ Application tree remains `78ee5e8b3e18acadc6c35b3f2a73127fce970cdf`; native tree
 - Signing run: https://github.com/AtlasEvermore/nutripilot/actions/runs/40237700794
 
 The final display name is deferred at the owner's request; do not propagate the existing localized suffix to new materials before that decision. Android remains deferred. The staged Railway patch is unapplied. Production remains on V12. Publishing the application requires prepare to pass, terminal SUCCESS and subsequent launch acceptance; no release gate was removed or relaxed.
+
+## Subsequent completion (supersedes earlier pending observations)
+
+Monthly US$29.99 pricing is now saved. Real candidate email is Delivered and recorded in CANDIDATE_EMAIL_CHECK_2026-10-27.json. Xcode 27.1/iOS 27.1 native compilation and 220 checks passed; native tree is now be0680febad4748045991bbcee2238dc8525824e. A new exact-revision signed IPA is therefore mandatory. A repeat restoration passed using the same 11:55Z real backup, without renewing its creation time. See FINAL_POLISH_2026-10-27.md for current evidence and release boundaries.
+
+The Apple login was securely renewed after session expiry. Availability in 175 countries was rejected by automatic approval review because that specific commercial scope was not authorized; selection was cancelled. No availability setting is claimed applied. No legal publication agreement was accepted. Funded provider access, Apple banking/commercial completion, privacy final confirmation and current signed-IPA acceptance remain external requirements.

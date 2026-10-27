@@ -52,7 +52,7 @@ Reviewed desktop Chromium and mobile WebKit captures include Atlas, NEXUS, local
 
 The browser account, permissions/identity responses and records are synthetic. Screenshots demonstrate the candidate UI, not a real purchase, live provider, production account, native-device execution or App Store acceptance. No private production recovery data or legal address is included.
 
-## Infrastructure recheck and unresolved release work
+## Historical infrastructure recheck (superseded by the account and current completion records)
 
 Read-only Railway queries on 2026-10-27 still show the last successful production deployment `2705400c-590b-4c47-bd81-4cd1759ab31b`, revision `fd3d9d8927f85adfe83fc31975f3878de73c580b` (V12). Later failed attempts are historical (2026-10-21), with no candidate deployment in the returned inventory. Live config retains one replica and the existing `/data` volume. No production branch is configured. `source.checkSuites: true` is still only in the STAGED patch, which has 18 changes; it is not confirmed active.
 
@@ -60,6 +60,20 @@ This read does not prove current billing continuity. Legal variable names remain
 
 External release evidence still required: current hosting/billing continuity, a fresh independently retained production backup, provider model/spending validation within an explicitly authorized budget, candidate access-email delivery, completed operational legal checks, iOS commercial setup and current IPA evidence. Post-deployment provider cutover/revocation, persistence/login, alert delivery, external scheduled backup and real store purchase/release acceptance remain pending. No credits were purchased, unbounded billing enabled, staged patch applied, volume changed, production deployment triggered or store publication performed.
 
-## Final local gate recheck
+## Earlier local gate recheck (superseded below)
 
 After correcting the evidence binding, `node ops/release-gate.mjs prepare` still exits 1 with seven operational blockers: expired hosting continuity, expired independent backup, pending provider controls, candidate email delivery, operational legal configuration, iOS commercial configuration and expired IPA evidence. The obsolete-application-tree blocker is resolved. All eight release-gate tests passed again locally and `git diff --check` passed. Application/native source trees were not changed during this evidence-only completion.
+
+## Current completion — resizable iPhone preparation and delivered email
+
+The owner authorized the monthly US$29.99 sale price and the scoped email test. Monthly product `np_complete_monthly` now has a saved initial US price of $29.99; Apple-calculated examples observed were Brazil R$199.90 and France €34.99. No subscription was sold or app published. A proposed availability selection across 175 countries was **not applied**: automatic approval review rejected that broad commercial scope as requiring specific authorization; the dialog was cancelled. Annual pricing and final availability remain incomplete.
+
+The native configuration previously forced portrait-only iPhone use. It now supports portrait and both landscape orientations, adds missing orientation configuration, sets UIRequiresFullScreen=false, preserves existing iPad orientation declarations and detects later regressions in check mode. Native tree is now `be0680febad4748045991bbcee2238dc8525824e`; the historical signed IPA no longer matches and was explicitly returned to pending. The signing workflow retains its exact-revision and protected-environment requirements. Both native workflows explicitly select Xcode 27.1/iOS SDK 27.1 on the documented standard xcode-27 runner.
+
+Revision `2715779e17423befb27468f5823b2be6305a3fd8` passed 220 checks in [40549524029](https://github.com/AtlasEvermore/nutripilot/actions/runs/40549524029): 98 application/PostgreSQL, eight release-gate, four native-configuration, ten signing-script and 100 browser checks. The live-resize check preserves a coach draft and open recipe, verifies reachable close controls and restores keyboard focus after Escape across compact, wide and short landscape windows. [Native compilation 40549523956](https://github.com/AtlasEvermore/nutripilot/actions/runs/40549523956) succeeded with Xcode 27.1 build 27A9275 and SDK 27.1; Duo simulator availability was listed. This proves compilation, not full native fold/unfold acceptance. A subsequent CI-only bundled candidate fixture was added for a real Duo simulator capture; its visual result must be inspected before any Duo badge or store screenshot claim. It is not used by the signing workflow.
+
+The isolated production-mode candidate sent a single real Portuguese signup access email to the previously authorized owner. HTTP 200/mailed=true was independently corroborated by the authenticated Resend list showing the new subject and Delivered. The OTP body was not opened. Earlier attempts failed because the isolated child lacked this environment's proxy/CA settings; inheriting only the required network settings resolved that test-harness failure. No application code change or production deployment was needed. See CANDIDATE_EMAIL_CHECK_2026-10-27.json.
+
+A repeated isolated restoration passed at 2026-10-27T17:19:40.750Z: five original file hashes preserved and version 18.1.0 smoke with no issues. The source snapshot remains the real backup created at 2026-10-27T11:55:12.942Z; the repeat does not make the backup newer. Source hash and creation time remain unchanged.
+
+The current prepare gate reports three pending groups: intelligence-provider funded access/model/spending controls, App Store commercial/product validation, and a new matching signed IPA. Hosting, independent backup, restoration, legal preparation and real candidate email have supporting evidence. Production remains V12; no Railway patch or store submission occurred. No credits, paid plans or unlimited recharge were activated.
