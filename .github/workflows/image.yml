@@ -2,7 +2,7 @@
 name: Server image
 on:
   push:
-    branches: [main]
+    branches: [main, ops/final-image-20261027]
   pull_request:
   workflow_dispatch:
 permissions:
