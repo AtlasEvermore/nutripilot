@@ -145,3 +145,64 @@ test('Journeys and plans adapt at narrow phone, large phone, tablet and desktop 
   await page.goto('/#modules');
   expect(await page.locator('.orbit-core').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
 });
+
+async function actualCapture(page,testInfo,name){
+  await page.evaluate(()=>{document.documentElement.style.scrollBehavior='auto';window.scrollTo({top:0,behavior:'instant'});});
+  await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBe(0);
+  const path=testInfo.outputPath(`${testInfo.project.name}-${name}.png`);
+  await page.screenshot({path,animations:'disabled'});
+  await testInfo.attach(name,{path,contentType:'image/png'});
+}
+
+test('Mission focus changes real catalog content and opens the corresponding module',async({page},testInfo)=>{
+  await seed(page);await page.goto('/#app');
+  await expect(page.locator('.mission-control')).toBeVisible();
+  await actualCapture(page,testInfo,'main-nutrition');
+  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('nutripilot_v7')).profile);
+  for(const id of ['training','sleep','nutrition']){
+    const choice=page.locator(`[data-mission-focus="${id}"]`);await choice.click();
+    await expect(choice).toHaveAttribute('aria-pressed','true');await expect(choice).toBeFocused();
+    await expect(page.locator('.mission-control')).toHaveClass(new RegExp(`focus-${id}`));
+    await expect(page.locator('.mission-reading strong')).not.toHaveText('');
+  }
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('nutripilot_v7')).profile)).toEqual(before);
+  await page.locator('[data-mission-focus="training"]').click();
+  await actualCapture(page,testInfo,'main-movement');
+  await page.locator('.mission-launch [data-go="training"]').click();
+  await expect(page).toHaveURL(/#training$/);await expect(page.locator('.lock-overlay')).toBeVisible();
+});
+
+test('Command navigation supports accents, keyboard selection, focus return and local-only access',async({page},testInfo)=>{
+  await seed(page);await page.goto('/#modules');
+  const opener=page.locator('.workspace-command');await opener.click();
+  const input=page.locator('#command-search');await expect(input).toBeFocused();await expect(page.locator('#app')).toHaveAttribute('inert','');
+  await input.fill('sono');await expect(page.locator('[data-command-go="sleep"]')).toBeVisible();
+  await actualCapture(page,testInfo,'navigation-center');
+  await input.press('Enter');await expect(page).toHaveURL(/#sleep$/);
+  await expect(page.locator('#app')).not.toHaveAttribute('inert','');
+  await page.locator('.workspace-command').click();await page.locator('#command-search').fill('no-result-7291');
+  await expect(page.locator('[data-command-go]')).toHaveCount(0);
+  await page.keyboard.press('Escape');await expect(page.locator('.workspace-command')).toBeFocused();
+  await page.keyboard.press('Control+k');await expect(page.locator('#command-search')).toBeFocused();
+  await page.keyboard.press('Tab');await expect(page.locator('.modal-wrap :focus')).toHaveCount(1);
+  await page.keyboard.press('Escape');await expect(page.locator('.command-sheet')).toHaveCount(0);
+  expect((await page.request.post('/api/user/state',{data:{state:{meals:[]}}})).status()).toBe(401);
+});
+
+test('Authenticated UI workspaces render without granting a synthetic account server access',async({page},testInfo)=>{
+  test.setTimeout(60000);
+  // UI-only scenario: the identity response is simulated. No store purchase or valid server token exists.
+  await seed(page,'pt',{premium:true,accessToken:'synthetic-interface-only',subscriptionPlan:'complete_annual',weights:[{day:'2026-10-20',value:72},{day:'2026-10-23',value:71.5},{day:'2026-10-26',value:71}]});
+  await page.route('**/api/access/status',r=>r.fulfill({status:200,json:{premium:true,plan:'complete_annual',email:'interface@example.invalid'}}));
+  await page.route('**/api/user/state',r=>r.fulfill({status:200,json:{state:null}}));
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  for(const route of routes){
+    await healthyScreen(page,route);
+    if(['app','program','recipes','training','menopause','sleep','progress','profile','settings'].includes(route)){
+      await expect(page.locator('.locked-blur')).toHaveCount(0);
+      await actualCapture(page,testInfo,`workspace-${route}`);
+    }
+  }
+  expect(errors).toEqual([]);
+  expect((await page.request.post('/api/user/state',{data:{state:{meals:[]}}})).status()).toBe(401);
+});
