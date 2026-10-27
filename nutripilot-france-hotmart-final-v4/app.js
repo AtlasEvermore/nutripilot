@@ -3023,7 +3023,7 @@ function modulesScreen() {
 // Shown inside a module the person does not have yet (paid users adding a module).
 function moduleLockedScreen(id) {
   const m = moduleById(id) || MODULES[0];
-  return `<div class="mobile-app"><div>${appHeader(m.name)}</div><div class="screen module-preview-screen">${modulePreview(m)}</div>${bottom('modules')}</div>`;
+  return `<div class="mobile-app">${appHeader(m.name)}<div class="screen module-preview-screen">${modulePreview(m)}</div>${bottom('modules')}</div>`;
 }
 
 const Billing = {
@@ -3302,10 +3302,9 @@ function paywall() {
   return `<div class="mobile-app no-nav paywall pw2">
     <div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button>${logo()}${loginLink('Se connecter')}</div></div>
     <div class="screen">
-      <span class="revo-kicker">${icon('star')}${L('Révolutionnaire')}</span>
-      <h1 class="screen-title">${p.name ? L('{name}, débloquez votre programme complet.', { name: esc(p.name) }) : L('Débloquez votre programme complet.')}</h1>
+      <section class="checkout-intro"><span class="orbit-eyebrow">NUTRIPILOT / ${L('Votre formule')}</span><h1 class="screen-title">${esc(planName(plan))}</h1><p>${L('Choisissez vos espaces. La boutique confirme le prix avant tout paiement.')}</p></section>
       ${proj ? `<div class="pw-goal">${icon('progress')}<span>${L('Objectif {target} · estimé le {date}', { target: `<b>${kgFmt(p.target)} kg</b>`, date: `<b>${esc(dateFr(proj.end))}</b>` })}</span></div>` : ''}
-      ${choices.length > 1 ? `<div class="pw-plans" role="radiogroup">${choices.map((x) => `<button class="pw-plan ${x.tone || ''} ${x.tier === plan.tier ? 'on' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}"><small>${L(x.tier === 'complete' ? 'Tout inclus' : 'Recommandé pour vous')}</small><b>${esc(planName(x))}</b><span class="pwp-mods">${MODULES.filter((m) => x.modules.includes(m.id) || m.free).map((m) => `<i class="${m.tone}" title="${esc(modTitle(m))}">${icon(m.icon)}</i>`).join('')}</span><em>${L('{n} espaces inclus', { n: MODULES.filter((m) => x.modules.includes(m.id) || m.free).length })}</em></button>`).join('')}</div>` : `<div class="pw-plan-one"><b>${esc(planName(plan))}</b><small>${esc(L(plan.sub))}</small></div>`}
+      ${choices.length > 1 ? `<details class="checkout-alternatives"><summary>${L('Comparer les formules')}</summary><div class="pw-plans" role="radiogroup">${choices.map((x) => `<button class="pw-plan ${x.tone || ''} ${x.tier === plan.tier ? 'on' : ''}" role="radio" aria-checked="${x.tier === plan.tier}" data-tier="${esc(x.tier)}"><small>${L(x.tier === 'complete' ? 'Tout inclus' : 'Recommandé pour vous')}</small><b>${esc(planName(x))}</b><span class="pwp-mods">${MODULES.filter((m) => x.modules.includes(m.id) || m.free).map((m) => `<i class="${m.tone}" title="${esc(modTitle(m))}">${icon(m.icon)}</i>`).join('')}</span><em>${L('{n} espaces inclus', { n: MODULES.filter((m) => x.modules.includes(m.id) || m.free).length })}</em></button>`).join('')}</div></details>` : `<div class="pw-plan-one"><b>${esc(planName(plan))}</b><small>${esc(L(plan.sub))}</small></div>`}
       <div class="pw-periods" role="radiogroup">${periods.map(periodCard).join('')}</div>
       <p class="fine">${L('Les analyses de votre formule sont soumises aux limites d’utilisation. Le code-barres et la saisie manuelle restent disponibles.')}</p><button class="btn btn-lime btn-wide btn-xl pw-cta-top" data-buy>${trial ? L('Commencer mes {n} jours gratuits', { n: trial }) : L('Continuer · {price} / {period}', { price, period: periodLabel })}</button>
       <div class="pw-trust">
