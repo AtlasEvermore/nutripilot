@@ -69,6 +69,7 @@ test('Every module image loads and discovery leads to its own space before Plans
   await page.locator('.lock-overlay [data-module-buy]').click();
   await expect(page.locator('.plans-page')).toBeVisible();
   await expect(page.locator('[data-plans-tab="modules"]')).toHaveAttribute('aria-selected','true');
+  await expect(page.locator('.kit-row')).toContainText('299,00');
   await testInfo.attach('plans', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
 });
 

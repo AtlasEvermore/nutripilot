@@ -3383,10 +3383,11 @@ function localPrice(basePrice, storeId = '', cur = currency()) {
   return roundCur(basePrice * (rates()[cur] || 1), cur);
 }
 // Price of a plan in the buyer's currency. The store's own price wins in the iPhone / Android app.
-// Annual = exactly 10 × the local monthly price, so the 2 free months add up in every currency.
+// Complete annual uses its independent catalog reference; other plans retain their local ten-month rule.
 function lp(plan, period, cur = currency()) {
   const store = window.NutriPilotNative?.products?.[plan[period].storeId];
   if (store && Number.isFinite(Number(store.price))) return Number(store.price);
+  if (plan.tier === 'complete' && period === 'annual') return localPrice(plan.annual.price, '', cur);
   const monthly = localPrice(plan.monthly.price, '', cur);
   return period === 'annual' ? roundCur(monthly * 10, cur) : monthly;
 }
