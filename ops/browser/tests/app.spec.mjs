@@ -351,3 +351,21 @@ test('Paused services explain availability, preserve a coach draft and keep loca
  await page.goto('/#planner');await expect(page.locator('.provider-availability')).toBeVisible();await expect(page.locator('[data-compose]')).toBeDisabled();
  await page.locator('.provider-availability [data-go="recipes"]').click();await expect(page.locator('#recipe-grid')).not.toBeEmpty();expect(providerRequests).toBe(0);
 });
+
+test('Live window resizing preserves a draft, open recipe and keyboard return path',async({page},testInfo)=>{
+ await authenticatedUI(page);const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.setViewportSize({width:390,height:844});await page.goto('/#coach');
+ await page.locator('#coach-input').fill('Rascunho preservado ao redimensionar');
+ for(const viewport of [{width:820,height:720},{width:844,height:390},{width:390,height:600}]){
+  await page.setViewportSize(viewport);await expect(page.locator('#coach-input')).toHaveValue('Rascunho preservado ao redimensionar');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ }
+ await page.goto('/#recipes');const opener=page.locator('.recipe-grid [data-recipe-id]').first();await opener.click();
+ for(const viewport of [{width:820,height:720},{width:844,height:390},{width:390,height:600}]){
+  await page.setViewportSize(viewport);const close=page.locator('.modal-wrap .sheet-head [data-close]').first();
+  await expect(close).toBeInViewport();await expect(page.locator('.modal-wrap')).toHaveCount(1);
+  const bounds=await page.locator('.modal-wrap .sheet').boundingBox();expect(bounds.x).toBeGreaterThanOrEqual(-1);expect(bounds.x+bounds.width).toBeLessThanOrEqual(viewport.width+1);
+  await testInfo.attach(`resized-${viewport.width}x${viewport.height}`,{body:await page.screenshot({animations:'disabled'}),contentType:'image/png'});
+ }
+ await page.keyboard.press('Escape');await expect(opener).toBeFocused();expect(errors).toEqual([]);
+});

@@ -53,7 +53,7 @@ jobs:
             native/native-checksums.txt
   ios:
     if: github.event.repository.private == false
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 35
     defaults:
       run:
@@ -66,7 +66,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: xcodebuild -version
+      - name: Select the Duo SDK explicitly
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.1.app/Contents/Developer
+          xcodebuild -version
+          test "$(xcrun --sdk iphoneos --show-sdk-version)" = '27.1'
+          xcrun simctl list devices available
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - run: npx cap add ios --packagemanager SPM
