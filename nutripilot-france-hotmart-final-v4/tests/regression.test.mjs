@@ -572,3 +572,12 @@ test('Webhook authentication and authoritative status resist forged events and p
  assert.equal((await hook('Bearer test-hook-secret',{app_user_id:id,type:'RENEWAL'})).status,200);
  assert.equal(JSON.parse(await fs.readFile(file,'utf8'))[email].status,'revoked');
 });
+
+test('Static HTTP responses negotiate compressed variants and revalidate without touching protected API caching',async t=>{
+ const f=await fixture(t,{ai:false,enabled:false,guests:false});
+ const plain=await fetch(`${f.url}/app.js`,{headers:{'accept-encoding':'identity'}});assert.equal(plain.status,200);assert.equal(plain.headers.get('content-encoding'),null);const text=await plain.text();const etag=plain.headers.get('etag');assert.ok(etag);
+ for(const encoding of ['gzip','br']){const response=await fetch(`${f.url}/app.js`,{headers:{'accept-encoding':encoding}});assert.equal(response.headers.get('content-encoding'),encoding);assert.equal(await response.text(),text);assert.match(response.headers.get('vary'),/Accept-Encoding/);const cached=await fetch(`${f.url}/app.js`,{headers:{'accept-encoding':encoding,'if-none-match':etag}});assert.equal(cached.status,304);assert.equal(await cached.text(),'');}
+ const refusal=await fetch(`${f.url}/app.js`,{headers:{'accept-encoding':'gzip;q=0,br;q=0'}});assert.equal(refusal.headers.get('content-encoding'),null);
+ assert.equal((await fetch(`${f.url}/app.js`,{headers:{'accept-encoding':'*;q=0'}})).status,406);
+ const denied=await fetch(`${f.url}/api/user/state`);assert.equal(denied.status,401);assert.equal(denied.headers.get('cache-control'),'no-store');
+});

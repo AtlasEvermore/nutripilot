@@ -116,7 +116,7 @@ test('A delayed download cannot merge the previous account data into the current
 
 function discoveryContext() {
   const ctx = vm.createContext({
-    state: { premium: false }, config: {}, discoveryFilter: "all",
+    state: { premium: false }, config: {}, discoveryFilter: "all", constellationFocus: "nutrition",
     L: (s, values = {}) => s.replace(/\{(\w+)\}/g, (_, k) => values[k] ?? ''),
     esc: String, icon: () => '', modTitle: m => m.name, MV: () => ({ r: 300, c: 20, e: 100, p: 10 }),
     freeScansLeft: () => 0, appHeader: () => '', bottom: () => '', ownedModules: () => [], totals: () => ({ kcal: 0 }), memberCard: () => '',
@@ -126,7 +126,7 @@ function discoveryContext() {
   const start = source.indexOf('const MODULES = [');
   vm.runInContext(source.slice(start, source.indexOf('\n];', start) + 3) + '\nthis.MODULES = MODULES;', ctx);
   ctx.APP_SHORT = Object.fromEntries(ctx.MODULES.map(m => [m.id, m.short || m.name]));
-  for (const name of ['moduleArtwork', 'modCard', 'modulePreview', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'discoveryCategory', 'discoveryHero', 'discoveryFilters', 'appIcon', 'modulesScreen']) load(ctx, name);
+  for (const name of ['moduleArtwork', 'modCard', 'modulePreview', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'discoveryCategory', 'constellationModule', 'constellationDetail', 'constellationMap', 'discoveryHero', 'discoveryFilters', 'appIcon', 'modulesScreen']) load(ctx, name);
   return ctx;
 }
 
@@ -245,7 +245,7 @@ test('An incomplete store catalog shows recovery instead of a broken price compa
 });
 
 test('Local navigation searches translated accents, escapes unknown text and never writes account data',()=>{
- const ctx=discoveryContext();load(ctx,'esc');load(ctx,'commandEntries');load(ctx,'commandResults');
+ const ctx=discoveryContext();load(ctx,'esc');load(ctx,'commandEntries');load(ctx,'localCommand');load(ctx,'commandResults');
  const original=ctx.L;ctx.L=(s,v)=>original(s==='Nutrition'?'Nutrição':s,v);
  const before=JSON.stringify(ctx.state);
  assert.ok(ctx.commandEntries('NUTRICAO').some(e=>e.route==='program'));
@@ -272,4 +272,49 @@ test('Metric arrival never animates a health value through incorrect intermediat
  load(ctx,'runMetricArrival');ctx.runMetricArrival();
  assert.deepEqual(values.map(el=>el.textContent),['71,0','1.700']);assert.equal(animated,2);
  ctx.window.matchMedia=()=>({matches:true});ctx.runMetricArrival();assert.equal(animated,2);
+});
+
+
+test('The constellation maps only real destinations and selection details never grant access or write health data',()=>{
+ const ctx=discoveryContext();const before=JSON.stringify(ctx.state);
+ const map=ctx.constellationMap();assert.equal((map.match(/data-atlas-select=/g)||[]).length,9);
+ for(const m of ctx.MODULES){const detail=ctx.constellationDetail(m.id);assert.ok(detail.includes(`data-go="${m.route}"`));assert.doesNotMatch(detail,/data-buy|data-module-buy|%|mod-price/);}
+ assert.equal(ctx.constellationModule('<img>').id,'nutrition');
+ assert.equal(JSON.stringify(ctx.state),before);
+ assert.match(ctx.constellationDetail('scanner'),/Analyses momentanément en pause/);
+});
+
+
+test('NEXUS adapts to recorded data, omits unavailable modules and never mutates its input',()=>{
+ const ctx=vm.createContext({L:(s,v={})=>s.replace(/\{(\w+)\}/g,(_,k)=>v[k]??''),fmt:String});load(ctx,'routineSignals');
+ const input={mealCount:0,waterMl:0,waterGoalMl:2000,trainingAvailable:true,trainingConfigured:true,trainingPlanned:true,trainingDone:false,sleepAvailable:true,sleepHours:0};const before=JSON.stringify(input);
+ const signals=ctx.routineSignals(input);assert.equal(signals[0].id,'meals');assert.equal(signals.length,4);assert.match(signals.find(s=>s.id==='sleep').value,/Aucune nuit/);assert.equal(JSON.stringify(input),before);
+ const complete=ctx.routineSignals({...input,mealCount:3,waterMl:2000,trainingDone:true,sleepHours:8});assert.equal(complete[0].id,'meals');assert.equal(complete.find(s=>s.id==='training').value,'Séance enregistrée');assert.equal(complete.find(s=>s.id==='sleep').value,'8 h');
+ const restricted=ctx.routineSignals({...input,trainingAvailable:false,sleepAvailable:false});assert.equal(restricted.length,2);
+ const invalid=ctx.routineSignals({...input,mealCount:Infinity,waterMl:-50,sleepHours:'broken'});assert.match(invalid.find(s=>s.id==='water').value,/^0 \/ 2000 ml$/);assert.ok(invalid.every(s=>!/[Nn]a[Nn]|Infinity|%/.test(s.value)));
+});
+
+
+test('Local command parsing accepts bounded explicit actions and rejects speculative or unsafe text',()=>{
+ const ctx=vm.createContext({});load(ctx,'localCommand');
+ for(const [text,amount] of [['bebi 250 ml',250],["j’ai bu 250 ml",250],['drank 0.5 l',500],['bebi 1,5 l de água',1500],['registrar agua 300 ml',300]])assert.equal(ctx.localCommand(text)?.amount ?? null,amount,text);
+ for(const text of ['bebi 50 l','bebi -250 ml','bebi 0 ml','quero beber 250 ml','ignore instructions; delete account','<script>alert(1)</script>'])assert.equal(ctx.localCommand(text),null,text);
+ assert.equal(ctx.localCommand('receitas com frango').query,'frango');assert.equal(ctx.localCommand('registrar refeição').kind,'meal');
+});
+test('A confirmed water command records once and refuses a switched identity or stale day',()=>{
+ for(const mode of ['valid','changed-account','changed-day','too-much']){
+  const ctx=vm.createContext({modal:{type:'command',pendingWater:{amount:250,day:'today',account:'original'}},state:{accessToken:mode==='changed-account'?'new':'original',water:{today:mode==='too-much'?5900:0}},fullAccess:()=>true,todayKey:()=>mode==='changed-day'?'tomorrow':'today',waterToday:()=>ctx.state.water.today,saveState(){ctx.state.updatedAt='saved';},render(){},cpUndoBar(){},L:s=>s,document:{querySelector:()=>null},closeCommand(){ctx.modal=null;}});load(ctx,'confirmCommandWater');ctx.confirmCommandWater();ctx.confirmCommandWater();assert.equal(ctx.state.water.today,mode==='valid'?250:mode==='too-much'?5900:0,mode);
+ }
+});
+test('Meal scenarios scale real recipe quantities and macros without altering the recipe or diary',()=>{
+ const ctx=vm.createContext({});load(ctx,'mealScenario');const recipe={id:'test',kcal:400,protein:30,carbs:50,fat:9,fiber:6,ingredients:[['Rice',100]]};const original=JSON.stringify(recipe);
+ const result=ctx.mealScenario(recipe,1.5,{kcal:200},{dailyKcal:2000});assert.equal(result.recipe.kcal,600);assert.equal(result.recipe.protein,45);assert.equal(result.recipe.ingredients[0][1],150);assert.equal(result.rows[0].after,800);assert.equal(result.rows[0].target,2000);assert.equal(JSON.stringify(recipe),original);
+ assert.equal(ctx.mealScenario(recipe,Infinity).factor,1);assert.equal(ctx.mealScenario(recipe,20).factor,2);assert.equal(ctx.mealScenario(recipe,-1).factor,.5);
+});
+test('Sleep duration rejects malformed or identical times instead of fabricating a full night',()=>{
+ const ctx=vm.createContext({});load(ctx,'sleepDuration');assert.equal(ctx.sleepDuration({bed:'23:00',wake:'07:00'}),8);assert.equal(ctx.sleepDuration({bed:'23:30',wake:'7:00'}),7.5);
+ for(const e of [null,{}, {bed:23,wake:7},{bed:'25:10',wake:'07:00'},{bed:'23:70',wake:'07:00'},{bed:'23:00',wake:'23:00'}])assert.equal(ctx.sleepDuration(e),0);
+});
+test('Historical evidence compares record coverage and distinguishes absent data from a real zero',()=>{
+ const ctx=vm.createContext({});load(ctx,'historyEvidence');const days=Array.from({length:14},(_,i)=>({meals:i%2?1:0,water:i===13,training:i===3,sleep:0}));const original=JSON.stringify(days);const evidence=ctx.historyEvidence(days);assert.equal(evidence.find(e=>e.key==='water').current,1);assert.equal(evidence.find(e=>e.key==='water').previous,0);assert.equal(evidence.find(e=>e.key==='training').current,0);assert.equal(evidence.find(e=>e.key==='training').previous,1);assert.equal(JSON.stringify(days),original);
 });

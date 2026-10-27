@@ -11,7 +11,7 @@ const requestLang = new AsyncLocalStorage();
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import zlib from 'node:zlib';
+import { createStaticAssets, matchesETag } from './ops/static-assets.mjs';
 import { legalPage, pickLegalLang, deletePage, pickDeleteLang, supportPage } from './legal.mjs';
 import { verifyIdToken, accountEmail, providerEnabled, appleAuthorizeUrl, googleAuthorizeUrl, googleExchangeCode, webFlowEnabled } from './auth.mjs';
 import { fileURLToPath } from 'node:url';
@@ -146,17 +146,7 @@ function securityHeaders(type = 'application/json; charset=utf-8') {
   };
 }
 
-const staticCache = new Map();
-async function staticEntry(filePath, stat) {
-  const key = `${filePath}:${stat.mtimeMs}:${stat.size}`;
-  const hit = staticCache.get(filePath);
-  if (hit?.key === key) return hit;
-  const buf = await fs.readFile(filePath);
-  const compressible = /\.(js|css|html|json|svg|webmanifest)$/.test(filePath) && buf.length > 1024;
-  const entry = { key, buf, etag: `"${crypto.createHash('sha1').update(buf).digest('base64url').slice(0, 20)}"`, gzip: compressible ? zlib.gzipSync(buf, { level: 9 }) : null };
-  staticCache.set(filePath, entry);
-  return entry;
-}
+const staticAssets = createStaticAssets();
 
 function send(res, status, body, type) {
   const t = type || 'application/json; charset=utf-8';
@@ -1864,17 +1854,16 @@ const server = http.createServer(async (req, res) => {
       const stat = await fs.stat(filePath);
       if (!stat.isFile()) return send(res, 404, 'Not found', 'text/plain; charset=utf-8');
       const type = TYPES[path.extname(filePath)] || 'application/octet-stream';
-      const entry = await staticEntry(filePath, stat);
+      const entry = await staticAssets.entry(filePath, stat);
       const headers = { ...securityHeaders(type), ETag: entry.etag, Vary: 'Accept-Encoding' };
       // Text assets revalidate on every load (cheap 304) instead of being downloaded again.
       if (/javascript|css|json|text\/html|manifest/.test(type)) headers['Cache-Control'] = 'no-cache';
-      if (req.headers['if-none-match'] === entry.etag) { res.writeHead(304, headers); return res.end(); }
-      if (entry.gzip && /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''))) {
-        res.writeHead(200, { ...headers, 'Content-Encoding': 'gzip' });
-        return res.end(entry.gzip);
-      }
-      res.writeHead(200, headers);
-      return res.end(entry.buf);
+      const representation = await staticAssets.representation(entry,req.headers['accept-encoding'] || '');
+      if(!representation) return send(res,406,'No acceptable content encoding','text/plain; charset=utf-8');
+      if(representation.encoding)headers['Content-Encoding']=representation.encoding;
+      if(matchesETag(req.headers['if-none-match'],entry.etag)){res.writeHead(304,headers);return res.end();}
+      res.writeHead(200,headers);
+      return res.end(representation.buf);
     } catch {
       return send(res, 404, 'Not found', 'text/plain; charset=utf-8');
     }

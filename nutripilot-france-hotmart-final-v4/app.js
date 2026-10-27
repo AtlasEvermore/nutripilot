@@ -571,11 +571,30 @@ function ingredientTableHtml(r, servings) {
   <p class="fine ing-note">${L('Viandes et poissons pesés crus, féculents et légumineuses pesés cuits. Valeurs calculées à partir des tables nutritionnelles de référence (CIQUAL, USDA) ; elles peuvent varier selon les marques.')}</p>`;
 }
 
+// Transparent arithmetic for a portion preview; nothing is saved until the person chooses to log it.
+function mealScenario(recipe, factor, current = {}, targets = {}) {
+  const finite=v=>Number.isFinite(Number(v))?Math.max(0,Number(v)):0;
+  const scale=Number.isFinite(Number(factor))?Math.max(.5,Math.min(2,Number(factor))):1;
+  const scaled={...recipe,ingredients:(recipe.ingredients || []).map(([name,grams])=>[name,Math.round(finite(grams)*scale*10)/10])};
+  const rows=['kcal','protein','carbs','fat','fiber'].map(key=>{
+    const added=Math.round(finite(recipe[key])*scale*(key==='kcal'?1:10))/(key==='kcal'?1:10);scaled[key]=added;
+    const before=finite(current[key]),target=finite(targets[key==='kcal'?'dailyKcal':key]);return {key,before,added,after:Math.round((before+added)*10)/10,target};
+  });
+  return {factor:scale,recipe:scaled,rows};
+}
+function mealScenarioResult(recipe, factor) {
+  const scenario=mealScenario(recipe,factor,totals(),state.profile);
+  return `<div class="scenario-caption"><span>${L('Avant')}</span><span>${L('Avec cette portion')}</span></div><div class="scenario-bars">${scenario.rows.slice(0,2).map(row=>`<div class="scenario-row"><div><b>${L(row.key==='kcal'?'Calories':'Protéines')}</b><span>${fmt(row.before)} ${row.key==='kcal'?'kcal':'g'} ${icon('chevron')} <strong>${fmt(row.after)} ${row.key==='kcal'?'kcal':'g'}</strong></span></div><div class="scenario-track" aria-hidden="true"><i style="width:${Math.min(100,row.before/Math.max(1,row.target,row.after)*100)}%"></i><b style="width:${Math.min(100,row.added/Math.max(1,row.target,row.after)*100)}%"></b></div><small>+${fmt(row.added)} ${row.key==='kcal'?'kcal':'g'} · ${L('Objectif')} ${row.target?fmt(row.target):'—'}</small></div>`).join('')}</div>`;
+}
+function mealScenarioPanel(recipe) {
+  return `<details class="scenario-panel"><summary>${icon('sparkle')}<span>${L('Simuler avant d’enregistrer')}</span>${icon('chevron')}</summary><p>${L('Explorez une portion et voyez son effet sur vos totaux enregistrés.')}</p><label class="scenario-slider"><span>${L('Portion')} <output id="scenario-portion">${fmt(modal?.impactFactor || 1,2)} ×</output></span><input id="scenario-factor" type="range" min="0.5" max="2" step="0.25" value="${modal?.impactFactor || 1}" aria-label="${L('Portion')}"></label><div id="scenario-result" aria-live="polite">${mealScenarioResult(recipe,modal?.impactFactor || 1)}</div><p class="scenario-note">${L('Simulation locale. Aucun enregistrement automatique.')}</p><button class="btn btn-primary btn-wide" data-scenario-add>${L('Enregistrer cette portion')}</button></details>`;
+}
 function recipeSheet(recipe) {
   const isFav = state.recipeFavorites.includes(recipe.id);
   const fromLib = ALL_RECIPES.some((x) => x.id === recipe.id);
   return `<div class="sheet-head"><div><span class="tag">${CUISINE_FLAG[recipe.cuisine] || ''} ${esc(L(recipe.category || 'RECETTE'))}</span><h2>${esc(L(recipe.name))}</h2></div><button class="icon-btn" data-close>×</button></div>
     <div class="recipe-hero-stats"><div><b>${fmt(recipe.kcal)}</b><span>kcal</span></div><div><b>${fmt(recipe.protein)}</b><span>${L('prot.')}</span></div><div><b>${fmt(recipe.carbs)}</b><span>${L('gluc.')}</span></div><div><b>${fmt(recipe.fat)}</b><span>${L('lip.')}</span></div><div><b>${esc(L(recipe.prep))}</b><span>${L('temps')}</span></div></div>
+    ${mealScenarioPanel(recipe)}
     ${recipeFitHtml(recipe)}
     <div class="section-label"><h3>${L('Ingrédients')}</h3><div class="stepper sm"><button data-servings="-1" aria-label="−">${icon('minus')}</button><b>${modal?.servings || 1}</b><button data-servings="1" aria-label="+">${icon('plus')}</button></div></div>
     <p class="fine serv-note">${L('Quantités pour {n} personne(s). Valeurs nutritionnelles par portion.', { n: modal?.servings || 1 })}</p>
@@ -2974,12 +2993,49 @@ function commandEntries(query = '') {
   ];
   return entries.filter(e => !q || fold(`${L(e.label)} ${L(e.sub,MV())}`).includes(q));
 }
+// Deterministic text commands run on this device. Writes always have a separate confirmation.
+function localCommand(query = '') {
+  const raw=String(query).trim().slice(0,80), q=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/’/g,"'").toLowerCase();
+  const water=q.match(/^(?:bebi|tomei|drank|i drank|j'ai bu|bu|bebi agua|log water|registrar agua|bevi|ho bevuto|getrunken|ich habe getrunken|gedronken|wypilem|ictim)\s+(\d+(?:[.,]\d{1,3})?)\s*(ml|l)(?:\s+(?:de agua|agua|water|d'eau|eau|acqua|wasser))?[.!]?$/);
+  if(water){const amount=Math.round(Number(water[1].replace(',','.'))*(water[2]==='l'?1000:1));return amount>=50 && amount<=1500?{kind:'water',amount,label:'Enregistrer de l’eau',icon:'drop'}:null;}
+  const recipes=raw.match(/^(?:receitas? com|recipes? with|recettes? avec|recetas? con|ricette? con|rezepte? mit)\s+(.+)$/i);
+  if(recipes)return {kind:'recipes',query:recipes[1].trim().slice(0,60),label:'Recettes',icon:'book'};
+  if(/^(?:registrar refeicao|adicionar refeicao|log (?:a )?meal|noter (?:un )?repas|registrar comida|registrare pasto)$/.test(q))return {kind:'meal',label:'Ajouter un repas',icon:'plus'};
+  if(/^(?:quero treinar|iniciar treino|start workout|commencer (?:ma )?seance|empezar entrenamiento)$/.test(q))return {kind:'training',label:'Entraînement',icon:'dumbbell'};
+  if(/^(?:registrar sono|anotar sono|log sleep|noter (?:ma )?nuit|registrar sueno)$/.test(q))return {kind:'sleep',label:'Noter ma nuit',icon:'moon'};
+  return null;
+}
+function runLocalCommand(query) {
+  const intent=localCommand(query);if(!intent)return;
+  if(intent.kind==='water'){
+    if(!fullAccess() || waterToday()+intent.amount>6000)return;
+    modal.pendingWater={amount:intent.amount,day:todayKey(),account:state.accessToken || ''};return renderModal();
+  }
+  closeCommand(false);
+  if(intent.kind==='meal')return openAdd('manual');
+  if(intent.kind==='recipes'){recipeQuery=intent.query;recipeView='explore';recipeCuisine='all';recipeRegion='all';recipeGoal='';recipeFilter='all';recipeType='all';return nav('recipes');}
+  if(intent.kind==='sleep'){sleepTab='sleep';return nav('sleep');}
+  if(intent.kind==='training')return nav('training');
+}
+function confirmCommandWater() {
+  const pending=modal?.type==='command' && modal.pendingWater;
+  if(!pending || !fullAccess() || pending.account!==(state.accessToken || '') || pending.day!==todayKey() || !Number.isInteger(pending.amount) || pending.amount<50 || pending.amount>1500)return closeCommand();
+  const key=todayKey(), before=waterToday(), hadEntry=Object.hasOwn(state.water,key), after=before+pending.amount;if(after>6000)return closeCommand();
+  closeCommand(false);state.water[key]=after;saveState();const revision=state.updatedAt;render();
+  cpUndoBar(L('Enregistré'),'', '');
+  // Reuse the undo bar with a conditional rollback; never overwrite a later water edit.
+  const undo=document.querySelector('.np-undo button');if(undo)undo.onclick=()=>{document.querySelector('.np-undo')?.remove();if(state.accessToken===pending.account && todayKey()===key && waterToday()===after && state.updatedAt===revision){if(hadEntry)state.water[key]=before;else delete state.water[key];saveState();render();}};
+}
 function commandResults(query = '') {
+  const intent=localCommand(query);
+  if(intent?.kind==='water' && fullAccess() && waterToday()+intent.amount>6000)return `<p class="command-empty">${L('Cette quantité dépasserait la limite du journal.')}</p>`;
+  if(intent && (intent.kind!=='water' || fullAccess()))return `<button id="command-option-0" class="command-result" role="option" aria-selected="true" data-command-intent><span class="command-result-icon">${icon(intent.icon)}</span><span><b>${L(intent.label)}${intent.amount?` · +${fmt(intent.amount)} ml`:''}</b><small>${intent.query?esc(intent.query):L(intent.kind==='water'?'Confirmation avant enregistrement':'Traitement local sur cet appareil')}</small></span>${icon('chevron')}</button>`;
   const entries = commandEntries(query);
   return entries.length ? entries.map((e,i) => `<button id="command-option-${i}" class="command-result ${e.tone}" role="option" aria-selected="${i===0}" data-command-go="${e.route}"><span class="command-result-icon">${icon(e.icon)}</span><span><b>${esc(L(e.label))}</b><small>${esc(L(e.sub,MV()))}</small></span>${icon('chevron')}</button>`).join('') : `<p class="command-empty">${L('Aucun résultat pour « {q} ».',{q:esc(query)})}</p>`;
 }
 function commandSheet() {
-  return `<section class="command-sheet"><div class="sheet-head"><div><span class="orbit-eyebrow">NUTRIPILOT / ${L('Mes apps')}</span><h2 id="command-title">${L('Centre de navigation')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div><p>${L('Accédez à vos espaces sans perdre le fil.')}</p><label class="command-search">${icon('search')}<input id="command-search" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="command-results" aria-activedescendant="command-option-0" aria-label="${L('Trouvez un espace ou une action.')}" placeholder="${L('Trouvez un espace ou une action.')}" maxlength="80" autocomplete="off" autocapitalize="off"></label><div id="command-results" role="listbox" aria-label="${L('Mes apps')}">${commandResults()}</div><div class="command-footer"><span id="command-count" role="status">${L('{n} résultats',{n:commandEntries().length})}</span><span>↑ ↓ · Enter · Esc</span></div></section>`;
+  if(modal?.pendingWater)return `<section class="command-sheet command-confirm"><div class="sheet-head"><div><span class="orbit-eyebrow">NUTRIPILOT / ${L('Hydratation')}</span><h2 id="command-title">${L('Confirmer l’enregistrement')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div><div class="command-amount">${icon('drop')}<strong>+${fmt(modal.pendingWater.amount)}<small>ml</small></strong></div><p>${L('Cette quantité sera ajoutée à votre journal d’aujourd’hui.')}</p><div class="modal-actions"><button class="btn btn-ghost" data-command-back>${L('Annuler')}</button><button class="btn btn-primary" data-command-confirm>${L('Confirmer')}</button></div></section>`;
+  return `<section class="command-sheet"><div class="sheet-head"><div><span class="orbit-eyebrow">NUTRIPILOT / ${L('Mes apps')}</span><h2 id="command-title">${L('Centre de navigation')}</h2></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div><p>${L('Accédez à vos espaces sans perdre le fil.')}</p><label class="command-search">${icon('search')}<input id="command-search" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="command-results" aria-activedescendant="command-option-0" aria-label="${L('Trouvez un espace ou une action.')}" placeholder="${L('Trouvez un espace ou une action.')}" maxlength="80" autocomplete="off" autocapitalize="off"></label><p class="command-examples">${L('Exemples : « bu 250 ml », « recettes avec poulet ».')}</p><div id="command-results" role="listbox" aria-label="${L('Mes apps')}">${commandResults()}</div><div class="command-footer"><span id="command-count" role="status">${L('{n} résultats',{n:commandEntries().length})}</span><span>↑ ↓ · Enter · Esc</span></div></section>`;
 }
 function openCommand() {
   if (modal?.type==='command') return closeCommand();
@@ -2999,18 +3055,18 @@ function bindCommand(wrap) {
   const input=wrap.querySelector('#command-search');const list=wrap.querySelector('#command-results');
   commandIndex=0;
   const select = index => {
-    const options=[...list.querySelectorAll('[data-command-go]')];
+    const options=[...list.querySelectorAll('[data-command-go],[data-command-intent]')];
     if(!options.length){input.removeAttribute('aria-activedescendant');return;}
     commandIndex=(index+options.length)%options.length;
     options.forEach((el,i)=>el.setAttribute('aria-selected',String(i===commandIndex)));
     input.setAttribute('aria-activedescendant',options[commandIndex].id);
     options[commandIndex].scrollIntoView({block:'nearest',behavior:'instant'});
   };
-  input.addEventListener('input',()=>{list.innerHTML=commandResults(input.value);commandIndex=0;select(0);wrap.querySelector('#command-count').textContent=L('{n} résultats',{n:commandEntries(input.value).length});});
+  input?.addEventListener('input',()=>{list.innerHTML=commandResults(input.value);commandIndex=0;select(0);wrap.querySelector('#command-count').textContent=L('{n} résultats',{n:list.querySelectorAll('[role=option]').length});});
   wrap.addEventListener('keydown',event=>{
     if(event.key==='Escape'){event.preventDefault();return closeCommand();}
     if(event.target===input && ['ArrowDown','ArrowUp','Enter'].includes(event.key)){
-      event.preventDefault();if(event.key==='Enter')return list.querySelectorAll('[data-command-go]')[commandIndex]?.click();
+      event.preventDefault();if(event.key==='Enter')return list.querySelectorAll('[data-command-go],[data-command-intent]')[commandIndex]?.click();
       select(commandIndex+(event.key==='ArrowDown'?1:-1));return;
     }
     if(event.key==='Tab'){
@@ -3020,7 +3076,34 @@ function bindCommand(wrap) {
     }
   });
   wrap.addEventListener('click',event=>{if(event.target===wrap)closeCommand();});
-  input.focus({preventScroll:true});
+  (input || wrap.querySelector('[data-command-back]'))?.focus({preventScroll:true});
+}
+
+// A local map of real destinations. Selection never changes health data or access rights.
+let constellationFocus = 'nutrition';
+function constellationModule(id = constellationFocus) {
+  return MODULES.find(m => m.id === id) || MODULES[0];
+}
+function constellationDetail(id = constellationFocus) {
+  const m = constellationModule(id);
+  const category = discoveryCategory(m.id);
+  const label = category === 'move' ? 'Bouger' : category === 'restore' ? 'Récupérer' : 'Manger';
+  return `<div class="constellation-copy ${m.tone}"><span class="constellation-category">${L(label)} / ${String(MODULES.indexOf(m)+1).padStart(2,'0')}</span><h2>${esc(L(m.name))}</h2><p>${L(m.sub,MV())}</p>${['scanner','coach'].includes(m.id) && !config.ai ? `<small class="constellation-availability">${icon('help')}${L('Analyses momentanément en pause')}</small>` : ''}<button class="btn btn-primary" data-go="${m.route}">${L('Découvrir')} ${icon('chevron')}</button></div>`;
+}
+function constellationMap() {
+  const selected = constellationModule();
+  return `<section class="constellation" aria-label="${L('Carte de votre routine')}"><div class="constellation-head"><span class="orbit-eyebrow">NUTRIPILOT / ATLAS</span><span>${String(MODULES.length).padStart(2,'0')} ${L('Modules')}</span></div><p class="constellation-hint">${L('Choisissez un espace. Tracez votre parcours.')}</p><div class="constellation-stage"><svg class="constellation-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="48" rx="34" ry="36"/>${MODULES.map((m,i)=>{const a=(-90+i*40)*Math.PI/180;return `<path data-atlas-path="${m.id}" class="${m.id===selected.id?'on':''}" d="M50 48L${(50+34*Math.cos(a)).toFixed(2)} ${(48+36*Math.sin(a)).toFixed(2)}"/>`;}).join('')}</svg><div class="orbit-core constellation-core ${selected.tone}" aria-hidden="true">${icon('sparkle')}<span>NP</span></div><div class="constellation-nodes" role="group" aria-label="${L('Tous vos espaces')}">${MODULES.map((m,i)=>{const a=(-90+i*40)*Math.PI/180;return `<button class="constellation-node ${m.tone}" style="--atlas-x:${(50+34*Math.cos(a)).toFixed(2)}%;--atlas-y:${(48+36*Math.sin(a)).toFixed(2)}%" data-atlas-select="${m.id}" aria-pressed="${m.id===selected.id}" aria-controls="constellation-detail" aria-label="${esc(L(m.name))}"><span>${icon(m.icon)}</span><b>${esc(L(APP_SHORT[m.id]))}</b></button>`;}).join('')}</div></div><div id="constellation-detail" aria-live="polite" aria-atomic="true">${constellationDetail()}</div></section>`;
+}
+function selectConstellation(id) {
+  if (!MODULES.some(m => m.id === id)) return;
+  constellationFocus = id;
+  const map = app.querySelector('.constellation');
+  if (!map) return;
+  map.querySelectorAll('[data-atlas-select]').forEach(el => el.setAttribute('aria-pressed',String(el.dataset.atlasSelect===id)));
+  map.querySelectorAll('[data-atlas-path]').forEach(el => el.classList.toggle('on',el.dataset.atlasPath===id));
+  map.querySelector('#constellation-detail').innerHTML = constellationDetail(id);
+  const core = map.querySelector('.constellation-core');
+  if(core) core.className = `orbit-core constellation-core ${constellationModule(id).tone}`;
 }
 
 let discoveryFilter = 'all';
@@ -3037,12 +3120,7 @@ function discoveryHero(kind = 'apps') {
       <div class="discovery-actions"><button class="btn btn-lime" data-go="${primary.route}">${L('Découvrir')} ${L(primary.name)} ${icon('chevron')}</button><button class="discovery-secondary" data-go="${kind === 'home' ? 'modules' : 'app'}">${L(kind === 'home' ? 'Tous vos espaces' : 'Aujourd’hui')}${icon('chevron')}</button></div>
       <div class="discovery-proof"><span><b>${v.r}</b>${L('recettes')}</span><span><b>${v.e}</b>${L('exercices')}</span><span><b>${String(MODULES.length).padStart(2,'0')}</b>${L('Modules')}</span></div>
     </div>
-    <div class="orbit-scene"><div class="orbit-track track-a" aria-hidden="true"></div><div class="orbit-track track-b" aria-hidden="true"></div><div class="orbit-track track-c" aria-hidden="true"></div>
-      <div class="orbit-core ${primary.tone}">${moduleArtwork(primary)}<span class="orbit-core-label">${icon(primary.icon)}${L(primary.name)}</span></div>
-      <button class="orbit-satellite sat-move" data-go="training">${icon('dumbbell')}<span>${L('Entraînement')}</span></button>
-      <button class="orbit-satellite sat-rest" data-go="sleep">${icon('moon')}<span>${L('Sommeil')}</span></button>
-      <span class="orbit-coordinate" aria-hidden="true">N / P — 01</span><span class="orbit-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-    </div>
+    ${constellationMap()}
   </section>`;
 }
 function discoveryFilters() {
@@ -3746,6 +3824,39 @@ function todayTabsHtml() {
   const tabs = [['summary', 'Résumé', ''], ['missions', 'Missions', `${done[0]}/${done[1]}`], ['foryou', 'Pour vous', '']];
   return `<div class="today-tabs" role="tablist">${tabs.map(([k, label, badge]) => `<button role="tab" aria-selected="${todayTab === k}" class="${todayTab === k ? 'active' : ''}" data-today-tab="${k}">${L(label)}${badge ? `<em>${badge}</em>` : ''}</button>`).join('')}</div>`;
 }
+// NEXUS orders navigation tasks, never clinical urgency or inferred health. Pure and offline.
+let routineFocus = '';
+function routineSignals(input) {
+  const safe = (v,max) => Number.isFinite(Number(v)) ? Math.max(0,Math.min(max,Number(v))) : 0;
+  const meals = Math.floor(safe(input.mealCount,1000));
+  const water = safe(input.waterMl,20000), goal = safe(input.waterGoalMl,5000);
+  const signals = [
+    {id:'meals',icon:'fork',label:'Nutrition',value:meals ? (meals===1?L('1 repas enregistré'):L('{n} repas enregistrés',{n:meals})) : L('Aucun repas enregistré aujourd’hui.'),reason:'Vos repas enregistrés permettent de suivre votre journée.',action:'Ajouter un repas',priority:meals?30:90},
+    {id:'water',icon:'drop',label:'Hydratation',value:`${fmt(water)}${goal?` / ${fmt(goal)}`:''} ml`,reason:'Ce compteur utilise uniquement l’eau que vous avez enregistrée.',action:'Voir mon suivi',priority:water?20:70},
+  ];
+  if(input.trainingAvailable) signals.push({id:'training',icon:'dumbbell',label:'Entraînement',value:L(input.trainingDone ? 'Séance enregistrée' : input.trainingPlanned ? 'Séance prévue' : input.trainingConfigured ? 'Repos' : 'Choisir comment m’entraîner'),reason:input.trainingPlanned?'Cette action suit votre programme de la journée.':'Vous choisissez votre programme et votre rythme.',action:'Ouvrir',priority:input.trainingDone?10:input.trainingPlanned?65:35});
+  if(input.sleepAvailable){const hours=safe(input.sleepHours,24);signals.push({id:'sleep',icon:'moon',label:'Sommeil',value:hours?`${fmt(hours,1)} h`:L('Aucune nuit enregistrée'),reason:hours?'Durée calculée à partir des horaires que vous avez saisis.':'Ajoutez votre nuit pour compléter votre journal.',action:hours?'Ouvrir':'Noter ma nuit',priority:hours?10:55});}
+  return signals.sort((a,b)=>b.priority-a.priority);
+}
+function routineSnapshot() {
+  return {mealCount:state.meals.filter(m=>m.day===todayKey()).length,waterMl:waterToday(),waterGoalMl:waterGoal(),trainingAvailable:hasFeature('training'),trainingPlanned:Boolean(todaySession()),trainingConfigured:hasTrainingPlan(),trainingDone:doneOn(todayKey()),sleepAvailable:hasFeature('sleep'),sleepHours:sleepDuration(state.sleepLog?.[todayKey()])};
+}
+function routineDetail(signal) {
+  return `<div class="nexus-detail"><span class="nexus-detail-icon" aria-hidden="true">${icon(signal.icon)}</span><div><span class="orbit-eyebrow">${L('Votre prochaine décision')}</span><h3>${esc(L(signal.label))}</h3><p>${esc(signal.value)}</p></div><button class="btn btn-primary" data-signal-action="${signal.id}">${L(signal.action)}${icon('chevron')}</button></div><details class="nexus-why"><summary>${L('Pourquoi cette action ?')}</summary><p>${L(signal.reason)}</p><small>${L('Priorité de navigation, pas une évaluation de santé.')}</small></details>`;
+}
+function routinePanel() {
+  const signals = routineSignals(routineSnapshot());
+  const selected = signals.find(s=>s.id===routineFocus) || signals[0];
+  const order=['meals','water','training','sleep'];
+  return `<section class="nexus-panel" aria-labelledby="nexus-title"><div class="nexus-head"><span class="orbit-eyebrow"><i></i>NUTRIPILOT / NEXUS</span><span>${icon('check')}${L('D’après vos enregistrements')}</span></div><h2 id="nexus-title">${L('Votre routine, connectée.')}</h2><div class="nexus-signals" role="group" aria-label="${L('Vue d’ensemble')}">${signals.slice().sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id)).map(signal=>`<button data-signal-select="${signal.id}" aria-pressed="${selected.id===signal.id}" aria-controls="nexus-focus">${icon(signal.icon)}<b>${L(signal.label)}</b><small>${esc(signal.value)}</small></button>`).join('')}</div><div id="nexus-focus" aria-live="polite" aria-atomic="true">${routineDetail(selected)}</div></section>`;
+}
+function selectRoutineSignal(id) {
+  const signal=routineSignals(routineSnapshot()).find(s=>s.id===id);
+  const panel=app.querySelector('.nexus-panel');if(!signal || !panel)return;
+  routineFocus=id;panel.querySelectorAll('[data-signal-select]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.signalSelect===id)));
+  panel.querySelector('#nexus-focus').innerHTML=routineDetail(signal);
+}
+
 function dashboard() {
   const t = totals();
   const p = state.profile;
@@ -3778,6 +3889,7 @@ function dashboard() {
       ${todayTabsHtml()}
       ${todayTab === 'summary' ? `
       ${welcomeBackCard()}
+      ${routinePanel()}
       <section class="hero-ring-card daily-flight">
         <div class="daily-flight-head"><span class="orbit-eyebrow">NUTRIPILOT / ${L('Mon jour maintenant')}</span><span>${L('Aujourd’hui')}</span></div>
         <div class="ring-wrap">
@@ -3945,6 +4057,33 @@ function periodCompare() {
   return `<div class="section-label"><h3>${L('30 derniers jours vs les 30 précédents')}</h3></div>
     <div class="pc-card">${row('Poids moyen', now.weight, prev.weight, 'kg', 1, state.profile.goal === 'lose')}${row('Calories moyennes', now.kcal, prev.kcal, 'kcal')}${row('Jours notés', now.logged, prev.logged, '', 0)}${row('Séances', now.workouts, prev.workouts, '', 0)}${row('Sommeil moyen', now.sleep, prev.sleep, 'h', 1)}</div>`;
 }
+// Record-coverage evidence: descriptive history, not a diagnosis or a forecast.
+let historyFocus = '';
+function historyEvidence(days) {
+  const keys=['meals','water','training','sleep'];
+  return keys.map(key=>({key,current:days.slice(-7).filter(d=>d[key]).length,previous:days.slice(-14,-7).filter(d=>d[key]).length}));
+}
+function routineHistory() {
+  const days=Array.from({length:14},(_,i)=>({day:addDays(i-13),meals:0,water:false,waterMl:0,training:0,sleep:0}));const byDay=new Map(days.map(d=>[d.day,d]));
+  for(const meal of state.meals || []){const day=byDay.get(meal.day);if(day)day.meals++;}
+  for(const workout of state.workoutLog || []){const day=byDay.get(workout.day);if(day)day.training++;}
+  for(const day of days){const water=Number(state.water?.[day.day]);day.water=Object.hasOwn(state.water || {},day.day) && Number.isFinite(water) && water>=0;day.waterMl=day.water?water:0;day.sleep=sleepDuration(state.sleepLog?.[day.day]);}
+  return days;
+}
+function historyDayDetail(day) {
+  return `<div class="history-day-title">${esc(dateFr(new Date(`${day.day}T12:00:00`),true))}</div><div class="history-values">${[['fork','Nutrition',day.meals?(day.meals===1?L('1 repas enregistré'):L('{n} repas enregistrés',{n:day.meals})):L('Sans enregistrement')],['drop','Hydratation',day.water?`${fmt(day.waterMl)} ml`:L('Sans enregistrement')],['dumbbell','Entraînement',day.training?(day.training===1?L('Séance enregistrée'):`${day.training} ${L('Séances')}`):L('Sans enregistrement')],['moon','Sommeil',day.sleep?`${fmt(day.sleep,1)} h`:L('Sans enregistrement')]].map(([ico,label,value])=>`<div>${icon(ico)}<span><b>${L(label)}</b><small>${esc(value)}</small></span></div>`).join('')}</div>`;
+}
+function historyPanel() {
+  const days=routineHistory(),week=days.slice(-7),selected=week.find(d=>d.day===historyFocus) || week.at(-1),evidence=historyEvidence(days);
+  const lanes=[['meals','fork','Nutrition'],['water','drop','Hydratation'],['training','dumbbell','Entraînement'],['sleep','moon','Sommeil']];
+  return `<section class="history-panel" aria-labelledby="history-title"><span class="orbit-eyebrow">NUTRIPILOT / PULSE</span><h2 id="history-title">${L('Le rythme de vos enregistrements')}</h2><p>${L('Touchez un jour pour explorer vos données.')}</p><div class="history-matrix"><span></span><div class="history-dates" role="group" aria-label="${L('Votre semaine')}">${week.map(day=>`<button data-history-day="${day.day}" aria-pressed="${selected.day===day.day}" aria-controls="history-detail" aria-label="${esc(dateFr(new Date(`${day.day}T12:00:00`),true))}">${day.day.slice(-2)}</button>`).join('')}</div>${lanes.map(([key,ico,label])=>`<span class="history-lane" title="${L(label)}" aria-label="${L(label)}">${icon(ico)}</span><div class="history-cells lane-${key}" aria-hidden="true">${week.map(day=>`<i class="${day[key]?'recorded':''} ${selected.day===day.day?'selected':''}"></i>`).join('')}</div>`).join('')}</div><p class="history-legend"><i></i>${L('Un repère indique un enregistrement, pas un résultat de santé.')}</p><div id="history-detail" aria-live="polite" aria-atomic="true">${historyDayDetail(selected)}</div><details class="history-evidence"><summary>${L('Comparer les enregistrements sur 14 jours')}</summary><div class="history-comparison"><span>${L('Modules')}</span><span>${L('7 jours précédents')}</span><span>${L('7 derniers jours')}</span>${lanes.map(([key,ico,label])=>{const e=evidence.find(e=>e.key===key);return `<b>${L(label)}</b><span>${e.previous}/7</span><strong>${e.current}/7</strong>`;}).join('')}</div><p>${L('Jours avec au moins un enregistrement. Une absence de données ne signifie pas une absence d’activité.')}</p></details></section>`;
+}
+function selectHistoryDay(id) {
+  const days=routineHistory().slice(-7),day=days.find(d=>d.day===id),panel=app.querySelector('.history-panel');if(!day || !panel)return;
+  historyFocus=id;panel.querySelectorAll('[data-history-day]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.historyDay===id)));
+  const index=days.indexOf(day);panel.querySelectorAll('.history-cells').forEach(row=>[...row.children].forEach((el,i)=>el.classList.toggle('selected',i===index)));
+  panel.querySelector('#history-detail').innerHTML=historyDayDetail(day);
+}
 function progressScreen() {
   if (!weightKnown()) {
     return `<div class="mobile-app">${appHeader('Progrès')}<div class="screen">
@@ -3989,6 +4128,8 @@ function progressScreen() {
         <button class="ph-edit" data-open-goal>${icon('scale')}<span>${goalSet() ? L('Modifier mon objectif') : L('Définir mon objectif')}</span></button>
         <div class="ph-stats"><div><small>${L('Restant')}</small><b>${fmt(Math.abs(toGo), 1)} kg</b></div><div><small>${L('Rythme')}</small><b>${rate ? `${rate > 0 ? '+' : ''}${fmt(rate, 2)} kg/${L('sem.')}` : '—'}</b></div><div><small>${L('Arrivée estimée')}</small><b>${eta ? esc(dateFr(eta)) : '—'}</b></div></div>
       </section>
+
+      ${historyPanel()}
 
       <div class="section-label"><h3>${L('Courbe de poids')}</h3><div class="range-chips">${[[30, '1 M'], [90, '3 M'], [0, L('Tout')]].map(([d, l]) => `<button class="${progressRange === d ? 'on' : ''}" data-prog-range="${d}">${l}</button>`).join('')}</div></div>
       <div class="chart-card">${weightChart(series.length ? series : state.weights.slice(-1), target)}</div>
@@ -4338,8 +4479,8 @@ function missionScreen() {
       ${copilotDemo(meals)}
 
       <section class="mx-card mx-scan">
-        <div class="mx-title"><span class="mx-ico m-scan">${icon('scan')}</span><div><small>${L('Scanner de repas')}</small><h2>${L('Une photo. Les calories en secondes.')}</h2></div></div>
-        <div class="scan-demo" aria-hidden="true">
+        <div class="mx-title"><span class="mx-ico m-scan">${icon('scan')}</span><div><small>${L('Scanner de repas')}</small><h2>${L(config.ai ? 'Une photo. Les calories en secondes.' : 'Code-barres et saisie manuelle toujours disponibles.')}</h2></div></div>
+        <div class="scan-demo" aria-hidden="true" ${config.ai ? '' : 'hidden'}>
           <div class="sd-frame"><span class="sd-plate">🥗</span><i class="sd-line"></i><b class="c1"></b><b class="c2"></b><b class="c3"></b><b class="c4"></b></div>
           <div class="sd-out"><span class="sd-chip k">520 kcal</span><span class="sd-chip">${L('Protéines')} 38 g</span><span class="sd-chip">${L('Glucides')} 41 g</span><span class="sd-chip">${L('Lipides')} 19 g</span></div>
         </div>
@@ -7462,10 +7603,9 @@ RELAX.push(
 const ROUTINE = [['screens', 'Écrans éteints 30 minutes avant le coucher'], ['light', 'Lumière douce le soir'], ['cool', 'Chambre fraîche et aérée'], ['caffeine', 'Pas de caféine après 14 h'], ['dinner', 'Dîner léger au moins 2 h avant le coucher'], ['breath', '3 minutes de respiration'], ['same', 'Coucher à heure régulière']];
 const EMOTIONS = [['stress', 'Stress'], ['bored', 'Ennui'], ['tired', 'Fatigue'], ['sad', 'Tristesse'], ['happy', 'Joie / fête'], ['social', 'Entourage'], ['habit', 'Habitude']];
 function sleepDuration(e) {
-  if (!e?.bed || !e?.wake) return 0;
-  const [bh, bm] = e.bed.split(':').map(Number); const [wh, wm] = e.wake.split(':').map(Number);
-  let mins = (wh * 60 + wm) - (bh * 60 + bm); if (mins <= 0) mins += 1440;
-  return mins / 60;
+  const parse=value=>{if(typeof value!=='string' || !/^\d{1,2}:\d{2}$/.test(value))return null;const [h,m]=value.split(':').map(Number);return h<24 && m<60?h*60+m:null;};
+  const bed=parse(e?.bed),wake=parse(e?.wake);if(bed===null || wake===null || bed===wake)return 0;
+  return ((wake-bed+1440)%1440)/60;
 }
 function speak(text) {
   try {
@@ -8481,6 +8621,16 @@ function a11yPass(root) {
 }
 
 function bind() {
+  app.querySelector('.constellation-nodes')?.addEventListener('keydown',event=>{
+    if(!['ArrowRight','ArrowLeft','ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
+    const nodes=[...event.currentTarget.querySelectorAll('[data-atlas-select]')];
+    const current=nodes.indexOf(document.activeElement);if(current<0)return;
+    event.preventDefault();
+    const rtl=document.documentElement.dir==='rtl';
+    const forward=event.key==='ArrowDown' || event.key===(rtl?'ArrowLeft':'ArrowRight');
+    const index=event.key==='Home'?0:event.key==='End'?nodes.length-1:(current+(forward?1:-1)+nodes.length)%nodes.length;
+    nodes[index].focus({preventScroll:true});selectConstellation(nodes[index].dataset.atlasSelect);
+  });
   app.querySelector('.plan-location')?.addEventListener('toggle',event => { planLocationOpen = event.target.open; });
   app.querySelectorAll('details[data-pf-sec]').forEach((el) => el.addEventListener('toggle', () => { if (el.open) pfOpen.add(el.dataset.pfSec); else pfOpen.delete(el.dataset.pfSec); }));
   app.onchange = (event) => {
@@ -8538,6 +8688,17 @@ function bind() {
       return;
     }
     if(button.dataset.openCommand!==undefined)return openCommand();
+    if(button.dataset.atlasSelect!==undefined)return selectConstellation(button.dataset.atlasSelect);
+    if(button.dataset.historyDay!==undefined)return selectHistoryDay(button.dataset.historyDay);
+    if(button.dataset.signalSelect!==undefined)return selectRoutineSignal(button.dataset.signalSelect);
+    if(button.dataset.signalAction!==undefined){
+      const id=button.dataset.signalAction;
+      if(!routineSignals(routineSnapshot()).some(s=>s.id===id))return;
+      if(id==='meals')return openAdd('manual');
+      if(id==='water'){const tile=app.querySelector('.water-tile');if(tile){tile.scrollIntoView({block:'center',behavior:AURA_REDUCED?'instant':'smooth'});tile.querySelector('button')?.focus({preventScroll:true});}return;}
+      if(id==='sleep'){sleepTab='sleep';return nav('sleep');}
+      if(id==='training')return nav('training');
+    }
     if(button.dataset.missionFocus!==undefined){const value=button.dataset.missionFocus;if(!['nutrition','training','sleep'].includes(value))return;missionFocus=value;const y=scrollY;render();scrollTo({top:y,behavior:'instant'});const choice=app.querySelector(`[data-mission-focus="${value}"]`);choice?.focus({preventScroll:true});if(choice){const bounds=choice.getBoundingClientRect();const dock=app.querySelector('.bottom-nav')?.getBoundingClientRect();const head=app.querySelector('.app-head')?.getBoundingClientRect();if(bounds.bottom>(dock && dock.width>dock.height ? dock.top-16 : innerHeight-20) || bounds.top<(head?.bottom || 0)+12)choice.scrollIntoView({block:'center',behavior:'instant'});}return;}
     const freeScanTap = button.dataset.openAdd !== undefined || ['photo', 'text', 'label', 'recent', 'barcode'].includes(button.dataset.addTab);
     if (!fullAccess() && !freeScanTap && PREMIUM_ACTIONS.some((key) => button.dataset[key] !== undefined)) {
@@ -9310,6 +9471,9 @@ function bindModal(root) {
     if (!button) return;
     if(modal?.type==='command'){
       if(button.dataset.close!==undefined)return closeCommand();
+      if(button.dataset.commandBack!==undefined){delete modal.pendingWater;return renderModal();}
+      if(button.dataset.commandConfirm!==undefined)return confirmCommandWater();
+      if(button.dataset.commandIntent!==undefined)return runLocalCommand(root.querySelector('#command-search')?.value || '');
       if(button.dataset.commandGo){const destination=button.dataset.commandGo;if(commandEntries().some(e=>e.route===destination)){closeCommand(false);nav(destination);}return;}
     }
     if (modal?.type === 'copilot' && copilotClick(button, root)) return;
@@ -9336,6 +9500,7 @@ function bindModal(root) {
     if (button.dataset.guide) { root.remove(); return openLesson(button.dataset.guide); }
     if (button.dataset.moduleBuy) { modal = null; root.remove(); return viewModulePlans(button.dataset.moduleBuy); }
     if (button.dataset.barcodeCam !== undefined) return startBarcodeCamera(root);
+    if(button.dataset.scenarioAdd!==undefined && modal?.type==='recipe'){if(!fullAccess()){modal=null;root.remove();return nav('plans');}const result=mealScenario(modal.recipe,modal.impactFactor || 1);return addCuratedRecipe(result.recipe.id,result.recipe);}
     if (button.dataset.servings) { modal.servings = clamp((modal.servings || 1) + Number(button.dataset.servings), 1, 12); return renderModal(); }
     if (button.dataset.scanLog) {
       const item = (state.scanHistory || []).find((x) => x.id === button.dataset.scanLog);
@@ -9536,6 +9701,7 @@ function bindModal(root) {
   };
 
   root.oninput = (event) => {
+    if(event.target.id==='scenario-factor' && modal?.type==='recipe'){modal.impactFactor=mealScenario(modal.recipe,event.target.value).factor;root.querySelector('#scenario-portion').textContent=`${fmt(modal.impactFactor,2)} ×`;root.querySelector('#scenario-result').innerHTML=mealScenarioResult(modal.recipe,modal.impactFactor);return;}
     if (event.target.matches('[data-grams]')) recalcResult(root);
     if (event.target.id === 'manual-search') $('#manual-list', root).innerHTML = manualResults(event.target.value);
   };
