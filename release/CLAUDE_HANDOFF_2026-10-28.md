@@ -20,3 +20,10 @@ Leia antes: `release/CLAUDE_HANDOFF_2026-10-27.md` (branch/commit a3d70be), `AGE
 
 ## Regras mantidas
 Não comprar créditos sem orçamento explícito; não burlar travas; não reconectar auto deploy antes de `prepare` passar; preservar volume `/data` e plano de retorno; não declarar lançamento antes de `launch` e da disponibilidade real na App Store. iOS primeiro; Android adiado.
+
+## Atualização 28/10 ~12:30Z
+- Produção conferida: `/api/health` → V12.0.0, ready=false (inalterada).
+- `IOS_SIGNING_APPROVED_REVISION` é variável do **ambiente** `ios-signing` (não do repositório) e ainda vale `5a4f67a1…`. A alteração para `3476052294f4ae7f0a12d2798e6c920aa0f9dfec` foi **recusada pela proteção de segurança do agente**: o proprietário precisa editá-la (Settings › Environments › ios-signing › Environment variables) e aprovar a execução 40612751598 (revisor obrigatório: AtlasEvermore). Os 3 segredos de assinatura existem no ambiente.
+- No navegador do proprietário, Railway, App Store Connect e OpenAI estão **deslogados** (Railway exibe aviso de recuperação pós-incidente de 21/10). Login com senha é exclusivo do proprietário; depois o agente continua (somente leitura/configuração autorizada, sem colar chaves).
+- Interruptor da IA já existe: `AI_ENABLED` (padrão false), `AI_ALLOW_GUESTS`, `AI_GLOBAL_DAILY_LIMIT`/`AI_GLOBAL_MONTHLY_LIMIT` (contagem de requisições, persistentes) e `AI_USER_DAILY_LIMIT`. O patch STAGED mantém IA desligada. Proprietário declarou orçamento de **US$100/dia** (tratar a IA por último). A OpenAI só oferece orçamento mensal por projeto; converter para limites de requisição exige o modelo real (`OPENAI_MODEL`) e medição de custo por chamada.
+- **Congelamento do código:** qualquer mudança na árvore da aplicação invalida todas as evidências vinculadas (`applicationTree`), inclusive o e-mail real único. Melhorias visuais ficam para o ciclo seguinte ao lançamento.
