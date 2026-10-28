@@ -115,22 +115,54 @@ jobs:
           retention-days: 1
           if-no-files-found: error
           path: native/duo-review/
-      - name: Capture the required iPhone and iPad store formats with the same candidate
-        timeout-minutes: 15
+      - name: Capture the required iPhone store format
+        timeout-minutes: 12
+        if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
-          for DEVICE_KIND in iphone ipad; do
-            DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; kind=sys.argv[1]; devices=[x for xs in json.load(sys.stdin)["devices"].values() for x in xs]; print(next(x["udid"] for x in devices if (x["name"] == "iPhone 17" if kind == "iphone" else "iPad Pro 13-inch" in x["name"])))' "$DEVICE_KIND")
-            xcrun simctl boot "$DEVICE_ID"
-            xcrun simctl bootstatus "$DEVICE_ID" -b
-            xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
-            xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
-            sleep 8
-            xcrun simctl io "$DEVICE_ID" screenshot "duo-review/$DEVICE_KIND-candidate.png"
-            xcrun simctl shutdown "$DEVICE_ID"
-          done
-          shasum -a 256 duo-review/*.png > duo-review/SHA256.txt
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; devices=[x for xs in json.load(sys.stdin)["devices"].values() for x in xs]; print(next(x["udid"] for x in devices if x["name"] == "iPhone 17"))')
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
+          sleep 8
+          xcrun simctl io "$DEVICE_ID" screenshot duo-review/iphone-candidate.png
+          shasum -a 256 duo-review/iphone-candidate.png > duo-review/iphone-SHA256.txt
+          xcrun simctl shutdown "$DEVICE_ID"
       - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nutripilot-iphone-store-real-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            native/duo-review/iphone-candidate.png
+            native/duo-review/iphone-SHA256.txt
+      - name: Capture the required iPad store format
+        timeout-minutes: 12
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; devices=[x for xs in json.load(sys.stdin)["devices"].values() for x in xs]; print(next(x["udid"] for x in devices if "iPad Pro 13-inch" in x["name"]))')
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
+          sleep 8
+          xcrun simctl io "$DEVICE_ID" screenshot duo-review/ipad-candidate.png
+          shasum -a 256 duo-review/ipad-candidate.png > duo-review/ipad-SHA256.txt
+          xcrun simctl shutdown "$DEVICE_ID"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nutripilot-ipad-store-real-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            native/duo-review/ipad-candidate.png
+            native/duo-review/ipad-SHA256.txt
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
           name: nutripilot-ios-store-real-${{ github.sha }}
           retention-days: 1
