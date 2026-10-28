@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-28T00:40:18.392607+00:00",
+  "applicationTree": "c1b99fd4fcd170dbff27d73b3af216002a36f1c5",
+  "nativeTree": "be0680febad4748045991bbcee2238dc8525824e",
+  "exitCode": 1,
+  "ok": false,
+  "phase": "prepare",
+  "version": "18.1.0",
+  "blockers": [
+    "Backup dos dados reais fora do Railway: verificação ausente, futura ou vencida.",
+    "Créditos, modelo e controles de despesa da IA verificados: pendente.",
+    "App Store: conta, produtos, assinatura e validação configurados: pendente.",
+    "IPA assinado da candidata verificado: pendente."
+  ]
+}

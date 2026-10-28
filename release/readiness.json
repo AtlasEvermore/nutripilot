@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "183fd2c2bf3f628353c0004f663df170f48b2b11",
+  "applicationTree": "c1b99fd4fcd170dbff27d73b3af216002a36f1c5",
   "channels": [
     "ios"
   ],
@@ -25,10 +25,10 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T18:23:51.515Z",
+        "verifiedAt": "2026-10-27T23:43:19.052Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: frozen final tree 183fd2c restored the real 11:55Z production snapshot in isolation; five original hashes preserved; smoke 18.1.0 issues empty; backup creation time is not renewed"
+          "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: final focus-correction tree c1b99fd4 restored the actual 11:55Z snapshot in isolation; five hashes preserved; smoke 18.1.0 issues empty; no newer backup time claimed."
         ]
       },
       "new_credentials_stored": {
@@ -55,10 +55,10 @@
       },
       "legal_configuration": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T18:23:51.892Z",
+        "verifiedAt": "2026-10-27T23:43:19.274Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/LEGAL_CONFIGURATION_CHECK_2026-10-27.json: final tree 183fd2c privacy, terms and support returned HTTP 200 with authorized operator/contact fields and no unresolved templates in isolation; public-domain launch verification remains pending"
+          "release/LEGAL_CONFIGURATION_CHECK_2026-10-27.json: final focus-correction tree c1b99fd4 legal pages HTTP 200 with approved private fields; launch public-domain check still pending."
         ]
       },
       "rollback_migration": {
@@ -78,12 +78,11 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T11:28:58.587Z",
+        "verifiedAt": "2026-10-27T23:48:54.5669223Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40495854814: exact merged revision 8f5286abdad36e08766c5a12d7c77e732959bf9e passed 98 application/PostgreSQL, eight gate, three native configuration, ten signing-script and 96 browser tests; container smoke version 18.1.0, empty issues; immutable image pushed successfully",
-          "ghcr.io/atlasevermore/nutripilot@sha256:ca9c550b1355bdb68ede36b5a8d151f4a4721f8ef87e8c0fc37a921f49468bfd: registry manifest digest from successful SHA-tag push, not the local image config digest",
-          "release/FINAL_POLISH_2026-10-27.md: read-only Railway configuration inspection confirms Wait for CI remains staged, 18 unapplied changes, one replica and existing data volume; no deployment/branch reconnection"
+          "release/FINAL_IMAGE_2026-10-27.json: exact final application/native trees passed all 224 mandatory checks in successful registry-only run 40604040289; verified container smoke 18.1.0 with empty issues; manifest sha256:f277d0593238aeba8ae01e7bf9e13baa144685ee64dda03e39faabfcdb6bdd3f pushed; temporary branch trigger subsequently removed.",
+          "Read-only Railway configuration 2026-10-27T23:36Z: Wait for CI is STAGED in 18 unapplied changes; no production branch connected, original volume/one replica preserved; active protection still requires launch verification."
         ]
       },
       "expiry_alert": {

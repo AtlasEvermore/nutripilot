@@ -1,18 +1,17 @@
 {
-  "checkedAt": "2026-10-27T18:23:51.515Z",
-  "applicationTree": "183fd2c2bf3f628353c0004f663df170f48b2b11",
+  "checkedAt": "2026-10-27T23:43:19.052Z",
+  "applicationTree": "c1b99fd4fcd170dbff27d73b3af216002a36f1c5",
   "snapshotCreatedAt": "2026-10-27T11:55:12.942Z",
   "snapshotSha256": "6fd4b0ae4806262b102d1cc3582e05db461aeb650bceb64989865b257297468b",
   "originalFiles": 5,
   "restoredHashesMatch": true,
   "originalFilesPreserved": true,
   "smoke": {
-    "checkedAt": "2026-10-27T18:23:51.501Z",
+    "checkedAt": "2026-10-27T23:43:19.046Z",
     "version": "18.1.0",
     "issues": []
   },
-  "elapsedSeconds": 0.416,
+  "elapsedSeconds": 0.285,
   "productionAccessed": false,
-  "freshBackupCreated": false,
-  "scope": "Isolated restore for the frozen monthly/annual and safe-area candidate; source snapshot remains 11:55Z, with no renewal of backup age."
+  "freshBackupCreated": false
 }

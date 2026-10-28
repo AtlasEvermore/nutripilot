@@ -54,5 +54,11 @@
     "newDeliveryClaimed": false,
     "secondTestTransmission": "blocked by automatic approval review; no second email sent",
     "originalDeliveryTimestampRetained": true
+  },
+  "finalRevisionApplicability": {
+    "applicationTree": "c1b99fd4fcd170dbff27d73b3af216002a36f1c5",
+    "basis": "Only frontend price/CSS/focus handlers changed since actual delivery; same server/auth executable blobs. No new mail transmission or timestamp.",
+    "serverBlob": "b04e08bb933fe1f7e95eb75dbc826a3d6398a986",
+    "authBlob": "2cfe486d389270ac4f7a689f0cab9bd4bd4de5de"
   }
 }
