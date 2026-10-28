@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "d3e4834862a43529d6ed8466541e857c70e8b41d",
+  "applicationTree": "c1b99fd4fcd170dbff27d73b3af216002a36f1c5",
   "channels": [
     "ios"
   ],
@@ -9,27 +9,26 @@
     "prepare": {
       "hosting_access": {
         "status": "verified",
-        "verifiedAt": "2026-10-26T02:43:11.895167+00:00",
-        "verifiedBy": "deployment-agent",
+        "verifiedAt": "2026-10-27T12:23:47.540806+00:00",
+        "verifiedBy": "development-agent",
         "evidence": [
-          "private-ops:Railway Support email 2026-10-25T06:38:23Z in the existing NutriPilot support thread explicitly confirms new deployments accepted on every plan; paused commits were not queued",
-          "private-ops:Current owner dashboard confirms Active Plan Hobby, usage cycle Oct 24-Nov 24, existing service online and console Connected; deploy action enabled without Limited Access; no production deployment attempted"
+          "release/ACCOUNT_READINESS_2026-10-27.md: authenticated Railway Billing shows Active Plan Hobby and attached payment method; service remains online, console Connected and deployment control available without Limited Access; historical support confirmation retained in RECOVERY_EVIDENCE_2026-10-25.md; no charge or plan change"
         ]
       },
       "independent_backup": {
         "status": "verified",
-        "verifiedAt": "2026-10-26T02:41:01.357734+00:00",
-        "verifiedBy": "deployment-agent",
+        "verifiedAt": "2026-10-27T11:55:12.942Z",
+        "verifiedBy": "development-agent",
         "evidence": [
-          "release/RECOVERY_EVIDENCE_2026-10-25.md: fresh real snapshot downloaded independently, hash checked, decrypted/restored, encrypted archive and separate key saved durably for owner"
+          "release/ACCOUNT_READINESS_2026-10-27.md: fresh real snapshot created 2026-10-27T11:55:12.942Z; five files; encrypted download SHA256 matched; authenticated decryption and isolated restore passed; encrypted archive and recovery key durably saved as separate private owner files outside Railway"
         ]
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T03:34:08.925Z",
+        "verifiedAt": "2026-10-27T23:43:19.052Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/CONSTELLATION_REVIEW_2026-10-26.md: exact final application restored five original files in isolation; smoke 18.1.0 passed and original contents remained byte-identical; snapshot age not renewed"
+          "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: final focus-correction tree c1b99fd4 restored the actual 11:55Z snapshot in isolation; five hashes preserved; smoke 18.1.0 issues empty; no newer backup time claimed."
         ]
       },
       "new_credentials_stored": {
@@ -47,16 +46,20 @@
         "evidence": []
       },
       "email_delivery": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-27T17:24:51.937556Z",
+        "verifiedBy": "development-agent",
+        "evidence": [
+          "release/CANDIDATE_EMAIL_CHECK_2026-10-27.json: original actual delivered Portuguese candidate access email retained at its original timestamp; final-tree applicability checked against identical server blob b04e08bb933fe1f7e95eb75dbc826a3d6398a986 and auth blob 2cfe486d389270ac4f7a689f0cab9bd4bd4de5de; only frontend price/CSS changed. Automatic review blocked a second test before transmission. No second delivery or renewed delivery timestamp is claimed."
+        ]
       },
       "legal_configuration": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
-        "evidence": []
+        "status": "verified",
+        "verifiedAt": "2026-10-27T23:43:19.274Z",
+        "verifiedBy": "development-agent",
+        "evidence": [
+          "release/LEGAL_CONFIGURATION_CHECK_2026-10-27.json: final focus-correction tree c1b99fd4 legal pages HTTP 200 with approved private fields; launch public-domain check still pending."
+        ]
       },
       "rollback_migration": {
         "status": "verified",
@@ -68,17 +71,18 @@
           "release/FINAL_REVIEW_2026-10-26.md: consolidated candidate reads the same previously V12-tested snapshot without changing original files; no storage format or migration code changed",
           "release/ORBITAL_REVIEW_2026-10-26.md: isolated restore of final UI candidate preserved the same original files; backend and data format unchanged",
           "release/WORKSPACES_REVIEW_2026-10-26.md: final workspace candidate preserves original files in isolated restore; backend and data format remain unchanged",
-          "release/CONSTELLATION_REVIEW_2026-10-26.md: final candidate and asynchronous static delivery preserve original restored files; no storage format or migration change"
+          "release/CONSTELLATION_REVIEW_2026-10-26.md: final candidate and asynchronous static delivery preserve original restored files; no storage format or migration change",
+          "release/FINAL_POLISH_2026-10-27.md: final merged application tree 78ee5e8b3e18acadc6c35b3f2a73127fce970cdf repeated isolated restore and preserved all five original files; no backend/storage-format change in PR 36; original V12 rollback rehearsal remains historical",
+          "release/ACCOUNT_READINESS_2026-10-27.md: exact final application booted the fresh 2026-10-27 real-data snapshot and preserved all five original files; storage/native source unchanged; prior V12 rollback rehearsal remains historical"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T03:43:43.706782+00:00",
+        "verifiedAt": "2026-10-27T23:48:54.5669223Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40445156036: merged main 513d5835e9d38a4e44ef9678d22b1acdfec99d2c passed 95 application/PostgreSQL, eight gate, three native configuration, ten signing-script and 88 clean-browser checks; all 37 module subtabs tested in each browser project",
-          "ghcr.io/atlasevermore/nutripilot@sha256:fe03b72c989ae544e0cba9689c3137b3d19529f3b206450c309d0aced0bedb2b: immutable image smoke passed, version 18.1.0 and empty issues; application tree d3e4834862a43529d6ed8466541e857c70e8b41d",
-          "private-ops:existing Railway Wait for CI patch remains staged, not applied; read-only inspection confirms production service Online and original volume retained; no deployment or branch reconnection performed"
+          "release/FINAL_IMAGE_2026-10-27.json: exact final application/native trees passed all 224 mandatory checks in successful registry-only run 40604040289; verified container smoke 18.1.0 with empty issues; manifest sha256:f277d0593238aeba8ae01e7bf9e13baa144685ee64dda03e39faabfcdb6bdd3f pushed; temporary branch trigger subsequently removed.",
+          "Read-only Railway configuration 2026-10-27T23:36Z: Wait for CI is STAGED in 18 unapplied changes; no production branch connected, original volume/one replica preserved; active protection still requires launch verification."
         ]
       },
       "expiry_alert": {
@@ -96,12 +100,11 @@
         "evidence": []
       },
       "ios_artifact": {
-        "status": "verified",
-        "verifiedAt": "2026-10-25T22:13:14.644896+00:00",
-        "verifiedBy": "deployment-agent",
+        "status": "pending",
+        "verifiedAt": null,
+        "verifiedBy": null,
         "evidence": [
-          "https://github.com/AtlasEvermore/nutripilot/actions/runs/40237700794 (attempt 2, SUCCESS, device IPA 18.1.0 build 202)",
-          "release/IOS_ARTIFACT_2026-10-25.json: approved certificate/profile, codesign and exact nativeTree verified; ZIP/IPA checksums and durable owner copy independently checked"
+          "Native source changed for resizable orientations; historical IPA native tree does not match the new candidate. New exact-revision signed build and independent signature verification required; protected signing approval remains intact."
         ]
       },
       "android_configuration": {
@@ -198,7 +201,7 @@
       }
     }
   },
-  "nativeTree": "39d0f6ebdde9f52a715c46fc9b9de67c7538e24c",
+  "nativeTree": "be0680febad4748045991bbcee2238dc8525824e",
   "deferredChannels": [
     "android"
   ]

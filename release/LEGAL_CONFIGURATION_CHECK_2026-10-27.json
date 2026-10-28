@@ -1,0 +1,36 @@
+{
+  "checkedAt": "2026-10-27T23:43:19.274Z",
+  "applicationTree": "c1b99fd4fcd170dbff27d73b3af216002a36f1c5",
+  "isolated": true,
+  "productionChanged": false,
+  "legalPages": [
+    {
+      "route": "/privacy?lang=pt",
+      "status": 200,
+      "nonempty": true,
+      "hasConfiguredContact": true,
+      "hasUnresolvedTemplate": false,
+      "hasOperator": true,
+      "hasAddress": true
+    },
+    {
+      "route": "/terms?lang=pt",
+      "status": 200,
+      "nonempty": true,
+      "hasConfiguredContact": true,
+      "hasUnresolvedTemplate": false,
+      "hasOperator": true,
+      "hasAddress": true
+    },
+    {
+      "route": "/support?lang=pt",
+      "status": 200,
+      "nonempty": true,
+      "hasConfiguredContact": true,
+      "hasUnresolvedTemplate": false,
+      "hasOperator": null,
+      "hasAddress": null
+    }
+  ],
+  "providerInferenceEnabled": false
+}

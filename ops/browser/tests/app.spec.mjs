@@ -69,6 +69,7 @@ test('Every module image loads and discovery leads to its own space before Plans
   await page.locator('.lock-overlay [data-module-buy]').click();
   await expect(page.locator('.plans-page')).toBeVisible();
   await expect(page.locator('[data-plans-tab="modules"]')).toHaveAttribute('aria-selected','true');
+  await expect(page.locator('.kit-row')).toContainText('299,00');
   await testInfo.attach('plans', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
 });
 
@@ -350,4 +351,33 @@ test('Paused services explain availability, preserve a coach draft and keep loca
  await page.locator('.provider-availability [data-open-command]').click();await page.keyboard.press('Escape');await expect(page.locator('.provider-availability [data-open-command]')).toBeFocused();
  await page.goto('/#planner');await expect(page.locator('.provider-availability')).toBeVisible();await expect(page.locator('[data-compose]')).toBeDisabled();
  await page.locator('.provider-availability [data-go="recipes"]').click();await expect(page.locator('#recipe-grid')).not.toBeEmpty();expect(providerRequests).toBe(0);
+});
+
+test('Live window resizing preserves a draft, open recipe and keyboard return path',async({page},testInfo)=>{
+ await authenticatedUI(page);const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.setViewportSize({width:390,height:844});await page.goto('/#coach');
+ await page.locator('#coach-input').fill('Rascunho preservado ao redimensionar');
+ for(const viewport of [{width:820,height:720},{width:844,height:390},{width:390,height:600}]){
+  await page.setViewportSize(viewport);await expect(page.locator('#coach-input')).toHaveValue('Rascunho preservado ao redimensionar');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ }
+ await page.goto('/#recipes');const opener=page.locator('.recipe-grid [data-recipe-id]').first();await opener.click();
+ for(const viewport of [{width:820,height:720},{width:844,height:390},{width:390,height:600}]){
+  await page.setViewportSize(viewport);const close=page.locator('.modal-wrap .sheet-head [data-close]').first();
+  await expect(close).toBeInViewport();await expect(page.locator('.modal-wrap')).toHaveCount(1);
+  const bounds=await page.locator('.modal-wrap .sheet').boundingBox();expect(bounds.x).toBeGreaterThanOrEqual(-1);expect(bounds.x+bounds.width).toBeLessThanOrEqual(viewport.width+1);
+  await testInfo.attach(`resized-${viewport.width}x${viewport.height}`,{body:await page.screenshot({animations:'disabled'}),contentType:'image/png'});
+ }
+ await page.keyboard.press('Escape');await expect(opener).toBeFocused();expect(errors).toEqual([]);
+});
+
+test('Asymmetric iOS safe regions keep navigation and modal controls reachable after resizing',async({page})=>{
+ await authenticatedUI(page);await page.goto('/#recipes');
+ for(const [viewport,insets] of [[{width:466,height:678},{left:0,right:64,top:0,bottom:24}],[{width:820,height:720},{left:30,right:0,top:24,bottom:24}],[{width:1200,height:820},{left:30,right:64,top:24,bottom:24}]]){
+  await page.setViewportSize(viewport);await page.evaluate(insets=>{document.documentElement.classList.add('cap-ios');for(const [side,value]of Object.entries(insets))document.documentElement.style.setProperty(`--safe-area-inset-${side}`,`${value}px`);},insets);
+  for(const locator of [page.locator('.app-head-row'),page.locator('.bottom-nav')]){
+   const b=await locator.boundingBox();expect(b.x).toBeGreaterThanOrEqual(insets.left-1);expect(b.x+b.width).toBeLessThanOrEqual(viewport.width-insets.right+1);
+  }
+  const opener=page.locator('.recipe-grid [data-recipe-id]').first();await page.locator('#recipe-search').focus();await opener.click();const close=page.locator('.modal-wrap .sheet-head [data-close]').first();await expect(close).toBeInViewport();const b=await close.boundingBox();expect(b.x+b.width).toBeLessThanOrEqual(viewport.width-insets.right+1);expect(b.y).toBeGreaterThanOrEqual(insets.top-1);await page.keyboard.press('Escape');await expect(opener).toBeFocused();
+ }
 });

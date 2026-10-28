@@ -50,6 +50,8 @@ const IOS_KEYS = {
   // No custom encryption: skips the export-compliance question on every upload.
   ITSAppUsesNonExemptEncryption: false,
   CFBundleDisplayName: 'NutriPilot',
+  // Let the window resize during multitasking and fold/unfold transitions.
+  UIRequiresFullScreen: false,
 };
 const plistValue = (v) => (typeof v === 'boolean' ? `<${v}/>` : `<string>${v}</string>`);
 const hasIos = edit(plist, (xml) => {
@@ -59,14 +61,17 @@ const hasIos = edit(plist, (xml) => {
     if (re.test(out)) out = out.replace(re, `<key>${k}</key>\n\t${plistValue(v)}`);
     else out = out.replace(/<\/dict>\s*<\/plist>\s*$/, `\t<key>${k}</key>\n\t${plistValue(v)}\n</dict>\n</plist>\n`);
   }
-  // iPhone: portrait only (the layout is designed for it). iPad keeps every orientation (required for multitasking).
-  out = out.replace(/(<key>UISupportedInterfaceOrientations<\/key>\s*<array>)[\s\S]*?(<\/array>)/, '$1\n\t\t<string>UIInterfaceOrientationPortrait</string>\n\t$2');
+  // Layout follows available space, including landscape and Duo fold/unfold.
+  const orientations = '<array>\n\t\t<string>UIInterfaceOrientationPortrait</string>\n\t\t<string>UIInterfaceOrientationLandscapeLeft</string>\n\t\t<string>UIInterfaceOrientationLandscapeRight</string>\n\t</array>';
+  const orientationKey = /<key>UISupportedInterfaceOrientations<\/key>\s*<array>[\s\S]*?<\/array>/;
+  if (orientationKey.test(out)) out = out.replace(orientationKey, `<key>UISupportedInterfaceOrientations</key>\n\t${orientations}`);
+  else out = out.replace(/<\/dict>\s*<\/plist>\s*$/, `\t<key>UISupportedInterfaceOrientations</key>\n\t${orientations}\n</dict>\n</plist>\n`);
   // App-Bound Domains: lets the service worker run inside the iPhone app (instant start, works offline).
   if (!out.includes('<key>WKAppBoundDomains</key>')) out = out.replace(/<\/dict>\s*<\/plist>\s*$/, '\t<key>WKAppBoundDomains</key>\n\t<array>\n\t\t<string>app.atlasevermore.com</string>\n\t</array>\n</dict>\n</plist>\n');
   // 64-bit only (every iPhone that runs iOS 15).
   out = out.replace(/(<key>UIRequiredDeviceCapabilities<\/key>\s*<array>\s*)<string>armv7<\/string>/, '$1<string>arm64</string>');
   return out;
-}, 'iOS Info.plist (camera/photos texts, encryption, portrait)');
+}, 'iOS Info.plist (camera/photos texts, encryption, resizable orientations)');
 if (hasIos) {
   edit(path.join(root, 'ios/App/App.xcodeproj/project.pbxproj'), (txt) => {
     let out = txt.replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${VERSION};`);

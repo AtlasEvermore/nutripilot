@@ -2556,7 +2556,8 @@ async function accountVerify() {
 // Annual = exactly 10 × monthly (2 months free), in every currency.
 const r2 = (v) => Math.round(v * 100) / 100;
 const MONTHLY_PRICE = { nutrition: 7.99, recipes: 3.99, training: 9.99, menopause: 8.99, nutrients: 2.99, sleep: 3.99 };
-const KIT_MONTHLY = 29.9;
+const KIT_MONTHLY = 29.99;
+const KIT_ANNUAL = 299;
 const COMBO_OFF = { 2: 0.15, 3: 0.15, 4: 0.15, 5: 0.15 };
 const annualOf = (monthly) => r2(monthly * 10);
 const PAID_MODULES = MODULES.filter((m) => !m.free);
@@ -2585,7 +2586,7 @@ function comboMonthly(mods) {
   comboMemo.set(key, price);
   return price;
 }
-const MODULE_PRICES = Object.fromEntries([...PAID_IDS.map((id) => [id, [MONTHLY_PRICE[id], annualOf(MONTHLY_PRICE[id])]]), ['complete', [KIT_MONTHLY, annualOf(KIT_MONTHLY)]]]);
+const MODULE_PRICES = Object.fromEntries([...PAID_IDS.map((id) => [id, [MONTHLY_PRICE[id], annualOf(MONTHLY_PRICE[id])]]), ['complete', [KIT_MONTHLY, KIT_ANNUAL]]]);
 // Themed combinations, priced with the same rule as any combination the person composes.
 const BUNDLES = [
   { id: 'body', name: 'Corps en forme', sub: 'Entraînement + Nutrition', tagline: 'Perdre du gras et prendre du muscle, repas et séances accordés.', icon: 'dumbbell', tone: 'm-train', modules: ['training', 'nutrition'], badge: 'Le plus choisi' },
@@ -2974,6 +2975,7 @@ function flushOverlayFocus() {
 function restoreOverlayFocus(root) {
   const origin=overlayFocusOrigins.get(root);overlayFocusOrigins.delete(root);if(!origin)return;
   const pending={...origin,expires:Date.now()+1500};pendingOverlayFocus=pending;
+  flushOverlayFocus();
   requestAnimationFrame(flushOverlayFocus);
   setTimeout(()=>{if(pendingOverlayFocus===pending)pendingOverlayFocus=null;},1500);
 }
@@ -3382,10 +3384,11 @@ function localPrice(basePrice, storeId = '', cur = currency()) {
   return roundCur(basePrice * (rates()[cur] || 1), cur);
 }
 // Price of a plan in the buyer's currency. The store's own price wins in the iPhone / Android app.
-// Annual = exactly 10 × the local monthly price, so the 2 free months add up in every currency.
+// Complete annual uses its independent catalog reference; other plans retain their local ten-month rule.
 function lp(plan, period, cur = currency()) {
   const store = window.NutriPilotNative?.products?.[plan[period].storeId];
   if (store && Number.isFinite(Number(store.price))) return Number(store.price);
+  if (plan.tier === 'complete' && period === 'annual') return localPrice(plan.annual.price, '', cur);
   const monthly = localPrice(plan.monthly.price, '', cur);
   return period === 'annual' ? roundCur(monthly * 10, cur) : monthly;
 }
@@ -8098,10 +8101,10 @@ function openAdd(tab = 'photo') {
   renderModal();
 }
 
-function renderModal() {
+function renderModal(focusTrigger = document.activeElement) {
   stopBarcodeCamera();
   const previous=document.querySelector('.modal-wrap');
-  const focusOrigin=previous ? overlayFocusOrigins.get(previous) : document.activeElement;
+  const focusOrigin=previous ? overlayFocusOrigins.get(previous) : focusTrigger;
   const active=document.activeElement;let preferred='';
   if(previous?.contains(active)){if(active.id)preferred=`#${CSS.escape(active.id)}`;else for(const name of ['data-servings','data-mtab'])if(active.hasAttribute(name)){preferred=`[${name}="${CSS.escape(active.getAttribute(name))}"]`;break;}}
   previous?.remove();
@@ -9410,7 +9413,7 @@ function bind() {
     if (button.dataset.sos !== undefined) { track('SosOpen'); modal = { type: 'sos' }; return renderModal(); }
     if (button.dataset.recipeId && !event.target.closest('[data-fav-recipe]')) {
       const recipe = ALL_RECIPES.find((r) => r.id === button.dataset.recipeId);
-      if (recipe) { modal = { type: 'recipe', recipe }; renderModal(); }
+      if (recipe) { modal = { type: 'recipe', recipe }; renderModal(button); }
       return;
     }
     if (button.dataset.favRecipe) {

@@ -1,0 +1,103 @@
+{
+  "checkedAt": "2026-10-28T00:39:57.840378+00:00",
+  "applicationTree": "c1b99fd4fcd170dbff27d73b3af216002a36f1c5",
+  "nativeTree": "be0680febad4748045991bbcee2238dc8525824e",
+  "browserRun": 40604040289,
+  "browserArtifact": 12780251947,
+  "browserSourceCommit": "fe8ef9ef4ec8316d98380bc54bcf1657ced404e8",
+  "browserZipSha256": "103c748165424b874c66b356e77fb35d4de51db4060eccee6f6a1d54bb05cb26",
+  "nativeRun": 40606946022,
+  "nativeArtifact": 12782680411,
+  "nativeSourceCommit": "c89fad4352b10c31de4858ac0795971a5962112d",
+  "nativeZipSha256": "1f2d480cdd5a444a409854a4f9bcaef91b1fb1da9de383614e05d51bf8cdac3b",
+  "nativeScreens": {
+    "Duo": {
+      "sourceFile": "duo-outer-candidate.png",
+      "sourceSha256": "b17d21272a9c651748c443f6f7e515789b3e7c107ed5fa6022db0932a9c18998",
+      "deliveredFile": "NutriPilot-Duo-real-2026-10-27.png",
+      "dimensions": [
+        1398,
+        2034
+      ],
+      "conversion": "RGB encoding only; no resizing, retouch or UI replacement"
+    },
+    "iPhone": {
+      "sourceFile": "iphone-candidate.png",
+      "sourceSha256": "ca00ea226f945a6b88c559681bd76b4f746627fb0e40fa2d3704e30eec8a9ae9",
+      "deliveredFile": "NutriPilot-iPhone-real-2026-10-27.png",
+      "dimensions": [
+        1206,
+        2622
+      ],
+      "conversion": "RGB encoding only; no resizing, retouch or UI replacement"
+    },
+    "iPad": {
+      "sourceFile": "ipad-candidate.png",
+      "sourceSha256": "96dbe4e404a9da562619ae3a881b070054b9120522735f6e67b245312c8cd2b4",
+      "deliveredFile": "NutriPilot-iPad-real-2026-10-27.png",
+      "dimensions": [
+        2064,
+        2752
+      ],
+      "conversion": "RGB encoding only; no resizing, retouch or UI replacement"
+    }
+  },
+  "inactiveInnerDisplayExcluded": true,
+  "foldUnfoldAcceptance": false,
+  "syntheticDataOnly": true,
+  "productionDeployed": false,
+  "files": {
+    "NutriPilot-Duo-real-2026-10-27.png": "9c5e61033fabaa794e0fc9a2f003207e11de702f27d3bd2ce7c964a66741dd20",
+    "NutriPilot-final-desktop.jpg": "b33dd7c0cebdd0c1807478bcfaf23182cfa24945b02b6b02655db52db7be34eb",
+    "NutriPilot-final-mobile.jpg": "34c53bf26b17ad7f9acb8b2644793d28aefd751fdf4c597dc5c6d5af5cb213b4",
+    "NutriPilot-iPad-real-2026-10-27.png": "7d00199b0cb566a020c837c70a32736e6f054813fd8f0f4ed434243788aa0638",
+    "NutriPilot-iPhone-real-2026-10-27.png": "cf1f916d94c90d739e3b2ff84f999acdfac0dd52d7ccf5a3b012d17e01322bd6",
+    "desktop-chromium-atlas.png": "72f0b3451bcb004d634b5a3b2c7b07c29fbdcd78ae19cb818b743cd31472544f",
+    "desktop-chromium-local-command.png": "30f58b69189922f2ecd9d0162d2ca3ecd12e947f0b592ee4febc370a1723055e",
+    "desktop-chromium-local-tools-final.png": "7a377c65445d00c9be7fb8a0694669846a83ad57c51f4da98a92caded586699a",
+    "desktop-chromium-main-movement.png": "422e9f951baee87e8df4a026199206738d075c827d5cfb758cbb653b8064fdd8",
+    "desktop-chromium-main-nutrition.png": "7b7bdc765621ccfc45ec6e8eb6da8263c8936d71a8053c69f44e2dd0ca1a2e53",
+    "desktop-chromium-meal-scenario.png": "72e69c4ac94db069d209401c26e98699cd2cfbe68a52f4c68a40f332576d06a3",
+    "desktop-chromium-navigation-center.png": "15e9d2e7995d593a19e7aecaedb9fa50a23a08be35cccf1d02b44ce03d4593b9",
+    "desktop-chromium-nexus.png": "03d8cc5d3a9ff72dd0782ae665890d886865463f2eac45aabe63cdf6cdb03b9c",
+    "desktop-chromium-plans.png": "faac9f0547ffadf6aae2041ea86bef106812cb4060c95ca92c01b803fc977f52",
+    "desktop-chromium-pulse-history.png": "ac5cd20610e92384ab7f7830b17d0eaf26899ac34d358ed1f760260d48d47999",
+    "desktop-chromium-recipe-sheet-final.png": "d0452a831e5775c87a3b1555c819e34ed04456659b9b9daa35ad2f0b802e9a97",
+    "desktop-chromium-workspace-app.png": "03d8cc5d3a9ff72dd0782ae665890d886865463f2eac45aabe63cdf6cdb03b9c",
+    "desktop-chromium-workspace-menopause.png": "6311627f0075ce4430604536d4d04ab225c179549693bde66d54350d7a6a79d5",
+    "desktop-chromium-workspace-profile.png": "dcb986293156d725a445ed236d3351add8c68b3152006568755de0fa0dc7fab9",
+    "desktop-chromium-workspace-program.png": "58e74c48ae52bb91f145f343ebad5b49e512f1f2cf1177d53f6d5ced2f37e220",
+    "desktop-chromium-workspace-progress.png": "2d269b6e616b41ca3c93de20c1af5f858cd0730c2519f5c9de5d45283b3acb83",
+    "desktop-chromium-workspace-recipes.png": "46d8b7e772e6dcba88965abd2916f7330b442ca31e4c1180d425e10502799acc",
+    "desktop-chromium-workspace-settings.png": "9a2f049ec0e6f46b3e73ffd41c0053235f00d4d9c3a3fbe349d250e04a680b51",
+    "desktop-chromium-workspace-sleep.png": "dc065ed44184ccbeca938d11cb56ea01ac4e0a9b85b815ece31f9d4bba806ae1",
+    "desktop-chromium-workspace-training.png": "78b73e39dea93bcb689ac9df79d4583076cf4cbe1a41d7f2e1af7f626204b2b8",
+    "mobile-webkit-atlas.png": "043b41b4799c1d680cf5ea78c85294748e89c6ce37195ad0ae8c8feff829eeab",
+    "mobile-webkit-local-command.png": "87d0a61472c2af46eb4c93558bfcb51bcf77ab18363d973cc255b60291f848b3",
+    "mobile-webkit-local-tools-final.png": "2461da825f377bc27cea3f4f6d28dbec111ee0c4fe6ff52976c40f9a51f3a67c",
+    "mobile-webkit-main-movement.png": "05b66283a6770abf304f8e40ee624d8e7f7f4d184439394a7656ab7c0215224d",
+    "mobile-webkit-main-nutrition.png": "471d1c600b4d0ad7f5a3b4aa2b60246fb5fb236cb0a50f162ecbef917de51edc",
+    "mobile-webkit-meal-scenario.png": "7d9817cb59a0846edb800118c228fae6663578eb253329aee129b42430e7dd56",
+    "mobile-webkit-navigation-center.png": "a082e4c4a403345716ce5a0d5eee91ba1840571329eb90cbd1d72551aa6fa503",
+    "mobile-webkit-nexus.png": "89bcb7b9b084ecc0292b1d1d3d6904cb951c8fd8bbac713e701609959c1afd8d",
+    "mobile-webkit-plans.png": "65e80056a57cf0adb62808bdfa9dfb2b8f8de8ece2637a020a45ce337ec90e03",
+    "mobile-webkit-pulse-history.png": "60f1c265da3a24e01751f961fddc3422d69df19228cd0baf75e0046693459281",
+    "mobile-webkit-recipe-sheet-final.png": "392e0f1b8958bb5ae59e5294fa95222237143380b7a034445872162f6aa9991f",
+    "mobile-webkit-workspace-app.png": "b37ec3ed1f50dc443987b8aad90a7d0b7f05c5dac86f2c692c873b8fd8555f3d",
+    "mobile-webkit-workspace-menopause.png": "8c0b6f35e7a23df2989aa082ceddd71d63c890e05046a56ea06f8f6888100f96",
+    "mobile-webkit-workspace-profile.png": "3db51695eb396d050cc39348db56fcd533aefbab552930e637d0e734ecea59dc",
+    "mobile-webkit-workspace-program.png": "787f97dd7bf0e782d276f794896dc636fdf5b9401f7f81eeb27c9178511943ff",
+    "mobile-webkit-workspace-progress.png": "a2cb953ace3ec836ca5173abbf0b928eeaff0f02afdc7707c5dcff597d8daa18",
+    "mobile-webkit-workspace-recipes.png": "f5f9e71e5cc51aead9ec9872f919befbde321deb621a45cdb622828f0422dcca",
+    "mobile-webkit-workspace-settings.png": "9697ee1aeb1ce0c877c10636a5f4a76d8e88dd5153cdd2b46340595e32608b92",
+    "mobile-webkit-workspace-sleep.png": "18e3520e53cc96bc4dea132453cd3bb6e94791d78ea7c2d2253ee407f8078367",
+    "mobile-webkit-workspace-training.png": "9b18d7cc580ea78ceeb5d511a7d8c45e171a3a60c5e97de832f1aa1adb5d3ae4"
+  },
+  "deliveryPackageSha256": "330481fee99edfdecfa3c923430443604fa6ece447f0d4295cfdfcc351bca6df",
+  "deliveryCounts": {
+    "browserPNG": 40,
+    "nativePNG": 3,
+    "panelsJPEG": 2,
+    "totalZIPEntries": 47
+  }
+}

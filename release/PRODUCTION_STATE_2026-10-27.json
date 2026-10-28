@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-28T00:40:18.301059+00:00",
+  "readOnly": true,
+  "httpStatus": 200,
+  "productionVersion": "12.0.0",
+  "ready": false,
+  "deploymentPerformed": false,
+  "railwaySourceBranchConnected": false,
+  "railwayPatchState": "STAGED",
+  "railwayPendingChanges": 18,
+  "waitForCIApplied": false,
+  "waitForCIStaged": true,
+  "originalVolumePreserved": true
+}

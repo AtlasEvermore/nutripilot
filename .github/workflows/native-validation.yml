@@ -53,7 +53,7 @@ jobs:
             native/native-checksums.txt
   ios:
     if: github.event.repository.private == false
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 35
     defaults:
       run:
@@ -66,14 +66,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: xcodebuild -version
+      - name: Select the Duo SDK explicitly
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.1.app/Contents/Developer
+          xcodebuild -version
+          test "$(xcrun --sdk iphoneos --show-sdk-version)" = '27.1'
+          xcrun simctl list devices available
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - run: npx cap add ios --packagemanager SPM
       - run: npm run assets
       - run: npx cap sync ios && node scripts/configure-native.mjs --platform ios && node scripts/configure-native.mjs --check --platform ios
       - name: Compile iOS simulator without signing or distribution
-        run: xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/ios-simulator CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -quiet -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/ios-simulator CODE_SIGNING_ALLOWED=NO build
       - name: Archive simulator diagnostic
         run: ditto -c -k --sequesterRsrc --keepParent build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app ios-simulator.zip
       - uses: actions/upload-artifact@v4
@@ -82,3 +87,84 @@ jobs:
           retention-days: 1
           if-no-files-found: error
           path: native/ios-simulator.zip
+      - name: Prepare an offline candidate fixture for Duo visual review
+        run: |
+          node ../ops/prepare-duo-fixture.mjs
+          npx cap sync ios
+          /usr/libexec/PlistBuddy -c 'Add :WKAppBoundDomains:0 string localhost' ios/App/App/Info.plist
+          xcodebuild -quiet -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/ios-simulator CODE_SIGNING_ALLOWED=NO build
+      - name: Boot the actual Duo simulator and capture the bundled candidate
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          DUO_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(x["udid"] for xs in d["devices"].values() for x in xs if x["name"] == "iPhone Duo"))')
+          xcrun simctl boot "$DUO_ID"
+          xcrun simctl bootstatus "$DUO_ID" -b
+          xcrun simctl install "$DUO_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch "$DUO_ID" com.atlasevermore.nutripilot
+          sleep 8
+          mkdir -p duo-review
+          xcrun simctl io "$DUO_ID" screenshot --display=3 duo-review/duo-inner-candidate.png
+          xcrun simctl io "$DUO_ID" screenshot --display=1 duo-review/duo-outer-candidate.png
+          printf '%s\n' 'Actual Xcode 27.1 Duo simulator; bundled candidate UI; synthetic guest; no production backend; visual review required; no store submission or full fold/unfold certification.' > duo-review/README.txt
+          shasum -a 256 duo-review/*.png > duo-review/SHA256.txt
+          xcrun simctl shutdown "$DUO_ID"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nutripilot-duo-real-simulator-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: native/duo-review/
+      - name: Capture the required iPhone store format
+        timeout-minutes: 12
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; devices=[x for xs in json.load(sys.stdin)["devices"].values() for x in xs]; print(next(x["udid"] for x in devices if x["name"] == "iPhone 17"))')
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
+          sleep 8
+          xcrun simctl io "$DEVICE_ID" screenshot duo-review/iphone-candidate.png
+          shasum -a 256 duo-review/iphone-candidate.png > duo-review/iphone-SHA256.txt
+          xcrun simctl shutdown "$DEVICE_ID"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nutripilot-iphone-store-real-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            native/duo-review/iphone-candidate.png
+            native/duo-review/iphone-SHA256.txt
+      - name: Capture the required iPad store format
+        timeout-minutes: 12
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; devices=[x for xs in json.load(sys.stdin)["devices"].values() for x in xs]; print(next(x["udid"] for x in devices if "iPad Pro 13-inch" in x["name"]))')
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
+          sleep 8
+          xcrun simctl io "$DEVICE_ID" screenshot duo-review/ipad-candidate.png
+          shasum -a 256 duo-review/ipad-candidate.png > duo-review/ipad-SHA256.txt
+          xcrun simctl shutdown "$DEVICE_ID"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nutripilot-ipad-store-real-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            native/duo-review/ipad-candidate.png
+            native/duo-review/ipad-SHA256.txt
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nutripilot-ios-store-real-${{ github.sha }}
+          retention-days: 1
+          if-no-files-found: error
+          path: native/duo-review/

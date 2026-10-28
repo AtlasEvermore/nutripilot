@@ -15,7 +15,7 @@ concurrency:
 jobs:
   ipa:
     if: github.event.repository.private == false && github.ref == 'refs/heads/main' && inputs.revision == github.sha
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 40
     environment: ios-signing
     env:
@@ -41,6 +41,8 @@ jobs:
         working-directory: native
         run: |
           set -euo pipefail
+          sudo xcode-select -s /Applications/Xcode_27.1.app/Contents/Developer
+          test "$(xcrun --sdk iphoneos --show-sdk-version)" = '27.1'
           npm ci --no-audit --no-fund
           npm test
           npx cap add ios --packagemanager SPM
