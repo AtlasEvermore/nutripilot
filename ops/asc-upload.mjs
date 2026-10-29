@@ -18,12 +18,27 @@ const api = async (method, path, data) => {
   const t = await r.text(); if (!r.ok) throw new Error(`${method} ${path} -> ${r.status} ${t.slice(0, 800)}`);
   return t ? JSON.parse(t) : {};
 };
+// A failed earlier attempt leaves an unfinished upload for the same build: remove it so the build number can be reused.
+const old = await api('GET', `apps/${e('APP_ID')}/buildUploads?limit=50`);
+for (const u of old.data || []) {
+  const a = u.attributes || {};
+  if (a.cfBundleShortVersionString === e('VERSION') && a.cfBundleVersion === e('BUILD') && !/COMPLETE/.test(JSON.stringify(a.state))) {
+    console.log(`removing unfinished upload ${u.id}`); await api('DELETE', `buildUploads/${u.id}`);
+  }
+}
 const up = await api('POST', 'buildUploads', { data: { type: 'buildUploads', attributes: { cfBundleShortVersionString: e('VERSION'), cfBundleVersion: e('BUILD'), platform: 'IOS' }, relationships: { app: { data: { type: 'apps', id: e('APP_ID') } } } } });
 const file = await api('POST', 'buildUploadFiles', { data: { type: 'buildUploadFiles', attributes: { fileName: 'NutriPilot.ipa', fileSize: ipa.length, uti: 'com.apple.ipa', assetType: 'ASSET' }, relationships: { buildUpload: { data: { type: 'buildUploads', id: up.data.id } } } } });
 for (const op of file.data.attributes.uploadOperations) {
   const headers = Object.fromEntries((op.requestHeaders || []).map(h => [h.name, h.value]));
-  const r = await fetch(op.url, { method: op.method, headers, body: ipa.subarray(op.offset, op.offset + op.length) });
-  if (!r.ok) throw new Error(`part upload -> ${r.status}`);
+  let ok = false;
+  for (let attempt = 1; attempt <= 5 && !ok; attempt++) {
+    try {
+      const r = await fetch(op.url, { method: op.method, headers, body: ipa.subarray(op.offset, op.offset + op.length), signal: AbortSignal.timeout(120000) });
+      ok = r.ok; if (!ok) console.log(`part ${op.offset} attempt ${attempt} -> ${r.status}`);
+    } catch (err) { console.log(`part ${op.offset} attempt ${attempt} -> ${err.name}`); }
+    if (!ok) await new Promise(r => setTimeout(r, attempt * 10000));
+  }
+  if (!ok) throw new Error(`part upload failed at offset ${op.offset}`);
 }
 const md5 = crypto.createHash('md5').update(ipa).digest('hex');
 await api('PATCH', `buildUploadFiles/${file.data.id}`, { data: { type: 'buildUploadFiles', id: file.data.id, attributes: { uploaded: true, sourceFileChecksums: { file: { hash: md5, algorithm: 'MD5' } } } } });
