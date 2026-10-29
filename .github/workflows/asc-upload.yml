@@ -1,0 +1,32 @@
+name: App Store upload
+on:
+  workflow_dispatch:
+    inputs:
+      ipa_url: { description: 'URL of the reviewed signed IPA', required: true }
+      ipa_sha256: { description: 'Expected SHA-256 of the IPA', required: true }
+      version: { description: 'CFBundleShortVersionString', required: true, default: '18.1.0' }
+      build: { description: 'CFBundleVersion', required: true, default: '301' }
+permissions: { contents: read }
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    environment: ios-signing
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Download IPA
+        run: curl -fsSL "$IPA_URL" -o NutriPilot.ipa
+        env: { IPA_URL: '${{ inputs.ipa_url }}' }
+      - name: Upload to App Store Connect
+        run: node ops/asc-upload.mjs
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          IPA_PATH: NutriPilot.ipa
+          IPA_SHA256: ${{ inputs.ipa_sha256 }}
+          APP_ID: '6826838334'
+          VERSION: ${{ inputs.version }}
+          BUILD: ${{ inputs.build }}
