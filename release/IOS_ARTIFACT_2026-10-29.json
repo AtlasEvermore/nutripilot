@@ -1,0 +1,27 @@
+{
+  "run": "https://github.com/AtlasEvermore/nutripilot/actions/runs/40612751598",
+  "revision": "3476052294f4ae7f0a12d2798e6c920aa0f9dfec",
+  "nativeTree": "be0680febad4748045991bbcee2238dc8525824e",
+  "applicationTree": "c1b99fd4fcd170dbff27d73b3af216002a36f1c5",
+  "artifactId": 12927838697,
+  "artifactZipSha256": "109d27ac767b7c7abb61dd53aa826d1922fc54961e88057a9911c2599a37e5e5",
+  "githubDigestMatched": true,
+  "ipaSha256": "39290a04d0dbcfa0db39ddcc1965c37e5efd863a7b74e3dd05ad45d14903babd",
+  "sha256sumsMatched": true,
+  "receiptMatched": true,
+  "independentCheck": {
+    "bundle": "com.atlasevermore.nutripilot",
+    "version": "18.1.0",
+    "build": "301",
+    "profileUuid": "95f24e59-cca8-4daf-82c9-81c7394a88d0",
+    "profileType": "App Store (no device list, get-task-allow false)",
+    "team": "4CFGPR2ZDT",
+    "profileExpires": "2027-10-25T20:48:19Z",
+    "certificateSha256": "7d33f59a893ec51405bc2a4f402cfb97d1eb7e755b57391742df88922f3c7e46",
+    "codeSignaturePresent": true
+  },
+  "durableCopy": "owner device (downloaded by owner from GitHub and attached to the agent session)",
+  "storeUploaded": false,
+  "purchasesTested": false,
+  "verifiedAt": "2026-10-29T20:34:12Z"
+}

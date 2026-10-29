@@ -100,11 +100,11 @@
         "evidence": []
       },
       "ios_artifact": {
-        "status": "pending",
-        "verifiedAt": null,
-        "verifiedBy": null,
+        "status": "verified",
+        "verifiedAt": "2026-10-29T20:34:12Z",
+        "verifiedBy": "development-agent",
         "evidence": [
-          "Native source changed for resizable orientations; historical IPA native tree does not match the new candidate. New exact-revision signed build and independent signature verification required; protected signing approval remains intact."
+          "release/IOS_ARTIFACT_2026-10-29.json: run 40612751598 SUCCESS on reviewed main 3476052; ZIP hash equals GitHub digest; IPA hash equals receipt and SHA256SUMS; independent Info.plist/profile/certificate check (bundle, 18.1.0 build 301, App Store profile, team, cert hash, signature folder); durable copy held by owner; not uploaded to Apple"
         ]
       },
       "android_configuration": {
