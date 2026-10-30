@@ -4442,7 +4442,8 @@ function orbitGauge(p) {
 // Ripples where the finger lands, a light that follows the pointer on cards, sections that appear as
 // you scroll. Everything is skipped with "reduce motion", and continuous effects stop on modest phones.
 const AURA_REDUCED = matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-const AURA_LITE = AURA_REDUCED || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 3);
+// Safari reports few logical cores even on fast iPhones, so only clearly weak devices get the lite mode.
+const AURA_LITE = AURA_REDUCED || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) || (navigator.deviceMemory && navigator.deviceMemory <= 2);
 document.documentElement.classList.add('aura', 'cosmos', ...(AURA_LITE ? ['aura-lite'] : []));
 const AURA_TAP = '.btn, .md-act, .cp-chip, .nav-btn, .mx-meal, .icon-btn, .mt-chips button, .chip-retry, .app-icon, .mini-card, .plan-option';
 document.addEventListener('pointerdown', (event) => {
