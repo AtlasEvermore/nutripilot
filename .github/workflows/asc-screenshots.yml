@@ -1,0 +1,26 @@
+name: App Store screenshots
+on:
+  workflow_dispatch:
+    inputs:
+      shots_commit: { description: 'Commit of the store-screenshots branch with the images', required: true }
+      version_id: { description: 'App Store version id', required: true, default: 'cd5e326f-7410-494a-b5ab-ebd66979612b' }
+permissions: { contents: read }
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    environment: ios-signing
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: '${{ inputs.shots_commit }}', path: shots }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Replace screenshots
+        run: node ops/asc-screenshots.mjs
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          SHOTS_DIR: shots
+          VERSION_ID: ${{ inputs.version_id }}
