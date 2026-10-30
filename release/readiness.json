@@ -16,11 +16,11 @@
         ]
       },
       "independent_backup": {
-        "status": "pending",
-        "verifiedAt": null,
+        "status": "verified",
+        "verifiedAt": "2026-10-30T12:35:25.225Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "Fresh backup required: previous 2026-10-30T02:49:56Z is older than eight hours."
+          "release/RELEASE_VISUAL_2026-10-30.md: owner-authorized fresh backup 2026-10-30T12:35:25.225Z with ops/backup-cli.mjs (create + verify) on the live 18.1.0 service; five files; 5716 encrypted bytes; SHA256 a8aa3c485de0b805d600f6623edf67df4ab21eb634fa1a50f3da3c591c160534 matched on the owner computer outside Railway; recovery key saved as a separate owner file"
         ]
       },
       "restore_drill": {

@@ -6,3 +6,4 @@
 - CI PR #41: regression, Clean browser acceptance, android e ios compile = success. Merge d897064.
 - Build 401 assinado (run 41053797571), verificado de forma independente e enviado à App Store Connect (run 41055467534).
 - Pendente: backup novo (8h), aplicar deploy do commit, trocar build/capturas na versão, submissão.
+- Backup novo (autorizado 09:35 BRT): 2026-10-30T12:35:25.225Z, 5 arquivos, 5716 bytes, SHA-256 a8aa3c48…0534, conferido no computador do proprietário; chave em arquivo separado.
