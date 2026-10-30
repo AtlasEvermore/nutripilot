@@ -2948,3 +2948,32 @@ html.cosmos .progress i{background:linear-gradient(90deg,var(--hx-lime),var(--hx
 html.aura-lite::after,html.aura-lite .ds-ring::after,html.aura-lite .ds-ring::before{animation:none!important}
 html.aura-lite :is(.kpi,.meal,.water-card,.action-card,.recipe-card,.guide-card,.mini-card,.pg-card,.water-tile,.checkin-card,.am-row,.discovery-card,.plan-choice,.kit-row){backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 @media (forced-colors:active){html.cosmos :is(.screen-title,.md-head h2){color:CanvasText;background:none}}
+/* Health OS 18.2.1 — living Atlas, deep-ocean hydration and a radiant best offer. Additive only. */
+/* Atlas map: radar sweep, energy flowing on every route, breathing nodes. */
+html.cosmos .constellation-stage{isolation:isolate}
+html.cosmos .constellation-stage::before{content:"";position:absolute;left:50%;top:48%;width:118%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;pointer-events:none;z-index:-1;background:conic-gradient(from 0deg,transparent 0 300deg,rgba(34,225,255,.0) 300deg,rgba(34,225,255,.16) 352deg,rgba(200,255,61,.28) 360deg);-webkit-mask:radial-gradient(circle,#000 0 58%,transparent 70%);mask:radial-gradient(circle,#000 0 58%,transparent 70%);animation:hxRot 7s linear infinite;will-change:transform}
+html.cosmos .constellation-stage::after{content:"";position:absolute;left:50%;top:48%;width:62%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;pointer-events:none;z-index:-1;border:1px dashed rgba(155,107,255,.35);animation:hxRot 40s linear infinite reverse;will-change:transform}
+html.cosmos .constellation-lines path:not(.on){stroke:rgba(34,225,255,.32);stroke-width:.28;stroke-dasharray:.5 1.8;animation:hxFlow 5s linear infinite}
+@keyframes hxFlow{to{stroke-dashoffset:-23}}
+html.cosmos .constellation-node>span{animation:hxNode 4.2s ease-in-out infinite}
+html.cosmos .constellation-node:nth-of-type(2n)>span{animation-delay:-1.4s}html.cosmos .constellation-node:nth-of-type(3n)>span{animation-delay:-2.8s}
+@keyframes hxNode{0%,100%{box-shadow:0 0 0 0 rgba(34,225,255,0),0 0 14px -6px rgba(34,225,255,.5)}50%{box-shadow:0 0 0 5px rgba(34,225,255,.07),0 0 22px -4px rgba(200,255,61,.55)}}
+html.cosmos .constellation-node[aria-pressed=true]>span{animation:hxNodeOn 2.2s ease-in-out infinite}
+@keyframes hxNodeOn{0%,100%{box-shadow:0 0 0 4px rgba(200,255,61,.10),0 0 24px -4px rgba(200,255,61,.7)}50%{box-shadow:0 0 0 9px rgba(200,255,61,.04),0 0 34px 0 rgba(200,255,61,.55)}}
+/* Hydration: deep-ocean instrument with a glowing level and neon controls. */
+html.cosmos .water-tile{background:radial-gradient(120% 90% at 20% 100%,rgba(34,225,255,.28),transparent 60%),linear-gradient(165deg,#0b1f4a,#071233 70%)!important;border:1px solid rgba(34,225,255,.45)!important;box-shadow:0 0 0 1px rgba(34,225,255,.08),0 0 34px -10px rgba(34,225,255,.65),0 18px 44px -28px #000!important;color:#e9fbff}
+html.cosmos .water-info small{color:#8feeff!important;letter-spacing:.08em;text-transform:uppercase;font-size:10.5px}
+html.cosmos .water-info b{color:#fff;text-shadow:0 0 18px rgba(34,225,255,.65)}
+html.cosmos .water-info .mm-bar.water{background:rgba(34,225,255,.14)}
+html.cosmos .water-info .mm-bar.water>i{background:linear-gradient(90deg,#22e1ff,#7df9ff,#c8ff3d);box-shadow:0 0 14px rgba(34,225,255,.8)}
+html.cosmos .water-info .water-actions button{background:linear-gradient(180deg,#27c8ff,#1590e0)!important;box-shadow:0 6px 18px -8px rgba(34,225,255,.9),inset 0 1px 0 rgba(255,255,255,.35);color:#fff!important;transition:transform .15s}
+html.cosmos .water-info .water-actions button:active{transform:scale(.94)}
+html.cosmos .water-info .water-actions button:first-child{background:rgba(34,225,255,.12)!important;border:1px solid rgba(34,225,255,.45)!important;color:#bff6ff!important;box-shadow:none}
+html.cosmos .water-tile svg{filter:drop-shadow(0 0 10px rgba(34,225,255,.55))}
+/* Plans: the complete kit radiates — rotating halo border and a light sweep. */
+html.cosmos .kit-row{isolation:isolate;overflow:hidden;box-shadow:0 0 0 1px rgba(200,255,61,.45),0 0 46px -12px rgba(200,255,61,.55),0 26px 60px -34px #000!important}
+html.cosmos .kit-row::before{content:"";position:absolute;inset:-60%;z-index:-1;pointer-events:none;background:conic-gradient(from 0deg,transparent 0 70%,rgba(200,255,61,.22) 82%,rgba(34,225,255,.22) 92%,transparent);animation:hxRot 9s linear infinite;will-change:transform}
+html.cosmos .kit-row::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:35%;z-index:-1;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.10),transparent);animation:hxSweep 6s ease-in-out infinite}
+@keyframes hxSweep{0%,60%{transform:translateX(0)}100%{transform:translateX(420%)}}
+@media (prefers-reduced-motion:reduce){html.cosmos :is(.constellation-stage,.kit-row)::before,html.cosmos :is(.constellation-stage,.kit-row)::after,html.cosmos .constellation-lines path,html.cosmos .constellation-node>span{animation:none!important}}
+html.aura-lite :is(.constellation-stage,.kit-row)::before,html.aura-lite :is(.constellation-stage,.kit-row)::after,html.aura-lite .constellation-lines path:not(.on),html.aura-lite .constellation-node>span{animation:none!important}
