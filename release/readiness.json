@@ -17,10 +17,10 @@
       },
       "independent_backup": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T11:55:12.942Z",
+        "verifiedAt": "2026-10-30T02:49:56.298Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/ACCOUNT_READINESS_2026-10-27.md: fresh real snapshot created 2026-10-27T11:55:12.942Z; five files; encrypted download SHA256 matched; authenticated decryption and isolated restore passed; encrypted archive and recovery key durably saved as separate private owner files outside Railway"
+          "release/PREPARE_EVIDENCE_2026-10-30.md: fresh real read-only snapshot 2026-10-30T02:49:56.298Z by the existing restricted export routine with owner authorization; five files; NPBACKUP1 5543 bytes; SHA256 905a7ca1a1639b9ccae8b261412a9839a1b9e0accad7a77f8aa0e933957588a3 matched on the owner computer outside Railway; recovery key saved as a separate owner file"
         ]
       },
       "restore_drill": {
@@ -49,10 +49,10 @@
       },
       "email_delivery": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T17:24:51.937556Z",
+        "verifiedAt": "2026-10-30T02:53:24.288Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/CANDIDATE_EMAIL_CHECK_2026-10-27.json: original actual delivered Portuguese candidate access email retained at its original timestamp; final-tree applicability checked against identical server blob b04e08bb933fe1f7e95eb75dbc826a3d6398a986 and auth blob 2cfe486d389270ac4f7a689f0cab9bd4bd4de5de; only frontend price/CSS changed. Automatic review blocked a second test before transmission. No second delivery or renewed delivery timestamp is claimed."
+          "release/PREPARE_EVIDENCE_2026-10-30.md: owner-authorized real access email to the owner address sent 2026-10-30T02:53:24Z (HTTP 200, mailed=true); owner confirmed receipt in inbox at 02:54Z; code not recorded"
         ]
       },
       "legal_configuration": {
