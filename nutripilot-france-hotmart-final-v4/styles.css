@@ -2920,11 +2920,10 @@ html.cosmos .mobile-app{background:transparent!important;position:relative;z-ind
 html.cosmos .app-head{background:linear-gradient(180deg,rgba(10,6,38,.92),rgba(10,6,38,.72))!important;border-bottom:1px solid rgba(155,107,255,.18)!important}
 html.cosmos .bottom-nav{background:rgba(16,10,50,.86)!important;border-color:rgba(155,107,255,.3)!important;box-shadow:0 -10px 40px rgba(123,77,255,.18),0 18px 50px rgba(0,0,0,.3)!important}
 html.cosmos .nav-btn.active{color:var(--hx-lime)!important}
-html.cosmos :is(.mission-console,.constellation,.prog-hero,.history-panel,.chart-card,.lock-card,.mx-card,.pc-card,.log-card){background:linear-gradient(160deg,rgba(40,28,100,.78),rgba(12,10,42,.86)) padding-box,var(--hx-edge) border-box!important;border:1px solid transparent!important}
 html.cosmos .btn-lime{background-color:var(--hx-lime)!important;box-shadow:0 10px 34px -10px rgba(200,255,61,.8),0 0 0 1px rgba(200,255,61,.5)!important}
 html.cosmos .orbit-eyebrow,html.cosmos .head-date{color:#b9a8ff!important}
 /* Glass instruments with a living gradient edge (no pseudo-elements, so existing decorations stay intact). */
-html.cosmos :is(.kpi,.meal,.water-card,.action-card:not(.primary),.recipe-card,.guide-card,.mini-card,.pg-card,.water-tile,.checkin-card,.am-row,.discovery-card,.plan-choice,.kit-row){border:1px solid transparent!important;background:var(--hx-glass) padding-box,var(--hx-edge) border-box!important;box-shadow:0 18px 44px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.04)!important}
+html.cosmos :is(.kpi,.meal,.water-card,.action-card:not(.primary),.recipe-card,.guide-card,.mini-card,.pg-card,.water-tile,.checkin-card,.am-row,.discovery-card,.plan-choice,.kit-row){box-shadow:0 0 0 1px rgba(155,107,255,.30),0 0 22px -10px rgba(34,225,255,.35),0 18px 44px -30px rgba(0,0,0,.9)!important}
 /* Holographic score ring: a slow tick orbit around the live value. */
 html.cosmos .ds-ring::after{content:"";position:absolute;inset:-7px;border-radius:50%;pointer-events:none;background:repeating-conic-gradient(rgba(117,216,236,.75) 0 1.6deg,transparent 1.6deg 10deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));animation:hxRot 16s linear infinite;opacity:.8;will-change:transform}
 @keyframes hxRot{to{transform:rotate(360deg)}}
@@ -2944,12 +2943,37 @@ html.cosmos :is(.screen-title,.md-head h2){background:linear-gradient(100deg,#ff
 html.cosmos .section-label h3::before{content:"";display:inline-block;width:6px;height:6px;margin:0 9px 2px 0;border-radius:50%;background:var(--hx-lime);box-shadow:0 0 12px var(--hx-lime);vertical-align:middle}
 /* Data feels alive: progress bars carry a moving glint. */
 html.cosmos .progress i{background:linear-gradient(90deg,var(--hx-lime),var(--hx-cyan));box-shadow:0 0 12px rgba(203,255,120,.45)}
-/* Entrances: content lifts in, in sequence. */
-html.cosmos .screen>*{animation:hxRise .55s var(--ease) both}
-html.cosmos .screen>*:nth-child(2){animation-delay:.04s}html.cosmos .screen>*:nth-child(3){animation-delay:.08s}html.cosmos .screen>*:nth-child(4){animation-delay:.12s}html.cosmos .screen>*:nth-child(n+5){animation-delay:.16s}
-@keyframes hxRise{from{opacity:0;transform:translateY(12px)}}
 /* Respect people and devices: no motion, lighter effects. */
-@media (prefers-reduced-motion:reduce){html.cosmos::after,html.cosmos .ds-ring::after,html.cosmos .ds-ring::before,html.cosmos .screen>*{animation:none!important}}
+@media (prefers-reduced-motion:reduce){html.cosmos::after,html.cosmos .ds-ring::after,html.cosmos .ds-ring::before{animation:none!important}}
 html.aura-lite::after,html.aura-lite .ds-ring::after,html.aura-lite .ds-ring::before{animation:none!important}
 html.aura-lite :is(.kpi,.meal,.water-card,.action-card,.recipe-card,.guide-card,.mini-card,.pg-card,.water-tile,.checkin-card,.am-row,.discovery-card,.plan-choice,.kit-row){backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 @media (forced-colors:active){html.cosmos :is(.screen-title,.md-head h2){color:CanvasText;background:none}}
+/* Health OS 18.2.1 — living Atlas, deep-ocean hydration and a radiant best offer. Additive only. */
+/* Atlas map: radar sweep, energy flowing on every route, breathing nodes. */
+html.cosmos .constellation-stage{isolation:isolate}
+html.cosmos .constellation-stage::before{content:"";position:absolute;left:50%;top:48%;width:118%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;pointer-events:none;z-index:-1;background:conic-gradient(from 0deg,transparent 0 300deg,rgba(34,225,255,.0) 300deg,rgba(34,225,255,.16) 352deg,rgba(200,255,61,.28) 360deg);-webkit-mask:radial-gradient(circle,#000 0 58%,transparent 70%);mask:radial-gradient(circle,#000 0 58%,transparent 70%);animation:hxRot 7s linear infinite;will-change:transform}
+html.cosmos .constellation-stage::after{content:"";position:absolute;left:50%;top:48%;width:62%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;pointer-events:none;z-index:-1;border:1px dashed rgba(155,107,255,.35);animation:hxRot 40s linear infinite reverse;will-change:transform}
+html.cosmos .constellation-lines path:not(.on){stroke:rgba(34,225,255,.32);stroke-width:.28;stroke-dasharray:.5 1.8;animation:hxFlow 5s linear infinite}
+@keyframes hxFlow{to{stroke-dashoffset:-23}}
+html.cosmos .constellation-node>span{animation:hxNode 4.2s ease-in-out infinite}
+html.cosmos .constellation-node:nth-of-type(2n)>span{animation-delay:-1.4s}html.cosmos .constellation-node:nth-of-type(3n)>span{animation-delay:-2.8s}
+@keyframes hxNode{0%,100%{box-shadow:0 0 0 0 rgba(34,225,255,0),0 0 14px -6px rgba(34,225,255,.5)}50%{box-shadow:0 0 0 5px rgba(34,225,255,.07),0 0 22px -4px rgba(200,255,61,.55)}}
+html.cosmos .constellation-node[aria-pressed=true]>span{animation:hxNodeOn 2.2s ease-in-out infinite}
+@keyframes hxNodeOn{0%,100%{box-shadow:0 0 0 4px rgba(200,255,61,.10),0 0 24px -4px rgba(200,255,61,.7)}50%{box-shadow:0 0 0 9px rgba(200,255,61,.04),0 0 34px 0 rgba(200,255,61,.55)}}
+/* Hydration: deep-ocean instrument with a glowing level and neon controls. */
+html.cosmos .water-tile{background:radial-gradient(120% 90% at 20% 100%,rgba(34,225,255,.28),transparent 60%),linear-gradient(165deg,#0b1f4a,#071233 70%)!important;border:1px solid rgba(34,225,255,.45)!important;box-shadow:0 0 0 1px rgba(34,225,255,.08),0 0 34px -10px rgba(34,225,255,.65),0 18px 44px -28px #000!important;color:#e9fbff}
+html.cosmos .water-info small{color:#8feeff!important;letter-spacing:.08em;text-transform:uppercase;font-size:10.5px}
+html.cosmos .water-info b{color:#fff;text-shadow:0 0 18px rgba(34,225,255,.65)}
+html.cosmos .water-info .mm-bar.water{background:rgba(34,225,255,.14)}
+html.cosmos .water-info .mm-bar.water>i{background:linear-gradient(90deg,#22e1ff,#7df9ff,#c8ff3d);box-shadow:0 0 14px rgba(34,225,255,.8)}
+html.cosmos .water-info .water-actions button{background:linear-gradient(180deg,#27c8ff,#1590e0)!important;box-shadow:0 6px 18px -8px rgba(34,225,255,.9),inset 0 1px 0 rgba(255,255,255,.35);color:#fff!important;transition:transform .15s}
+html.cosmos .water-info .water-actions button:active{transform:scale(.94)}
+html.cosmos .water-info .water-actions button:first-child{background:rgba(34,225,255,.12)!important;border:1px solid rgba(34,225,255,.45)!important;color:#bff6ff!important;box-shadow:none}
+html.cosmos .water-tile svg{filter:drop-shadow(0 0 10px rgba(34,225,255,.55))}
+/* Plans: the complete kit radiates — rotating halo border and a light sweep. */
+html.cosmos .kit-row{isolation:isolate;overflow:hidden;box-shadow:0 0 0 1px rgba(200,255,61,.45),0 0 46px -12px rgba(200,255,61,.55),0 26px 60px -34px #000!important}
+html.cosmos .kit-row::before{content:"";position:absolute;inset:-60%;z-index:-1;pointer-events:none;background:conic-gradient(from 0deg,transparent 0 70%,rgba(200,255,61,.22) 82%,rgba(34,225,255,.22) 92%,transparent);animation:hxRot 9s linear infinite;will-change:transform}
+html.cosmos .kit-row::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:35%;z-index:-1;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.10),transparent);animation:hxSweep 6s ease-in-out infinite}
+@keyframes hxSweep{0%,60%{transform:translateX(0)}100%{transform:translateX(420%)}}
+@media (prefers-reduced-motion:reduce){html.cosmos :is(.constellation-stage,.kit-row)::before,html.cosmos :is(.constellation-stage,.kit-row)::after,html.cosmos .constellation-lines path,html.cosmos .constellation-node>span{animation:none!important}}
+html.aura-lite :is(.constellation-stage,.kit-row)::before,html.aura-lite :is(.constellation-stage,.kit-row)::after,html.aura-lite .constellation-lines path:not(.on),html.aura-lite .constellation-node>span{animation:none!important}
