@@ -4,3 +4,4 @@
 - Causa das travadas: desfoque de fundo (backdrop-filter) em muitos cartões e anel do score redesenhado a cada quadro. Removido o desfoque dos cartões novos; anel gira por transform (composição).
 - sw.js: cache renomeado (v51) para atualizar ícones de quem já visitou.
 - Movimento reduzido do sistema continua desligando tudo.
+- 30/10 12:20 BRT: camada visual corrigida para nunca substituir fundos/fotos/animações originais (seção Treino e mundo animado de volta), comparação lado a lado com 7b74f94 sem perda de conteúdo.

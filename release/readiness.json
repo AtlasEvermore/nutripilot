@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "886dee68853f7029670438412ca195cb6c31987c",
+  "applicationTree": "36234d50ac0888239aaa74a70257294bf6643577",
   "channels": [
     "ios"
   ],
@@ -88,10 +88,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-30T13:10:26.864834Z",
+        "verifiedAt": "2026-10-30T15:18:35.602957Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PERF_MOTION_2026-10-30.md: PR #44 with application tree 886dee68 and native tree 680daea3 passes regression and Clean browser acceptance before merge; service keeps Wait for CI"
+          "release/PERF_MOTION_2026-10-30.md: PR with application tree 36234d50 and native tree 680daea3 passes regression and Clean browser acceptance before merge; service keeps Wait for CI"
         ]
       },
       "expiry_alert": {
