@@ -19,3 +19,10 @@ Ainda não aplicado na App Store Connect: países, nomes, descrições, contato 
 - Capturas: 6 iPhone 6,9" + 6 iPad 13" por idioma (en, pt, fr, es, de, it), molduras sobre telas reais com dados sintéticos; fontes na branch `store-screenshots-18.1.0` (9d27896).
 - IA: decisão do proprietário de ligar só para assinantes, gpt-5-mini, US$5 de crédito, recarga automática desligada. Railway ainda com AI_ENABLED=false e OPENAI_MODEL antigo; mudar só no patch preparado, nunca direto no serviço ao vivo.
 - Falta: contato de revisão (proprietário), upload do build 301 (workflow PR #39 + chave ASC API em secrets; IPA temporária na branch `tmp-ipa-upload-301`, apagar após upload), RevenueCat inexistente no Railway (chaves/webhook/entitlement), declaração de privacidade, gates de deploy.
+
+## Atualização 29/10 23h40
+- Build 18.1.0 (301) enviado pelo workflow `App Store upload` (run 40974071402, SHA-256 verificado 39290a04…), estado VALID e vinculado à versão 18.1.0. Branch temporária da IPA apagada com autorização do proprietário.
+- Assinaturas mensal/anual: disponibilidade nos 34 territórios, localização do grupo en-US, nota e captura de revisão enviadas; status "Preparar para envio"; devem ser marcadas junto com a versão na submissão.
+- RevenueCat já existia (projeto 70ddc21f, app App Store com chave IAP válida). O app usa getProducts por ID, sem entitlements/offerings.
+- Railway patch 9c88b850 (STAGED, 14 variáveis): AI_ENABLED=true, OPENAI_MODEL=gpt-5-mini, OPENAI_API_KEY nova (colada pelo proprietário), RevenueCat, legal, limites de IA. Itens no-op (APP_URL, DATA_DIR, WEB_CHECKOUT_ENABLED, FREE_SCANS, AI_ALLOW_GUESTS) foram descartados pelo Railway por já serem iguais ao vivo. NÃO aplicado.
+- Falta: declaração de privacidade (confirmação do proprietário), gates do prepare (backup novo + restore isolado, hosting, CI, e-mail com autorização, IA), aplicar patch, testes reais, launch, submissão com as assinaturas.
