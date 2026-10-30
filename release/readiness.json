@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "c1b99fd4fcd170dbff27d73b3af216002a36f1c5",
+  "applicationTree": "6c151f087e7438b41438fbf74a09371b837ad64e",
   "channels": [
     "ios"
   ],
@@ -16,11 +16,11 @@
         ]
       },
       "independent_backup": {
-        "status": "verified",
-        "verifiedAt": "2026-10-30T02:49:56.298Z",
+        "status": "pending",
+        "verifiedAt": null,
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-10-30.md: fresh real read-only snapshot 2026-10-30T02:49:56.298Z by the existing restricted export routine with owner authorization; five files; NPBACKUP1 5543 bytes; SHA256 905a7ca1a1639b9ccae8b261412a9839a1b9e0accad7a77f8aa0e933957588a3 matched on the owner computer outside Railway; recovery key saved as a separate owner file"
+          "Fresh backup required: previous 2026-10-30T02:49:56Z is older than eight hours."
         ]
       },
       "restore_drill": {
@@ -28,7 +28,8 @@
         "verifiedAt": "2026-10-27T23:43:19.052Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: final focus-correction tree c1b99fd4 restored the actual 11:55Z snapshot in isolation; five hashes preserved; smoke 18.1.0 issues empty; no newer backup time claimed."
+          "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: final focus-correction tree c1b99fd4 restored the actual 11:55Z snapshot in isolation; five hashes preserved; smoke 18.1.0 issues empty; no newer backup time claimed.",
+          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies"
         ]
       },
       "new_credentials_stored": {
@@ -52,7 +53,8 @@
         "verifiedAt": "2026-10-30T02:53:24.288Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-10-30.md: owner-authorized real access email to the owner address sent 2026-10-30T02:53:24Z (HTTP 200, mailed=true); owner confirmed receipt in inbox at 02:54Z; code not recorded"
+          "release/PREPARE_EVIDENCE_2026-10-30.md: owner-authorized real access email to the owner address sent 2026-10-30T02:53:24Z (HTTP 200, mailed=true); owner confirmed receipt in inbox at 02:54Z; code not recorded",
+          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies"
         ]
       },
       "legal_configuration": {
@@ -60,7 +62,8 @@
         "verifiedAt": "2026-10-27T23:43:19.274Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/LEGAL_CONFIGURATION_CHECK_2026-10-27.json: final focus-correction tree c1b99fd4 legal pages HTTP 200 with approved private fields; launch public-domain check still pending."
+          "release/LEGAL_CONFIGURATION_CHECK_2026-10-27.json: final focus-correction tree c1b99fd4 legal pages HTTP 200 with approved private fields; launch public-domain check still pending.",
+          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies"
         ]
       },
       "rollback_migration": {
@@ -75,15 +78,16 @@
           "release/WORKSPACES_REVIEW_2026-10-26.md: final workspace candidate preserves original files in isolated restore; backend and data format remain unchanged",
           "release/CONSTELLATION_REVIEW_2026-10-26.md: final candidate and asynchronous static delivery preserve original restored files; no storage format or migration change",
           "release/FINAL_POLISH_2026-10-27.md: final merged application tree 78ee5e8b3e18acadc6c35b3f2a73127fce970cdf repeated isolated restore and preserved all five original files; no backend/storage-format change in PR 36; original V12 rollback rehearsal remains historical",
-          "release/ACCOUNT_READINESS_2026-10-27.md: exact final application booted the fresh 2026-10-27 real-data snapshot and preserved all five original files; storage/native source unchanged; prior V12 rollback rehearsal remains historical"
+          "release/ACCOUNT_READINESS_2026-10-27.md: exact final application booted the fresh 2026-10-27 real-data snapshot and preserved all five original files; storage/native source unchanged; prior V12 rollback rehearsal remains historical",
+          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-30T02:45:50.656524Z",
+        "verifiedAt": "2026-10-30T12:34:11.038942Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-10-30.md: staged Railway patch 9c88b850 contains source.checkSuites=true (Wait for CI); main 2b35e7a+ with application tree c1b99fd4 and native tree be0680fe passed regression, clean browser acceptance and image jobs at 2026-10-29T23:40Z"
+          "release/RELEASE_VISUAL_2026-10-30.md: PR #41 head with application tree 6c151f08 and native tree 680daea3 passed regression, Clean browser acceptance, android and ios compile; production service keeps Wait for CI (checkSuites) from the applied patch"
         ]
       },
       "expiry_alert": {
@@ -104,10 +108,10 @@
       },
       "ios_artifact": {
         "status": "verified",
-        "verifiedAt": "2026-10-29T20:34:12Z",
+        "verifiedAt": "2026-10-30T12:34:11.038942Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/IOS_ARTIFACT_2026-10-29.json: run 40612751598 SUCCESS on reviewed main 3476052; ZIP hash equals GitHub digest; IPA hash equals receipt and SHA256SUMS; independent Info.plist/profile/certificate check (bundle, 18.1.0 build 301, App Store profile, team, cert hash, signature folder); durable copy held by owner; not uploaded to Apple"
+          "release/IOS_ARTIFACT_2026-10-30.json: run 41053797571 on main d897064 (native tree 680daea3), build 401; artifact digest f11b2358… matched; independent check of IPA 2eb24f18…: bundle, version, App Store profile without devices, get-task-allow false, team, certificate, code signature; uploaded to App Store Connect by run 41055467534"
         ]
       },
       "android_configuration": {
@@ -204,7 +208,7 @@
       }
     }
   },
-  "nativeTree": "be0680febad4748045991bbcee2238dc8525824e",
+  "nativeTree": "680daea35d58e1c9c751846bc26c530dcd45e7e8",
   "deferredChannels": [
     "android"
   ]
