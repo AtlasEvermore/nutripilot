@@ -1,0 +1,14 @@
+{
+  "workflowRun": 41053797571,
+  "revision": "d89706488ed158e13bcaabca395033f039cf1f69",
+  "nativeTree": "680daea35d58e1c9c751846bc26c530dcd45e7e8",
+  "applicationTree": "6c151f087e7438b41438fbf74a09371b837ad64e",
+  "artifactId": 12975889004,
+  "artifactZipSha256": "f11b2358cbb39fe868bc657410c8a3e49e2863693840d1d4f7ce251657117d34",
+  "ipaSha256": "2eb24f189040379a9d93c4dc4805e76fef2e3ffb679a26a4393cc9509b86c3c8",
+  "independentCheck": {"bundle": "com.atlasevermore.nutripilot", "version": "18.1.0", "build": "401", "profileUuid": "95f24e59-cca8-4daf-82c9-81c7394a88d0", "appStoreProfile": true, "provisionedDevices": false, "getTaskAllow": false, "team": "4CFGPR2ZDT", "profileExpires": "2027-10-25T20:48:19Z", "certificateSha256": "7d33f59a893ec51405bc2a4f402cfb97d1eb7e755b57391742df88922f3c7e46", "codeSignaturePresent": true, "itsNonExemptEncryption": false},
+  "storeUploadRun": 41055467534,
+  "storeUploaded": true,
+  "purchasesTested": false,
+  "note": "New app icon (Orbit data circuit). Artifact copy downloaded on the owner computer and verified outside GitHub."
+}
