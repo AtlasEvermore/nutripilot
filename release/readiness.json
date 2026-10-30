@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "6c151f087e7438b41438fbf74a09371b837ad64e",
+  "applicationTree": "886dee68853f7029670438412ca195cb6c31987c",
   "channels": [
     "ios"
   ],
@@ -29,7 +29,8 @@
         "verifiedBy": "development-agent",
         "evidence": [
           "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: final focus-correction tree c1b99fd4 restored the actual 11:55Z snapshot in isolation; five hashes preserved; smoke 18.1.0 issues empty; no newer backup time claimed.",
-          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies"
+          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
+          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical"
         ]
       },
       "new_credentials_stored": {
@@ -54,7 +55,8 @@
         "verifiedBy": "development-agent",
         "evidence": [
           "release/PREPARE_EVIDENCE_2026-10-30.md: owner-authorized real access email to the owner address sent 2026-10-30T02:53:24Z (HTTP 200, mailed=true); owner confirmed receipt in inbox at 02:54Z; code not recorded",
-          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies"
+          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
+          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical"
         ]
       },
       "legal_configuration": {
@@ -63,7 +65,8 @@
         "verifiedBy": "development-agent",
         "evidence": [
           "release/LEGAL_CONFIGURATION_CHECK_2026-10-27.json: final focus-correction tree c1b99fd4 legal pages HTTP 200 with approved private fields; launch public-domain check still pending.",
-          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies"
+          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
+          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical"
         ]
       },
       "rollback_migration": {
@@ -79,15 +82,16 @@
           "release/CONSTELLATION_REVIEW_2026-10-26.md: final candidate and asynchronous static delivery preserve original restored files; no storage format or migration change",
           "release/FINAL_POLISH_2026-10-27.md: final merged application tree 78ee5e8b3e18acadc6c35b3f2a73127fce970cdf repeated isolated restore and preserved all five original files; no backend/storage-format change in PR 36; original V12 rollback rehearsal remains historical",
           "release/ACCOUNT_READINESS_2026-10-27.md: exact final application booted the fresh 2026-10-27 real-data snapshot and preserved all five original files; storage/native source unchanged; prior V12 rollback rehearsal remains historical",
-          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies"
+          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
+          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-30T12:34:11.038942Z",
+        "verifiedAt": "2026-10-30T13:10:26.864834Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/RELEASE_VISUAL_2026-10-30.md: PR #41 head with application tree 6c151f08 and native tree 680daea3 passed regression, Clean browser acceptance, android and ios compile; production service keeps Wait for CI (checkSuites) from the applied patch"
+          "release/PERF_MOTION_2026-10-30.md: PR #44 with application tree 886dee68 and native tree 680daea3 passes regression and Clean browser acceptance before merge; service keeps Wait for CI"
         ]
       },
       "expiry_alert": {
