@@ -5,3 +5,4 @@
 - sw.js: cache renomeado (v51) para atualizar ícones de quem já visitou.
 - Movimento reduzido do sistema continua desligando tudo.
 - 30/10 12:20 BRT: camada visual corrigida para nunca substituir fundos/fotos/animações originais (seção Treino e mundo animado de volta), comparação lado a lado com 7b74f94 sem perda de conteúdo.
+- 30/10 13:30 BRT: Atlas vivo (varredura de radar, rotas com energia, nós pulsando), hidratação estilo oceano profundo, Kit completo com halo girando. Somente CSS aditivo; movimento reduzido e aparelhos fracos desligam.
