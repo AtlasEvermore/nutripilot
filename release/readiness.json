@@ -52,12 +52,10 @@
       },
       "email_delivery": {
         "status": "verified",
-        "verifiedAt": "2026-10-30T02:53:24.288Z",
+        "verifiedAt": "2026-11-03T11:44:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-10-30.md: owner-authorized real access email to the owner address sent 2026-10-30T02:53:24Z (HTTP 200, mailed=true); owner confirmed receipt in inbox at 02:54Z; code not recorded",
-          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
-          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: owner-authorized real access e-mail to the owner address sent 11:36:45Z (HTTP 200, mailed=true); owner confirmed receipt at 11:44Z; code not recorded"
         ]
       },
       "legal_configuration": {
