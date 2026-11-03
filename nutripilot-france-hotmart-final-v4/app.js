@@ -8195,14 +8195,68 @@ function addTab(tab) {
   if (tab === 'photo' || tab === 'label') return `<label class="upload"><input id="meal-image" type="file" accept="image/*" capture="environment"><div class="camera-ico">${tab === 'label' ? '▤' : '📸'}</div><h3>${L(tab === 'label' ? 'Photographier l’étiquette' : 'Photographier mon repas')}</h3><p>${L(tab === 'label' ? 'Cadrez les valeurs nutritionnelles et la portion.' : 'Une photo donne une estimation. Vous pourrez corriger chaque quantité avant de l’enregistrer.')}</p><span class="btn btn-primary">${L('Choisir une photo')}</span></label>`;
   if (tab === 'text') return `<div class="field"><label>${L('Décrivez votre repas')}</label><textarea class="textarea" id="meal-text" placeholder="${L('Ex. 150 g de poulet, 120 g de riz, courgettes et 1 c. à café d’huile d’olive')}"></textarea></div><div class="inline-actions"><button class="voice-btn" data-voice ${window.SpeechRecognition || window.webkitSpeechRecognition ? '' : 'hidden'}>${L('🎙 Dicter')}</button><button class="btn btn-primary" data-analyze-text>${L('Analyser →')}</button></div>`;
   if (tab === 'barcode') return `<div class="day-card"><h3>${L('Produit emballé')}</h3><p class="screen-sub">${L('Entrez les 8 à 14 chiffres du code-barres. Les données disponibles proviennent d’Open Food Facts et restent à vérifier sur l’emballage.')}</p>${navigator.mediaDevices?.getUserMedia ? `<button class="btn btn-lime btn-wide" data-barcode-cam>${icon('camera')} ${L('Scanner avec la caméra')}</button><div id="bc-cam" class="bc-cam" hidden><video id="bc-video" playsinline muted></video><span>${L('Placez le code-barres dans le cadre')}</span></div>` : ''}<div class="field"><label>${L('Code-barres')}</label><input id="barcode" inputmode="numeric" placeholder="${L('Ex. 3017620422003')}"></div><button class="btn btn-primary btn-wide" data-barcode>${L('Rechercher →')}</button></div>`;
-  if (tab === 'manual') return `<div class="field"><label>${L('Rechercher un aliment')}</label><input id="manual-search" placeholder="${L('Ex. poulet, riz, skyr…')}"></div><div id="manual-list" class="manual-list">${manualResults('')}</div>`;
+  if (tab === 'manual') return `<div class="field"><label>${L('Rechercher un aliment')}</label><input id="manual-search" placeholder="${L('Ex. poulet, riz, skyr…')}" autocomplete="off" enterkeyhint="search"></div><div id="manual-list" class="manual-list">${manualResults('')}</div>`;
   if (tab === 'favorites') return state.favorites.length ? `<div class="manual-list">${state.favorites.map((fav, i) => `<button class="manual-item" data-fav="${i}"><span><b>${esc(fav.title)}</b><small>${fmt(fav.total?.kcal)} kcal</small></span><b>→</b></button>`).join('')}</div>` : `<div class="empty">${L('Aucun favori. Enregistrez un repas analysé comme favori pour le retrouver ici.')}</div>`;
   return '';
 }
 
+// Every food the app knows (quick list + recipe library + everyday staples), searchable in any language.
+const EXTRA_FOODS = [
+  ['Picanha grillée',289,26,0,20,0], ['Filet de bœuf grillé',220,32,0,9,0], ['Bœuf haché cuit',212,27,0,11,0], ['Bœuf braisé',215,27,0,11,0], ['Rumsteck grillé',241,32,0,11.6,0], ['Bœuf maigre grillé',219,36,0,7.3,0], ['Côte de bœuf cuite',373,28,0,28,0], ['Foie de bœuf cuit',225,30,4.2,9,0], ['Steak grillé',250,30,0,14,0],
+  ['Poulet bouilli',163,31.5,0,3.2,0], ['Poulet rôti avec peau',239,27,0,14,0], ['Poulet frit',249,25,5,14,0.2], ['Cuisse de poulet rôtie',215,26,0,12,0], ['Poulet effiloché',170,30,0,5,0], ['Poulet pané',270,17,16,15,0.8], ['Blanc de poulet poêlé',175,32,0,4.5,0],
+  ['Côte de porc grillée',230,27,0,13,0], ['Saucisse grillée',296,23,0,21,0], ['Bacon cuit',541,37,1.4,42,0], ['Jambon cru',250,26,0,16,0], ['Agneau grillé',294,25,0,21,0], ['Dinde rôtie',135,25,0,3,0],
+  ['Saumon grillé',206,22,0,12,0], ['Tilapia grillé',128,26,0,2.7,0], ['Thon grillé',184,30,0,6,0], ['Poisson pané',230,13,18,12,1],
+  ['Œuf dur',155,13,1.1,11,0], ['Œuf au plat',196,14,1,15,0], ['Omelette',154,11,0.6,12,0], ['Œufs brouillés',149,10,1.6,11,0],
+  ['Haricots cuits (feijão)',76,4.8,13.6,0.5,8.5], ['Riz blanc cuit',128,2.5,28,0.2,1.6], ['Farofa',406,2.1,80,9.1,7.8], ['Pain français',300,8,58.6,3.1,2.3], ['Couscous de maïs',113,2.2,25,0.7,2.1], ['Crêpe de tapioca',240,0.1,59,0.1,0.5], ['Pain au fromage',363,5.1,34,24.6,0.6], ['Purée de pommes de terre',88,1.9,15,2.5,1.5], ['Frites',312,3.4,41,15,3.8], ['Pain de mie',265,9,49,3.2,2.7],
+  ['Fromage minas frais',264,17.4,3.2,20.2,0], ['Requeijão',257,9.6,2.4,23.4,0], ['Beurre',717,0.9,0.1,81,0], ['Lait entier',61,3.2,4.8,3.3,0], ['Café noir',2,0.1,0,0,0], ['Jus d’orange',45,0.7,10.4,0.2,0.2], ['Sucre',387,0,100,0,0],
+  ['Pizza margherita',250,11,30,9,2], ['Hamburger',254,13,30,9,1.5], ['Lasagne',135,8,12,6,1], ['Spaghetti bolognaise',150,7,20,4.5,1.5],
+  ['Pastèque',30,0.6,7.6,0.2,0.4], ['Raisin',69,0.7,18,0.2,0.9], ['Melon',34,0.8,8.2,0.2,0.9],
+];
+const FOOD_INDEX = (() => {
+  const seen = new Set(); const out = [];
+  const add = (f) => { if (!f?.[0] || seen.has(f[0])) return; seen.add(f[0]); out.push(f); };
+  localFood.forEach(add); EXTRA_FOODS.forEach(add);
+  Object.entries(INGREDIENTS).forEach(([name, v]) => add([name, v[0], v[1], v[2], v[3], v[4] || 0, v[6] || '']));
+  return out;
+})();
+const foodNorm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, ' ').trim();
+// Generic words in the 14 languages lead to the whole family (search "carne" and see every meat, "frango" every chicken).
+const FOOD_FAMILIES = [
+  [/^(carne|carnes|meat|viande|fleisch|carne|vlees|mieso|et|肉|고기|لحم|daging)/, /(bœuf|boeuf|poulet|porc|dinde|agneau|steak|saucisse|jambon|bacon|foie|picanha|rumsteck|cote de)/i],
+  [/^(boi|bife|beef|bœuf|boeuf|res|ternera|rind|manzo|rund|wolowin|dana|牛|소고기|بقر|sapi)/, /(bœuf|boeuf|picanha|rumsteck|steak|cote de bœuf|foie de bœuf)/i],
+  [/^(frango|galinha|chicken|poulet|pollo|hahnchen|huhn|kip|kurczak|tavuk|鶏|鸡|닭|دجاج|ayam)/, /poulet/i],
+  [/^(porco|pork|porc|cerdo|schwein|maiale|varken|wieprz|domuz|豚|猪|돼지|خنزير|babi)/, /(porc|bacon|jambon|saucisse)/i],
+  [/^(peixe|fish|poisson|pescado|pez|fisch|pesce|vis|ryba|balik|魚|鱼|생선|سمك|ikan)/, /(saumon|tilapia|thon|cabillaud|sardine|hareng|maquereau|truite|poisson)/i],
+  [/^(ovo|ovos|egg|oeuf|huevo|ei|uovo|jajk|yumurta|卵|蛋|계란|달걀|بيض|telur)/, /(^|\s|d’)(œuf|oeuf)|omelette/i],
+  [/^(fruta|fruit|fruta|obst|frutta|fruit|owoc|meyve|果物|水果|과일|فاكهة|buah)/, null, 'F'],
+  [/^(legume|verdura|vegetable|legume|gemuse|verdur|groente|warzyw|sebze|野菜|蔬菜|채소|خضار|sayur)/, null, 'L'],
+];
+function foodMatches(food, q) {
+  if (!q) return true;
+  const hay = foodNorm(`${food[0]} ${L(food[0])}`);
+  if (q.split(/\s+/).every((w) => hay.includes(w))) return true;
+  return FOOD_FAMILIES.some(([word, name, aisle]) => word.test(q) && (name ? name.test(food[0]) : INGREDIENTS[food[0]]?.[5] === aisle));
+}
+// With an empty search: what this person eats most, then what fits the time of day.
+function foodSuggestions() {
+  const count = {};
+  (state.meals || []).slice(-120).forEach((m) => (m.foods || []).forEach((f) => { const hit = FOOD_INDEX.find((x) => x[0] === f.name || L(x[0]) === f.name); if (hit) count[hit[0]] = (count[hit[0]] || 0) + 1; }));
+  const mine = Object.entries(count).sort((a, b) => b[1] - a[1]).map(([n]) => FOOD_INDEX.find((x) => x[0] === n));
+  const h = new Date().getHours();
+  const byTime = h < 11 ? ['Œuf', 'Pain français', 'Crêpe de tapioca', 'Couscous de maïs', 'Banane', 'Yaourt grec', 'Café noir', 'Fromage minas frais', 'Flocons d’avoine', 'Pain complet']
+    : h < 16 ? ['Riz blanc cuit', 'Haricots cuits (feijão)', 'Poulet grillé', 'Picanha grillée', 'Bœuf haché cuit', 'Salade', 'Œuf au plat', 'Farofa', 'Saumon grillé', 'Patate douce cuite']
+      : h < 19 ? ['Yaourt grec', 'Banane', 'Pomme', 'Pain au fromage', 'Amandes', 'Skyr', 'Fruits rouges', 'Café noir']
+        : ['Poulet grillé', 'Omelette', 'Salade', 'Soupe', 'Riz blanc cuit', 'Saumon grillé', 'Brocoli', 'Poulet effiloché', 'Tilapia grillé'];
+  const pick = []; const seen = new Set();
+  [...mine, ...byTime.map((n) => FOOD_INDEX.find((x) => x[0] === n))].forEach((f) => { if (f && !seen.has(f[0])) { seen.add(f[0]); pick.push(f); } });
+  return pick.slice(0, 14);
+}
 function manualResults(query = '') {
-  const q = query.trim().toLowerCase();
-  return localFood.filter((x) => !q || `${x[0]} ${L(x[0])}`.toLowerCase().includes(q)).slice(0, 12).map((food) => `<button class="manual-item" data-manual='${esc(JSON.stringify([L(food[0]), ...food.slice(1)]))}'><span><b>${esc(L(food[0]))}</b><small>${food[1]} kcal / 100 g</small></span><b>＋</b></button>`).join('');
+  const q = foodNorm(query);
+  const list = q ? FOOD_INDEX.filter((x) => foodMatches(x, q)).slice(0, 40) : foodSuggestions();
+  const head = q ? '' : `<p class="manual-hint">${icon('star')} ${L('Suggestions pour vous maintenant')}</p>`;
+  if (!list.length) return `<p class="manual-hint">${L('Aucun aliment trouvé. Essayez un autre mot ou décrivez le repas dans « Texte ».')}</p>`;
+  return head + list.map((food) => `<button class="manual-item" data-manual='${esc(JSON.stringify([L(food[0]), ...food.slice(1, 6)]))}'><span><b>${esc(L(food[0]))}</b><small>${fmt(food[1])} kcal · P ${fmt(food[2])} g · G ${fmt(food[3])} g · L ${fmt(food[4])} g / 100 g</small></span><b>＋</b></button>`).join('');
 }
 
 function foodEdit(food, index) {
