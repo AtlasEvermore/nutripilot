@@ -2977,3 +2977,14 @@ html.cosmos .kit-row::after{content:"";position:absolute;top:0;bottom:0;left:-40
 @keyframes hxSweep{0%,60%{transform:translateX(0)}100%{transform:translateX(420%)}}
 @media (prefers-reduced-motion:reduce){html.cosmos :is(.constellation-stage,.kit-row)::before,html.cosmos :is(.constellation-stage,.kit-row)::after,html.cosmos .constellation-lines path,html.cosmos .constellation-node>span{animation:none!important}}
 html.aura-lite :is(.constellation-stage,.kit-row)::before,html.aura-lite :is(.constellation-stage,.kit-row)::after,html.aura-lite .constellation-lines path:not(.on),html.aura-lite .constellation-node>span{animation:none!important}
+/* Health OS 18.2.2 — nothing is ever static: empty slots, meal markers and pending images stay alive. */
+html.cosmos .empty{overflow:hidden;isolation:isolate}
+html.cosmos .empty::before{background:radial-gradient(circle,var(--hx-lime) 0 3px,transparent 4px),conic-gradient(from 0deg,rgba(200,255,61,.0),rgba(200,255,61,.55),rgba(34,225,255,.55),rgba(155,107,255,.45),rgba(200,255,61,.0));-webkit-mask:radial-gradient(circle,#000 0 5px,transparent 6px 14px,#000 15px);mask:radial-gradient(circle,#000 0 5px,transparent 6px 14px,#000 15px);animation:hxRot 3.6s linear infinite,hxGlowOrb 2.8s ease-in-out infinite;will-change:transform}
+@keyframes hxGlowOrb{50%{box-shadow:0 0 28px rgba(200,255,61,.55),inset 0 0 12px rgba(34,225,255,.35)}}
+html.cosmos .empty::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(34,225,255,.09) 50%,transparent 65%);background-size:250% 100%;animation:hxShimmer 4.5s ease-in-out infinite}
+@keyframes hxShimmer{0%{background-position:120% 0}100%{background-position:-120% 0}}
+html.cosmos .meal-ico{background:linear-gradient(135deg,rgba(200,255,61,.22),rgba(34,225,255,.22),rgba(155,107,255,.24))!important;background-size:220% 220%!important;animation:hxHue 6s ease-in-out infinite;box-shadow:0 0 16px -6px rgba(34,225,255,.7),inset 0 0 0 1px rgba(255,255,255,.12)}
+@keyframes hxHue{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+html.cosmos .module-art:not(:has(img[src])),html.cosmos .module-art img:not([src]){background:linear-gradient(110deg,rgba(255,255,255,.04) 30%,rgba(34,225,255,.12) 50%,rgba(255,255,255,.04) 70%);background-size:250% 100%;animation:hxShimmer 2.2s linear infinite}
+@media (prefers-reduced-motion:reduce){html.cosmos .empty::before,html.cosmos .empty::after,html.cosmos .meal-ico,html.cosmos .module-art{animation:none!important}}
+html.aura-lite .empty::before,html.aura-lite .empty::after,html.aura-lite .meal-ico{animation:none!important}
