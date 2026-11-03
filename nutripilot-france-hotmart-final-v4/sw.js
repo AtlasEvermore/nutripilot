@@ -1,4 +1,4 @@
-const CACHE = 'nutripilot-v51-20261030-health-os';
+const CACHE = 'nutripilot-v52-20261103-food-atlas';
 const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n-launch.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {

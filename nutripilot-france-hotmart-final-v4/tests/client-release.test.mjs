@@ -126,7 +126,7 @@ function discoveryContext() {
   const start = source.indexOf('const MODULES = [');
   vm.runInContext(source.slice(start, source.indexOf('\n];', start) + 3) + '\nthis.MODULES = MODULES;', ctx);
   ctx.APP_SHORT = Object.fromEntries(ctx.MODULES.map(m => [m.id, m.short || m.name]));
-  for (const name of ['moduleArtwork', 'modCard', 'modulePreview', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'discoveryCategory', 'constellationModule', 'constellationDetail', 'constellationMap', 'discoveryHero', 'discoveryFilters', 'appIcon', 'modulesScreen']) load(ctx, name);
+  for (const name of ['moduleArtwork', 'modCard', 'modulePreview', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'discoveryCategory', 'constellationModule', 'atlasLinksOf', 'constellationDetail', 'constellationMap', 'discoveryHero', 'ecosystemPromise', 'discoveryFilters', 'appIcon', 'modulesScreen']) load(ctx, name);
   return ctx;
 }
 
