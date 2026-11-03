@@ -399,3 +399,18 @@ test('Drawer stats keep full height and Training preview opens live animated dem
   await expect(page.locator('.modal-wrap .ex-demo .move-svg')).toBeVisible();
   expect(await page.evaluate(() => window.__npErrors || [])).toEqual([]);
 });
+
+test('In the iPhone app Plans shows only the real store subscription, with store prices and no builder', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
+    window.NutriPilotNative = { currency: 'BRL', purchase: async () => ({}), restore: async () => ({}), trialDays: 0,
+      products: { np_complete_monthly: { price: 49.9 }, np_complete_annual: { price: 299.9 } } };
+  });
+  await seed(page); await page.goto('/#plans');
+  await expect(page.locator('.holo-plan')).toBeVisible();
+  await expect(page.locator('.plans-tabs, [data-plans-tab], [data-build-mod], .price-table')).toHaveCount(0);
+  await expect(page.locator('.hp-price')).toContainText('299,90');
+  await expect(page.locator('[data-restore]').first()).toBeVisible();
+  await expect(page.locator('.legal-links a[href^="/terms"]')).toHaveCount(1);
+  expect(await page.evaluate(() => window.__npErrors || [])).toEqual([]);
+});

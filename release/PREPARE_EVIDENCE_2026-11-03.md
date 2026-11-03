@@ -19,3 +19,6 @@ Owner authorization for this round (chat, 2026-11-03 08:16 BRT): "autorizo tudo,
 
 ## PR #47 (same day)
 Candidate application tree `7ffd35d483ecc80d9f8355a7f45932c214baf3f7`: side-menu stats no longer clipped, neon movement figures on the space theme, live animated demo reel in the Training preview. Only app.js, styles.css, sw.js, i18n.js, i18n/<lang>.js and tests changed; backend, ops and native unchanged, so the 11:30Z backup, 11:53Z restore/rollback drill, hosting, AI, credentials, e-mail and iOS artifact checks above still apply to this tree.
+
+## PR #48 (same day)
+Candidate application tree `592171f3e79b8c9fc4aeed3303fb82f774f0c4d5`: in the native apps the Plans screen shows only the store's NutriPilot Complete subscription (monthly/annual) with store prices; web combinations, builder and reference-price table remain web-only. Backend, ops and native unchanged.
