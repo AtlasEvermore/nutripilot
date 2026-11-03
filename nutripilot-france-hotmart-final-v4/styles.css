@@ -3026,3 +3026,36 @@ html.cosmos .constellation-lines path.link{stroke:#22e1ff;stroke-width:.38;strok
 @media (min-width:700px){.eco-pillars{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (prefers-reduced-motion:reduce){.eco-promise::before{animation:none}}
 html.aura-lite .eco-promise::before{animation:none}
+
+/* 18.3 · Drawer items keep their natural height (the drawer itself scrolls). */
+.drawer>*{flex-shrink:0}
+/* 18.3 · Training preview: live animated demonstration reel */
+.demo-reel{margin:14px 0 4px;border-radius:20px;padding:12px 0 12px 12px;background:linear-gradient(160deg,rgba(124,92,255,.16),rgba(0,229,255,.08) 55%,rgba(200,255,62,.08));border:1px solid rgba(0,229,255,.28);box-shadow:0 0 0 1px rgba(124,92,255,.12) inset,0 18px 40px -22px rgba(0,229,255,.5)}
+.demo-reel-head{display:flex;justify-content:space-between;align-items:center;padding-right:12px;margin-bottom:10px}
+.demo-live{display:inline-flex;align-items:center;gap:7px;font:700 11px/1 var(--mono,ui-monospace,monospace);letter-spacing:.14em;text-transform:uppercase;color:#bff8ff}
+.demo-live i{width:8px;height:8px;border-radius:50%;background:#ff3d71;box-shadow:0 0 10px #ff3d71;animation:demoPulse 1.4s ease-in-out infinite}
+.demo-reel-head small{font-size:11px;color:rgba(255,255,255,.6)}
+.demo-reel-row{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 12px 4px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.demo-reel-row::-webkit-scrollbar{display:none}
+.demo-tile{flex:0 0 112px;scroll-snap-align:start;display:grid;gap:6px;justify-items:center;padding:10px 8px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:radial-gradient(120% 90% at 50% 0%,rgba(0,229,255,.18),rgba(8,10,30,.85) 70%);color:#fff;position:relative;overflow:hidden;animation:demoIn .5s calc(var(--i)*70ms) both}
+.demo-tile::after{content:"";position:absolute;left:0;right:0;top:-40%;height:40%;background:linear-gradient(180deg,transparent,rgba(0,229,255,.22),transparent);animation:demoScan 2.8s calc(var(--i)*.35s) linear infinite;pointer-events:none}
+.demo-tile .ex-anim{width:84px;height:84px;display:grid;place-items:center;filter:drop-shadow(0 0 8px rgba(0,229,255,.45))}
+.demo-tile .ex-anim svg{width:100%;height:100%}
+.demo-tile b{font-size:11.5px;line-height:1.2;text-align:center;font-weight:650}
+.demo-tile:active{transform:scale(.97)}
+@keyframes demoPulse{50%{opacity:.35;transform:scale(.8)}}
+@keyframes demoScan{to{top:110%}}
+@keyframes demoIn{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){.demo-live i,.demo-tile::after{animation:none}.demo-tile{animation:none}}
+html.aura-lite .demo-tile::after{animation:none;display:none}
+/* 18.3 · Neon movement figures: the animated coach must glow on the space theme everywhere */
+html.cosmos .ex-anim,html.cosmos .ex-demo{background:radial-gradient(120% 100% at 50% 0%,rgba(0,229,255,.16),rgba(124,92,255,.10) 45%,rgba(6,8,24,.92) 80%)!important;border:1px solid rgba(0,229,255,.22);position:relative}
+html.cosmos .ex-demo{border-radius:20px;overflow:hidden}
+html.cosmos .ex-demo::before,html.cosmos .demo-tile .ex-anim::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,229,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.07) 1px,transparent 1px);background-size:14px 14px;-webkit-mask-image:linear-gradient(180deg,#000 30%,transparent);mask-image:linear-gradient(180deg,#000 30%,transparent)}
+html.cosmos .move-svg .mv-body{stroke:#eafcff;filter:drop-shadow(0 0 3px rgba(0,229,255,.9))}
+html.cosmos .move-svg .mv-far{stroke:rgba(0,229,255,.55)}
+html.cosmos .move-svg .mv-head{fill:#c8ff3e;filter:drop-shadow(0 0 4px rgba(200,255,62,.9))}
+html.cosmos .move-svg .mv-weight{fill:#a99bff;stroke:none;filter:drop-shadow(0 0 4px rgba(169,155,255,.9))}
+html.cosmos .move-svg .mv-cable{stroke:rgba(169,155,255,.7)}
+html.cosmos .move-svg *:not(.mv-body):not(.mv-far):not(.mv-head):not(.mv-weight):not(.mv-cable):not(animate){stroke:rgba(0,229,255,.35)}
+html.aura-lite .move-svg .mv-body,html.aura-lite .move-svg .mv-head,html.aura-lite .move-svg .mv-weight{filter:none}

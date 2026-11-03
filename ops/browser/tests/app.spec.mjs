@@ -381,3 +381,21 @@ test('Asymmetric iOS safe regions keep navigation and modal controls reachable a
   const opener=page.locator('.recipe-grid [data-recipe-id]').first();await page.locator('#recipe-search').focus();await opener.click();const close=page.locator('.modal-wrap .sheet-head [data-close]').first();await expect(close).toBeInViewport();const b=await close.boundingBox();expect(b.x+b.width).toBeLessThanOrEqual(viewport.width-insets.right+1);expect(b.y).toBeGreaterThanOrEqual(insets.top-1);await page.keyboard.press('Escape');await expect(opener).toBeFocused();
  }
 });
+
+test('Drawer stats keep full height and Training preview opens live animated demos', async ({ page }) => {
+  await seed(page); await page.goto('/#app');
+  await page.locator('[data-drawer]').first().click();
+  const stats = page.locator('.drawer-stats');
+  await expect(stats).toBeVisible();
+  const clip = await stats.evaluate(el => el.scrollHeight - el.clientHeight);
+  expect(clip, 'drawer stats are not clipped').toBeLessThanOrEqual(2);
+  await page.keyboard.press('Escape');
+  await page.goto('/#training');
+  const tiles = page.locator('.demo-tile');
+  await expect(tiles.first()).toBeVisible();
+  expect(await tiles.count()).toBeGreaterThanOrEqual(6);
+  await expect(page.locator('.demo-tile .move-svg').first()).toBeVisible();
+  await tiles.first().click();
+  await expect(page.locator('.modal-wrap .ex-demo .move-svg')).toBeVisible();
+  expect(await page.evaluate(() => window.__npErrors || [])).toEqual([]);
+});

@@ -121,12 +121,13 @@ function discoveryContext() {
     esc: String, icon: () => '', modTitle: m => m.name, MV: () => ({ r: 300, c: 20, e: 100, p: 10 }),
     freeScansLeft: () => 0, appHeader: () => '', bottom: () => '', ownedModules: () => [], totals: () => ({ kcal: 0 }), memberCard: () => '',
     moduleById: id => ctx.MODULES.find(m => m.id === id),
+    EXERCISES: { squat: { name: 'Squat' }, pushup: { name: 'Pompes' } }, exAnim: id => `<span class="ex-anim">${id}</span>`, exName: id => ctx.EXERCISES[id]?.name || id,
     Billing: { plans() { throw new Error('Discovery must not query the storefront'); }, trialDays() { throw new Error('Trials belong in Plans'); } },
   });
   const start = source.indexOf('const MODULES = [');
   vm.runInContext(source.slice(start, source.indexOf('\n];', start) + 3) + '\nthis.MODULES = MODULES;', ctx);
   ctx.APP_SHORT = Object.fromEntries(ctx.MODULES.map(m => [m.id, m.short || m.name]));
-  for (const name of ['moduleArtwork', 'modCard', 'modulePreview', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'discoveryCategory', 'constellationModule', 'atlasLinksOf', 'constellationDetail', 'constellationMap', 'discoveryHero', 'ecosystemPromise', 'discoveryFilters', 'appIcon', 'modulesScreen']) load(ctx, name);
+  for (const name of ['moduleArtwork', 'modCard', 'modulePreview', 'moduleLockedScreen', 'revoHero', 'modsForMe', 'discoveryCategory', 'constellationModule', 'atlasLinksOf', 'demoReelIds', 'trainingDemoReel', 'constellationDetail', 'constellationMap', 'discoveryHero', 'ecosystemPromise', 'discoveryFilters', 'appIcon', 'modulesScreen']) load(ctx, name);
   return ctx;
 }
 

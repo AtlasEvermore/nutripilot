@@ -16,3 +16,6 @@ Owner authorization for this round (chat, 2026-11-03 08:16 BRT): "autorizo tudo,
 - Reviewer notes rewritten with the six requested items (purpose and audience, access steps, external services, regional behaviour, regulated/third-party material, recording statement). Saved 2026-11-03 via App Store Connect (HTTP 200).
 - Subscriptions np_complete_monthly and np_complete_annual are complete (localizations en-US/pt-BR, 175 territory prices, review screenshots, review notes) but were not attached to the first submission; they will be added with the resubmission.
 - Pending owner: screen recording on a physical iPhone.
+
+## PR #47 (same day)
+Candidate application tree `7ffd35d483ecc80d9f8355a7f45932c214baf3f7`: side-menu stats no longer clipped, neon movement figures on the space theme, live animated demo reel in the Training preview. Only app.js, styles.css, sw.js, i18n.js, i18n/<lang>.js and tests changed; backend, ops and native unchanged, so the 11:30Z backup, 11:53Z restore/rollback drill, hosting, AI, credentials, e-mail and iOS artifact checks above still apply to this tree.

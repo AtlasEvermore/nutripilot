@@ -3207,12 +3207,20 @@ function modulePreview(m) {
     <div class="story-visual">${moduleArtwork(m)}<div class="story-coordinate" aria-hidden="true">NUTRIPILOT / ${String(MODULES.indexOf(m) + 1).padStart(2,'0')}</div><span class="story-identity">${icon(m.icon)}${L(m.name)}</span></div>
     <div class="story-copy"><span class="orbit-eyebrow">${L('Aperçu')} / ${L('Votre parcours')}</span><h1 id="preview-title">${modTitle(m)}</h1><p>${L(m.sub, MV())}</p>
       <ol class="story-features">${m.features.map((f,i) => `<li><span>${String(i+1).padStart(2,'0')}</span><b>${L(f, MV())}</b></li>`).join('')}</ol>
+      ${m.id === 'training' ? trainingDemoReel() : ''}
       ${['coach','scanner'].includes(m.id) && !config.ai ? `<p class="story-availability">${icon('help')}${L('Analyses momentanément en pause')}</p>` : ''}
       <div class="story-actions"><button class="btn btn-lime" data-module-buy="${m.id}">${L('Voir les formules')}${icon('chevron')}</button><button class="discovery-secondary" data-go="modules">${L('Toutes mes apps')}</button></div>
     </div>
   </article>`;
 }
 
+// Live proof in the Training preview: real animated demonstrations anyone can open.
+function demoReelIds() { return ['squat', 'pushup', 'lunge', 'plank', 'rdl', 'row', 'hip-thrust', 'mountain'].filter((id) => EXERCISES[id]); }
+function trainingDemoReel() {
+  const ids = demoReelIds();
+  return `<div class="demo-reel" aria-label="${esc(L('Démonstration animée'))}"><div class="demo-reel-head"><span class="demo-live"><i></i>${L('Démonstration animée')}</span><small>${L('Touchez un exercice')}</small></div>
+    <div class="demo-reel-row">${ids.map((id, i) => `<button class="demo-tile" data-demo-ex="${esc(id)}" style="--i:${i}">${exAnim(id)}<b>${esc(L(exName(id)))}</b></button>`).join('')}</div></div>`;
+}
 function appIcon(m, owned) {
   const lock = !owned && !m.free;
   return `<button class="app-icon discovery-card ${m.tone} ${lock ? 'locked' : ''}" data-go="${m.route}" aria-label="${esc(L(m.name))}${lock ? ` · ${esc(L('Aperçu'))}` : ''}">
@@ -8135,7 +8143,8 @@ function renderModal(focusTrigger = document.activeElement) {
   previous?.remove();
   if (!modal) return;
   // Recipes, exercises and lessons opened from anywhere stay locked outside the free minutes.
-  if (!fullAccess() && ['recipe', 'exercise', 'guide', 'lesson'].includes(modal.type) && !modal.recipe?.custom) modal = { type: 'trial' };
+  const freeDemo = modal.type === 'exercise' && modal.demo && demoReelIds().includes(modal.id);
+  if (!fullAccess() && !freeDemo && ['recipe', 'exercise', 'guide', 'lesson'].includes(modal.type) && !modal.recipe?.custom) modal = { type: 'trial' };
   if (trialActive()) { if (modal.type === 'recipe') trialFound('recipe'); if (['session', 'exercise'].includes(modal.type)) trialFound('workout'); }
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
@@ -9348,6 +9357,7 @@ function bind() {
     if (button.dataset.planAddRecipe) { if (!fullAccess()) return nav('plans'); modal = { type: 'plan-pick', recipeId: button.dataset.planAddRecipe }; return renderModal(); }
     if (button.dataset.trainFocus) { trainFocus = button.dataset.trainFocus; return render(); }
     if (button.dataset.libGroup) { libGroup = button.dataset.libGroup; return render(); }
+    if (button.dataset.demoEx && EXERCISES[button.dataset.demoEx]) { modal = { type: 'exercise', id: button.dataset.demoEx, demo: true }; return renderModal(); }
     if (button.dataset.exercise) { modal = { type: 'exercise', id: button.dataset.exercise }; return renderModal(); }
     if (button.dataset.trainDay) {
       const wd = Number(button.dataset.trainDay);
