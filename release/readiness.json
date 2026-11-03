@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "3a7f9ee058903781500347e22d0c13080fcaea4d",
+  "applicationTree": "615f507c4b43d38475ae32d366cd67755572ebe2",
   "channels": [
     "ios"
   ],
@@ -9,10 +9,10 @@
     "prepare": {
       "hosting_access": {
         "status": "verified",
-        "verifiedAt": "2026-10-30T02:45:50.656524Z",
+        "verifiedAt": "2026-11-03T11:43:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-10-30.md: authenticated Railway billing shows Active Hobby plan with card attached; production /api/health HTTP 200 V12.0.0 persistence writable on /data"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: Railway workspace HOBBY, customer ACTIVE; deployment a7ff1353 SUCCESS on f3e6113; /api/health HTTP 200 18.1.0, files persistence writable on /data"
         ]
       },
       "independent_backup": {
@@ -30,23 +30,24 @@
         "evidence": [
           "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: final focus-correction tree c1b99fd4 restored the actual 11:55Z snapshot in isolation; five hashes preserved; smoke 18.1.0 issues empty; no newer backup time claimed.",
           "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
-          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical"
+          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical",
+          "release/PREPARE_EVIDENCE_2026-11-03.md: candidate tree 615f507c changes only app.js, styles.css, sw.js and translations; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "new_credentials_stored": {
         "status": "verified",
-        "verifiedAt": "2026-10-24T03:37:05Z",
-        "verifiedBy": "deployment-agent",
+        "verifiedAt": "2026-11-03T11:43:00Z",
+        "verifiedBy": "development-agent",
         "evidence": [
-          "private-ops:Railway acknowledgements for new OpenAI and Resend variables; provider scopes reviewed"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: Railway variable names for OpenAI, Resend, RevenueCat and access secret present (values not read); live Resend delivery and active OpenAI billing confirm they are in use"
         ]
       },
       "ai_billing_limits": {
         "status": "verified",
-        "verifiedAt": "2026-10-30T02:45:50.656524Z",
+        "verifiedAt": "2026-11-03T11:43:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-10-30.md: OpenAI prepaid balance US$5.00 with auto-reload OFF (hard stop at zero); organization spend limit US$100 with 80%/100% alerts; owner restricted project to gpt-5-mini; staged OPENAI_MODEL=gpt-5-mini, AI subscribers-only, per-user daily limit 10"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: OpenAI prepaid balance US$5.00 with auto-reload OFF; Railway OPENAI_MODEL=gpt-5-mini, AI subscribers only, per-user daily 10, global 300/day and 5000/month"
         ]
       },
       "email_delivery": {
@@ -66,7 +67,8 @@
         "evidence": [
           "release/LEGAL_CONFIGURATION_CHECK_2026-10-27.json: final focus-correction tree c1b99fd4 legal pages HTTP 200 with approved private fields; launch public-domain check still pending.",
           "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
-          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical"
+          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical",
+          "release/PREPARE_EVIDENCE_2026-11-03.md: candidate tree 615f507c changes only app.js, styles.css, sw.js and translations; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "rollback_migration": {
@@ -112,10 +114,10 @@
       },
       "ios_artifact": {
         "status": "verified",
-        "verifiedAt": "2026-10-30T12:34:11.038942Z",
+        "verifiedAt": "2026-11-03T11:43:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/IOS_ARTIFACT_2026-10-30.json: run 41053797571 on main d897064 (native tree 680daea3), build 401; artifact digest f11b2358… matched; independent check of IPA 2eb24f18…: bundle, version, App Store profile without devices, get-task-allow false, team, certificate, code signature; uploaded to App Store Connect by run 41055467534"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: ASC version 18.1.0 build 401 VALID, not expired; native tree 680daea3 unchanged since release/IOS_ARTIFACT_2026-10-30.json (IPA 2eb24f18…)"
         ]
       },
       "android_configuration": {
