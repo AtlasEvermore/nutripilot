@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "615f507c4b43d38475ae32d366cd67755572ebe2",
+  "applicationTree": "7ffd35d483ecc80d9f8355a7f45932c214baf3f7",
   "channels": [
     "ios"
   ],
@@ -12,7 +12,8 @@
         "verifiedAt": "2026-11-03T11:43:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-03.md: Railway workspace HOBBY, customer ACTIVE; deployment a7ff1353 SUCCESS on f3e6113; /api/health HTTP 200 18.1.0, files persistence writable on /data"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: Railway workspace HOBBY, customer ACTIVE; deployment a7ff1353 SUCCESS on f3e6113; /api/health HTTP 200 18.1.0, files persistence writable on /data",
+          "release/PREPARE_EVIDENCE_2026-11-03.md (PR #47): tree 7ffd35d4 changes only app.js, styles.css, sw.js, i18n and tests versus 615f507c; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "independent_backup": {
@@ -20,7 +21,8 @@
         "verifiedAt": "2026-11-03T11:30:07.607Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-03.md: owner-authorized fresh backup 2026-11-03T11:30:07.607Z with ops/backup-cli.mjs (keygen + create + verify) on the live 18.1.0 service; five files; 6035 encrypted bytes; SHA256 9ead86e1…fa43 matched on the owner computer outside Railway; recovery key saved by the owner as a separate file and proven to open the backup (release/RESTORE_DRILL_2026-11-03.json)"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: owner-authorized fresh backup 2026-11-03T11:30:07.607Z with ops/backup-cli.mjs (keygen + create + verify) on the live 18.1.0 service; five files; 6035 encrypted bytes; SHA256 9ead86e1…fa43 matched on the owner computer outside Railway; recovery key saved by the owner as a separate file and proven to open the backup (release/RESTORE_DRILL_2026-11-03.json)",
+          "release/PREPARE_EVIDENCE_2026-11-03.md (PR #47): tree 7ffd35d4 changes only app.js, styles.css, sw.js, i18n and tests versus 615f507c; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "restore_drill": {
@@ -28,7 +30,8 @@
         "verifiedAt": "2026-11-03T11:53:10.232Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/RESTORE_DRILL_2026-11-03.json: candidate tree 615f507c restored the 11:30Z snapshot in isolation with the owner key; five files; smoke 18.1.0 issues empty; original restored files byte-identical afterwards; production not accessed"
+          "release/RESTORE_DRILL_2026-11-03.json: candidate tree 615f507c restored the 11:30Z snapshot in isolation with the owner key; five files; smoke 18.1.0 issues empty; original restored files byte-identical afterwards; production not accessed",
+          "release/PREPARE_EVIDENCE_2026-11-03.md (PR #47): tree 7ffd35d4 changes only app.js, styles.css, sw.js, i18n and tests versus 615f507c; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "new_credentials_stored": {
@@ -36,7 +39,8 @@
         "verifiedAt": "2026-11-03T11:43:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-03.md: Railway variable names for OpenAI, Resend, RevenueCat and access secret present (values not read); live Resend delivery and active OpenAI billing confirm they are in use"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: Railway variable names for OpenAI, Resend, RevenueCat and access secret present (values not read); live Resend delivery and active OpenAI billing confirm they are in use",
+          "release/PREPARE_EVIDENCE_2026-11-03.md (PR #47): tree 7ffd35d4 changes only app.js, styles.css, sw.js, i18n and tests versus 615f507c; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "ai_billing_limits": {
@@ -44,7 +48,8 @@
         "verifiedAt": "2026-11-03T11:43:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-03.md: OpenAI prepaid balance US$5.00 with auto-reload OFF; Railway OPENAI_MODEL=gpt-5-mini, AI subscribers only, per-user daily 10, global 300/day and 5000/month"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: OpenAI prepaid balance US$5.00 with auto-reload OFF; Railway OPENAI_MODEL=gpt-5-mini, AI subscribers only, per-user daily 10, global 300/day and 5000/month",
+          "release/PREPARE_EVIDENCE_2026-11-03.md (PR #47): tree 7ffd35d4 changes only app.js, styles.css, sw.js, i18n and tests versus 615f507c; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "email_delivery": {
@@ -52,7 +57,8 @@
         "verifiedAt": "2026-11-03T11:44:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-03.md: owner-authorized real access e-mail to the owner address sent 11:36:45Z (HTTP 200, mailed=true); owner confirmed receipt at 11:44Z; code not recorded"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: owner-authorized real access e-mail to the owner address sent 11:36:45Z (HTTP 200, mailed=true); owner confirmed receipt at 11:44Z; code not recorded",
+          "release/PREPARE_EVIDENCE_2026-11-03.md (PR #47): tree 7ffd35d4 changes only app.js, styles.css, sw.js, i18n and tests versus 615f507c; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "legal_configuration": {
@@ -63,7 +69,8 @@
           "release/LEGAL_CONFIGURATION_CHECK_2026-10-27.json: final focus-correction tree c1b99fd4 legal pages HTTP 200 with approved private fields; launch public-domain check still pending.",
           "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
           "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical",
-          "release/PREPARE_EVIDENCE_2026-11-03.md: candidate tree 615f507c changes only app.js, styles.css, sw.js and translations; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: candidate tree 615f507c changes only app.js, styles.css, sw.js and translations; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies",
+          "release/PREPARE_EVIDENCE_2026-11-03.md (PR #47): tree 7ffd35d4 changes only app.js, styles.css, sw.js, i18n and tests versus 615f507c; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "rollback_migration": {
@@ -71,15 +78,16 @@
         "verifiedAt": "2026-11-03T11:53:10.232Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/RESTORE_DRILL_2026-11-03.json: after the candidate ran on the restored copy, the current production commit f3e6113 booted on the same copy with smoke issues empty; no storage format or migration change (server.mjs, auth.mjs, ops/ byte-identical); rollback = redeploy deployment a7ff1353 and keep the /data volume"
+          "release/RESTORE_DRILL_2026-11-03.json: after the candidate ran on the restored copy, the current production commit f3e6113 booted on the same copy with smoke issues empty; no storage format or migration change (server.mjs, auth.mjs, ops/ byte-identical); rollback = redeploy deployment a7ff1353 and keep the /data volume",
+          "release/PREPARE_EVIDENCE_2026-11-03.md (PR #47): tree 7ffd35d4 changes only app.js, styles.css, sw.js, i18n and tests versus 615f507c; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-03T12:00:00Z",
+        "verifiedAt": "2026-11-03T17:45:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "GitHub checks: PR #46 heads 025f3d0 and 9a8750b (application tree 615f507c, native tree 680daea3) pass regression and Clean browser acceptance (9a8750b after one rerun of a page-load timeout); deploy only the merged green main commit; service keeps Wait for CI"
+          "GitHub checks: PR #47 head d370453 (application tree 7ffd35d4, native tree 680daea3) passes regression and Clean browser acceptance including the new drawer/demo-reel test; deploy only the merged green main commit"
         ]
       },
       "expiry_alert": {
@@ -103,7 +111,8 @@
         "verifiedAt": "2026-11-03T11:43:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-03.md: ASC version 18.1.0 build 401 VALID, not expired; native tree 680daea3 unchanged since release/IOS_ARTIFACT_2026-10-30.json (IPA 2eb24f18…)"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: ASC version 18.1.0 build 401 VALID, not expired; native tree 680daea3 unchanged since release/IOS_ARTIFACT_2026-10-30.json (IPA 2eb24f18…)",
+          "release/PREPARE_EVIDENCE_2026-11-03.md (PR #47): tree 7ffd35d4 changes only app.js, styles.css, sw.js, i18n and tests versus 615f507c; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
         ]
       },
       "android_configuration": {
