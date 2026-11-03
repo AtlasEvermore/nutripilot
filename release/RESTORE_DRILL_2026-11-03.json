@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-11-03T11:53:10.232Z",
+  "applicationTree": "615f507c4b43d38475ae32d366cd67755572ebe2",
+  "rollbackCommit": "f3e6113d717518e775031cce15ba3fcbe6ae1db9",
+  "snapshotCreatedAt": "2026-11-03T11:30:07.607Z",
+  "snapshotSha256": "9ead86e12847a29f83bf0fb34597489ea712bd3f7e702eedc5f0819903e2fa43",
+  "keySource": "owner recovery-key file on the owner computer (key value never displayed)",
+  "originalFiles": 5,
+  "restoredMatchesSnapshotList": true,
+  "originalFilesPreserved": true,
+  "candidate": { "smokeVersion": "18.1.0", "smokeIssues": [], "home": 200, "appJs": 200, "i18nPt": 200 },
+  "rollback": { "smokeVersion": "18.1.0", "smokeIssues": [], "home": 200, "appJs": 200, "i18nPt": 200 },
+  "order": "candidate booted first on the restored copy, then the rollback commit on the same copy after the candidate wrote to it",
+  "productionAccessed": false,
+  "restoredDataDeletedAfterDrill": true
+}

@@ -17,21 +17,18 @@
       },
       "independent_backup": {
         "status": "verified",
-        "verifiedAt": "2026-10-30T12:35:25.225Z",
+        "verifiedAt": "2026-11-03T11:30:07.607Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/RELEASE_VISUAL_2026-10-30.md: owner-authorized fresh backup 2026-10-30T12:35:25.225Z with ops/backup-cli.mjs (create + verify) on the live 18.1.0 service; five files; 5716 encrypted bytes; SHA256 a8aa3c485de0b805d600f6623edf67df4ab21eb634fa1a50f3da3c591c160534 matched on the owner computer outside Railway; recovery key saved as a separate owner file"
+          "release/PREPARE_EVIDENCE_2026-11-03.md: owner-authorized fresh backup 2026-11-03T11:30:07.607Z with ops/backup-cli.mjs (keygen + create + verify) on the live 18.1.0 service; five files; 6035 encrypted bytes; SHA256 9ead86e1…fa43 matched on the owner computer outside Railway; recovery key saved by the owner as a separate file and proven to open the backup (release/RESTORE_DRILL_2026-11-03.json)"
         ]
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-10-27T23:43:19.052Z",
+        "verifiedAt": "2026-11-03T11:53:10.232Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/FINAL_POLISH_RESTORE_FRESH_2026-10-27.json: final focus-correction tree c1b99fd4 restored the actual 11:55Z snapshot in isolation; five hashes preserved; smoke 18.1.0 issues empty; no newer backup time claimed.",
-          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
-          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical",
-          "release/PREPARE_EVIDENCE_2026-11-03.md: candidate tree 615f507c changes only app.js, styles.css, sw.js and translations; server.mjs, auth.mjs, legal.mjs, ops/ and native/ byte-identical, so this evidence still applies"
+          "release/RESTORE_DRILL_2026-11-03.json: candidate tree 615f507c restored the 11:30Z snapshot in isolation with the owner key; five files; smoke 18.1.0 issues empty; original restored files byte-identical afterwards; production not accessed"
         ]
       },
       "new_credentials_stored": {
@@ -71,27 +68,18 @@
       },
       "rollback_migration": {
         "status": "verified",
-        "verifiedAt": "2026-10-25T00:25:04.984630+00:00",
-        "verifiedBy": "deployment-agent",
+        "verifiedAt": "2026-11-03T11:53:10.232Z",
+        "verifiedBy": "development-agent",
         "evidence": [
-          "private-ops:18.1.0 and original V12 both booted isolated restorations; original files byte-identical after candidate shutdown; preserve existing service and volume; see release/RECOVERY_EVIDENCE_2026-10-24.md",
-          "private-ops:Revised candidate booted a fresh isolated real-data restore during SITE_AUDIT; original contents remained byte-identical; no format migration",
-          "release/FINAL_REVIEW_2026-10-26.md: consolidated candidate reads the same previously V12-tested snapshot without changing original files; no storage format or migration code changed",
-          "release/ORBITAL_REVIEW_2026-10-26.md: isolated restore of final UI candidate preserved the same original files; backend and data format unchanged",
-          "release/WORKSPACES_REVIEW_2026-10-26.md: final workspace candidate preserves original files in isolated restore; backend and data format remain unchanged",
-          "release/CONSTELLATION_REVIEW_2026-10-26.md: final candidate and asynchronous static delivery preserve original restored files; no storage format or migration change",
-          "release/FINAL_POLISH_2026-10-27.md: final merged application tree 78ee5e8b3e18acadc6c35b3f2a73127fce970cdf repeated isolated restore and preserved all five original files; no backend/storage-format change in PR 36; original V12 rollback rehearsal remains historical",
-          "release/ACCOUNT_READINESS_2026-10-27.md: exact final application booted the fresh 2026-10-27 real-data snapshot and preserved all five original files; storage/native source unchanged; prior V12 rollback rehearsal remains historical",
-          "release/RELEASE_VISUAL_2026-10-30.md: change limited to styles.css and icons; server.mjs, auth.mjs, legal.mjs, ops/ and app.js byte-identical to the verified tree, so this evidence still applies",
-          "release/PERF_MOTION_2026-10-30.md: only app.js lite-mode threshold, styles.css and sw.js cache name changed; server.mjs, auth.mjs, legal.mjs and ops/ byte-identical"
+          "release/RESTORE_DRILL_2026-11-03.json: after the candidate ran on the restored copy, the current production commit f3e6113 booted on the same copy with smoke issues empty; no storage format or migration change (server.mjs, auth.mjs, ops/ byte-identical); rollback = redeploy deployment a7ff1353 and keep the /data volume"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-10-30T16:16:56.075150Z",
+        "verifiedAt": "2026-11-03T12:00:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PERF_MOTION_2026-10-30.md: PR #45 with application tree 3a7f9ee0 and native tree 680daea3 passes regression and Clean browser acceptance before merge; service keeps Wait for CI"
+          "GitHub checks: PR #46 heads 025f3d0 and 9a8750b (application tree 615f507c, native tree 680daea3) pass regression and Clean browser acceptance (9a8750b after one rerun of a page-load timeout); deploy only the merged green main commit; service keeps Wait for CI"
         ]
       },
       "expiry_alert": {
