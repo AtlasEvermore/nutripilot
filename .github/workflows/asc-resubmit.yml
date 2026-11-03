@@ -1,0 +1,28 @@
+name: App Review resubmission
+on:
+  workflow_dispatch:
+    inputs:
+      video_commit: { description: 'Commit of the review-video branch', required: true }
+permissions: { contents: read }
+jobs:
+  resubmit:
+    runs-on: ubuntu-latest
+    environment: ios-signing
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: '${{ inputs.video_commit }}', path: review }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Attach recording, update notes, submit subscriptions and resubmit
+        run: node ops/asc-resubmit.mjs
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          VIDEO_PATH: review/review-recording.mov
+          NOTES_PATH: review/review-notes.txt
+          REVIEW_DETAIL_ID: 0208d7ff-309d-47a0-89a8-b1ca60e09eb7
+          REVIEW_SUBMISSION_ID: 91f898e6-0b95-44cc-a89b-34c2b3cb20c8
+          SUBSCRIPTION_IDS: '6826844906,6826844951'
