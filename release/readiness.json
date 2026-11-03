@@ -84,7 +84,7 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-03T17:45:00Z",
+        "verifiedAt": "2026-11-03T17:32:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
           "GitHub checks: PR #47 head d370453 (application tree 7ffd35d4, native tree 680daea3) passes regression and Clean browser acceptance including the new drawer/demo-reel test; deploy only the merged green main commit"
