@@ -4349,6 +4349,42 @@ function choosePlanBtn(x, mine) {
   if (mine) return `<span class="pc-mine">${icon('check')} ${L('Votre formule')}</span>`;
   return `<button class="btn ${x.kind === 'complete' ? 'btn-lime' : 'btn-primary'}" data-choose-plan="${esc(x.tier)}">${L('Choisir')}</button>`;
 }
+function storePlansScreen(kit, ownsAll) {
+  const periods = ['annual', 'monthly'].filter((k) => kit[k] && sellable({ monthly: kit[k] }));
+  if (!periods.includes(selectedPeriod)) selectedPeriod = periods[0] || 'annual';
+  const trial = Billing.trialFor(kit, selectedPeriod);
+  const price = money(lp(kit, selectedPeriod));
+  const orbit = PAID_MODULES.map((m, i) => `<i class="hp-node ${m.tone}" style="--a:${(360 / PAID_MODULES.length) * i}deg">${icon(m.icon)}</i>`).join('');
+  return `<div class="mobile-app plans-page store-plans">
+    ${appHeader('Nos formules')}
+    <div class="screen">
+      <section class="plans-intro"><span class="orbit-eyebrow">NUTRIPILOT / ${L('Formules')}</span><h1>${L('Tout NutriPilot. Un seul abonnement.')}</h1><p>${L('Plan alimentaire, recettes, entraînement, ménopause 40+, sommeil et coach : tout s’adapte à vous.')}</p></section>
+      ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
+      <article class="holo-plan" aria-label="${esc(L('Kit complet'))}">
+        <div class="hp-orbit" aria-hidden="true"><span class="hp-core"><i class="hp-dot"></i></span>${orbit}</div>
+        <span class="hp-tag">${L('Kit complet')}</span>
+        <h2>${L('Les 9 modules et le coach')}</h2>
+        ${periods.length > 1 ? `<div class="period-toggle slim hp-toggle" role="tablist">${periods.map((k) => `<button class="${selectedPeriod === k ? 'active' : ''}" data-period="${k}" role="tab" aria-selected="${selectedPeriod === k}">${L(k === 'annual' ? 'Annuel' : 'Mensuel')}</button>`).join('')}</div>` : ''}
+        <div class="hp-price">${ownsAll ? `<em>${icon('check')} ${L('Activé')}</em>` : `<b>${price}</b><small>${unitOf(selectedPeriod)}</small>`}</div>
+        ${!ownsAll && selectedPeriod === 'annual' && periods.includes('monthly') ? `<p class="hp-sub">${L('soit {p} / mois', { p: money(lp(kit, 'annual') / 12) })}</p>` : ''}
+        ${!ownsAll && trial ? `<p class="hp-trial">${icon('star')} ${L('{n} jours gratuits', { n: trial })}</p>` : ''}
+        <button class="btn btn-lime btn-wide btn-xl hp-cta" ${ownsAll ? 'disabled' : 'data-choose-plan="complete"'}>${L(ownsAll ? 'Votre formule' : 'Choisir cette formule')}${ownsAll ? '' : icon('chevron')}</button>
+        <ul class="hp-trust"><li>${icon('check')}${L('Paiement sécurisé par l’App Store')}</li><li>${icon('check')}${L('Annulable à tout moment')}</li></ul>
+      </article>
+      <section class="hp-included"><div class="section-label"><h3>${L('Inclus dans votre abonnement')}</h3></div>
+        <div class="hp-grid">${MODULES.map((m) => `<span class="hp-mod ${m.tone}">${icon(m.icon)}<b>${esc(L(m.short || m.name))}</b></span>`).join('')}</div></section>
+      <details class="pl-more"><summary>${L('Questions fréquentes')}</summary>
+        <div class="plans-faq">
+          <p><b>${L('Puis-je changer de formule ?')}</b> ${L('Oui, à tout moment depuis les réglages de votre compte App Store ou Google Play.')}</p>
+          <p><b>${L('Le coach est-il inclus ?')}</b> ${L('Oui, le coach répond dans chaque module que vous avez activé.')}</p>
+        </div>
+      </details>
+      ${Billing.native() ? `<button class="hp-restore" data-restore>${icon('user')} ${L('Restaurer mes achats')}</button>` : ''}
+      <div class="fine center-fine legal-links"><a href="/terms?lang=${lang()}" target="_blank" rel="noopener">${L('Conditions d’utilisation')}</a> · <a href="/privacy?lang=${lang()}" target="_blank" rel="noopener">${L('Politique de confidentialité')}</a></div>
+    </div>
+    ${bottom('plans')}
+  </div>`;
+}
 function plansScreen() {
   if (nativePlatform() && !storeReady()) return storeLoadingScreen();
   const plans = Billing.plans();
@@ -4356,6 +4392,9 @@ function plansScreen() {
   const ownsAll = state.premium && PAID_MODULES.every((m) => owned.includes(m.id));
   const kit = plans.find((x) => x.kind === 'complete');
   if (!kit) return storeLoadingScreen();
+  // In the iPhone / Android app only the store's real subscriptions exist: no combinations, no builder,
+  // no reference prices that the store does not sell.
+  if (nativePlatform()) return storePlansScreen(kit, ownsAll);
   const bundles = plans.filter((x) => x.kind === 'bundle');
   const mods = plans.filter((x) => x.kind === 'module').sort((a,b) => Number(b.tier === selectedTier) - Number(a.tier === selectedTier));
   const isMine = (x) => state.premium && x.modules.every((id) => owned.includes(id));
