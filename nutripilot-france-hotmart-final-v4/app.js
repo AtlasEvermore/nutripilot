@@ -2264,6 +2264,7 @@ const moduleForRoute = (r = route) => moduleById(MODULE_ROUTES[r]);
 // ---- Store billing inside the iPhone / Android app (Capacitor + RevenueCat) ----------------
 // The web app is loaded in the native shell; when RevenueCat is present, purchases go through
 // Apple / Google and the server confirms them (/api/iap/verify) before unlocking anything.
+const isDeviceIdentity = (e) => String(e || '').endsWith('@device.nutripilot.invalid');
 const NativeBilling = {
   started: false,
   pending: null,
@@ -2290,7 +2291,8 @@ const NativeBilling = {
     const days = Object.values(this.products).map((p) => this.introDays(p.intro)).filter(Boolean);
     return days.length ? Math.max(...days) : 0;
   },
-  email() { const e = state.premiumEmail || state.accountEmail || ''; return e.includes('@') ? e : ''; },
+  // Only a real, verified e-mail counts as an account; a purchase made without one uses a private device identity.
+  email() { const e = state.premiumEmail || state.accountEmail || ''; return e.includes('@') && !isDeviceIdentity(e) ? e : ''; },
   async start() {
     if (this.started) return;
     const P = this.plugin();
@@ -2300,9 +2302,9 @@ const NativeBilling = {
     try {
       await P.configure({ apiKey: key });
       if (this.email() && this.token()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) });
-      // Revalidate purchases only for a previously verified NutriPilot account.
-      if (this.email() && this.token()) this.silentCheck();
-      P.addCustomerInfoUpdateListener?.(() => { if (this.email() && this.token()) this.silentCheck(); });
+      // Revalidate any purchase this device holds: an e-mail account, or a device purchase made without one.
+      if (this.token()) this.silentCheck();
+      P.addCustomerInfoUpdateListener?.(() => { if (this.token()) this.silentCheck(); });
       const ids = [...new Set(storeCatalog().map((x) => x.id))];
       const res = await P.getProducts({ productIdentifiers: ids, type: 'SUBSCRIPTION' }).catch(() => P.getProducts({ productIdentifiers: ids }));
       const list = res?.products || [];
@@ -2353,12 +2355,13 @@ const NativeBilling = {
     if (!response.ok) throw new Error(data.error || 'Vérification de l’achat impossible pour le moment. Réessayez.');
     return data;
   },
+  // App Store 5.1.1(v): buying and restoring never require an account. Signing in stays optional and only
+  // links the subscription to an e-mail so it can be used on other devices.
   async purchase(storeId, intent) {
-    if (this.needAccount(intent)) return null;
     const P = this.plugin();
     const product = this.products[storeId]?.raw;
     if (!product) throw new Error(L('Cette formule n’est pas encore disponible dans la boutique.'));
-    if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) });
+    if (this.email() && this.token()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) });
     try {
       await P.purchaseStoreProduct({ product });
     } catch (error) {
@@ -2372,9 +2375,8 @@ const NativeBilling = {
     return { token: data.token, email: data.email, plan: data.plan };
   },
   async restore() {
-    if (this.needAccount({action:'restore'})) return null;
     const P = this.plugin();
-    if (this.email()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) });
+    if (this.email() && this.token()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) });
     await P.restorePurchases();
     const data = await this.verify();
     return data.premium ? { token: data.token, email: data.email, plan: data.plan } : null;
@@ -2502,6 +2504,7 @@ function accountSheet() {
   const step = modal.step || 'email';
   return `<div class="sheet-head"><h2>${L('Votre compte NutriPilot')}</h2><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
     <p class="screen-sub">${L('Votre abonnement sera lié à cet e-mail : vous retrouvez votre plan et votre historique sur n’importe quel téléphone.')}</p>
+    <p class="fine">${L('Facultatif : connectez-vous avec votre e-mail pour retrouver votre abonnement sur vos autres appareils.')}</p>
     <div class="field"><label for="acc-email">${L('E-mail')}</label><input id="acc-email" type="email" autocomplete="email" inputmode="email" value="${esc(modal.email || '')}" ${step === 'code' ? 'readonly' : ''}></div>
     ${step === 'code' ? `<div class="field"><label for="acc-code">${L('Code à 6 chiffres')}</label><input id="acc-code" class="code-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div>
       <button class="btn btn-lime btn-wide" data-acc-verify>${L('Confirmer et continuer')}</button>
@@ -4369,7 +4372,8 @@ function storePlansScreen(kit, ownsAll) {
         ${!ownsAll && selectedPeriod === 'annual' && periods.includes('monthly') ? `<p class="hp-sub">${L('soit {p} / mois', { p: money(lp(kit, 'annual') / 12) })}</p>` : ''}
         ${!ownsAll && trial ? `<p class="hp-trial">${icon('star')} ${L('{n} jours gratuits', { n: trial })}</p>` : ''}
         <button class="btn btn-lime btn-wide btn-xl hp-cta" ${ownsAll ? 'disabled' : 'data-choose-plan="complete"'}>${L(ownsAll ? 'Votre formule' : 'Choisir cette formule')}${ownsAll ? '' : icon('chevron')}</button>
-        <ul class="hp-trust"><li>${icon('check')}${L('Paiement sécurisé par l’App Store')}</li><li>${icon('check')}${L('Annulable à tout moment')}</li></ul>
+        <ul class="hp-trust"><li>${icon('check')}${L('Paiement sécurisé par l’App Store')}</li><li>${icon('check')}${L('Annulable à tout moment')}</li><li>${icon('check')}${L('Aucun compte nécessaire pour vous abonner.')}</li></ul>
+        ${NativeBilling.email() ? '' : `<p class="hp-account">${L('Facultatif : connectez-vous avec votre e-mail pour retrouver votre abonnement sur vos autres appareils.')} <button class="link-btn" data-signin="email">${L('Lier un e-mail (facultatif)')}</button></p>`}
       </article>
       <section class="hp-included"><div class="section-label"><h3>${L('Inclus dans votre abonnement')}</h3></div>
         <div class="hp-grid">${MODULES.map((m) => `<span class="hp-mod ${m.tone}">${icon(m.icon)}<b>${esc(L(m.short || m.name))}</b></span>`).join('')}</div></section>
@@ -8103,7 +8107,7 @@ function settings() {
       ${state.premium ? '' : `<button class="explore-banner" data-go="plans">${icon('lock')}<span><b>${esc(t('explore'))}</b>${esc(t('exploreSub'))}</span><em>${esc(t('unlock'))} →</em></button>${Billing.native() ? `<button class="btn btn-ghost btn-wide" data-restore>${icon('user')} ${L('Restaurer mes achats')}</button>` : `<button class="btn btn-ghost btn-wide" data-go="access">${icon('user')} ${L('Déjà client ? Se connecter')}</button>`}`}
       <button class="btn btn-ghost btn-wide" data-go="lang">${icon('globe')} ${L('Langue')} · ${esc(LANGS.find((x) => x[0] === lang())?.[1] || 'Français')}</button>
       ${memberCard()}
-      <div class="success warn" ${state.premium ? '' : 'hidden'}><b>${L('NutriPilot Premium actif ✓')}</b><br>${esc(state.premiumEmail || L('Accès activé'))}</div>
+      <div class="success warn" ${state.premium ? '' : 'hidden'}><b>${L('NutriPilot Premium actif ✓')}</b><br>${esc(NativeBilling.email() || L('Accès activé'))}</div>
       <div class="kpi settings-goal"><small>${L('Votre objectif quotidien')}</small><b>${fmt(state.profile.dailyKcal)} kcal</b><div class="fine">P ${state.profile.protein} g · G ${state.profile.carbs} g · L ${state.profile.fat} g · Fibres ${state.profile.fiber} g</div></div>
       <div class="settings-two"><button class="btn btn-primary" data-open-profile>${icon('user')}<span>${L('Mon profil')}</span></button><button class="btn btn-lime" data-open-goal>${icon('scale')}<span>${L('Mon objectif')}</span></button></div>
       <button class="btn btn-ghost btn-wide" data-start>${L('Refaire le questionnaire complet')}</button>
@@ -8141,7 +8145,7 @@ function access() {
     <div class="screen">
       <div class="access-card login-card">
         <p class="screen-sub">${L('Déjà client ? Recevez un code à 6 chiffres sur l’e-mail de votre achat.')}</p>
-        <div class="field"><label for="access-email">${L('E-mail')}</label><input id="access-email" type="email" autocomplete="email" placeholder="${L('vous@exemple.fr')}" value="${esc(state.premiumEmail || '')}"></div>
+        <div class="field"><label for="access-email">${L('E-mail')}</label><input id="access-email" type="email" autocomplete="email" placeholder="${L('vous@exemple.fr')}" value="${esc(NativeBilling.email())}"></div>
         <button class="btn btn-primary btn-wide" data-request-code>${L('Recevoir mon code')}</button>
         <div id="code-area" style="display:none"><div class="field"><label for="access-code">${L('Code à 6 chiffres')}</label><input id="access-code" class="code-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div><button class="btn btn-lime btn-wide" data-verify-code>${L('Se connecter')}</button></div>
         <div id="access-msg"></div>
