@@ -30,3 +30,16 @@ test('generated language files match the master dictionary', async () => {
     assert.deepEqual(out, expected, `i18n/${code}.js is stale; run npm run i18n`);
   }
 });
+
+test('App Store 5.1.1(v): native purchase and restore never force sign-in', () => {
+  const src = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+  const start = src.indexOf('const NativeBilling = {');
+  const end = src.indexOf('\n};', start);
+  const block = src.slice(start, end);
+  for (const name of ['async purchase(storeId, intent) {', 'async restore() {']) {
+    const i = block.indexOf(name);
+    assert.ok(i > 0, name);
+    const body = block.slice(i, block.indexOf('\n  },', i));
+    assert.ok(!body.includes('needAccount'), `${name} must not require an account`);
+  }
+});

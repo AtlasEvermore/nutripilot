@@ -419,6 +419,26 @@ test('Only a verified account can validate its own store customer; missing expir
  f.subscriber({subscriptions:{np_complete_monthly:{...active,expires_date:new Date(Date.now()-60000).toISOString()}}});assert.equal((await f.post('/api/iap/verify',{appUserId:id},{premium:true})).data.premium,false);
 });
 
+test('App Store 5.1.1(v): a purchase without an account is verified by its random store ID only',async t=>{
+ const f=await fixture(t,{store:true});
+ const anon='$RCAnonymousID:'+crypto.randomBytes(16).toString('hex');
+ const call=async(body,token)=>{const r=await fetch(f.url+'/api/iap/verify',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body)});return {status:r.status,data:await r.json()};};
+ f.subscriber({subscriptions:{}});
+ const none=await call({appUserId:anon});assert.equal(none.status,200);assert.equal(none.data.premium,false);assert.equal(none.data.token,undefined);
+ let saved=JSON.parse(await fs.readFile(path.join(f.dir,'entitlements.json'),'utf8').catch(()=> '{}'));assert.equal(Object.keys(saved).some(k=>k.endsWith('@device.nutripilot.invalid')),false,'no record for a device without purchase');
+ const active={store:'app_store',expires_date:new Date(Date.now()+3600000).toISOString(),original_purchase_date:'2026-11-15T00:00:00Z'};
+ f.subscriber({subscriptions:{np_complete_annual:active}});
+ const ok=await call({appUserId:anon});assert.equal(ok.status,200);assert.equal(ok.data.premium,true);assert.equal(ok.data.plan,'complete_annual');assert.ok(ok.data.token);assert.equal(ok.data.email,undefined);
+ const again=await call({appUserId:anon},ok.data.token);assert.equal(again.data.premium,true);
+ const other='$RCAnonymousID:'+crypto.randomBytes(16).toString('hex');
+ assert.equal((await call({appUserId:other},ok.data.token)).status,403,'a device token cannot validate another store ID');
+ assert.equal((await call({appUserId:'np-'+'b'.repeat(32)},ok.data.token)).status,403,'a device token cannot claim an e-mail store ID');
+ assert.equal((await call({appUserId:'np-'+'b'.repeat(32)})).status,401,'derived e-mail IDs still need their account');
+ assert.equal((await call({appUserId:'$RCAnonymousID:short'})).status,401);
+ saved=JSON.parse(await fs.readFile(path.join(f.dir,'entitlements.json'),'utf8'));const key=Object.keys(saved).find(k=>k.endsWith('@device.nutripilot.invalid'));assert.ok(key);assert.equal(saved[key].status,'active');
+ const login=await fetch(f.url+'/api/access/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:key,purpose:'login'})});assert.notEqual(login.status,200,'no login code for a device identity');
+});
+
 test('Removed web checkout and legacy payment routes cannot grant purchases or redirect to external payment',async t=>{
  const f=await fixture(t);assert.equal((await fetch(f.url+'/checkout?plan=complete&period=monthly',{redirect:'manual'})).status,404);
  const before=await fs.readFile(path.join(f.dir,'entitlements.json'),'utf8');assert.equal((await f.post('/api/hotmart/webhook',{event:'PURCHASE_APPROVED'},{premium:true})).status,404);assert.equal(await fs.readFile(path.join(f.dir,'entitlements.json'),'utf8'),before);

@@ -1344,6 +1344,7 @@ async function sendAccessEmail(email, code, language) {
 }
 
 async function requestAccessCode(email, purpose = 'login', language = 'fr') {
+  if (isDeviceIdentity(email)) throw publicError('Adresse e-mail invalide', 400);
   if (REVIEW_EMAIL && email === REVIEW_EMAIL && /^\d{6}$/.test(REVIEW_CODE)) return { ok: true, mailed: true };
   const result = await mutateEntitlements(email, async (entitlements) => {
     let entry = entitlements[email];
@@ -1372,6 +1373,7 @@ const REVIEW_CODE = String(process.env.REVIEW_CODE || '').trim();
 const isReviewLogin = (email, code) => Boolean(REVIEW_EMAIL && /^\d{6}$/.test(REVIEW_CODE) && email === REVIEW_EMAIL && safeTokenEqual(String(code), REVIEW_CODE));
 
 async function verifyAccessCode(email, code) {
+  if (isDeviceIdentity(email)) return false;
   if (isReviewLogin(email, code)) {
     return mutateEntitlements(email, (entitlements) => {
       entitlements[email] = { ...(entitlements[email] || {}), status: 'active', source: 'review', plan: 'complete_annual', accessUntil: Date.now() + 90 * 86_400_000, updatedAt: new Date().toISOString() };
@@ -1470,6 +1472,10 @@ async function syncStoreAccount(email, appUserId, subscriber = null) {
     return { active: entry.status === 'active', plan: entry.plan || '' };
   });
 }
+const ANON_STORE_ID = /^\$RCAnonymousID:[0-9a-f]{32}$/;
+const DEVICE_DOMAIN = '@device.nutripilot.invalid';
+const isDeviceIdentity = (email) => String(email || '').endsWith(DEVICE_DOMAIN);
+const deviceIdentityFor = (appUserId) => `device-${hashKey(`nutripilot-device:${appUserId}`).slice(0, 32)}${DEVICE_DOMAIN}`;
 const validAppUserId = (id) => /^[\w$:.@-]{1,120}$/.test(String(id || ''));
 
 const dataDirectoryWritable = singleFlight(async () => {
@@ -1668,8 +1674,24 @@ const server = http.createServer(async (req, res) => {
       const payload = verifyAccessToken(bearer(req));
       const body = await readJson(req);
       if (!validAppUserId(body.appUserId)) return send(res, 400, { error: 'Données invalides' });
-      // Store customer IDs are public identifiers; only a verified account may validate its own.
-      if (!payload || !safeEmail(payload.email)) return send(res, 401, {error: 'Confirmez votre compte avant de vérifier un achat.'});
+      // App Store 5.1.1(v): buying must not require an account. A purchase made without one belongs to the
+      // store's random anonymous customer ID (128 random bits, held only by the device and the store), which
+      // maps to a private device identity. Derived np- IDs are guessable from an e-mail and still need its account.
+      if (!payload || isDeviceIdentity(payload.email)) {
+        if (!ANON_STORE_ID.test(String(body.appUserId))) {
+          if (!payload) return send(res, 401, {error: 'Confirmez votre compte avant de vérifier un achat.'});
+          return send(res, 403, {error: 'Cet achat ne correspond pas au compte connecté.'});
+        }
+        const identity = deviceIdentityFor(String(body.appUserId));
+        if (payload && payload.email !== identity) return send(res, 403, {error: 'Cet achat ne correspond pas au compte connecté.'});
+        if (!(await rateLimit(`iap-device:${clientIp(req)}`, 30, 15 * 60 * 1000))) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
+        const subscriber = await revenueCatSubscriber(String(body.appUserId));
+        const live = activeStorePlans(subscriber);
+        if (!payload && !(live.plans.length && live.until > Date.now())) return send(res, 200, { ok: true, premium: false });
+        const result = await syncStoreAccount(identity, String(body.appUserId), subscriber);
+        return send(res, 200, { ok: true, premium: result.active, plan: result.plan, device: true, token: result.active ? signAccessToken(identity) : undefined });
+      }
+      if (!safeEmail(payload.email)) return send(res, 401, {error: 'Confirmez votre compte avant de vérifier un achat.'});
       const expectedAppUserId = 'np-' + hashKey(`nutripilot:${payload.email.toLowerCase()}`).slice(0,32);
       if (body.appUserId !== expectedAppUserId) return send(res, 403, {error: 'Cet achat ne correspond pas au compte connecté.'});
       if (!(await rateLimit(`iap:${clientIp(req)}:${payload.email}`, 30, 15 * 60 * 1000))) return send(res, 429, { error: 'Trop de demandes. Réessayez dans quelques minutes.' });
