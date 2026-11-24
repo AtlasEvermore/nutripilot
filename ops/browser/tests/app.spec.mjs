@@ -419,12 +419,20 @@ test('DIAG language card stability', async ({ page }, info) => {
   await page.goto('/');
   await page.waitForTimeout(2500);
   const d = await page.evaluate(async () => {
-    const e = document.querySelector('[data-lang="pt"]');
-    const frames = [];
-    for (let i = 0; i < 8; i++) { await new Promise(r => requestAnimationFrame(r)); const r = e.getBoundingClientRect(); frames.push([Math.round(r.x*10)/10, Math.round(r.y*10)/10, Math.round(r.width*10)/10, Math.round(r.height*10)/10, scrollY]); }
-    const r = e.getBoundingClientRect(); const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-    const cs = getComputedStyle(e);
-    return { frames, vh: innerHeight, top: top && (top.className + '').slice(0, 60), anim: cs.animationName, op: cs.opacity, tf: cs.transform, html: document.documentElement.className, anims: document.getAnimations().map(a => (a.animationName || a.constructor.name) + ':' + a.playState + ':' + ((a.effect?.target?.className || '') + '').slice(0, 30)).slice(0, 30) };
+    const ok = () => Promise.race([new Promise(r => requestAnimationFrame(() => r(true))), new Promise(r => setTimeout(() => r(false), 700))]);
+    const steps = [
+      ['initial', () => {}],
+      ['no animateMotion', () => document.querySelectorAll('animateMotion').forEach(e => e.remove())],
+      ['no orbit-mark svg', () => document.querySelectorAll('.lang-hyper svg').forEach(e => e.remove())],
+      ['no lh-stars/grid', () => document.querySelectorAll('.lh-stars,.lh-grid').forEach(e => e.remove())],
+      ['no halo/orbits', () => document.querySelectorAll('.lh-halo,.lh-orbit').forEach(e => e.remove())],
+      ['no backdrop', () => document.querySelectorAll('.lang-card').forEach(e => { e.style.webkitBackdropFilter = 'none'; e.style.backdropFilter = 'none'; })],
+      ['no animations', () => document.getAnimations().forEach(a => a.cancel())],
+      ['no lang screen', () => document.querySelector('.lang-hyper')?.remove()],
+    ];
+    const out = [];
+    for (const [name, fn] of steps) { fn(); out.push(name + ':' + (await ok()) + ':' + (await ok())); }
+    return out;
   });
   console.log('DIAG', info.project.name, JSON.stringify(d));
 });
