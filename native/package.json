@@ -10,7 +10,7 @@
     "setup": "npm install",
     "add:android": "npx cap add android",
     "add:ios": "npx cap add ios",
-    "assets": "npx capacitor-assets generate --iconBackgroundColor '#02040B' --iconBackgroundColorDark '#02040B' --splashBackgroundColor '#02040B' --splashBackgroundColorDark '#02040B'",
+    "assets": "npx capacitor-assets generate --iconBackgroundColor '#0A100D' --iconBackgroundColorDark '#0A100D' --splashBackgroundColor '#0A100D' --splashBackgroundColorDark '#0A100D'",
     "configure": "node scripts/configure-native.mjs",
     "sync": "npx cap sync && node scripts/configure-native.mjs",
     "android": "npx cap open android",
