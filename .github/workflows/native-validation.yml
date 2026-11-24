@@ -97,11 +97,14 @@ jobs:
         timeout-minutes: 10
         run: |
           set -euo pipefail
+          t(){ local s=$1; shift; echo "::notice::$(date -u +%T) start($s s): $*"; perl -e 'alarm shift; exec @ARGV' "$s" "$@"; local rc=$?; echo "::notice::$(date -u +%T) end rc=$rc: $1 $2"; return $rc; }
           DUO_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(x["udid"] for xs in d["devices"].values() for x in xs if x["name"] == "iPhone Duo"))')
-          xcrun simctl boot "$DUO_ID"
-          xcrun simctl bootstatus "$DUO_ID" -b
-          xcrun simctl install "$DUO_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
-          xcrun simctl launch "$DUO_ID" com.atlasevermore.nutripilot
+          t 120 xcrun simctl boot "$DUO_ID"
+          for i in $(seq 1 60); do if perl -e 'alarm 20; exec @ARGV' xcrun simctl spawn "$DUO_ID" launchctl print system >/dev/null 2>&1; then echo "::notice::$(date -u +%T) simulator responds after $((i*5)) s"; break; fi; sleep 5; done
+          perl -e 'alarm 20; exec @ARGV' xcrun simctl spawn "$DUO_ID" launchctl print system >/dev/null
+          sleep 10
+          t 120 xcrun simctl install "$DUO_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+          t 90 xcrun simctl launch "$DUO_ID" com.atlasevermore.nutripilot
           sleep 8
           mkdir -p duo-review
           xcrun simctl io "$DUO_ID" screenshot --display=3 duo-review/duo-inner-candidate.png
@@ -120,11 +123,14 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
+          t(){ local s=$1; shift; echo "::notice::$(date -u +%T) start($s s): $*"; perl -e 'alarm shift; exec @ARGV' "$s" "$@"; local rc=$?; echo "::notice::$(date -u +%T) end rc=$rc: $1 $2"; return $rc; }
           DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; devices=[x for xs in json.load(sys.stdin)["devices"].values() for x in xs]; print(next(x["udid"] for x in devices if x["name"] == "iPhone 17"))')
-          xcrun simctl boot "$DEVICE_ID"
-          xcrun simctl bootstatus "$DEVICE_ID" -b
-          xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
-          xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
+          t 120 xcrun simctl boot "$DEVICE_ID"
+          for i in $(seq 1 60); do if perl -e 'alarm 20; exec @ARGV' xcrun simctl spawn "$DEVICE_ID" launchctl print system >/dev/null 2>&1; then echo "::notice::$(date -u +%T) simulator responds after $((i*5)) s"; break; fi; sleep 5; done
+          perl -e 'alarm 20; exec @ARGV' xcrun simctl spawn "$DEVICE_ID" launchctl print system >/dev/null
+          sleep 10
+          t 120 xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+          t 90 xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
           sleep 8
           xcrun simctl io "$DEVICE_ID" screenshot duo-review/iphone-candidate.png
           shasum -a 256 duo-review/iphone-candidate.png > duo-review/iphone-SHA256.txt
@@ -143,11 +149,14 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
+          t(){ local s=$1; shift; echo "::notice::$(date -u +%T) start($s s): $*"; perl -e 'alarm shift; exec @ARGV' "$s" "$@"; local rc=$?; echo "::notice::$(date -u +%T) end rc=$rc: $1 $2"; return $rc; }
           DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; devices=[x for xs in json.load(sys.stdin)["devices"].values() for x in xs]; print(next(x["udid"] for x in devices if "iPad Pro 13-inch" in x["name"]))')
-          xcrun simctl boot "$DEVICE_ID"
-          xcrun simctl bootstatus "$DEVICE_ID" -b
-          xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
-          xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
+          t 120 xcrun simctl boot "$DEVICE_ID"
+          for i in $(seq 1 60); do if perl -e 'alarm 20; exec @ARGV' xcrun simctl spawn "$DEVICE_ID" launchctl print system >/dev/null 2>&1; then echo "::notice::$(date -u +%T) simulator responds after $((i*5)) s"; break; fi; sleep 5; done
+          perl -e 'alarm 20; exec @ARGV' xcrun simctl spawn "$DEVICE_ID" launchctl print system >/dev/null
+          sleep 10
+          t 120 xcrun simctl install "$DEVICE_ID" build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+          t 90 xcrun simctl launch "$DEVICE_ID" com.atlasevermore.nutripilot
           sleep 8
           xcrun simctl io "$DEVICE_ID" screenshot duo-review/ipad-candidate.png
           shasum -a 256 duo-review/ipad-candidate.png > duo-review/ipad-SHA256.txt
