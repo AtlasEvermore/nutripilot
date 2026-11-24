@@ -2185,7 +2185,7 @@ function projection(p) {
 
 function projectionChart(p, proj) {
   const w = 320, h = 150, x0 = 18, x1 = 302, y0 = 26, y1 = 118;
-  return `<svg class="proj-chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Projection de votre poids">
+  return `<svg class="proj-chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(L('Projection de votre poids'))}">
     <defs><linearGradient id="projFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9f23d" stop-opacity=".45"/><stop offset="1" stop-color="#b9f23d" stop-opacity="0"/></linearGradient></defs>
     <path d="M${x0} ${y0} C ${x0 + 110} ${y0 + 10}, ${x1 - 120} ${y1}, ${x1} ${y1} L ${x1} ${h} L ${x0} ${h} Z" fill="url(#projFill)"/>
     <path class="proj-line" d="M${x0} ${y0} C ${x0 + 110} ${y0 + 10}, ${x1 - 120} ${y1}, ${x1} ${y1}" fill="none" stroke="#102419" stroke-width="3.5" stroke-linecap="round"/>
@@ -4613,6 +4613,50 @@ function copilotDemo(meals) {
     <div class="at-grid">${[['camera', 'Vision par photo', 'Calories et macros d’une assiette'], ['scan', 'Code-barres', 'Millions de produits'], ['sparkle', 'Copilote de routine', 'Réorganise votre journée'], ['bell', 'Rappels intelligents', 'Suivent vos horaires du jour'], ['globe', '{n} langues', 'Et la cuisine de votre pays'], ['drop', 'Hors ligne', 'Votre plan reste disponible']].map(([ic, ti, sub]) => `<div class="at-item">${icon(ic)}<b>${L(ti, { n: LANGS.length })}</b><span>${L(sub)}</span></div>`).join('')}</div>
   </section>`;
 }
+// 20.1 · Nexus: the nine NutriPilot programs as a living constellation on the home screen.
+function nexusHub() {
+  const n = MODULES.length;
+  const R = 41; // % of the stage
+  const nodes = MODULES.map((m, i) => {
+    const a = (-90 + (360 / n) * i) * Math.PI / 180;
+    const x = 50 + R * Math.cos(a), y = 50 + R * Math.sin(a);
+    return { m, x: +x.toFixed(2), y: +y.toFixed(2) };
+  });
+  const lines = nodes.map(({ x, y }, i) => `<line x1="50" y1="50" x2="${x}" y2="${y}" class="nx-link" style="--i:${i}"/>`).join('');
+  const dots = nodes.map(({ x, y }, i) => `<circle r=".9" class="nx-dot" style="--i:${i}"><animateMotion dur="${2.6 + (i % 3) * .5}s" begin="${(i * .31).toFixed(2)}s" repeatCount="indefinite" path="M50 50L${x} ${y}"/></circle>`).join('');
+  return `<section class="nexus" aria-label="${L('Tous les modules NutriPilot')}">
+    <div class="nx-head"><span class="nx-eyebrow"><i></i>NUTRIPILOT / ${String(n).padStart(2, '0')}</span><h2>${L('Tout NutriPilot, en un coup d’œil.')}</h2><p>${L('Les 9 modules, sans limite')}</p></div>
+    <div class="nx-stage">
+      <svg class="nx-web" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="41" class="nx-ring"/><circle cx="50" cy="50" r="28" class="nx-ring nx-ring2"/><circle cx="50" cy="50" r="47" class="nx-ring nx-ring3"/>${lines}${dots}</svg>
+      <div class="nx-core">${orbitMark('nx-mark')}<span class="nx-count"><b>${n}</b>${L('Modules')}</span></div>
+      ${nodes.map(({ m, x, y }, i) => `<button class="nx-node ${m.tone}" style="--x:${x}%;--y:${y}%;--i:${i}" data-nexus="${m.id}" aria-label="${esc(modTitle(m))}"><span class="mod-ico">${icon(m.icon)}</span><small>${esc(L(m.short || m.name))}</small></button>`).join('')}
+    </div>
+  </section>`;
+}
+
+function nexusSheet(id) {
+  const i = Math.max(0, MODULES.findIndex((m) => m.id === id));
+  const m = MODULES[i];
+  const prev = MODULES[(i + MODULES.length - 1) % MODULES.length];
+  const next = MODULES[(i + 1) % MODULES.length];
+  const v = MV();
+  const open = fullAccess() || m.free;
+  return `<div class="nx-sheet ${m.tone}">
+    <div class="sheet-head"><div><span class="nx-eyebrow"><i></i>NUTRIPILOT / ${String(i + 1).padStart(2, '0')} · ${String(MODULES.length).padStart(2, '0')}</span></div><button class="icon-btn" data-close aria-label="${L('Fermer')}">${icon('close')}</button></div>
+    <div class="nx-holo" aria-hidden="true"><span class="nx-h1"></span><span class="nx-h2"></span><span class="nx-h3"></span><span class="nx-hico mod-ico">${icon(m.icon)}</span><span class="nx-scan"></span></div>
+    <span class="nx-kicker">${esc(L(m.name))}</span>
+    <h2 class="nx-title">${esc(modTitle(m))}</h2>
+    <p class="nx-sub">${esc(L(m.sub, v))}</p>
+    <ol class="nx-topics">${m.features.map((f, k) => `<li style="--k:${k}"><span>${String(k + 1).padStart(2, '0')}</span><b>${esc(L(f, v))}</b></li>`).join('')}</ol>
+    ${moduleArtwork(m) ? `<div class="nx-art">${moduleArtwork(m)}</div>` : ''}
+    <div class="nx-actions">
+      <button class="btn btn-lime btn-wide btn-xl" data-go="${m.route}">${L('Ouvrir →')}</button>
+      ${open ? '' : `<button class="btn btn-ghost btn-wide" data-go="plans">${L('Voir les formules')}</button>`}
+    </div>
+    <div class="nx-nav"><button class="nx-step" data-nexus="${prev.id}" aria-label="${esc(modTitle(prev))}"><i aria-hidden="true">←</i><span>${esc(L(prev.short || prev.name))}</span></button><button class="nx-step" data-nexus="${next.id}" aria-label="${esc(modTitle(next))}"><span>${esc(L(next.short || next.name))}</span><i aria-hidden="true">→</i></button></div>
+  </div>`;
+}
+
 function missionScreen() {
   const p = state.profile || {};
   const proj = p.goalSet && p.weight && p.target && Number(p.target) !== Number(p.weight) ? projection(p) : null;
@@ -4629,6 +4673,7 @@ function missionScreen() {
     <div class="space-bg" aria-hidden="true"><i class="st s1"></i><i class="st s2"></i><i class="st s3"></i><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
     <header class="app-head mx-head"><div class="app-head-row"><button class="icon-btn menu-btn" data-drawer aria-label="${L('Menu')}">${icon('menu')}</button>${logo()}<div class="head-actions"><button class="icon-btn" data-go="lang" aria-label="Language">${(LANGS.find((x) => x[0] === lang()) || [])[2] || '🌐'}</button></div></div></header>
     <div class="screen mx">
+      ${nexusHub()}
       ${missionControl()}
 
       <section class="mx-card mx-menu">
@@ -5781,7 +5826,7 @@ const EX_GROUP_OF = {
   balance: 'Mobilité & équilibre', 'cat-cow': 'Mobilité & équilibre', 'hip-opener': 'Mobilité & équilibre',
 };
 function exGroup(id) { return EXERCISES[id]?.group || EX_GROUP_OF[id] || 'Abdos & gainage'; }
-function exName(id) { return EXERCISES[id]?.name || (state.customExercises || {})[id]?.name || id; }
+function exName(id) { return EXERCISES[id] ? L(EXERCISES[id].name) : ((state.customExercises || {})[id]?.name || id); }
 
 const COACH_STYLES = [
   { id: 'hypertrophy', name: 'Hypertrophie', desc: 'Volume modéré à élevé, 8 à 12 répétitions, 60 à 90 s de repos. Pour prendre du muscle.', reps: '8–12', sets: 3, rest: 75 },
@@ -8229,7 +8274,7 @@ function renderModal(focusTrigger = document.activeElement) {
   if (trialActive()) { if (modal.type === 'recipe') trialFound('recipe'); if (['session', 'exercise'].includes(modal.type)) trialFound('workout'); }
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
-  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'command' ? commandSheet() : modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'signin' ? signInSheet() : ['trial', 'trial-started', 'trial-ended', 'trial-guide', 'trial-5min'].includes(modal.type) ? trialSheet(modal.type) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : modal.type === 'copilot' ? copilotSheet() : modal.type === 'cp-history' ? cpHistorySheet() : addSheet()}</div>`;
+  wrap.innerHTML = `<div class="sheet"><div class="sheet-grip"></div>${modal.type === 'command' ? commandSheet() : modal.type === 'meal' ? mealSheet(modal.meal) : modal.type === 'signin' ? signInSheet() : ['trial', 'trial-started', 'trial-ended', 'trial-guide', 'trial-5min'].includes(modal.type) ? trialSheet(modal.type) : modal.type === 'recipe' ? recipeSheet(modal.recipe) : modal.type === 'appmore' ? appMoreSheet(modal.app) : modal.type === 'nexus' ? nexusSheet(modal.id) : modal.type === 'ex-picker' ? exPickerSheet() : modal.type === 'plan-swap' ? planSwapSheet() : modal.type === 'plan-pick' ? planPickSheet() : modal.type === 'plan-recipe' ? planRecipeSheet() : modal.type === 'guide' ? guideSheet(modal.guide) : modal.type === 'session' ? sessionSheet(modal.sessionId, modal.programId) : modal.type === 'exercise' ? exerciseSheet(modal.id) : modal.type === 'support' ? supportSheet() : modal.type === 'reminders' ? remindersSheet() : modal.type === 'sos' ? sosSheet() : modal.type === 'scan' ? scanSheet(modal.item) : modal.type === 'account' ? accountSheet() : modal.type === 'page' ? pageSheet() : modal.type === 'store' ? storeSheet() : modal.type === 'copilot' ? copilotSheet() : modal.type === 'cp-history' ? cpHistorySheet() : addSheet()}</div>`;
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   document.body.appendChild(wrap);
@@ -9027,6 +9072,7 @@ function bind() {
     if (button.dataset.todayTab) { todayTab = button.dataset.todayTab; return render(); }
     if (button.dataset.trialStart !== undefined) return beginTrial();
     if (button.dataset.appMore) { modal = { type: 'appmore', app: button.dataset.appMore }; return renderModal(); }
+    if (button.dataset.nexus) { modal = { type: 'nexus', id: button.dataset.nexus }; track('OpenNexus', { module: button.dataset.nexus }); return renderModal(); }
     if (button.dataset.recipeView) { recipeView = button.dataset.recipeView; return render(); }
     // Scanner module
     if (button.dataset.scanOpen) { const item = (state.scanHistory || []).find((x) => x.id === button.dataset.scanOpen); if (item) { modal = { type: 'scan', item }; renderModal(); } return; }
@@ -9712,6 +9758,10 @@ function bindModal(root) {
     if (modal?.type === 'copilot' && copilotClick(button, root)) return;
     if (button.dataset.cpUndo) { modal = null; root.remove(); return cpUndo(button.dataset.cpUndo); }
 
+    if (modal?.type === 'nexus') {
+      if (button.dataset.nexus) { modal = { type: 'nexus', id: button.dataset.nexus }; return renderModal(); }
+      if (button.dataset.go) { const to = button.dataset.go; modal = null; root.remove(); return nav(to); }
+    }
     if (button.dataset.appTab) { const [id, key] = button.dataset.appTab.split(':'); modal = null; root.remove(); return openAppTab(id, key); }
     if (button.dataset.trialStart !== undefined) { modal = null; root.remove(); return beginTrial(); }
     if (button.dataset.trialGo !== undefined) { modal = null; root.remove(); return nav('modules'); }
