@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "5ab6caadff064ac0e17cf377efc4abd382177b7d",
+  "applicationTree": "7c8616762449100c66c1c034c9e0c6c800bc8b89",
   "channels": [
     "ios"
   ],
@@ -9,98 +9,98 @@
     "prepare": {
       "hosting_access": {
         "status": "verified",
-        "verifiedAt": "2026-11-15T23:51:00Z",
+        "verifiedAt": "2026-11-24T16:06:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: Railway HOBBY ACTIVE; deployment dd92aeb4 SUCCESS on b7c1f0f; /api/health 200 18.1.0, persistence writable"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: Railway HOBBY ACTIVE; deployment 246f45ec SUCCESS on 50d8671; /api/health 200 18.1.0, persistence writable"
         ]
       },
       "independent_backup": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:00:41.738Z",
+        "verifiedAt": "2026-11-24T12:09:09.006Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: owner-authorized backup on the live service (keygen + create + verify), 6 files, 3290 encrypted bytes, SHA256 c38e748a…943e matched on the owner computer outside Railway; owner recovery key opened it (release/RESTORE_DRILL_2026-11-16.json)"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized backup (keygen + create + verify), 6 files, SHA256 860e81e6…d8e1 copied to the owner computer outside Railway; owner recovery key opened it (release/RESTORE_DRILL_2026-11-24.json)"
         ]
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:11:09.590Z",
+        "verifiedAt": "2026-11-24T16:54:46Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: release/RESTORE_DRILL_2026-11-16.json: candidate tree restored the 00:00:41Z snapshot in isolation; smoke issues empty; originals byte-identical; production not accessed"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: release/RESTORE_DRILL_2026-11-24.json: candidate tree restored the 12:09Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed"
         ]
       },
       "new_credentials_stored": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:03:00Z",
+        "verifiedAt": "2026-11-24T16:06:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: Railway variable names unchanged since 2026-11-03 (values not read); live Resend delivery and active OpenAI billing confirm they are in use"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: variable names unchanged (values not read); OpenAI billing active and Resend delivery confirm they are in use"
         ]
       },
       "ai_billing_limits": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:03:00Z",
+        "verifiedAt": "2026-11-24T16:09:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: OpenAI prepaid US$5.00, auto-reload OFF; Railway AI limits unchanged (gpt-5-mini, subscribers only, 10/user/day, 300/day, 5000/month)"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: OpenAI prepaid US$5.00, auto-reload OFF; AI limits unchanged (gpt-5-mini, subscribers only, 10/user/day, 300/day, 5000/month)"
         ]
       },
       "email_delivery": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:09:00Z",
+        "verifiedAt": "2026-11-24T16:13:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: owner-authorized access e-mail to the owner address 00:01:51Z, HTTP 200 mailed=true; owner confirmed receipt; code not recorded"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized access e-mail to the owner address 16:11:52Z, HTTP 200 mailed=true; owner confirmed receipt 13:13 BRT; code not recorded"
         ]
       },
       "legal_configuration": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:12:00Z",
+        "verifiedAt": "2026-11-24T16:05:44Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: production /terms, /privacy and /delete-account HTTP 200 with NutriPilot content; legal.mjs unchanged by the candidate; launch public-domain check still pending"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: production /terms, /privacy, /delete-account HTTP 200 with NutriPilot content; legal.mjs unchanged"
         ]
       },
       "rollback_migration": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:11:09.590Z",
+        "verifiedAt": "2026-11-24T16:54:46Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: release/RESTORE_DRILL_2026-11-16.json: production commit b7c1f0f booted on the copy after the candidate ran, smoke issues empty; entitlement storage shape unchanged; rollback = redeploy dd92aeb4 keeping /data"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: release/RESTORE_DRILL_2026-11-24.json: production commit 50d8671 booted on the copy after the candidate, smoke issues empty; storage shape unchanged; rollback = redeploy 246f45ec keeping /data"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:11:30Z",
+        "verifiedAt": "2026-11-24T16:54:55Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: GitHub checks: PR #50 head f90534c (application tree 5ab6caad, native tree 680daea3) passes regression and Clean browser acceptance; deploy only the merged green main commit"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: GitHub checks: PR #51 head 280fea4 (application tree 7c861676, native tree 680daea3) passes regression and Clean browser acceptance on chromium, firefox and mobile WebKit; deploy only the merged green main commit"
         ]
       },
       "expiry_alert": {
         "status": "verified",
-        "verifiedAt": "2026-10-24T03:37:05Z",
-        "verifiedBy": "deployment-agent",
+        "verifiedAt": "2026-11-24T16:10:59Z",
+        "verifiedBy": "development-agent",
         "evidence": [
-          "private-ops:OpenAI key renewal reminder enabled for 2027-01-14 before 2027-01-21 expiration"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: scheduled task notifies the owner 2027-01-14 before the OpenAI key expires 2027-01-21"
         ]
       },
       "ios_configuration": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:12:00Z",
+        "verifiedAt": "2026-11-24T16:10:30Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: App Store Connect: 34 available territories, 17 version localizations, review contact and 3297-character notes with recording attached, build 401 VALID; subscriptions np_complete_monthly/annual in the rejected submission ad3c5516 awaiting resubmission"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: ASC 18.1.0 READY_FOR_SALE, build 401 VALID; subscriptions monthly/annual APPROVED, no introductory offers"
         ]
       },
       "ios_artifact": {
         "status": "verified",
-        "verifiedAt": "2026-11-15T23:50:00Z",
+        "verifiedAt": "2026-11-24T16:10:30Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: ASC 18.1.0 build 401 VALID, not expired; native tree 680daea3 unchanged since release/IOS_ARTIFACT_2026-10-30.json"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: ASC build 401 VALID, not expired; native tree 680daea3 unchanged"
         ]
       },
       "android_configuration": {

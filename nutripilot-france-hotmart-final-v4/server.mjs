@@ -108,6 +108,7 @@ const STATIC_FILES = new Set([
   '/icon-192.png',
   '/icon-512.png',
   '/icon-maskable-512.png',
+  '/og-share.jpg',
   '/apple-touch-icon.png',
   '/product-cover-600x600.png',
   '/fonts/bricolage.woff',
@@ -1581,6 +1582,31 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/support' && req.method === 'GET') {
       res.writeHead(200, { ...securityHeaders('text/html; charset=utf-8'), 'Cache-Control': 'public, max-age=3600' });
       return res.end(supportPage(pickLegalLang(url.searchParams.get('lang'), req.headers['accept-language']), { brand: BRAND_NAME, email: SUPPORT_EMAIL }));
+    }
+
+    // Share link with a rich preview: iPhone/iPad go to the App Store, everyone else to the web app.
+    if ((url.pathname === '/get' || url.pathname === '/ios') && req.method === 'GET') {
+      const store = 'https://apps.apple.com/app/id6826838334';
+      const ua = String(req.headers['user-agent'] || '');
+      const previewBot = /WhatsApp|facebookexternalhit|Facebot|Twitterbot|Slackbot|TelegramBot|Discordbot|LinkedInBot|Pinterest|Googlebot|bingbot|Applebot|SkypeUriPreview|redditbot|vkShare|Embedly|Iframely/i.test(ua);
+      if (!previewBot) {
+        res.writeHead(302, { Location: /iPhone|iPad|iPod|Macintosh/.test(ua) ? store : '/', 'Cache-Control': 'no-store' });
+        return res.end();
+      }
+      const origin = (process.env.APP_URL || `https://${req.headers.host || 'app.atlasevermore.com'}`).replace(/\/$/, '');
+      const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NutriPilot · Health OS</title>
+<meta name="description" content="Nutrition, recipes, training, menopause 40+, sleep and coach: 9 apps in one ecosystem.">
+<meta property="og:type" content="website"><meta property="og:site_name" content="NutriPilot">
+<meta property="og:title" content="NutriPilot · Health OS"><meta property="og:description" content="9 apps · 1 ecosystem. Nutrition, recipes, training, menopause 40+, sleep and coach.">
+<meta property="og:url" content="${origin}/get"><meta property="og:image" content="${origin}/og-share.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${origin}/og-share.jpg">
+<meta name="apple-itunes-app" content="app-id=6826838334">
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#02040b;color:#bff8ff;font:600 16px system-ui}a{color:#d4ff3d}</style></head>
+<body><p><a href="${store}">NutriPilot · App Store</a></p>
+</body></html>`;
+      res.writeHead(200, { ...securityHeaders('text/html; charset=utf-8'), 'Cache-Control': 'public, max-age=600' });
+      return res.end(html);
     }
 
     // Public legal pages (URLs required by the App Store and Google Play).

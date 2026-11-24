@@ -1140,8 +1140,12 @@ function track(name, params = {}) {
 }
 const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus', 'TrialStart', 'TrialEnded', 'TrialSignIn', 'CopilotAsk', 'CopilotApply', 'CopilotUndo', 'CopilotProSummary']);
 
+// Brand mark: the App Store icon's orbiting N, drawn inline so it stays crisp and can animate.
+function orbitMark(cls = '') {
+  return `<svg class="orbit-mark ${cls}" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="omg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d4ff3d"/><stop offset="1" stop-color="#22e1ff"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#060b1c"/><circle cx="32" cy="32" r="21" fill="none" stroke="url(#omg)" stroke-width="1.2" stroke-dasharray="1 3" opacity=".8"/><path d="M22.5 42V22l19 20V22" fill="none" stroke="url(#omg)" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/><g transform="rotate(-28 32 32.5)"><ellipse cx="32" cy="32.5" rx="21" ry="8" fill="none" stroke="url(#omg)" stroke-width="2.4"/><circle r="2.8" fill="#d4ff3d" class="om-sat"><animateMotion dur="4s" repeatCount="indefinite" path="M53 32.5a21 8 0 1 1-42 0a21 8 0 1 1 42 0"/></circle></g></svg>`;
+}
 function logo() {
-  return `<div class="logo"><span class="logo-mark"></span>${esc(config.brand)}</div>`;
+  return `<div class="logo">${orbitMark('logo-orbit')}${esc(config.brand)}</div>`;
 }
 
 // Screens visited in this session, for the header back button.
@@ -1752,12 +1756,15 @@ function langChip() {
 function langScreen() {
   const current = pendingLang || state.lang || detectLang();
   prefetchDict(current);
-  return `<div class="welcome">
+  const count = LANGS.length;
+  return `<div class="welcome lang-hyper">
+    <div class="lh-stars" aria-hidden="true"></div><div class="lh-grid" aria-hidden="true"></div>
     <div class="welcome-inner">
-      <div class="lang-top">${state.lang ? `<button class="back" data-lang-ok="${current}" aria-label="${L('Retour')}">${lang() === 'ar' ? '→' : '←'}</button>` : '<span></span>'}${logo()}<span></span></div>
-      <div class="welcome-copy"><h1>${esc(I18N[current]?.langTitle || t('langTitle'))}</h1></div>
-      <div class="lang-grid">${LANGS.map(([code, label, flag]) => `<button class="lang-card ${code === current ? 'selected' : ''}" data-lang="${code}" aria-pressed="${code === current}" lang="${code}"><span>${flag}</span><b>${label}</b></button>`).join('')}</div>
-      <div class="welcome-cta"><button class="btn btn-lime btn-wide btn-xl" data-lang-ok="${current}">${esc(I18N[current]?.langCta || 'Continuer')}</button></div>
+      <div class="lang-top">${state.lang ? `<button class="back" data-lang-ok="${current}" aria-label="${L('Retour')}">${lang() === 'ar' ? '→' : '←'}</button>` : '<span></span>'}<span class="lh-brand">${esc(config.brand)}</span><span></span></div>
+      <div class="lh-core" aria-hidden="true"><span class="lh-halo"></span><span class="lh-orbit o1"><i></i></span><span class="lh-orbit o2"><i></i></span>${orbitMark('lh-mark')}</div>
+      <div class="welcome-copy lh-copy"><span class="lh-hud"><i></i>HEALTH OS · ${String(count).padStart(2, '0')} LANG · ONLINE</span><h1>${esc(I18N[current]?.langTitle || t('langTitle'))}</h1></div>
+      <div class="lang-grid lh-cards">${LANGS.map(([code, label, flag], i) => `<button class="lang-card ${code === current ? 'selected' : ''}" data-lang="${code}" aria-pressed="${code === current}" lang="${code}" style="--i:${i}"><span class="lh-flag">${flag}</span><b>${label}</b><em class="lh-code">${code.toUpperCase()}</em></button>`).join('')}</div>
+      <div class="welcome-cta"><button class="btn btn-lime btn-wide btn-xl lh-cta" data-lang-ok="${current}">${esc(I18N[current]?.langCta || 'Continuer')}<span class="lh-arrow">→</span></button></div>
     </div>
   </div>`;
 }
@@ -1814,7 +1821,7 @@ function helloScreen() {
     <div class="hello-pick" role="radiogroup" aria-label="${L('Votre objectif')}">${Object.entries(FOCI).map(([id, x]) => `<button class="${x.tone} ${fk === id ? 'on' : ''}" role="radio" aria-checked="${fk === id}" data-focus="${id}"><span class="mod-ico">${icon(x.ico)}</span>${L(x.kicker)}</button>`).join('')}</div>
     ${f ? `<ul class="hello-points">${f.points.map(([ico, a, b]) => `<li><span class="mod-ico">${icon(ico)}</span><span><b>${L(a)}</b><small>${L(b)}</small></span></li>`).join('')}</ul>` : ''}
     <div class="hello-cta">
-      <button class="btn btn-lime btn-wide btn-xl" data-hello-start>${L('Créer mon plan gratuit')}</button>
+      <button class="btn btn-lime btn-wide btn-xl" data-hello-start>${L('Créer mon programme')}</button>
       <p>${L('Nutrition, entraînement et bien-être, dans une seule app.')}</p>
     </div>
     <div class="hello-trust">${[['fork', `${ALL_RECIPES.length}`, L('recettes')], ['dumbbell', `${Object.keys(EXERCISES).length}`, L('exercices')], ['globe', `${LANGS.length}`, L('langues')]].map(([ico, n, l]) => `<div>${icon(ico)}<b>${n}</b><span>${l}</span></div>`).join('')}</div>
@@ -1926,7 +1933,6 @@ function tourScreen() {
 
 // ---- Support ---------------------------------------------------------------
 const FAQ = [
-  ['Comment fonctionne l’essai gratuit ?', 'Quand la boutique propose un essai gratuit, sa durée est indiquée sur le bouton d’achat (par exemple 7 jours sur la formule annuelle), avec un accès complet. Aucun paiement pendant l’essai. L’abonnement démarre ensuite, sauf si vous annulez au moins 24 h avant la fin. Nous vous envoyons un rappel 2 jours avant.'],
   ['Comment annuler mon abonnement ?', 'iPhone : Réglages › votre nom › Abonnements › NutriPilot. Android : Play Store › votre profil › Paiements et abonnements › Abonnements. Supprimer l’application n’annule pas l’abonnement.'],
   ['Quelle différence entre les formules ?', 'Nutrition : scanner, plan de repas, recettes, courses, cours nutrition et coach. Entraînement : programmes salle et maison avec suivi des charges et cours musculation. Kit complet : tout NutriPilot, Académie incluse, au meilleur prix.'],
   ['Le scanner est-il précis ?', 'Une photo ne pèse pas un aliment : NutriPilot affiche des estimations. Vous pouvez corriger chaque quantité avant d’enregistrer. Le code-barres et l’étiquette donnent des valeurs plus précises.'],
@@ -4463,7 +4469,6 @@ function plansScreen() {
       </details>
       <details class="pl-more"><summary>${L('Questions fréquentes')}</summary>
         <div class="plans-faq">
-          <p><b>${L('Comment fonctionne l’essai gratuit ?')}</b> ${L('Quand la boutique propose un essai gratuit (par exemple 7 jours sur la formule annuelle), sa durée est indiquée sur le bouton. Vous pouvez annuler avant la fin de l’essai sans rien payer.')}</p>
           <p><b>${L('Puis-je combiner plusieurs modules ?')}</b> ${L('Oui. Chaque module s’ajoute à votre abonnement. Si une combinaison ou le Kit complet revient moins cher, NutriPilot vous le propose dans « Composer ».')}</p>
           <p><b>${L('Puis-je changer de formule ?')}</b> ${L('Oui, à tout moment depuis les réglages de votre compte App Store ou Google Play.')}</p>
           <p><b>${L('Le coach est-il inclus ?')}</b> ${L('Oui, le coach répond dans chaque module que vous avez activé.')}</p>
@@ -4529,7 +4534,7 @@ document.addEventListener('pointerdown', (event) => {
   const dot = document.createElement('span');
   dot.className = 'aura-ripple';
   const size = Math.max(r.width, r.height) * 2.2;
-  dot.style.cssText = `width:${size}px;height:${size}px;left:${event.clientX - r.left - size / 2}px;top:${event.clientY - r.top - size / 2}px`;
+  dot.style.cssText = `position:absolute;pointer-events:none;width:${size}px;height:${size}px;left:${event.clientX - r.left - size / 2}px;top:${event.clientY - r.top - size / 2}px`;
   if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
   el.classList.add('aura-host');
   el.appendChild(dot);
