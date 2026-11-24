@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "7c8616762449100c66c1c034c9e0c6c800bc8b89",
+  "applicationTree": "f90c1f0c93340b8e57fe75fd98b1257dce5f060e",
   "channels": [
     "ios"
   ],
@@ -9,10 +9,10 @@
     "prepare": {
       "hosting_access": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T16:06:00Z",
+        "verifiedAt": "2026-11-24T17:05:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: Railway HOBBY ACTIVE; deployment 246f45ec SUCCESS on 50d8671; /api/health 200 18.1.0, persistence writable"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: Railway HOBBY ACTIVE; deployment 38f6b8c2 SUCCESS on 00f3e29 (17:04Z); /api/health 200 18.1.0, persistence writable"
         ]
       },
       "independent_backup": {
@@ -25,10 +25,10 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T16:54:46Z",
+        "verifiedAt": "2026-11-24T17:39:15Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: release/RESTORE_DRILL_2026-11-24.json: candidate tree restored the 12:09Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: release/RESTORE_DRILL_2026-11-24.json: candidate tree f90c1f0c restored the 12:09Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed"
         ]
       },
       "new_credentials_stored": {
@@ -65,18 +65,18 @@
       },
       "rollback_migration": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T16:54:46Z",
+        "verifiedAt": "2026-11-24T17:39:15Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: release/RESTORE_DRILL_2026-11-24.json: production commit 50d8671 booted on the copy after the candidate, smoke issues empty; storage shape unchanged; rollback = redeploy 246f45ec keeping /data"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: production commit 00f3e29 booted on the copy after the candidate, smoke issues empty; storage shape unchanged; rollback = redeploy 38f6b8c2 keeping /data"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T16:54:55Z",
+        "verifiedAt": "2026-11-24T17:38:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: GitHub checks: PR #51 head 280fea4 (application tree 7c861676, native tree 680daea3) passes regression and Clean browser acceptance on chromium, firefox and mobile WebKit; deploy only the merged green main commit"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #53 head 6f50a26 (application tree f90c1f0c, native tree 680daea3) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
         ]
       },
       "expiry_alert": {

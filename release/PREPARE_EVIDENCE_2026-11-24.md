@@ -16,3 +16,9 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - **E-mail (16:11:52Z):** POST /api/access/request (signup) to the owner address → 200 mailed=true; owner confirmed receipt at 13:13 BRT; code not recorded.
 - **WebKit frame stall (found by CI, fixed):** on mobile WebKit the new language screen stopped producing animation frames (13 live backdrop blurs over the animated aurora); blur removed, CI diagnostic confirmed, acceptance green on head 280fea4.
 - **CI (16:55Z):** PR #51 head 280fea4 passes regression and Clean browser acceptance (desktop chromium, mobile chromium, desktop firefox, mobile WebKit).
+
+## Second candidate (PR #53, Bio-Twin hello + Nexus home), application tree `f90c1f0c93340b8e57fe75fd98b1257dce5f060e`
+- **Production before:** deployment 38f6b8c2 SUCCESS on 00f3e29 at 17:04Z (PR #51), live checks passed (tap fix, sw v58, og image, /get).
+- **Restore and rollback drill (17:39Z):** same 12:09Z snapshot; candidate f90c1f0c then production 00f3e29 booted on the restored copy, smoke issues empty, originals preserved, restored data deleted.
+- **i18n:** pt sweep of 30 routes in 3 states found no French source strings; exercise names and two labels now translated in 13 languages.
+- **CI:** PR #53 head 6f50a26 green (regression + Clean browser acceptance incl. mobile WebKit).

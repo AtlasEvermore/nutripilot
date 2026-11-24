@@ -1,7 +1,7 @@
 {
-  "checkedAt": "2026-11-24T16:54:46Z",
-  "applicationTree": "7c8616762449100c66c1c034c9e0c6c800bc8b89",
-  "rollbackCommit": "50d8671",
+  "checkedAt": "2026-11-24T17:39:15Z",
+  "applicationTree": "f90c1f0c93340b8e57fe75fd98b1257dce5f060e",
+  "rollbackCommit": "00f3e29",
   "snapshotCreatedAt": "2026-11-24T12:09:09.006Z",
   "snapshotSha256": "860e81e6afcf44b98cd6494db03d12ad27bfd61739d3858d2a5e29513d5dd8e1",
   "keySource": "owner recovery-key file on the owner computer (64 hex, key value never displayed)",
@@ -22,7 +22,7 @@
     "appJs": 200,
     "i18nPt": 200
   },
-  "order": "candidate booted first on the restored copy, then the production commit 50d8671 on the same copy after the candidate ran",
+  "order": "candidate booted first on the restored copy, then the production commit 00f3e29 on the same copy after the candidate ran",
   "productionAccessed": false,
   "restoredDataDeletedAfterDrill": true
 }
