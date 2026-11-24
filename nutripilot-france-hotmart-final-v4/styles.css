@@ -3150,3 +3150,9 @@ html.aura-lite .lang-hyper .lang-card.selected::after,html.aura-lite .lh-cta::af
 
 /* 19.1 · Tap ripple never takes layout space (a `.btn-lime > *` rule made it a 780px flex item on tap) */
 html .aura-host>.aura-ripple,html.aura .btn-lime>.aura-ripple{position:absolute!important;flex:none;margin:0}
+/* 19.2 · Language screen performance: no live blur over the animated aurora (13 backdrop blurs re-rendered every frame stalled WebKit) */
+.lang-hyper .lang-card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:linear-gradient(160deg,rgba(22,34,72,.92),rgba(8,13,32,.92))}
+.lang-hyper .lang-card.selected{background:linear-gradient(160deg,rgba(58,78,30,.95),rgba(12,40,52,.95))}
+.lang-hyper .lh-stars{animation:none;opacity:.6}
+.lang-hyper .lh-grid{transform:none;-webkit-mask-image:linear-gradient(to top,#000,transparent 45%);mask-image:linear-gradient(to top,#000,transparent 45%)}
+.lang-hyper .lh-grid{background-size:34px 34px;opacity:.7}
