@@ -1821,7 +1821,7 @@ function helloScreen() {
     <div class="hello-pick" role="radiogroup" aria-label="${L('Votre objectif')}">${Object.entries(FOCI).map(([id, x]) => `<button class="${x.tone} ${fk === id ? 'on' : ''}" role="radio" aria-checked="${fk === id}" data-focus="${id}"><span class="mod-ico">${icon(x.ico)}</span>${L(x.kicker)}</button>`).join('')}</div>
     ${f ? `<ul class="hello-points">${f.points.map(([ico, a, b]) => `<li><span class="mod-ico">${icon(ico)}</span><span><b>${L(a)}</b><small>${L(b)}</small></span></li>`).join('')}</ul>` : ''}
     <div class="hello-cta">
-      <button class="btn btn-lime btn-wide btn-xl" data-hello-start>${L('Créer mon plan gratuit')}</button>
+      <button class="btn btn-lime btn-wide btn-xl" data-hello-start>${L('Créer mon programme')}</button>
       <p>${L('Nutrition, entraînement et bien-être, dans une seule app.')}</p>
     </div>
     <div class="hello-trust">${[['fork', `${ALL_RECIPES.length}`, L('recettes')], ['dumbbell', `${Object.keys(EXERCISES).length}`, L('exercices')], ['globe', `${LANGS.length}`, L('langues')]].map(([ico, n, l]) => `<div>${icon(ico)}<b>${n}</b><span>${l}</span></div>`).join('')}</div>
@@ -1933,7 +1933,6 @@ function tourScreen() {
 
 // ---- Support ---------------------------------------------------------------
 const FAQ = [
-  ['Comment fonctionne l’essai gratuit ?', 'Quand la boutique propose un essai gratuit, sa durée est indiquée sur le bouton d’achat (par exemple 7 jours sur la formule annuelle), avec un accès complet. Aucun paiement pendant l’essai. L’abonnement démarre ensuite, sauf si vous annulez au moins 24 h avant la fin. Nous vous envoyons un rappel 2 jours avant.'],
   ['Comment annuler mon abonnement ?', 'iPhone : Réglages › votre nom › Abonnements › NutriPilot. Android : Play Store › votre profil › Paiements et abonnements › Abonnements. Supprimer l’application n’annule pas l’abonnement.'],
   ['Quelle différence entre les formules ?', 'Nutrition : scanner, plan de repas, recettes, courses, cours nutrition et coach. Entraînement : programmes salle et maison avec suivi des charges et cours musculation. Kit complet : tout NutriPilot, Académie incluse, au meilleur prix.'],
   ['Le scanner est-il précis ?', 'Une photo ne pèse pas un aliment : NutriPilot affiche des estimations. Vous pouvez corriger chaque quantité avant d’enregistrer. Le code-barres et l’étiquette donnent des valeurs plus précises.'],
@@ -4470,7 +4469,6 @@ function plansScreen() {
       </details>
       <details class="pl-more"><summary>${L('Questions fréquentes')}</summary>
         <div class="plans-faq">
-          <p><b>${L('Comment fonctionne l’essai gratuit ?')}</b> ${L('Quand la boutique propose un essai gratuit (par exemple 7 jours sur la formule annuelle), sa durée est indiquée sur le bouton. Vous pouvez annuler avant la fin de l’essai sans rien payer.')}</p>
           <p><b>${L('Puis-je combiner plusieurs modules ?')}</b> ${L('Oui. Chaque module s’ajoute à votre abonnement. Si une combinaison ou le Kit complet revient moins cher, NutriPilot vous le propose dans « Composer ».')}</p>
           <p><b>${L('Puis-je changer de formule ?')}</b> ${L('Oui, à tout moment depuis les réglages de votre compte App Store ou Google Play.')}</p>
           <p><b>${L('Le coach est-il inclus ?')}</b> ${L('Oui, le coach répond dans chaque module que vous avez activé.')}</p>
@@ -4536,7 +4534,7 @@ document.addEventListener('pointerdown', (event) => {
   const dot = document.createElement('span');
   dot.className = 'aura-ripple';
   const size = Math.max(r.width, r.height) * 2.2;
-  dot.style.cssText = `width:${size}px;height:${size}px;left:${event.clientX - r.left - size / 2}px;top:${event.clientY - r.top - size / 2}px`;
+  dot.style.cssText = `position:absolute;pointer-events:none;width:${size}px;height:${size}px;left:${event.clientX - r.left - size / 2}px;top:${event.clientY - r.top - size / 2}px`;
   if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
   el.classList.add('aura-host');
   el.appendChild(dot);

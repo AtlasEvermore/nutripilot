@@ -610,3 +610,12 @@ test('Static HTTP responses negotiate compressed variants and revalidate without
  assert.equal((await fetch(`${f.url}/app.js`,{headers:{'accept-encoding':'*;q=0'}})).status,406);
  const denied=await fetch(`${f.url}/api/user/state`);assert.equal(denied.status,401);assert.equal(denied.headers.get('cache-control'),'no-store');
 });
+
+test('Tap ripple never takes layout space and the hello CTA promises no trial', async () => {
+  const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+  const app = await fs.readFile(path.join(root, 'app.js'), 'utf8');
+  const css = await fs.readFile(path.join(root, 'styles.css'), 'utf8');
+  assert.match(app, /dot\.style\.cssText = `position:absolute;pointer-events:none;/);
+  assert.match(css, /html\.aura \.btn-lime>\.aura-ripple\{position:absolute!important/);
+  assert.doesNotMatch(app, /Créer mon plan gratuit|Comment fonctionne l’essai gratuit/);
+});

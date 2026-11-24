@@ -3147,3 +3147,6 @@ html.aura-lite .lang-hyper .lang-card.selected::after,html.aura-lite .lh-cta::af
 .lang-hyper .lh-code{position:absolute;top:8px;inset-inline-end:10px;font-size:9px}
 .orbit-mark .om-ring{animation:none}
 .lang-hyper .lang-card[aria-pressed=true]{outline:none;border-width:1px}
+
+/* 19.1 · Tap ripple never takes layout space (a `.btn-lime > *` rule made it a 780px flex item on tap) */
+html .aura-host>.aura-ripple,html.aura .btn-lime>.aura-ripple{position:absolute!important;flex:none;margin:0}
