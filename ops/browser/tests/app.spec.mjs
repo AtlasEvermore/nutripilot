@@ -414,3 +414,17 @@ test('In the iPhone app Plans shows only the real store subscription, with store
   await expect(page.locator('.legal-links a[href^="/terms"]')).toHaveCount(1);
   expect(await page.evaluate(() => window.__npErrors || [])).toEqual([]);
 });
+
+test('DIAG language card stability', async ({ page }, info) => {
+  await page.goto('/');
+  await page.waitForTimeout(2500);
+  const d = await page.evaluate(async () => {
+    const e = document.querySelector('[data-lang="pt"]');
+    const frames = [];
+    for (let i = 0; i < 8; i++) { await new Promise(r => requestAnimationFrame(r)); const r = e.getBoundingClientRect(); frames.push([Math.round(r.x*10)/10, Math.round(r.y*10)/10, Math.round(r.width*10)/10, Math.round(r.height*10)/10, scrollY]); }
+    const r = e.getBoundingClientRect(); const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    const cs = getComputedStyle(e);
+    return { frames, vh: innerHeight, top: top && (top.className + '').slice(0, 60), anim: cs.animationName, op: cs.opacity, tf: cs.transform, html: document.documentElement.className, anims: document.getAnimations().map(a => (a.animationName || a.constructor.name) + ':' + a.playState + ':' + ((a.effect?.target?.className || '') + '').slice(0, 30)).slice(0, 30) };
+  });
+  console.log('DIAG', info.project.name, JSON.stringify(d));
+});
