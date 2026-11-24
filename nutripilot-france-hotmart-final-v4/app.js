@@ -1805,6 +1805,39 @@ function showcase(focus) {
     ${chips.map(([ico, a, b], i) => `<div class="sc-float f${i + 1}"><span class="mod-ico">${icon(ico)}</span><span><small>${a}</small><b>${b}</b></span></div>`).join('')}
   </div>`;
 }
+// 20.0 · Bio-Twin: holographic body with a scanning beam; the four focus nodes are real buttons.
+function bioTwin(fk) {
+  const pos = { lose: [13, 32], meno: [87, 32], recipes: [13, 72], training: [87, 72] };
+  const nodes = Object.entries(FOCI).map(([id, x]) => {
+    const [l, t] = pos[id] || [50, 50];
+    return `<button class="bt-node ${x.tone} ${fk === id ? 'on' : ''}" style="--x:${l}%;--y:${t}%" data-focus="${id}" aria-pressed="${fk === id}" aria-label="${esc(L(x.kicker))}"><span class="mod-ico">${icon(x.ico)}</span><i></i></button>`;
+  }).join('');
+  return `<div class="bio-twin ${fk ? FOCI[fk]?.tone || '' : ''}" aria-hidden="false">
+    <svg class="bt-svg" viewBox="0 0 300 300" aria-hidden="true">
+      <defs>
+        <linearGradient id="btg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ef9ff"/><stop offset="1" stop-color="#d4ff3d"/></linearGradient>
+        <radialGradient id="btc" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#22e1ff" stop-opacity=".28"/><stop offset="1" stop-color="#22e1ff" stop-opacity="0"/></radialGradient>
+        <clipPath id="btclip"><path d="M150 40a19 19 0 1 1 0 .1zM126 92c6-8 16-12 24-12s18 4 24 12l14 46c2 7-2 12-8 12-4 0-7-3-8-7l-8-28v46l8 92c1 7-4 11-9 11s-9-4-10-10l-11-80-11 80c-1 6-5 10-10 10s-10-4-9-11l8-92v-46l-8 28c-1 4-4 7-8 7-6 0-10-5-8-12z"/></clipPath>
+      </defs>
+      <circle cx="150" cy="150" r="140" fill="url(#btc)"/>
+      <g class="bt-rings" fill="none">
+        <circle class="bt-r1" cx="150" cy="150" r="118" stroke="rgba(126,249,255,.22)" stroke-dasharray="2 6"/>
+        <ellipse class="bt-r2" cx="150" cy="150" rx="132" ry="46" stroke="rgba(212,255,61,.32)"/>
+        <ellipse class="bt-r3" cx="150" cy="150" rx="132" ry="46" stroke="rgba(126,249,255,.24)"/>
+      </g>
+      <g clip-path="url(#btclip)">
+        <rect x="90" y="20" width="120" height="270" fill="rgba(34,225,255,.07)"/>
+        <g stroke="rgba(126,249,255,.35)" stroke-width=".7">${Array.from({ length: 22 }, (_, i) => `<line x1="90" x2="210" y1="${30 + i * 12}" y2="${30 + i * 12}"/>`).join('')}</g>
+        <rect class="bt-scan" x="90" y="20" width="120" height="26" fill="url(#btg)" opacity=".55"/>
+      </g>
+      <path d="M150 40a19 19 0 1 1 0 .1zM126 92c6-8 16-12 24-12s18 4 24 12l14 46c2 7-2 12-8 12-4 0-7-3-8-7l-8-28v46l8 92c1 7-4 11-9 11s-9-4-10-10l-11-80-11 80c-1 6-5 10-10 10s-10-4-9-11l8-92v-46l-8 28c-1 4-4 7-8 7-6 0-10-5-8-12z" fill="none" stroke="url(#btg)" stroke-width="1.6"/>
+      <g class="bt-pulse"><circle cx="150" cy="118" r="4" fill="#d4ff3d"/><circle cx="150" cy="118" r="4" fill="none" stroke="#d4ff3d" class="bt-ping"/></g>
+    </svg>
+    <span class="bt-corner tl"></span><span class="bt-corner tr"></span><span class="bt-corner bl"></span><span class="bt-corner br"></span>
+    ${nodes}
+  </div>`;
+}
+
 function helloScreen() {
   const fk = currentFocus();
   const f = FOCI[fk];
@@ -1812,12 +1845,12 @@ function helloScreen() {
   const sub = f ? f.sub : 'Une seule app pour la nutrition, les recettes, l’entraînement, la ménopause 40+ et le sommeil. Choisissez ce qui compte pour vous.';
   return `<div class="hello ${f ? f.tone : ''}">
     <div class="hello-top">${logo()}${loginLink('Se connecter')}</div>
+    ${bioTwin(fk)}
     <div class="hello-copy">
       ${f ? `<span class="hello-kicker">${icon(f.ico)} ${L(f.kicker)}</span>` : ''}
       <h1>${L(title)}</h1>
       <p>${L(sub)}</p>
     </div>
-    <div class="welcome-flight">${missionControl()}</div>
     <div class="hello-pick" role="radiogroup" aria-label="${L('Votre objectif')}">${Object.entries(FOCI).map(([id, x]) => `<button class="${x.tone} ${fk === id ? 'on' : ''}" role="radio" aria-checked="${fk === id}" data-focus="${id}"><span class="mod-ico">${icon(x.ico)}</span>${L(x.kicker)}</button>`).join('')}</div>
     ${f ? `<ul class="hello-points">${f.points.map(([ico, a, b]) => `<li><span class="mod-ico">${icon(ico)}</span><span><b>${L(a)}</b><small>${L(b)}</small></span></li>`).join('')}</ul>` : ''}
     <div class="hello-cta">

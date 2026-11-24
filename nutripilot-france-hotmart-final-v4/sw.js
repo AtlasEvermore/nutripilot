@@ -1,4 +1,4 @@
-const CACHE = 'nutripilot-v58-20261124-langperf';
+const CACHE = 'nutripilot-v59-20261124-biotwin';
 const CORE = ['/', '/index.html', '/styles.css', '/app.js', '/i18n-launch.js', '/food.js', '/exercises.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest', '/fonts/bricolage.woff', '/fonts/figtree.woff'];
 
 self.addEventListener('install', (event) => {

@@ -3156,3 +3156,35 @@ html .aura-host>.aura-ripple,html.aura .btn-lime>.aura-ripple{position:absolute!
 .lang-hyper .lh-stars{animation:none;opacity:.6}
 .lang-hyper .lh-grid{transform:none;-webkit-mask-image:linear-gradient(to top,#000,transparent 45%);mask-image:linear-gradient(to top,#000,transparent 45%)}
 .lang-hyper .lh-grid{background-size:34px 34px;opacity:.7}
+/* 20.0 · Bio-Twin hologram (hello) — transform/opacity animations only, no blur */
+.bio-twin{position:relative;width:min(100%,330px);aspect-ratio:1;margin:6px auto 0;--glow:#d4ff3d}
+.bio-twin .bt-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.bt-rings *{transform-box:view-box;transform-origin:150px 150px}
+.bt-r1{animation:omSpin 40s linear infinite}
+.bt-r2{transform:rotate(-24deg);animation:btTilt 9s ease-in-out infinite alternate}
+.bt-r3{transform:rotate(24deg);animation:btTilt2 11s ease-in-out infinite alternate}
+.bt-scan{animation:btScan 3.6s cubic-bezier(.45,0,.55,1) infinite}
+.bt-ping{transform-box:fill-box;transform-origin:center;animation:btPing 2.2s ease-out infinite}
+.bt-corner{position:absolute;width:18px;height:18px;border:1.5px solid rgba(126,249,255,.55)}
+.bt-corner.tl{top:0;left:0;border-right:0;border-bottom:0;border-top-left-radius:6px}
+.bt-corner.tr{top:0;right:0;border-left:0;border-bottom:0;border-top-right-radius:6px}
+.bt-corner.bl{bottom:0;left:0;border-right:0;border-top:0;border-bottom-left-radius:6px}
+.bt-corner.br{bottom:0;right:0;border-left:0;border-top:0;border-bottom-right-radius:6px}
+.bt-node{position:absolute;left:var(--x);top:var(--y);width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;border:1px solid rgba(126,249,255,.3);background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.14),rgba(10,18,40,.92) 70%);display:grid;place-items:center;padding:0;color:#fff;box-shadow:0 8px 24px -10px rgba(0,0,0,.8);transition:transform .25s,border-color .25s,box-shadow .25s;z-index:2}
+.bt-node .mod-ico{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--mc,#2e7d32);box-shadow:0 0 16px -2px var(--mc,#2e7d32)}
+.bt-node .mod-ico svg{width:18px;height:18px}
+.bt-node i{position:absolute;inset:-7px;border-radius:50%;border:1.5px solid var(--glow);opacity:0;transform:scale(.8);transition:opacity .25s,transform .25s}
+.bt-node.on{border-color:var(--glow);transform:scale(1.12);box-shadow:0 0 0 4px rgba(212,255,61,.12),0 0 30px -4px var(--glow)}
+.bt-node.on i{opacity:1;transform:scale(1);animation:btRing 2.4s ease-out infinite}
+.bt-node:active{transform:scale(.94)}
+.bt-node:focus-visible{outline:3px solid var(--glow);outline-offset:4px}
+@keyframes btScan{0%{transform:translateY(0);opacity:0}12%{opacity:.6}88%{opacity:.6}100%{transform:translateY(240px);opacity:0}}
+@keyframes btPing{from{transform:scale(1);opacity:.9}to{transform:scale(4.5);opacity:0}}
+@keyframes btRing{from{transform:scale(1);opacity:.9}to{transform:scale(1.35);opacity:0}}
+@keyframes btTilt{to{transform:rotate(-14deg) scale(1.03)}}
+@keyframes btTilt2{to{transform:rotate(34deg) scale(.97)}}
+.hello .bio-twin + .hello-copy{text-align:center}
+.hello .bio-twin + .hello-copy p{margin-inline:auto}
+@media (prefers-reduced-motion:reduce){.bt-r1,.bt-r2,.bt-r3,.bt-scan,.bt-ping,.bt-node.on i{animation:none}}
+html.aura-lite .bt-r1,html.aura-lite .bt-r2,html.aura-lite .bt-r3{animation:none}
+.bio-twin{width:min(100%,300px)}
