@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "0e782b91e64b176aeb14ce88ff4083fabd1ba87e",
+  "applicationTree": "7c8616762449100c66c1c034c9e0c6c800bc8b89",
   "channels": [
     "ios"
   ],
@@ -25,7 +25,7 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T16:07:30Z",
+        "verifiedAt": "2026-11-24T16:54:46Z",
         "verifiedBy": "development-agent",
         "evidence": [
           "release/PREPARE_EVIDENCE_2026-11-24.md: release/RESTORE_DRILL_2026-11-24.json: candidate tree restored the 12:09Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed"
@@ -65,7 +65,7 @@
       },
       "rollback_migration": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T16:07:30Z",
+        "verifiedAt": "2026-11-24T16:54:46Z",
         "verifiedBy": "development-agent",
         "evidence": [
           "release/PREPARE_EVIDENCE_2026-11-24.md: release/RESTORE_DRILL_2026-11-24.json: production commit 50d8671 booted on the copy after the candidate, smoke issues empty; storage shape unchanged; rollback = redeploy 246f45ec keeping /data"
@@ -73,10 +73,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-16T00:11:30Z",
+        "verifiedAt": "2026-11-24T16:54:55Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-16.md: GitHub checks: PR #50 head f90534c (application tree 5ab6caad, native tree 680daea3) passes regression and Clean browser acceptance; deploy only the merged green main commit"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: GitHub checks: PR #51 head 280fea4 (application tree 7c861676, native tree 680daea3) passes regression and Clean browser acceptance on chromium, firefox and mobile WebKit; deploy only the merged green main commit"
         ]
       },
       "expiry_alert": {

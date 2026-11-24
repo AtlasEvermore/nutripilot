@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-11-24T16:07:30Z",
-  "applicationTree": "0e782b91e64b176aeb14ce88ff4083fabd1ba87e",
+  "checkedAt": "2026-11-24T16:54:46Z",
+  "applicationTree": "7c8616762449100c66c1c034c9e0c6c800bc8b89",
   "rollbackCommit": "50d8671",
   "snapshotCreatedAt": "2026-11-24T12:09:09.006Z",
   "snapshotSha256": "860e81e6afcf44b98cd6494db03d12ad27bfd61739d3858d2a5e29513d5dd8e1",
@@ -8,8 +8,20 @@
   "originalFiles": 6,
   "restoredMatchesSnapshotList": true,
   "originalFilesPreserved": true,
-  "candidate": { "smokeVersion": "18.1.0", "smokeIssues": [], "home": 200, "appJs": 200, "i18nPt": 200 },
-  "rollback": { "smokeVersion": "18.1.0", "smokeIssues": [], "home": 200, "appJs": 200, "i18nPt": 200 },
+  "candidate": {
+    "smokeVersion": "18.1.0",
+    "smokeIssues": [],
+    "home": 200,
+    "appJs": 200,
+    "i18nPt": 200
+  },
+  "rollback": {
+    "smokeVersion": "18.1.0",
+    "smokeIssues": [],
+    "home": 200,
+    "appJs": 200,
+    "i18nPt": 200
+  },
   "order": "candidate booted first on the restored copy, then the production commit 50d8671 on the same copy after the candidate ran",
   "productionAccessed": false,
   "restoredDataDeletedAfterDrill": true
