@@ -1140,8 +1140,12 @@ function track(name, params = {}) {
 }
 const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus', 'TrialStart', 'TrialEnded', 'TrialSignIn', 'CopilotAsk', 'CopilotApply', 'CopilotUndo', 'CopilotProSummary']);
 
+// Brand mark: the App Store icon's orbiting N, drawn inline so it stays crisp and can animate.
+function orbitMark(cls = '') {
+  return `<svg class="orbit-mark ${cls}" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="omg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d4ff3d"/><stop offset="1" stop-color="#22e1ff"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#060b1c"/><circle cx="32" cy="32" r="21" fill="none" stroke="url(#omg)" stroke-width="1.2" stroke-dasharray="1 3" opacity=".8"/><path d="M22.5 42V22l19 20V22" fill="none" stroke="url(#omg)" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/><g transform="rotate(-28 32 32.5)"><ellipse cx="32" cy="32.5" rx="21" ry="8" fill="none" stroke="url(#omg)" stroke-width="2.4"/><circle r="2.8" fill="#d4ff3d" class="om-sat"><animateMotion dur="4s" repeatCount="indefinite" path="M53 32.5a21 8 0 1 1-42 0a21 8 0 1 1 42 0"/></circle></g></svg>`;
+}
 function logo() {
-  return `<div class="logo"><span class="logo-mark"></span>${esc(config.brand)}</div>`;
+  return `<div class="logo">${orbitMark('logo-orbit')}${esc(config.brand)}</div>`;
 }
 
 // Screens visited in this session, for the header back button.
@@ -1752,12 +1756,15 @@ function langChip() {
 function langScreen() {
   const current = pendingLang || state.lang || detectLang();
   prefetchDict(current);
-  return `<div class="welcome">
+  const count = LANGS.length;
+  return `<div class="welcome lang-hyper">
+    <div class="lh-stars" aria-hidden="true"></div><div class="lh-grid" aria-hidden="true"></div>
     <div class="welcome-inner">
-      <div class="lang-top">${state.lang ? `<button class="back" data-lang-ok="${current}" aria-label="${L('Retour')}">${lang() === 'ar' ? '→' : '←'}</button>` : '<span></span>'}${logo()}<span></span></div>
-      <div class="welcome-copy"><h1>${esc(I18N[current]?.langTitle || t('langTitle'))}</h1></div>
-      <div class="lang-grid">${LANGS.map(([code, label, flag]) => `<button class="lang-card ${code === current ? 'selected' : ''}" data-lang="${code}" aria-pressed="${code === current}" lang="${code}"><span>${flag}</span><b>${label}</b></button>`).join('')}</div>
-      <div class="welcome-cta"><button class="btn btn-lime btn-wide btn-xl" data-lang-ok="${current}">${esc(I18N[current]?.langCta || 'Continuer')}</button></div>
+      <div class="lang-top">${state.lang ? `<button class="back" data-lang-ok="${current}" aria-label="${L('Retour')}">${lang() === 'ar' ? '→' : '←'}</button>` : '<span></span>'}<span class="lh-brand">${esc(config.brand)}</span><span></span></div>
+      <div class="lh-core" aria-hidden="true"><span class="lh-halo"></span><span class="lh-orbit o1"><i></i></span><span class="lh-orbit o2"><i></i></span>${orbitMark('lh-mark')}</div>
+      <div class="welcome-copy lh-copy"><span class="lh-hud"><i></i>HEALTH OS · ${String(count).padStart(2, '0')} LANG · ONLINE</span><h1>${esc(I18N[current]?.langTitle || t('langTitle'))}</h1></div>
+      <div class="lang-grid lh-cards">${LANGS.map(([code, label, flag], i) => `<button class="lang-card ${code === current ? 'selected' : ''}" data-lang="${code}" aria-pressed="${code === current}" lang="${code}" style="--i:${i}"><span class="lh-flag">${flag}</span><b>${label}</b><em class="lh-code">${code.toUpperCase()}</em></button>`).join('')}</div>
+      <div class="welcome-cta"><button class="btn btn-lime btn-wide btn-xl lh-cta" data-lang-ok="${current}">${esc(I18N[current]?.langCta || 'Continuer')}<span class="lh-arrow">→</span></button></div>
     </div>
   </div>`;
 }

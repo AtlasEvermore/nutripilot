@@ -439,6 +439,15 @@ test('App Store 5.1.1(v): a purchase without an account is verified by its rando
  const login=await fetch(f.url+'/api/access/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:key,purpose:'login'})});assert.notEqual(login.status,200,'no login code for a device identity');
 });
 
+test('Share link: preview bots get the rich card, iPhone users go to the App Store, others to the web app',async t=>{
+ const f=await fixture(t);
+ const get=async ua=>fetch(f.url+'/get',{headers:{'User-Agent':ua},redirect:'manual'});
+ const bot=await get('WhatsApp/2.24.1');assert.equal(bot.status,200);const html=await bot.text();assert.match(html,/og:image" content="[^"]+\/og-share\.jpg"/);assert.match(html,/summary_large_image/);assert.doesNotMatch(html,/<script/);
+ const ios=await get('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)');assert.equal(ios.status,302);assert.equal(ios.headers.get('location'),'https://apps.apple.com/app/id6826838334');
+ const web=await get('Mozilla/5.0 (Linux; Android 14)');assert.equal(web.status,302);assert.equal(web.headers.get('location'),'/');
+ const img=await fetch(f.url+'/og-share.jpg');assert.equal(img.status,200);assert.equal(img.headers.get('content-type'),'image/jpeg');
+});
+
 test('Removed web checkout and legacy payment routes cannot grant purchases or redirect to external payment',async t=>{
  const f=await fixture(t);assert.equal((await fetch(f.url+'/checkout?plan=complete&period=monthly',{redirect:'manual'})).status,404);
  const before=await fs.readFile(path.join(f.dir,'entitlements.json'),'utf8');assert.equal((await f.post('/api/hotmart/webhook',{event:'PURCHASE_APPROVED'},{premium:true})).status,404);assert.equal(await fs.readFile(path.join(f.dir,'entitlements.json'),'utf8'),before);
