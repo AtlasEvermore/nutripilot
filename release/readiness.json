@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "41da7fb1705493bbcf6e70eabbb00f0c4b70a95e",
+  "applicationTree": "5e0a3f1ee11ab58cd5bce323d3976606c25815d7",
   "channels": [
     "ios"
   ],
@@ -20,7 +20,7 @@
         "verifiedAt": "2026-11-25T16:44:25.724Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized backup 20261125T164425Z (keygen + create + verify), 6 files, SHA256 7a7d6437\u202673df, copied to the owner computer outside Railway (hash matched); owner saved the new key separately (format checked), key opened the backup"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized backup 20261125T164425Z (keygen + create + verify), 6 files, SHA256 7a7d6437…73df, copied to the owner computer outside Railway (hash matched); owner saved the new key separately (format checked), key opened the backup"
         ]
       },
       "restore_drill": {
@@ -73,10 +73,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T16:58:30Z",
+        "verifiedAt": "2026-11-25T17:22:54Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #57 head 0061e0a (application tree 41da7fb1, native tree a6a5e9a8) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #59 head 21d7dcb (application tree 5e0a3f1e) passes regression and Clean browser acceptance incl. mobile WebKit; interface-only release relative to production 5792a0a"
         ]
       },
       "expiry_alert": {
@@ -100,7 +100,7 @@
         "verifiedAt": "2026-11-24T22:22:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: signed IPA 18.2.0 (501) from main 54d29c9 (native tree a6a5e9a8), run 45524712579, IPA SHA256 180ea17c\u2026f8ff (artifact zip a1f62906\u20261ae2 re-hashed in the browser); uploaded to App Store Connect by run 45525587237 (success); held in TestFlight for owner approval before review"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: signed IPA 18.2.0 (501) from main 54d29c9 (native tree a6a5e9a8), run 45524712579, IPA SHA256 180ea17c…f8ff (artifact zip a1f62906…1ae2 re-hashed in the browser); uploaded to App Store Connect by run 45525587237 (success); held in TestFlight for owner approval before review"
         ]
       },
       "android_configuration": {

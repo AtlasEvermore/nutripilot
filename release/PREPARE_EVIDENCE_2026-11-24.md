@@ -43,3 +43,5 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - Drill 16:57Z: candidate then production aed95cf on the restored copy, smoke issues empty, originals preserved, restored data deleted.
 - AI billing 16:58Z: OpenAI US$5.00, auto-reload OFF; limits unchanged. Hosting: Railway HOBBY ACTIVE, 41a0fc20 SUCCESS on aed95cf.
 - Tests: selection blocked (triple tap selects nothing, context menu prevented), inputs still typeable and selectable; tap sweep 429 buttons no size change; CI green on 0061e0a.
+
+## PR #59 (real-life story hero), application tree `5e0a3f1ee11ab58cd5bce323d3976606c25815d7` — interface-only release (owner decision 25/11): changes since production 5792a0a are app.js, styles.css, sw.js, i18n only; data checks not required. CI green on 21d7dcb.
