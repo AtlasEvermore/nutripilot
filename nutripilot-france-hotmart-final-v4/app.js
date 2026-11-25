@@ -2057,10 +2057,22 @@ function initStory() {
 function helloAll() {
   const v = MV();
   const mods = MODULES.slice(0, 9);
-  return `<section class="hello-all" aria-label="${esc(L('Les 9 modules, sans limite'))}">
-    <div class="ha-head"><span class="ha-count"><i></i>${mods.length}</span><div><h2>${L('Tout NutriPilot, en un coup d’œil.')}</h2><p>${L('Les 9 modules, sans limite')}</p></div></div>
-    <div class="ha-grid">${mods.map((m, i) => `<button class="ha-tile ${m.tone}" data-nexus="${m.id}" style="--i:${i}"><span class="ha-no">${String(i + 1).padStart(2, '0')}</span><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.short || m.name))}</b><small>${esc(L(m.sub, v))}</small><em>${(m.features || []).length} <i>›</i></em><span class="ha-sheen" aria-hidden="true"></span></button>`).join('')}</div>
+  const card = (m) => `<div class="hp-detail-in ${m.tone}"><div class="hp-dh"><span class="mod-ico">${icon(m.icon)}</span><div><span class="hp-k">${esc(L(m.name))}</span><b>${esc(modTitle(m))}</b></div></div><p>${esc(L(m.sub, v))}</p><ul>${(m.features || []).map((f) => `<li>${esc(L(f, v))}</li>`).join('')}</ul></div>`;
+  return `<section class="hello-pick9" data-pick9 aria-label="${esc(L('Les 9 modules, sans limite'))}">
+    <div class="hp-head"><span class="hp-count"><i></i>${mods.length}</span><div><h2>${L('Tout NutriPilot, en un coup d’œil.')}</h2><p>${L('Les 9 modules, sans limite')}</p></div></div>
+    <div class="hp-grid" role="tablist">${mods.map((m, i) => `<button class="hp-chip ${m.tone} ${i === 0 ? 'on' : ''}" role="tab" aria-selected="${i === 0}" data-pick9="${i}" style="--i:${i}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.short || m.name))}</b></button>`).join('')}</div>
+    <div class="hp-detail" aria-live="polite">${mods.map((m, i) => `<div class="hp-pane ${i === 0 ? 'on' : ''}" data-pane="${i}">${card(m)}</div>`).join('')}</div>
   </section>`;
+}
+function initPick9() {
+  const host = app.querySelector('[data-pick9]'); if (!host || host.dataset.ready) return; host.dataset.ready = '1';
+  host.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pick9]'); if (!b || b === host) return;
+    e.preventDefault(); e.stopPropagation();
+    const i = b.dataset.pick9;
+    host.querySelectorAll('.hp-chip').forEach((c) => { const on = c.dataset.pick9 === i; c.classList.toggle('on', on); c.setAttribute('aria-selected', on); });
+    host.querySelectorAll('.hp-pane').forEach((p) => p.classList.toggle('on', p.dataset.pane === i));
+  }, true);
 }
 
 function helloScreen() {
@@ -9078,6 +9090,7 @@ function render() {
   app.innerHTML = html + (noFab ? '' : supportBubble());
   try { initHolo(); } catch (e) { (window.__npErrors ||= []).push('holo ' + e); }
   try { initStory(); } catch (e) { (window.__npErrors ||= []).push('story ' + e); }
+  try { initPick9(); } catch (e) { (window.__npErrors ||= []).push('pick9 ' + e); }
   const workspace=app.querySelector('.mobile-app');
   if(workspace){
     workspace.classList.add('quantum-workspace');workspace.dataset.workspace=modHere?.id || route;
