@@ -34,3 +34,4 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - Production before: deployment e4779229 SUCCESS on 13b2f90 (PR #55).
 - Restore and rollback drill (2026-11-25T02:31:05Z): same 01:37Z snapshot; candidate then 13b2f90 on the restored copy; smoke issues empty; originals preserved; restored data deleted.
 - CI: PR #56 head 7c6663c green (regression + Clean browser acceptance incl. mobile WebKit). Orbitron font added (OFL) at /fonts/orbitron.woff2.
+- Final tree after animation cycle (9351b439): drill re-run 2026-11-25T02:45:32Z, smoke issues empty; CI green on 5fe09ec.
