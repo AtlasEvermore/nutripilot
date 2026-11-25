@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "e0c7439d47c7c68bf46a98cbe5fba7f5c7f69aa1",
+  "applicationTree": "d860792c512296b68014c87e88d979b9aa1abeb9",
   "channels": [
     "ios"
   ],
@@ -25,10 +25,10 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T01:46:54Z",
+        "verifiedAt": "2026-11-25T02:31:05Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: candidate tree e0c7439d restored the 01:37Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed; restored data deleted"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: candidate tree d860792c restored the 01:37Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed; restored data deleted"
         ]
       },
       "new_credentials_stored": {
@@ -65,18 +65,18 @@
       },
       "rollback_migration": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T01:46:54Z",
+        "verifiedAt": "2026-11-25T02:31:05Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: production commit 7d3b230 booted on the restored copy after the candidate, smoke issues empty; storage shape unchanged; rollback = redeploy 6e2f602b keeping /data"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: production commit 13b2f90 booted on the restored copy after the candidate, smoke issues empty; rollback = redeploy e4779229 keeping /data"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T01:48:00Z",
+        "verifiedAt": "2026-11-25T02:31:05Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #55 head 6b572aa (application tree e0c7439d, native tree a6a5e9a8) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #56 head 7c6663c (application tree d860792c, native tree a6a5e9a8) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
         ]
       },
       "expiry_alert": {

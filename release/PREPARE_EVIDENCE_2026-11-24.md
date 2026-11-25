@@ -29,3 +29,8 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - **Backup (01:37:44Z):** Railway console keygen + create + verify, 6 files, SHA256 98a2dbd4…fc94; copied to owner computer (hash matched); owner saved the new key separately (format checked; value never displayed).
 - **Restore and rollback drill (01:46:54Z):** candidate e0c7439d then production 7d3b230 on the restored copy, smoke issues empty, originals preserved, restored data deleted.
 - **CI:** PR #55 head 6b572aa green (regression + Clean browser acceptance incl. mobile WebKit).
+
+## Fourth candidate (PR #56, WebGL hologram + Orbitron), application tree `d860792c512296b68014c87e88d979b9aa1abeb9`
+- Production before: deployment e4779229 SUCCESS on 13b2f90 (PR #55).
+- Restore and rollback drill (2026-11-25T02:31:05Z): same 01:37Z snapshot; candidate then 13b2f90 on the restored copy; smoke issues empty; originals preserved; restored data deleted.
+- CI: PR #56 head 7c6663c green (regression + Clean browser acceptance incl. mobile WebKit). Orbitron font added (OFL) at /fonts/orbitron.woff2.
