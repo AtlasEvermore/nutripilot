@@ -3250,3 +3250,24 @@ html.aura-lite .nx-ring,html.aura-lite .nx-h1,html.aura-lite .nx-h2{animation:no
 .nx-node small{max-width:84px;overflow-wrap:normal;word-break:normal;hyphens:auto;font-size:10px}
 .nx-count{transform:translate(-50%,150%)}
 .nx-step i{font-style:normal;font-size:16px;line-height:1}
+/* 20.2 · Bio-Twin v2: anatomical point-cloud body, links to the four programs */
+.bio-twin .bt-scan{animation:btScan2 3.4s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes btScan2{0%{transform:translateY(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(285px);opacity:0}}
+.bt-sp{fill:#eaffff;animation:btTw 3s ease-in-out var(--d) infinite}
+@keyframes btTw{0%,100%{opacity:.15}50%{opacity:1}}
+.bt-outline{filter:drop-shadow(0 0 4px rgba(126,249,255,.65))}
+.bt-floor{animation:lhBreath 3s ease-in-out infinite}
+.bt-link path{stroke:rgba(126,249,255,.28);stroke-width:.8;stroke-dasharray:3 4;fill:none}
+.bt-link .bt-flow{fill:#d4ff3d;opacity:.7}
+.bt-link .bt-anchor{fill:rgba(212,255,61,.25);stroke:#d4ff3d;stroke-width:.8}
+.bt-link.on path{stroke:#d4ff3d;stroke-width:1.2;stroke-dasharray:none;opacity:.9}
+.bt-link.on .bt-anchor{fill:#d4ff3d;transform-box:fill-box;transform-origin:center;animation:btAnchor 1.6s ease-in-out infinite}
+@keyframes btAnchor{50%{transform:scale(1.8);opacity:.6}}
+@media (prefers-reduced-motion:reduce){.bio-twin .bt-scan,.bt-sp,.bt-floor,.bt-link.on .bt-anchor{animation:none}}
+/* 20.3 · Bio-Twin planet: the body stands on a living planet horizon */
+.bio-twin .bt-svg{overflow:hidden;border-radius:0 0 40% 40%/0 0 12% 12%}
+.bt-meridians{transform-box:view-box;transform-origin:150px 415px;animation:btSpinY 14s linear infinite}
+@keyframes btSpinY{from{transform:scaleX(1)}50%{transform:scaleX(-1)}to{transform:scaleX(1)}}
+.bt-city{fill:#d4ff3d;animation:btTw 4s ease-in-out var(--d) infinite}
+.bt-rim{filter:drop-shadow(0 0 6px #7ef9ff) drop-shadow(0 0 14px rgba(34,225,255,.6))}
+@media (prefers-reduced-motion:reduce){.bt-meridians,.bt-city{animation:none}}

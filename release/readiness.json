@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "f90c1f0c93340b8e57fe75fd98b1257dce5f060e",
+  "applicationTree": "e0c7439d47c7c68bf46a98cbe5fba7f5c7f69aa1",
   "channels": [
     "ios"
   ],
@@ -17,18 +17,18 @@
       },
       "independent_backup": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T12:09:09.006Z",
+        "verifiedAt": "2026-11-25T01:37:44.979Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized backup (keygen + create + verify), 6 files, SHA256 860e81e6…d8e1 copied to the owner computer outside Railway; owner recovery key opened it (release/RESTORE_DRILL_2026-11-24.json)"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized backup 20261125T013744Z (keygen + create + verify), 6 files, SHA256 98a2dbd4…fc94, copied to the owner computer outside Railway (hash matched); owner saved the new 64-hex key separately, format checked, key opened the backup"
         ]
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T17:39:15Z",
+        "verifiedAt": "2026-11-25T01:46:54Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: release/RESTORE_DRILL_2026-11-24.json: candidate tree f90c1f0c restored the 12:09Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: candidate tree e0c7439d restored the 01:37Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed; restored data deleted"
         ]
       },
       "new_credentials_stored": {
@@ -65,18 +65,18 @@
       },
       "rollback_migration": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T17:39:15Z",
+        "verifiedAt": "2026-11-25T01:46:54Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: production commit 00f3e29 booted on the copy after the candidate, smoke issues empty; storage shape unchanged; rollback = redeploy 38f6b8c2 keeping /data"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: production commit 7d3b230 booted on the restored copy after the candidate, smoke issues empty; storage shape unchanged; rollback = redeploy 6e2f602b keeping /data"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T17:38:00Z",
+        "verifiedAt": "2026-11-25T01:48:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #53 head 6f50a26 (application tree f90c1f0c, native tree 680daea3) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #55 head 6b572aa (application tree e0c7439d, native tree a6a5e9a8) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
         ]
       },
       "expiry_alert": {
@@ -97,10 +97,10 @@
       },
       "ios_artifact": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T16:10:30Z",
+        "verifiedAt": "2026-11-24T22:22:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: ASC build 401 VALID, not expired; native tree 680daea3 unchanged"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: signed IPA 18.2.0 (501) from main 54d29c9 (native tree a6a5e9a8), run 45524712579, IPA SHA256 180ea17c…f8ff (artifact zip a1f62906…1ae2 re-hashed in the browser); uploaded to App Store Connect by run 45525587237 (success); held in TestFlight for owner approval before review"
         ]
       },
       "android_configuration": {
@@ -197,7 +197,7 @@
       }
     }
   },
-  "nativeTree": "680daea35d58e1c9c751846bc26c530dcd45e7e8",
+  "nativeTree": "a6a5e9a8d89f0ee444e6abc7f09089df4ffaa63b",
   "deferredChannels": [
     "android"
   ]
