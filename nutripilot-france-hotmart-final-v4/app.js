@@ -1812,12 +1812,14 @@ function bioTwin(fk) {
   const BODY = 'M150 26C153.7 26.0 158.0 26.5 161 28C164.0 29.5 166.5 31.8 168 35C169.5 38.2 170.0 43.0 170 47C170.0 51.0 169.2 55.5 168 59C166.8 62.5 164.7 65.7 163 68C161.3 70.3 159.0 71.0 158 73C157.0 75.0 157.0 77.8 157 80C157.0 82.2 155.8 84.3 158 86C160.2 87.7 165.7 88.7 170 90C174.3 91.3 180.3 92.2 184 94C187.7 95.8 190.2 97.7 192 101C193.8 104.3 194.2 108.8 195 114C195.8 119.2 196.3 126.0 197 132C197.7 138.0 198.3 144.0 199 150C199.7 156.0 200.3 162.7 201 168C201.7 173.3 202.5 178.0 203 182C203.5 186.0 204.5 189.2 204 192C203.5 194.8 201.5 198.8 200 199C198.5 199.2 196.2 196.0 195 193C193.8 190.0 193.8 185.8 193 181C192.2 176.2 191.0 169.8 190 164C189.0 158.2 188.2 152.0 187 146C185.8 140.0 184.3 132.7 183 128C181.7 123.3 179.8 116.3 179 118C178.2 119.7 178.7 131.3 178 138C177.3 144.7 175.0 152.0 175 158C175.0 164.0 177.2 168.7 178 174C178.8 179.3 179.8 184.3 180 190C180.2 195.7 179.7 201.3 179 208C178.3 214.7 177.0 222.7 176 230C175.0 237.3 173.8 245.7 173 252C172.2 258.3 170.8 263.3 171 268C171.2 272.7 175.3 277.3 174 280C172.7 282.7 165.5 285.3 163 284C160.5 282.7 159.8 277.3 159 272C158.2 266.7 158.5 259.3 158 252C157.5 244.7 156.8 235.7 156 228C155.2 220.3 154.0 211.0 153 206C152.0 201.0 151.0 198.0 150 198C149.0 198.0 148.0 201.0 147 206C146.0 211.0 144.8 220.3 144 228C143.2 235.7 142.5 244.7 142 252C141.5 259.3 141.8 266.7 141 272C140.2 277.3 139.5 282.7 137 284C134.5 285.3 127.3 282.7 126 280C124.7 277.3 128.8 272.7 129 268C129.2 263.3 127.8 258.3 127 252C126.2 245.7 125.0 237.3 124 230C123.0 222.7 121.7 214.7 121 208C120.3 201.3 119.8 195.7 120 190C120.2 184.3 121.2 179.3 122 174C122.8 168.7 125.0 164.0 125 158C125.0 152.0 122.7 144.7 122 138C121.3 131.3 121.8 119.7 121 118C120.2 116.3 118.3 123.3 117 128C115.7 132.7 114.2 140.0 113 146C111.8 152.0 111.0 158.2 110 164C109.0 169.8 107.8 176.2 107 181C106.2 185.8 106.2 190.0 105 193C103.8 196.0 101.5 199.2 100 199C98.5 198.8 96.5 194.8 96 192C95.5 189.2 96.5 186.0 97 182C97.5 178.0 98.3 173.3 99 168C99.7 162.7 100.3 156.0 101 150C101.7 144.0 102.3 138.0 103 132C103.7 126.0 104.2 119.2 105 114C105.8 108.8 106.2 104.3 108 101C109.8 97.7 112.3 95.8 116 94C119.7 92.2 125.7 91.3 130 90C134.3 88.7 139.8 87.7 142 86C144.2 84.3 143.0 82.2 143 80C143.0 77.8 143.0 75.0 142 73C141.0 71.0 138.7 70.3 137 68C135.3 65.7 133.2 62.5 132 59C130.8 55.5 130.0 51.0 130 47C130.0 43.0 130.5 38.2 132 35C133.5 31.8 136.0 29.5 139 28C142.0 26.5 146.3 26.0 150 26Z';
   const links = Object.keys(FOCI).map((id) => {
     const [l, t] = pos[id] || [50, 50]; const [ax, ay] = anchor[id] || [150, 150];
-    const x = l * 3, y = t * 3;
-    return `<g class="bt-link ${fk === id ? 'on' : ''}"><path d="M${x} ${y}L${ax} ${ay}"/><circle r="2" class="bt-flow"><animateMotion dur="2.4s" repeatCount="indefinite" path="M${x} ${y}L${ax} ${ay}"/></circle><circle cx="${ax}" cy="${ay}" r="3.2" class="bt-anchor"/></g>`;
+    const x = l < 50 ? 92 : 208, y = t * 3;
+    return `<g class="bt-link ${fk === id ? 'on' : ''}"><path d="M${x} ${y}L${ax} ${ay}"/><circle r="2" class="bt-flow"><animateMotion dur="2.4s" repeatCount="indefinite" path="M${x} ${y}L${ax} ${ay}"/></circle><circle cx="${ax}" cy="${ay}" r="3.2" class="bt-anchor"/>${fk === id ? `<g class="bt-reticle" transform="translate(${ax} ${ay})"><path d="M-12 -6V-12H-6M6 -12H12V-6M12 6V12H6M-6 12H-12V6"/><circle r="8"/></g>` : ''}</g>`;
   }).join('');
-  const nodes = Object.entries(FOCI).map(([id, x]) => {
-    const [l, t] = pos[id] || [50, 50];
-    return `<button class="bt-node ${x.tone} ${fk === id ? 'on' : ''}" style="--x:${l}%;--y:${t}%" data-focus="${id}" aria-pressed="${fk === id}" aria-label="${esc(L(x.kicker))}"><span class="mod-ico">${icon(x.ico)}</span><i></i></button>`;
+  const side = { lose: 'l', meno: 'r', recipes: 'l', training: 'r' };
+  const nodes = Object.entries(FOCI).map(([id, x], i) => {
+    const [, t] = pos[id] || [50, 50];
+    const bars = [5, 9, 6, 11, 8, 13, 10].map((h, k) => `<i style="--h:${h + ((i * 3 + k) % 4)}px;--k:${k}"></i>`).join('');
+    return `<button class="bt-tag ${side[id] || 'l'} ${x.tone} ${fk === id ? 'on' : ''}" style="--y:${t}%" data-focus="${id}" aria-pressed="${fk === id}"><span class="bt-tag-id">0${i + 1} · ${fk === id ? 'LOCK' : 'SCAN'}</span><b>${esc(L(x.kicker))}</b><span class="bt-tag-bars" aria-hidden="true">${bars}</span></button>`;
   }).join('');
   return `<div class="bio-twin ${fk ? FOCI[fk]?.tone || '' : ''}">
     <svg class="bt-svg" viewBox="0 0 300 300" aria-hidden="true">
@@ -1826,6 +1828,7 @@ function bioTwin(fk) {
         <radialGradient id="btc" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#22e1ff" stop-opacity=".32"/><stop offset=".6" stop-color="#1b5cff" stop-opacity=".08"/><stop offset="1" stop-color="#22e1ff" stop-opacity="0"/></radialGradient>
         <pattern id="btdots" width="4.2" height="4.2" patternUnits="userSpaceOnUse"><circle cx="2.1" cy="2.1" r=".75" fill="#7ef9ff" opacity=".55"/></pattern>
         <linearGradient id="btscan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4ff3d" stop-opacity="0"/><stop offset=".46" stop-color="#d4ff3d" stop-opacity=".35"/><stop offset=".5" stop-color="#ffffff" stop-opacity=".95"/><stop offset=".54" stop-color="#7ef9ff" stop-opacity=".35"/><stop offset="1" stop-color="#7ef9ff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="btstream" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#d4ff3d" stop-opacity="0"/><stop offset=".8" stop-color="#d4ff3d" stop-opacity=".9"/><stop offset="1" stop-color="#fff"/></linearGradient>
         <clipPath id="btclip"><path d="${BODY}"/></clipPath>
       </defs>
       <circle cx="150" cy="155" r="146" fill="url(#btc)"/>
@@ -1833,6 +1836,12 @@ function bioTwin(fk) {
         <circle class="bt-r1" cx="150" cy="155" r="122" stroke="rgba(126,249,255,.22)" stroke-dasharray="2 6"/>
         <ellipse class="bt-r2" cx="150" cy="190" rx="118" ry="30" stroke="rgba(212,255,61,.35)"/>
         <ellipse class="bt-r3" cx="150" cy="120" rx="96" ry="22" stroke="rgba(126,249,255,.28)"/>
+      </g>
+      <g class="bt-orbit-back">
+        <ellipse cx="150" cy="150" rx="140" ry="44" transform="rotate(-18 150 150)" fill="none" stroke="url(#btg)" stroke-width="1.2" opacity=".55"/>
+        <circle r="3.4" fill="#d4ff3d" class="bt-sat"><animateMotion dur="7s" repeatCount="indefinite" path="M290 150a140 44 0 1 1-280 0a140 44 0 1 1 280 0" rotate="0"/></circle>
+        <ellipse cx="150" cy="160" rx="128" ry="36" transform="rotate(14 150 160)" fill="none" stroke="rgba(126,249,255,.35)" stroke-width=".8" stroke-dasharray="1 5"/>
+        <circle r="2.4" fill="#7ef9ff" class="bt-sat"><animateMotion dur="11s" repeatCount="indefinite" path="M278 160a128 36 0 1 0-256 0a128 36 0 1 0 256 0"/></circle>
       </g>
       <defs><radialGradient id="btpl" cx=".5" cy=".18" r=".75"><stop offset="0" stop-color="#2ad4ff"/><stop offset=".35" stop-color="#0d4fa8"/><stop offset=".8" stop-color="#061536"/><stop offset="1" stop-color="#02040b"/></radialGradient><clipPath id="btplc"><circle cx="150" cy="415" r="172"/></clipPath><linearGradient id="btatm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ef9ff" stop-opacity=".0"/><stop offset=".5" stop-color="#7ef9ff" stop-opacity=".35"/><stop offset="1" stop-color="#22e1ff" stop-opacity="0"/></linearGradient></defs>
       <g class="bt-planet">
@@ -1846,19 +1855,146 @@ function bioTwin(fk) {
         </g>
         <path d="M-22 415A172 172 0 0 1 322 415" fill="none" stroke="#bff8ff" stroke-width="1.4" opacity=".9" class="bt-rim"/>
       </g>
+      <g class="bt-body">
       <g clip-path="url(#btclip)">
         <rect x="90" y="20" width="120" height="270" fill="rgba(10,60,110,.55)"/>
         <rect x="90" y="20" width="120" height="270" fill="url(#btdots)"/>
         <circle cx="133.8" cy="67.7" r="1.2" class="bt-sp" style="--d:0.14s"/><circle cx="179.6" cy="53.5" r="1.2" class="bt-sp" style="--d:0.17s"/><circle cx="150.7" cy="39.4" r="0.9" class="bt-sp" style="--d:1.25s"/><circle cx="126.1" cy="167.8" r="0.7" class="bt-sp" style="--d:2.48s"/><circle cx="115.4" cy="85.8" r="1.2" class="bt-sp" style="--d:1.75s"/><circle cx="109.7" cy="176.4" r="0.7" class="bt-sp" style="--d:2.93s"/><circle cx="108.3" cy="244.6" r="0.9" class="bt-sp" style="--d:1.26s"/><circle cx="153.7" cy="172.7" r="1.2" class="bt-sp" style="--d:2.45s"/><circle cx="120.6" cy="175.4" r="1.2" class="bt-sp" style="--d:0.56s"/><circle cx="113.0" cy="208.0" r="1.2" class="bt-sp" style="--d:0.18s"/><circle cx="122.9" cy="200.1" r="0.9" class="bt-sp" style="--d:2.33s"/><circle cx="146.8" cy="260.9" r="0.9" class="bt-sp" style="--d:0.90s"/><circle cx="177.1" cy="204.7" r="0.7" class="bt-sp" style="--d:0.25s"/><circle cx="131.6" cy="153.8" r="0.9" class="bt-sp" style="--d:2.19s"/><circle cx="130.5" cy="275.0" r="0.7" class="bt-sp" style="--d:1.54s"/><circle cx="119.2" cy="115.5" r="0.9" class="bt-sp" style="--d:1.27s"/><circle cx="192.5" cy="49.4" r="1.2" class="bt-sp" style="--d:1.72s"/><circle cx="184.5" cy="108.4" r="1.2" class="bt-sp" style="--d:1.05s"/><circle cx="149.7" cy="229.2" r="0.7" class="bt-sp" style="--d:2.52s"/><circle cx="190.9" cy="148.5" r="1.2" class="bt-sp" style="--d:0.19s"/><circle cx="171.3" cy="107.4" r="1.2" class="bt-sp" style="--d:2.98s"/><circle cx="179.6" cy="101.1" r="0.9" class="bt-sp" style="--d:2.66s"/><circle cx="135.9" cy="265.2" r="0.9" class="bt-sp" style="--d:0.50s"/><circle cx="114.8" cy="44.7" r="0.9" class="bt-sp" style="--d:0.39s"/><circle cx="126.8" cy="127.7" r="0.9" class="bt-sp" style="--d:0.24s"/><circle cx="145.3" cy="167.4" r="0.7" class="bt-sp" style="--d:2.46s"/><circle cx="183.5" cy="99.6" r="0.9" class="bt-sp" style="--d:2.96s"/><circle cx="166.8" cy="125.1" r="0.7" class="bt-sp" style="--d:0.45s"/><circle cx="120.2" cy="88.0" r="0.7" class="bt-sp" style="--d:0.04s"/><circle cx="180.5" cy="75.6" r="0.9" class="bt-sp" style="--d:0.01s"/><circle cx="142.5" cy="122.3" r="1.2" class="bt-sp" style="--d:0.96s"/><circle cx="115.5" cy="244.8" r="1.2" class="bt-sp" style="--d:1.96s"/><circle cx="172.1" cy="144.2" r="1.2" class="bt-sp" style="--d:2.39s"/><circle cx="140.1" cy="129.7" r="0.7" class="bt-sp" style="--d:1.44s"/><circle cx="140.8" cy="77.7" r="0.7" class="bt-sp" style="--d:1.32s"/><circle cx="114.1" cy="180.2" r="0.7" class="bt-sp" style="--d:0.00s"/><circle cx="117.9" cy="55.4" r="0.9" class="bt-sp" style="--d:1.84s"/><circle cx="110.5" cy="82.0" r="0.9" class="bt-sp" style="--d:0.45s"/><circle cx="127.2" cy="116.8" r="0.9" class="bt-sp" style="--d:1.42s"/><circle cx="114.6" cy="152.0" r="0.9" class="bt-sp" style="--d:1.44s"/><circle cx="132.7" cy="66.0" r="1.2" class="bt-sp" style="--d:1.03s"/><circle cx="128.4" cy="237.2" r="0.7" class="bt-sp" style="--d:1.55s"/><circle cx="122.9" cy="268.0" r="0.9" class="bt-sp" style="--d:0.44s"/><circle cx="154.0" cy="36.8" r="1.2" class="bt-sp" style="--d:0.89s"/><circle cx="163.1" cy="52.8" r="0.9" class="bt-sp" style="--d:1.56s"/><circle cx="187.6" cy="118.9" r="0.7" class="bt-sp" style="--d:1.60s"/><circle cx="175.7" cy="112.4" r="0.7" class="bt-sp" style="--d:1.84s"/><circle cx="176.5" cy="219.6" r="0.7" class="bt-sp" style="--d:2.42s"/><circle cx="179.3" cy="215.0" r="0.7" class="bt-sp" style="--d:0.60s"/><circle cx="149.3" cy="212.8" r="0.7" class="bt-sp" style="--d:2.37s"/><circle cx="147.4" cy="78.4" r="1.2" class="bt-sp" style="--d:2.87s"/><circle cx="145.1" cy="264.3" r="0.9" class="bt-sp" style="--d:2.87s"/><circle cx="137.5" cy="85.1" r="0.7" class="bt-sp" style="--d:1.41s"/><circle cx="135.1" cy="150.7" r="1.2" class="bt-sp" style="--d:2.52s"/><circle cx="148.1" cy="193.2" r="1.2" class="bt-sp" style="--d:0.25s"/><circle cx="164.8" cy="257.4" r="1.2" class="bt-sp" style="--d:2.25s"/><circle cx="148.0" cy="74.6" r="1.2" class="bt-sp" style="--d:1.00s"/><circle cx="177.7" cy="272.9" r="0.9" class="bt-sp" style="--d:1.39s"/><circle cx="172.4" cy="51.2" r="0.7" class="bt-sp" style="--d:0.51s"/><circle cx="115.7" cy="67.8" r="0.9" class="bt-sp" style="--d:2.42s"/><circle cx="117.4" cy="236.6" r="0.9" class="bt-sp" style="--d:1.97s"/><circle cx="136.2" cy="167.2" r="0.7" class="bt-sp" style="--d:0.06s"/><circle cx="177.5" cy="211.6" r="0.7" class="bt-sp" style="--d:1.58s"/><circle cx="189.9" cy="138.5" r="0.7" class="bt-sp" style="--d:2.48s"/><circle cx="123.4" cy="93.0" r="0.9" class="bt-sp" style="--d:1.50s"/><circle cx="174.3" cy="111.5" r="1.2" class="bt-sp" style="--d:1.26s"/><circle cx="116.1" cy="257.5" r="0.9" class="bt-sp" style="--d:2.69s"/><circle cx="164.9" cy="233.8" r="1.2" class="bt-sp" style="--d:1.26s"/><circle cx="188.4" cy="155.4" r="1.2" class="bt-sp" style="--d:0.46s"/><circle cx="151.0" cy="248.2" r="0.7" class="bt-sp" style="--d:1.83s"/>
+        ${[112, 131, 150, 169, 188].map((x, k) => `<rect class="bt-stream" x="${x}" y="300" width="1.4" height="60" fill="url(#btstream)" style="--k:${k}"/>`).join('')}
         <rect class="bt-scan" x="90" y="0" width="120" height="34" fill="url(#btscan)"/>
       </g>
       <path d="${BODY}" fill="none" stroke="url(#btg)" stroke-width="1.7" class="bt-outline"/>
       <path d="${BODY}" fill="none" stroke="#7ef9ff" stroke-width="5" opacity=".12"/>
+      </g>
       ${links}
     </svg>
     <span class="bt-corner tl"></span><span class="bt-corner tr"></span><span class="bt-corner bl"></span><span class="bt-corner br"></span>
     ${nodes}
   </div>`;
+}
+
+// 21.0 · Holo: real-time WebGL hologram. Thousands of particles rise from a planet and assemble a human body,
+// orbit rings turn behind it, a light scan sweeps it and the four programs orbit as tappable lights.
+let HOLO = null;
+function holoHello(fk) {
+  const tags = Object.entries(FOCI).map(([id, x], i) => `<button class="hx-sat ${x.tone} ${fk === id ? 'on' : ''}" data-focus="${id}" data-sat="${i}" aria-pressed="${fk === id}"><i class="hx-core"></i><span class="hx-lbl"><em>0${i + 1}</em>${esc(L(x.kicker))}</span></button>`).join('');
+  return `<div class="holo" data-holo data-focus-key="${fk || ''}">
+    <canvas class="hx-canvas" aria-hidden="true"></canvas>
+    <div class="hx-hud" aria-hidden="true"><span class="hx-tl">NP-OS // BIO-SCAN</span><span class="hx-tr" data-hx-clock>00:00:00</span><span class="hx-bl">SYNC <b data-hx-sync>000</b>%</span><span class="hx-br">ORBIT 4/4</span></div>
+    <div class="hx-sats">${tags}</div>
+    <div class="hx-fallback">${bioTwin(fk)}</div>
+  </div>`;
+}
+function holoBody() {
+  const P = [], rnd = (a, b) => a + Math.random() * (b - a);
+  const ell = (cx, cy, cz, rx, ry, rz, n, y0 = -1, y1 = 1) => { for (let i = 0; i < n; i++) { const u = rnd(0, Math.PI * 2), v = Math.acos(rnd(-1, 1)); const sy = Math.cos(v); if (sy < y0 || sy > y1) { i--; continue; } P.push([cx + rx * Math.sin(v) * Math.cos(u), cy + ry * sy, cz + rz * Math.sin(v) * Math.sin(u)]); } };
+  const cap = (a, b, r0, r1, n) => { for (let i = 0; i < n; i++) { const t = Math.random(), u = rnd(0, Math.PI * 2), r = r0 + (r1 - r0) * t; const x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, z = a[2] + (b[2] - a[2]) * t; P.push([x + r * Math.cos(u), y, z + r * Math.sin(u) * .85]); } };
+  ell(0, .83, 0, .095, .118, .105, 900);            // head
+  cap([0, .7, 0], [0, .63, 0], .045, .05, 160);      // neck
+  ell(0, .43, 0, .17, .2, .095, 1500, -1, 1);       // chest
+  ell(0, .2, 0, .135, .14, .085, 700);               // waist
+  ell(0, .04, 0, .155, .1, .095, 600);               // pelvis
+  for (const s of [-1, 1]) {
+    ell(s * .19, .58, 0, .065, .05, .06, 220);       // shoulder
+    cap([s * .21, .56, 0], [s * .25, .31, 0], .048, .04, 420);   // upper arm
+    cap([s * .25, .31, 0], [s * .28, .08, .02], .04, .03, 380); // forearm
+    ell(s * .285, .02, .025, .03, .055, .02, 120);   // hand
+    cap([s * .085, .0, 0], [s * .1, -.4, 0], .075, .055, 700);  // thigh
+    cap([s * .1, -.4, 0], [s * .105, -.74, -.01], .052, .036, 560); // shin
+    ell(s * .105, -.77, .04, .035, .02, .07, 120);   // foot
+  }
+  return P;
+}
+function initHolo() {
+  if (HOLO) { cancelAnimationFrame(HOLO.raf); HOLO.ro?.disconnect(); HOLO = null; }
+  const host = app.querySelector('[data-holo]'); if (!host) return;
+  const canvas = host.querySelector('canvas');
+  let gl = null; try { gl = canvas.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: false }); } catch {}
+  if (!gl) { host.classList.add('hx-off'); return; }
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const body = holoBody();
+  const A = [], B = [], R = [], K = [];
+  const push = (a, b, k) => { A.push(...a); B.push(...b); R.push(Math.random()); K.push(k); };
+  const PC = [0, -2.05, 0], PR = 1.25;
+  const onSphere = (r = PR) => { const u = Math.random() * Math.PI * 2, v = Math.acos(1 - Math.random() * .55); return [PC[0] + r * Math.sin(v) * Math.cos(u), PC[1] + r * Math.cos(v), PC[2] + r * Math.sin(v) * Math.sin(u)]; };
+  for (const p of body) push(onSphere(), p, 0);
+  for (const p of holoBody()) push(onSphere(), p, 0);
+  for (let i = 0; i < 9000; i++) { const p = onSphere(); push(p, p, 1); }
+  for (let lat = 1; lat <= 6; lat++) for (let i = 0; i < 260; i++) { const v = lat * .1, u2 = i / 260 * Math.PI * 2; const p = [PC[0] + PR * Math.sin(v) * Math.cos(u2), PC[1] + PR * Math.cos(v), PC[2] + PR * Math.sin(v) * Math.sin(u2)]; push(p, p, 1); }                 // planet surface
+  for (let i = 0; i < 900; i++) { const p = onSphere(PR * (1.04 + Math.random() * .05)); push(p, p, 4); } // atmosphere
+  for (let ring = 0; ring < 4; ring++) { const N = ring === 3 ? 2600 : 2200; for (let i = 0; i < N; i++) { const th = (i / N) * Math.PI * 2; push([th, ring, 0], [th, ring, 0], 2); } }
+  for (let i = 0; i < 72; i++) for (let j = 0; j < 9; j++) { const th = i / 72 * Math.PI * 2; push([th, 3, .02 + j * .006], [th, 3, 1], 2); } // HUD ticks
+  for (let i = 0; i < 1600; i++) { const b = body[(Math.random() * body.length) | 0]; push(onSphere(PR * 1.01), b, 5); } // energy streams
+  for (let i = 0; i < 700; i++) { const p = [(Math.random() - .5) * 7, (Math.random() - .3) * 4, -1.5 - Math.random() * 3]; push(p, p, 3); } // deep stars
+  const n = K.length;
+  const vs = `attribute vec3 aA,aB;attribute float aR,aK;uniform mat4 uPV;uniform float uT,uTime,uScan,uRot,uDpr,uFocusY,uMode,uPulse;varying vec3 vC;varying float vA;
+  mat3 ry(float a){float c=cos(a),s=sin(a);return mat3(c,0.,-s,0.,1.,0.,s,0.,c);} mat3 rx(float a){float c=cos(a),s=sin(a);return mat3(1.,0.,0.,0.,c,s,0.,-s,c);}
+  void main(){vec3 p;float sz=2.9;vC=vec3(.49,.97,1.);vA=.9;
+   if(aK<.5){float t=clamp(uT*1.15-aR*.35,0.,1.);t=t*t*(3.-2.*t);vec3 a=aA;if(uMode>.5){vec3 v=ry((1.-t)*7.*(aR+.4))*aB;a=vec3(v.x*(1.+(1.-t)*.9),aB.y*(1.-(1.-t)*.35)+(1.-t)*.45,v.z*(1.+(1.-t)*.9));}p=mix(a,aB,t);p=ry((1.-t)*5.*(aR+.3))*p;p.y+=sin(t*3.1416)*.35*(1.-uMode);float w=sin(aB.y*14.-uTime*4.5)*.012*t;p.x+=p.x*w*6.;p.z+=p.z*w*6.;p+=vec3(sin(uTime*1.7+aR*40.),cos(uTime*1.3+aR*30.),sin(uTime+aR*20.))*.003;
+     p=ry(uRot)*p;float h=(aB.y+.78)/1.7;vC=mix(vec3(.83,1.,.24),vec3(.49,.97,1.),h);float sd=abs(aB.y-uScan);if(sd<.05){vC=mix(vec3(1.),vC,sd/.05);sz=4.2-sd*40.;}
+     if(abs(aB.y-uFocusY)<.06&&uFocusY>-5.){vC=vec3(.83,1.,.24);sz+=1.4;} vA=mix(uMode>.5?.7:.25,.95,t);if(uMode>.5)sz+=.6*(1.-t);}
+   else if(aK<1.5||aK>3.5){vec3 q=aA-vec3(0.,-2.05,0.);q=ry(uTime*.05)*q;p=q+vec3(0.,-2.05,0.);p=ry(uRot*.35)*p;vC=aK>3.5?vec3(.35,.85,1.):mix(vec3(.08,.45,1.),vec3(.49,.97,1.),aR);sz=aK>3.5?2.2:2.6;vA=aK>3.5?.45:1.;if(aR>.985){vC=vec3(.83,1.,.24);sz=2.6;}float ang=acos(clamp((aA.y+2.05)/1.25,-1.,1.));float pd=abs(ang-uPulse*1.1);if(aK<1.5&&pd<.035){vC=mix(vec3(.83,1.,.24),vC,pd/.035);sz+=1.6;vA=1.;}}
+   else if(aK<2.5){float ri=aA.y;float dir=mod(ri,2.)<.5?1.:-1.;float spd=.22+ri*.05;float th=aA.x;float rr=.98+ri*.2+aA.z;vec3 q=vec3(cos(th)*rr,0.,sin(th)*rr);q=rx(.36-ri*.2)*ry(ri*1.1+uTime*.03*dir)*q;p=ry(uRot)*q+vec3(0.,.1,0.);float head=fract(uTime*spd*dir/6.2832+ri*.27);float ph=fract(th/6.2832);float d=fract((head-ph)*dir+1.);float comet=pow(1.-d,3.5);vec3 base=ri<.5?vec3(.83,1.,.24):(ri<1.5?vec3(.49,.97,1.):(ri<2.5?vec3(1.,.45,.85):vec3(.55,.75,1.)));float dash=ri>.5&&ri<1.5?step(.45,fract(th*18./6.2832)):1.;vC=mix(base,vec3(1.),comet*.8);sz=2.1+comet*3.4;vA=(.55+comet*.6)*dash;if(ri>2.5){vA*=.6;if(aB.z>.5){vA=.6;sz=1.5;vC=vec3(.49,.97,1.);}}vA*=clamp(uT*1.3,.3,1.);}
+   else if(aK>4.5){float f=fract(uTime*.22+aR*7.);vec3 q=aA-vec3(0.,-2.05,0.);q=ry(uTime*.05)*q;vec3 s0=q+vec3(0.,-2.05,0.);vec3 tgt=aB;p=mix(s0,tgt,f);p.x+=sin(f*9.+aR*20.)*.05*(1.-f);p=ry(uRot)*p;vC=mix(vec3(.83,1.,.24),vec3(.49,.97,1.),f);sz=2.2;vA=sin(f*3.1416)*.85*uT;}
+   else {p=aA;vC=vec3(.8,.95,1.);sz=1.2+aR*1.4;vA=.25+.35*sin(uTime*1.5+aR*60.);}
+   vec4 cp=uPV*vec4(p,1.);gl_Position=cp;gl_PointSize=sz*uDpr*(3.2/cp.w);}`;
+  const fs = `precision mediump float;varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-.5;float r=length(d);if(r>.5)discard;float a=pow(1.-r*2.,1.6);gl_FragColor=vec4(vC,a*vA);}`;
+  const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  let prog;
+  try { prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link'); }
+  catch (e) { host.classList.add('hx-off'); (window.__npErrors ||= []).push('holo ' + e.message); return; }
+  gl.useProgram(prog);
+  const buf = (name, arr, size) => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW); const l = gl.getAttribLocation(prog, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, 0, 0); };
+  buf('aA', A, 3); buf('aB', B, 3); buf('aR', R, 1); buf('aK', K, 1);
+  const U = (k) => gl.getUniformLocation(prog, k);
+  const u = { pv: U('uPV'), t: U('uT'), time: U('uTime'), scan: U('uScan'), rot: U('uRot'), dpr: U('uDpr'), fy: U('uFocusY'), mode: U('uMode'), pulse: U('uPulse') };
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE); gl.disable(gl.DEPTH_TEST);
+  const mul = (a, b) => { const o = new Array(16); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + j] * b[i * 4 + k]; o[i * 4 + j] = s; } return o; };
+  const persp = (f, asp, n, fa) => { const t = 1 / Math.tan(f / 2); return [t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, 2 * fa * n / (n - fa), 0]; };
+  const look = (e, c) => { const z = [e[0] - c[0], e[1] - c[1], e[2] - c[2]]; const zl = Math.hypot(...z); z.forEach((v, i) => z[i] = v / zl); const x = [z[2], 0, -z[0]]; const xl = Math.hypot(...x); x.forEach((v, i) => x[i] = v / xl); const y = [z[1] * x[2] - z[2] * x[1], z[2] * x[0] - z[0] * x[2], z[0] * x[1] - z[1] * x[0]]; return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -(x[0] * e[0] + x[1] * e[1] + x[2] * e[2]), -(y[0] * e[0] + y[1] * e[1] + y[2] * e[2]), -(z[0] * e[0] + z[1] * e[1] + z[2] * e[2]), 1]; };
+  const focusY = { lose: .2, meno: .45, recipes: .78, training: -.35 }[host.dataset.focusKey] ?? -9;
+  const sats = [...host.querySelectorAll('.hx-sat')];
+  const clock = host.querySelector('[data-hx-clock]'), sync = host.querySelector('[data-hx-sync]');
+  let W = 1, H = 1, dpr = Math.min(2, devicePixelRatio || 1), PV, rot = 0, vel = 0, drag = null;
+  const size = () => { const r = canvas.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); gl.viewport(0, 0, canvas.width, canvas.height); PV = mul(persp(.62, W / H, .1, 30), look([0, .35, 3.5], [0, -.08, 0])); };
+  size();
+  const ro = new ResizeObserver(size); ro.observe(canvas);
+  canvas.addEventListener('pointerdown', (e) => { drag = e.clientX; canvas.setPointerCapture?.(e.pointerId); });
+  canvas.addEventListener('pointermove', (e) => { if (drag == null) return; const d = e.clientX - drag; drag = e.clientX; vel = d * .012; rot += vel; });
+  const end = () => { drag = null; }; canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+  const start = performance.now();
+  const frame = (now) => {
+    if (!host.isConnected) { cancelAnimationFrame(HOLO?.raf); ro.disconnect(); HOLO = null; return; }
+    const t = (now - start) / 1000;
+    if (drag == null) { vel *= .94; rot += vel + (reduce ? 0 : .0035); }
+    const CY = 16, c = t % CY, first = t < CY;
+    let build = 1, mode = 0;
+    if (reduce) build = 1;
+    else if (first && c < 3.2) build = c / 3.2;
+    else if (!first && c < 2.4) { build = .18 + .82 * (c / 2.4); mode = 1; }
+    else if (c > 14.2) { build = Math.max(.18, 1 - (c - 14.2) / 1.8); mode = 1; }
+    const scan = -.8 + ((t * .45) % 1) * 1.75;
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniformMatrix4fv(u.pv, false, PV); gl.uniform1f(u.t, build); gl.uniform1f(u.time, t); gl.uniform1f(u.scan, scan); gl.uniform1f(u.rot, rot); gl.uniform1f(u.dpr, dpr); gl.uniform1f(u.fy, focusY); gl.uniform1f(u.mode, mode); gl.uniform1f(u.pulse, (t * .35) % 1);
+    gl.drawArrays(gl.POINTS, 0, n);
+    sats.forEach((el, i) => {
+      const ri = i % 2, dir = ri === 0 ? 1 : -1, rr = .98 + ri * .2;
+      const th0 = t * (.22 + ri * .05) * dir + (i < 2 ? 0 : Math.PI);
+      let q = [Math.cos(th0) * rr, 0, Math.sin(th0) * rr];
+      const ay = ri * 1.1 + t * .03 * dir, ax = .36 - ri * .2;
+      q = [q[0] * Math.cos(ay) - q[2] * Math.sin(ay), q[1], q[0] * Math.sin(ay) + q[2] * Math.cos(ay)];
+      q = [q[0], q[1] * Math.cos(ax) - q[2] * Math.sin(ax), q[1] * Math.sin(ax) + q[2] * Math.cos(ax)];
+      const p = [q[0] * Math.cos(rot) - q[2] * Math.sin(rot), q[1] + .1, q[0] * Math.sin(rot) + q[2] * Math.cos(rot)];
+      const c = [PV[0] * p[0] + PV[4] * p[1] + PV[8] * p[2] + PV[12], PV[1] * p[0] + PV[5] * p[1] + PV[9] * p[2] + PV[13], 0, PV[3] * p[0] + PV[7] * p[1] + PV[11] * p[2] + PV[15]];
+      const x = (c[0] / c[3] * .5 + .5) * W, y = (1 - (c[1] / c[3] * .5 + .5)) * H, front = p[2] > 0;
+      el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) scale(${(front ? 1 : .78) * (el.classList.contains('on') ? 1.12 : 1)})`;
+      el.classList.toggle('back', !front); el.classList.toggle('flip', x > W * .52); el.style.opacity = String(Math.min(1, build * 1.5) * (front ? 1 : .55));
+    });
+    if (clock && (now | 0) % 6 === 0) { const s = Math.floor(t); clock.textContent = `T+${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}:${String(Math.floor((t % 1) * 100)).padStart(2, '0')}`; }
+    if (sync) sync.textContent = String(Math.round(build * 100)).padStart(3, '0');
+    HOLO.raf = requestAnimationFrame(frame);
+  };
+  HOLO = { raf: requestAnimationFrame(frame), ro };
 }
 
 function helloScreen() {
@@ -1868,7 +2004,7 @@ function helloScreen() {
   const sub = f ? f.sub : 'Une seule app pour la nutrition, les recettes, l’entraînement, la ménopause 40+ et le sommeil. Choisissez ce qui compte pour vous.';
   return `<div class="hello ${f ? f.tone : ''}">
     <div class="hello-top">${logo()}${loginLink('Se connecter')}</div>
-    ${bioTwin(fk)}
+    ${holoHello(fk)}
     <div class="hello-copy">
       ${f ? `<span class="hello-kicker">${icon(f.ico)} ${L(f.kicker)}</span>` : ''}
       <h1>${L(title)}</h1>
@@ -8874,6 +9010,7 @@ function render() {
   if (locked) html = html.replace('<div class="screen', '<div inert aria-hidden="true" class="locked-blur screen').replace('<div class="in-app mobile-app', '<div class="in-app locked-app mobile-app') + lockOverlay(modHere);
   const noFab = state.premium || locked || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
+  try { initHolo(); } catch (e) { (window.__npErrors ||= []).push('holo ' + e); }
   const workspace=app.querySelector('.mobile-app');
   if(workspace){
     workspace.classList.add('quantum-workspace');workspace.dataset.workspace=modHere?.id || route;
