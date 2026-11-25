@@ -50,3 +50,4 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 
 ## PR #62 (nine-program console, owner-approved 16:43), tree `75f2eb8513a5440c065e2a47636029cd7f9de0f4` — interface-only relative to production b89780e.
 - PR #62 revised (nine chips + inline description, owner-approved 16:46; caption ghost fix), tree `80ee2b8a29a9a704fb043dcc62b7de48af2b97e7` — interface-only.
+- Hello: static focus cards removed, nine-module picker opens on the visitor's focus (owner-approved 18:31), tree `7fb92678215f2e646b93e64d3bd527ba49d118bd` — interface-only relative to production 1bfa375.
