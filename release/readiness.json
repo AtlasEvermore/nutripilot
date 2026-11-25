@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "7fb92678215f2e646b93e64d3bd527ba49d118bd",
+  "applicationTree": "c02a9131d597bbc9415ceb193bb4ae3a5b8ebfe0",
   "channels": [
     "ios"
   ],
@@ -73,10 +73,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T21:32:24Z",
+        "verifiedAt": "2026-11-25T21:54:45Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR hello-focus-chip (app 84c9545, tree 7fb92678); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR hello-nine-neon (app ba7790e, tree c02a9131); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
         ]
       },
       "expiry_alert": {
@@ -201,5 +201,5 @@
   "deferredChannels": [
     "android"
   ],
-  "productionCommit": "1bfa375d638b598c7c0b10e608362cf6a27740e8"
+  "productionCommit": "8c4539b294150a2a23a5c31fef294d24d6d4296a"
 }
