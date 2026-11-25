@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "5e0a3f1ee11ab58cd5bce323d3976606c25815d7",
+  "applicationTree": "41168e6af8f7e0bd151d98da190895346118ca23",
   "channels": [
     "ios"
   ],
@@ -73,10 +73,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T17:22:54Z",
+        "verifiedAt": "2026-11-25T18:33:57Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #59 head 21d7dcb (application tree 5e0a3f1e) passes regression and Clean browser acceptance incl. mobile WebKit; interface-only release relative to production 5792a0a"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #60 head 586e922 (application tree 41168e6a) passes regression and Clean browser acceptance incl. mobile WebKit; interface-only release relative to production a08a051"
         ]
       },
       "expiry_alert": {
@@ -201,5 +201,5 @@
   "deferredChannels": [
     "android"
   ],
-  "productionCommit": "5792a0ad1faaa91a2c4e5c1c994439689767bae1"
+  "productionCommit": "a08a05117ddb575c2303a3b3e0555cf5c8fd0825"
 }
