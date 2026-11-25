@@ -20,7 +20,7 @@
         "verifiedAt": "2026-11-25T16:44:25.724Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized backup 20261125T164425Z (keygen + create + verify), 6 files, SHA256 7a7d6437…73df, copied to the owner computer outside Railway (hash matched); owner saved the new key separately (format checked), key opened the backup"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized backup 20261125T164425Z (keygen + create + verify), 6 files, SHA256 7a7d6437\u202673df, copied to the owner computer outside Railway (hash matched); owner saved the new key separately (format checked), key opened the backup"
         ]
       },
       "restore_drill": {
@@ -100,7 +100,7 @@
         "verifiedAt": "2026-11-24T22:22:00Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: signed IPA 18.2.0 (501) from main 54d29c9 (native tree a6a5e9a8), run 45524712579, IPA SHA256 180ea17c…f8ff (artifact zip a1f62906…1ae2 re-hashed in the browser); uploaded to App Store Connect by run 45525587237 (success); held in TestFlight for owner approval before review"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: signed IPA 18.2.0 (501) from main 54d29c9 (native tree a6a5e9a8), run 45524712579, IPA SHA256 180ea17c\u2026f8ff (artifact zip a1f62906\u20261ae2 re-hashed in the browser); uploaded to App Store Connect by run 45525587237 (success); held in TestFlight for owner approval before review"
         ]
       },
       "android_configuration": {
@@ -200,5 +200,6 @@
   "nativeTree": "a6a5e9a8d89f0ee444e6abc7f09089df4ffaa63b",
   "deferredChannels": [
     "android"
-  ]
+  ],
+  "productionCommit": "5792a0ad1faaa91a2c4e5c1c994439689767bae1"
 }

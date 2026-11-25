@@ -78,3 +78,16 @@ test('Store readiness requires matching native source and signed-artifact eviden
  assert.equal(evaluateReadiness(value,{applicationTree:tree,nativeTree:'b'.repeat(40),now}).ok,false);
  delete value.gates.prepare.ios_artifact;assert.equal(evaluateReadiness(value,{applicationTree:tree,nativeTree:tree,now}).ok,false);
 });
+
+test('interface-only releases skip the data backup checks; server changes still require them', async () => {
+  const { isInterfaceOnly, requirementsFor, DATA_GATES } = await import('./release-gate.mjs');
+  assert.equal(isInterfaceOnly(['nutripilot-france-hotmart-final-v4/app.js', 'nutripilot-france-hotmart-final-v4/styles.css', 'release/readiness.json']), true);
+  assert.equal(isInterfaceOnly(['nutripilot-france-hotmart-final-v4/app.js', 'nutripilot-france-hotmart-final-v4/server.mjs']), false);
+  assert.equal(isInterfaceOnly(['nutripilot-france-hotmart-final-v4/ops/backup-cli.mjs']), false);
+  assert.equal(isInterfaceOnly(['native/capacitor.config.json']), false);
+  assert.equal(isInterfaceOnly([]), false);
+  const ids = requirementsFor('prepare', ['ios'], { interfaceOnly: true }).map(([id]) => id);
+  for (const g of DATA_GATES) assert.equal(ids.includes(g), false);
+  const full = requirementsFor('prepare', ['ios']).map(([id]) => id);
+  for (const g of DATA_GATES) assert.equal(full.includes(g), true);
+});
