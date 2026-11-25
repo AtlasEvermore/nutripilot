@@ -113,6 +113,7 @@ const STATIC_FILES = new Set([
   '/product-cover-600x600.png',
   '/fonts/bricolage.woff',
   '/fonts/figtree.woff',
+  '/fonts/orbitron.woff2',
 ]);
 
 

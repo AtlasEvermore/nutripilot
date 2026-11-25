@@ -1873,6 +1873,117 @@ function bioTwin(fk) {
   </div>`;
 }
 
+// 21.0 · Holo: real-time WebGL hologram. Thousands of particles rise from a planet and assemble a human body,
+// orbit rings turn behind it, a light scan sweeps it and the four programs orbit as tappable lights.
+let HOLO = null;
+function holoHello(fk) {
+  const tags = Object.entries(FOCI).map(([id, x], i) => `<button class="hx-sat ${x.tone} ${fk === id ? 'on' : ''}" data-focus="${id}" data-sat="${i}" aria-pressed="${fk === id}"><i class="hx-core"></i><span class="hx-lbl"><em>0${i + 1}</em>${esc(L(x.kicker))}</span></button>`).join('');
+  return `<div class="holo" data-holo data-focus-key="${fk || ''}">
+    <canvas class="hx-canvas" aria-hidden="true"></canvas>
+    <div class="hx-hud" aria-hidden="true"><span class="hx-tl">NP-OS // BIO-SCAN</span><span class="hx-tr" data-hx-clock>00:00:00</span><span class="hx-bl">SYNC <b data-hx-sync>000</b>%</span><span class="hx-br">ORBIT 4/4</span></div>
+    <div class="hx-sats">${tags}</div>
+    <div class="hx-fallback">${bioTwin(fk)}</div>
+  </div>`;
+}
+function holoBody() {
+  const P = [], rnd = (a, b) => a + Math.random() * (b - a);
+  const ell = (cx, cy, cz, rx, ry, rz, n, y0 = -1, y1 = 1) => { for (let i = 0; i < n; i++) { const u = rnd(0, Math.PI * 2), v = Math.acos(rnd(-1, 1)); const sy = Math.cos(v); if (sy < y0 || sy > y1) { i--; continue; } P.push([cx + rx * Math.sin(v) * Math.cos(u), cy + ry * sy, cz + rz * Math.sin(v) * Math.sin(u)]); } };
+  const cap = (a, b, r0, r1, n) => { for (let i = 0; i < n; i++) { const t = Math.random(), u = rnd(0, Math.PI * 2), r = r0 + (r1 - r0) * t; const x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, z = a[2] + (b[2] - a[2]) * t; P.push([x + r * Math.cos(u), y, z + r * Math.sin(u) * .85]); } };
+  ell(0, .83, 0, .095, .118, .105, 900);            // head
+  cap([0, .7, 0], [0, .63, 0], .045, .05, 160);      // neck
+  ell(0, .43, 0, .17, .2, .095, 1500, -1, 1);       // chest
+  ell(0, .2, 0, .135, .14, .085, 700);               // waist
+  ell(0, .04, 0, .155, .1, .095, 600);               // pelvis
+  for (const s of [-1, 1]) {
+    ell(s * .19, .58, 0, .065, .05, .06, 220);       // shoulder
+    cap([s * .21, .56, 0], [s * .25, .31, 0], .048, .04, 420);   // upper arm
+    cap([s * .25, .31, 0], [s * .28, .08, .02], .04, .03, 380); // forearm
+    ell(s * .285, .02, .025, .03, .055, .02, 120);   // hand
+    cap([s * .085, .0, 0], [s * .1, -.4, 0], .075, .055, 700);  // thigh
+    cap([s * .1, -.4, 0], [s * .105, -.74, -.01], .052, .036, 560); // shin
+    ell(s * .105, -.77, .04, .035, .02, .07, 120);   // foot
+  }
+  return P;
+}
+function initHolo() {
+  if (HOLO) { cancelAnimationFrame(HOLO.raf); HOLO.ro?.disconnect(); HOLO = null; }
+  const host = app.querySelector('[data-holo]'); if (!host) return;
+  const canvas = host.querySelector('canvas');
+  let gl = null; try { gl = canvas.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: false }); } catch {}
+  if (!gl) { host.classList.add('hx-off'); return; }
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const body = holoBody();
+  const A = [], B = [], R = [], K = [];
+  const push = (a, b, k) => { A.push(...a); B.push(...b); R.push(Math.random()); K.push(k); };
+  const PC = [0, -2.05, 0], PR = 1.25;
+  const onSphere = (r = PR) => { const u = Math.random() * Math.PI * 2, v = Math.acos(1 - Math.random() * .55); return [PC[0] + r * Math.sin(v) * Math.cos(u), PC[1] + r * Math.cos(v), PC[2] + r * Math.sin(v) * Math.sin(u)]; };
+  for (const p of body) push(onSphere(), p, 0);
+  for (const p of holoBody()) push(onSphere(), p, 0);
+  for (let i = 0; i < 9000; i++) { const p = onSphere(); push(p, p, 1); }
+  for (let lat = 1; lat <= 6; lat++) for (let i = 0; i < 260; i++) { const v = lat * .1, u2 = i / 260 * Math.PI * 2; const p = [PC[0] + PR * Math.sin(v) * Math.cos(u2), PC[1] + PR * Math.cos(v), PC[2] + PR * Math.sin(v) * Math.sin(u2)]; push(p, p, 1); }                 // planet surface
+  for (let i = 0; i < 900; i++) { const p = onSphere(PR * (1.04 + Math.random() * .05)); push(p, p, 4); } // atmosphere
+  for (let ring = 0; ring < 3; ring++) for (let i = 0; i < 1100; i++) { const th = (i / 1100) * Math.PI * 2; push([th, ring, 0], [th, ring, 0], 2); }
+  for (let i = 0; i < 700; i++) { const p = [(Math.random() - .5) * 7, (Math.random() - .3) * 4, -1.5 - Math.random() * 3]; push(p, p, 3); } // deep stars
+  const n = K.length;
+  const vs = `attribute vec3 aA,aB;attribute float aR,aK;uniform mat4 uPV;uniform float uT,uTime,uScan,uRot,uDpr,uFocusY;varying vec3 vC;varying float vA;
+  mat3 ry(float a){float c=cos(a),s=sin(a);return mat3(c,0.,-s,0.,1.,0.,s,0.,c);} mat3 rx(float a){float c=cos(a),s=sin(a);return mat3(1.,0.,0.,0.,c,s,0.,-s,c);}
+  void main(){vec3 p;float sz=2.9;vC=vec3(.49,.97,1.);vA=.9;
+   if(aK<.5){float t=clamp(uT*1.15-aR*.35,0.,1.);t=t*t*(3.-2.*t);vec3 a=aA;p=mix(a,aB,t)+vec3(sin(uTime*1.7+aR*40.),cos(uTime*1.3+aR*30.),sin(uTime+aR*20.))*.003;
+     p=ry(uRot)*p;float h=(aB.y+.78)/1.7;vC=mix(vec3(.83,1.,.24),vec3(.49,.97,1.),h);float sd=abs(aB.y-uScan);if(sd<.05){vC=mix(vec3(1.),vC,sd/.05);sz=4.2-sd*40.;}
+     if(abs(aB.y-uFocusY)<.06&&uFocusY>-5.){vC=vec3(.83,1.,.24);sz+=1.4;} vA=mix(.25,.95,t);}
+   else if(aK<1.5||aK>3.5){vec3 q=aA-vec3(0.,-2.05,0.);q=ry(uTime*.05)*q;p=q+vec3(0.,-2.05,0.);p=ry(uRot*.35)*p;vC=aK>3.5?vec3(.35,.85,1.):mix(vec3(.08,.45,1.),vec3(.49,.97,1.),aR);sz=aK>3.5?2.2:2.6;vA=aK>3.5?.45:1.;if(aR>.985){vC=vec3(.83,1.,.24);sz=2.6;}}
+   else if(aK<2.5){float th=aA.x+uTime*(.18+aA.y*.07)*(mod(aA.y,2.)<.5?1.:-1.);float rr=1.05+aA.y*.22;vec3 q=vec3(cos(th)*rr,0.,sin(th)*rr);q=rx(.32-aA.y*.22)*ry(aA.y*.9)*q;p=ry(uRot)*q+vec3(0.,.12,0.);vC=aA.y<.5?vec3(.83,1.,.24):vec3(.49,.97,1.);sz=2.4;vA=.9;}
+   else {p=aA;vC=vec3(.8,.95,1.);sz=1.2+aR*1.4;vA=.25+.35*sin(uTime*1.5+aR*60.);}
+   vec4 cp=uPV*vec4(p,1.);gl_Position=cp;gl_PointSize=sz*uDpr*(3.2/cp.w);}`;
+  const fs = `precision mediump float;varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-.5;float r=length(d);if(r>.5)discard;float a=pow(1.-r*2.,1.6);gl_FragColor=vec4(vC,a*vA);}`;
+  const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  let prog;
+  try { prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link'); }
+  catch (e) { host.classList.add('hx-off'); (window.__npErrors ||= []).push('holo ' + e.message); return; }
+  gl.useProgram(prog);
+  const buf = (name, arr, size) => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW); const l = gl.getAttribLocation(prog, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, 0, 0); };
+  buf('aA', A, 3); buf('aB', B, 3); buf('aR', R, 1); buf('aK', K, 1);
+  const U = (k) => gl.getUniformLocation(prog, k);
+  const u = { pv: U('uPV'), t: U('uT'), time: U('uTime'), scan: U('uScan'), rot: U('uRot'), dpr: U('uDpr'), fy: U('uFocusY') };
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE); gl.disable(gl.DEPTH_TEST);
+  const mul = (a, b) => { const o = new Array(16); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + j] * b[i * 4 + k]; o[i * 4 + j] = s; } return o; };
+  const persp = (f, asp, n, fa) => { const t = 1 / Math.tan(f / 2); return [t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, 2 * fa * n / (n - fa), 0]; };
+  const look = (e, c) => { const z = [e[0] - c[0], e[1] - c[1], e[2] - c[2]]; const zl = Math.hypot(...z); z.forEach((v, i) => z[i] = v / zl); const x = [z[2], 0, -z[0]]; const xl = Math.hypot(...x); x.forEach((v, i) => x[i] = v / xl); const y = [z[1] * x[2] - z[2] * x[1], z[2] * x[0] - z[0] * x[2], z[0] * x[1] - z[1] * x[0]]; return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -(x[0] * e[0] + x[1] * e[1] + x[2] * e[2]), -(y[0] * e[0] + y[1] * e[1] + y[2] * e[2]), -(z[0] * e[0] + z[1] * e[1] + z[2] * e[2]), 1]; };
+  const focusY = { lose: .2, meno: .45, recipes: .78, training: -.35 }[host.dataset.focusKey] ?? -9;
+  const sats = [...host.querySelectorAll('.hx-sat')];
+  const clock = host.querySelector('[data-hx-clock]'), sync = host.querySelector('[data-hx-sync]');
+  let W = 1, H = 1, dpr = Math.min(2, devicePixelRatio || 1), PV, rot = 0, vel = 0, drag = null;
+  const size = () => { const r = canvas.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); gl.viewport(0, 0, canvas.width, canvas.height); PV = mul(persp(.62, W / H, .1, 30), look([0, .35, 3.5], [0, -.08, 0])); };
+  size();
+  const ro = new ResizeObserver(size); ro.observe(canvas);
+  canvas.addEventListener('pointerdown', (e) => { drag = e.clientX; canvas.setPointerCapture?.(e.pointerId); });
+  canvas.addEventListener('pointermove', (e) => { if (drag == null) return; const d = e.clientX - drag; drag = e.clientX; vel = d * .012; rot += vel; });
+  const end = () => { drag = null; }; canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+  const start = performance.now();
+  const frame = (now) => {
+    if (!host.isConnected) { cancelAnimationFrame(HOLO?.raf); ro.disconnect(); HOLO = null; return; }
+    const t = (now - start) / 1000;
+    if (drag == null) { vel *= .94; rot += vel + (reduce ? 0 : .0035); }
+    const build = reduce ? 1 : Math.min(1, t / 2.6);
+    const scan = -.8 + ((t * .45) % 1) * 1.75;
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniformMatrix4fv(u.pv, false, PV); gl.uniform1f(u.t, build); gl.uniform1f(u.time, t); gl.uniform1f(u.scan, scan); gl.uniform1f(u.rot, rot); gl.uniform1f(u.dpr, dpr); gl.uniform1f(u.fy, focusY);
+    gl.drawArrays(gl.POINTS, 0, n);
+    sats.forEach((el, i) => {
+      const th = t * .32 + i * Math.PI / 2 + rot * .6, rr = .86;
+      const p = [Math.cos(th) * rr, .2 + Math.sin(th * 2 + i) * .18, Math.sin(th) * rr];
+      const c = [PV[0] * p[0] + PV[4] * p[1] + PV[8] * p[2] + PV[12], PV[1] * p[0] + PV[5] * p[1] + PV[9] * p[2] + PV[13], 0, PV[3] * p[0] + PV[7] * p[1] + PV[11] * p[2] + PV[15]];
+      const x = (c[0] / c[3] * .5 + .5) * W, y = (1 - (c[1] / c[3] * .5 + .5)) * H, front = p[2] > 0;
+      el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) scale(${(front ? 1 : .78) * (el.classList.contains('on') ? 1.12 : 1)})`;
+      el.classList.toggle('back', !front); el.classList.toggle('flip', x > W * .52); el.style.opacity = String(Math.min(1, build * 1.5) * (front ? 1 : .55));
+    });
+    if (clock && (now | 0) % 6 === 0) { const s = Math.floor(t); clock.textContent = `T+${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}:${String(Math.floor((t % 1) * 100)).padStart(2, '0')}`; }
+    if (sync) sync.textContent = String(Math.round(build * 100)).padStart(3, '0');
+    HOLO.raf = requestAnimationFrame(frame);
+  };
+  HOLO = { raf: requestAnimationFrame(frame), ro };
+}
+
 function helloScreen() {
   const fk = currentFocus();
   const f = FOCI[fk];
@@ -1880,7 +1991,7 @@ function helloScreen() {
   const sub = f ? f.sub : 'Une seule app pour la nutrition, les recettes, l’entraînement, la ménopause 40+ et le sommeil. Choisissez ce qui compte pour vous.';
   return `<div class="hello ${f ? f.tone : ''}">
     <div class="hello-top">${logo()}${loginLink('Se connecter')}</div>
-    ${bioTwin(fk)}
+    ${holoHello(fk)}
     <div class="hello-copy">
       ${f ? `<span class="hello-kicker">${icon(f.ico)} ${L(f.kicker)}</span>` : ''}
       <h1>${L(title)}</h1>
@@ -8886,6 +8997,7 @@ function render() {
   if (locked) html = html.replace('<div class="screen', '<div inert aria-hidden="true" class="locked-blur screen').replace('<div class="in-app mobile-app', '<div class="in-app locked-app mobile-app') + lockOverlay(modHere);
   const noFab = state.premium || locked || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
+  try { initHolo(); } catch (e) { (window.__npErrors ||= []).push('holo ' + e); }
   const workspace=app.querySelector('.mobile-app');
   if(workspace){
     workspace.classList.add('quantum-workspace');workspace.dataset.workspace=modHere?.id || route;

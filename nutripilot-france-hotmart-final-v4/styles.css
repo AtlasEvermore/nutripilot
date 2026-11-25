@@ -3299,3 +3299,38 @@ html.aura-lite .nx-ring,html.aura-lite .nx-h1,html.aura-lite .nx-h2{animation:no
 .bio-twin{width:min(100%,360px)}
 .bt-tag{width:30%;padding:7px 8px 6px}
 .bt-tag b{font-size:11.5px;letter-spacing:-.02em;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
+/* 21.0 · Holo (WebGL) + futuristic type */
+@font-face{font-family:"Orbitron";src:url("/fonts/orbitron.woff2") format("woff2");font-weight:400 900;font-display:swap}
+.holo{position:relative;width:min(100%,400px);aspect-ratio:1/1.08;margin:0 auto;touch-action:pan-y;isolation:isolate}
+.holo::before{content:"";position:absolute;inset:6% 4% 0;background:radial-gradient(closest-side,rgba(34,225,255,.2),rgba(27,92,255,.06) 60%,transparent);z-index:-1;pointer-events:none}
+.hx-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+.hx-fallback{display:none}
+.holo.hx-off .hx-canvas,.holo.hx-off .hx-sats,.holo.hx-off .hx-hud{display:none}
+.holo.hx-off .hx-fallback{display:block}
+.hx-hud span{position:absolute;font:600 9px/1 Orbitron,var(--mono,ui-monospace,monospace);letter-spacing:.22em;color:rgba(126,249,255,.75);pointer-events:none}
+.hx-hud b{color:#d4ff3d;font-weight:800}
+.hx-tl{top:4px;left:2px}.hx-tr{top:4px;right:2px}.hx-bl{bottom:6px;left:2px}.hx-br{bottom:6px;right:2px}
+.hx-hud::before,.hx-hud::after{content:"";position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(126,249,255,.4),transparent);pointer-events:none}
+.hx-hud::before{top:18px}.hx-hud::after{bottom:20px}
+.hx-sats{position:absolute;inset:0;pointer-events:none}
+.hx-sat{position:absolute;left:0;top:0;pointer-events:auto;display:flex;align-items:center;gap:7px;padding:0;margin:-9px 0 0 -9px;border:0;background:none;color:#fff;transition:opacity .3s;will-change:transform;z-index:2}
+.hx-sat.back{z-index:1}
+.hx-core{width:18px;height:18px;border-radius:50%;flex:none;background:radial-gradient(circle,#fff 0 18%,var(--mc,#22e1ff) 45%,transparent 72%);box-shadow:0 0 14px 2px var(--mc,#22e1ff),0 0 0 1px rgba(255,255,255,.4) inset;position:relative}
+.hx-core::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:1px solid var(--mc,#22e1ff);opacity:.6;animation:btRing 2.2s ease-out infinite}
+.hx-lbl{display:flex;flex-direction:column;gap:2px;font:700 10px/1.05 Orbitron,var(--font,system-ui);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;padding:5px 8px;border-radius:7px;background:rgba(3,8,22,.72);border:1px solid rgba(126,249,255,.25);text-shadow:0 0 8px rgba(126,249,255,.6)}
+.hx-lbl em{font-style:normal;font-size:8px;letter-spacing:.24em;color:#7ef9ff}
+.hx-sat.on .hx-core{background:radial-gradient(circle,#fff 0 22%,#d4ff3d 50%,transparent 74%);box-shadow:0 0 22px 4px #d4ff3d}
+.hx-sat.on .hx-core::after{border-color:#d4ff3d}
+.hx-sat.on .hx-lbl{border-color:#d4ff3d;color:#f4ffd0;box-shadow:0 0 18px -4px #d4ff3d}
+.hx-sat.on .hx-lbl em{color:#d4ff3d}
+.hx-sat:focus-visible{outline:none}.hx-sat:focus-visible .hx-lbl{outline:2px solid #d4ff3d;outline-offset:2px}
+html:not([lang=ja]):not([lang=ko]):not([lang=zh]):not([lang=ar]) .hello .hello-copy h1{font-family:Orbitron,var(--font-display,system-ui);font-weight:800;letter-spacing:-.01em;text-transform:uppercase;font-size:clamp(24px,7vw,34px);line-height:1.08;background:linear-gradient(100deg,#fff 10%,#bff8ff 45%,#d4ff3d 95%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 0 14px rgba(34,225,255,.25))}
+@media (prefers-reduced-motion:reduce){.hx-core::after{animation:none}}
+.hx-sat.back .hx-lbl{opacity:0;transform:translateX(-6px)}
+.hx-lbl{transition:opacity .35s,transform .35s;font-size:8.5px;padding:4px 6px}
+.hx-lbl em{font-size:7px}
+.hx-sat.on .hx-lbl{font-size:10px}
+.hx-sat.flip{flex-direction:row-reverse}
+.hx-sat.flip .hx-lbl{align-items:flex-end}
+.hx-sat.flip.back .hx-lbl{transform:translateX(6px)}
+.hx-sat .hx-lbl{max-width:42vw;overflow:hidden;text-overflow:ellipsis}
