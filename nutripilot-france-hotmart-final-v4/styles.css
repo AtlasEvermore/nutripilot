@@ -3271,3 +3271,31 @@ html.aura-lite .nx-ring,html.aura-lite .nx-h1,html.aura-lite .nx-h2{animation:no
 .bt-city{fill:#d4ff3d;animation:btTw 4s ease-in-out var(--d) infinite}
 .bt-rim{filter:drop-shadow(0 0 6px #7ef9ff) drop-shadow(0 0 14px rgba(34,225,255,.6))}
 @media (prefers-reduced-motion:reduce){.bt-meridians,.bt-city{animation:none}}
+/* 20.4 · Bio-Twin v3: HUD readout tags, back orbit with satellites, energy streams, 3D sway, lock-on reticle */
+.bt-body{transform-box:view-box;transform-origin:150px 160px;animation:btSway 9s ease-in-out infinite}
+@keyframes btSway{0%,100%{transform:scaleX(1)}25%{transform:scaleX(.94) skewY(.6deg)}75%{transform:scaleX(.94) skewY(-.6deg)}}
+.bt-stream{animation:btStream 2.6s linear calc(var(--k)*.45s) infinite}
+@keyframes btStream{from{transform:translateY(0)}to{transform:translateY(-330px)}}
+.bt-sat{filter:drop-shadow(0 0 4px currentColor)}
+.bt-reticle{fill:none;stroke:#d4ff3d;stroke-width:1.2}
+.bt-reticle path,.bt-reticle circle{transform-box:fill-box;transform-origin:center}
+.bt-reticle path{animation:btLock 1.4s cubic-bezier(.2,.8,.2,1) infinite}
+.bt-reticle circle{stroke-dasharray:3 3;animation:omSpin 3s linear infinite}
+@keyframes btLock{0%{transform:scale(1.8);opacity:0}40%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:.6}}
+.bio-twin .bt-node{display:none}
+.bt-tag{position:absolute;top:var(--y);transform:translateY(-50%);width:31%;min-height:58px;padding:8px 9px 7px;display:flex;flex-direction:column;gap:3px;text-align:left;color:#eaffff;border:1px solid rgba(126,249,255,.28);border-radius:10px;background:linear-gradient(135deg,rgba(14,40,70,.88),rgba(4,10,26,.9));box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),0 10px 24px -14px #000;z-index:2;transition:border-color .25s,box-shadow .25s,transform .25s;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
+.bt-tag.l{left:0}.bt-tag.r{right:0;text-align:right;align-items:flex-end}
+.bt-tag::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(126,249,255,.14),transparent);transform:translateX(-100%);animation:lhSheen 4s ease-in-out infinite}
+.bt-tag-id{font:700 8.5px/1 var(--mono,ui-monospace,monospace);letter-spacing:.18em;color:#7ef9ff;opacity:.85}
+.bt-tag b{font-size:12.5px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
+.bt-tag-bars{display:flex;align-items:flex-end;gap:2px;height:13px}
+.bt-tag-bars i{width:3px;height:var(--h);border-radius:1px;background:var(--mc,#22e1ff);opacity:.75;transform-origin:bottom;animation:btBar 1.6s ease-in-out calc(var(--k)*.12s) infinite alternate}
+@keyframes btBar{from{transform:scaleY(.45)}to{transform:scaleY(1)}}
+.bt-tag.on{border-color:#d4ff3d;box-shadow:0 0 0 1px rgba(212,255,61,.35),0 0 26px -6px #d4ff3d;transform:translateY(-50%) scale(1.04)}
+.bt-tag.on .bt-tag-id{color:#d4ff3d}
+.bt-tag:active{transform:translateY(-50%) scale(.97)}
+.bt-tag:focus-visible{outline:3px solid #d4ff3d;outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.bt-body,.bt-stream,.bt-reticle path,.bt-reticle circle,.bt-tag::before,.bt-tag-bars i{animation:none}}
+.bio-twin{width:min(100%,360px)}
+.bt-tag{width:30%;padding:7px 8px 6px}
+.bt-tag b{font-size:11.5px;letter-spacing:-.02em;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
