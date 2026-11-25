@@ -2054,14 +2054,15 @@ function initStory() {
 }
 
 // 22.1 · Hello: everything included — the nine programs, each opening its full topic sheet.
-function helloAll() {
+function helloAll(fk) {
   const v = MV();
   const mods = MODULES.slice(0, 9);
+  const s0 = Math.max(0, mods.findIndex((m) => m.id === FOCI[fk]?.mod));
   const card = (m) => `<div class="hp-detail-in ${m.tone}"><div class="hp-dh"><span class="mod-ico">${icon(m.icon)}</span><div><span class="hp-k">${esc(L(m.name))}</span><b>${esc(modTitle(m))}</b></div></div><p>${esc(L(m.sub, v))}</p><ul>${(m.features || []).map((f) => `<li>${esc(L(f, v))}</li>`).join('')}</ul></div>`;
   return `<section class="hello-pick9" data-pick9 aria-label="${esc(L('Les 9 modules, sans limite'))}">
     <div class="hp-head"><span class="hp-count"><i></i>${mods.length}</span><div><h2>${L('Tout NutriPilot, en un coup d’œil.')}</h2><p>${L('Les 9 modules, sans limite')}</p></div></div>
-    <div class="hp-grid" role="tablist">${mods.map((m, i) => `<button class="hp-chip ${m.tone} ${i === 0 ? 'on' : ''}" role="tab" aria-selected="${i === 0}" data-pick9="${i}" style="--i:${i}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.short || m.name))}</b></button>`).join('')}</div>
-    <div class="hp-detail" aria-live="polite">${mods.map((m, i) => `<div class="hp-pane ${i === 0 ? 'on' : ''}" data-pane="${i}">${card(m)}</div>`).join('')}</div>
+    <div class="hp-grid" role="tablist">${mods.map((m, i) => `<button class="hp-chip ${m.tone} ${i === s0 ? 'on' : ''}" role="tab" aria-selected="${i === s0}" data-pick9="${i}" style="--i:${i}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.short || m.name))}</b></button>`).join('')}</div>
+    <div class="hp-detail" aria-live="polite">${mods.map((m, i) => `<div class="hp-pane ${i === s0 ? 'on' : ''}" data-pane="${i}">${card(m)}</div>`).join('')}</div>
   </section>`;
 }
 function initPick9() {
@@ -2088,8 +2089,7 @@ function helloScreen() {
       <h1>${L(title)}</h1>
       <p>${L(sub)}</p>
     </div>
-    ${f ? `<ul class="hello-points">${f.points.map(([ico, a, b]) => `<li><span class="mod-ico">${icon(ico)}</span><span><b>${L(a)}</b><small>${L(b)}</small></span></li>`).join('')}</ul>` : ''}
-    ${helloAll()}
+    ${helloAll(fk)}
     <div class="hello-cta">
       <button class="btn btn-lime btn-wide btn-xl" data-hello-start>${L('Créer mon programme')}</button>
       <p>${L('Nutrition, entraînement et bien-être, dans une seule app.')}</p>
