@@ -22,3 +22,10 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - **Restore and rollback drill (17:39Z):** same 12:09Z snapshot; candidate f90c1f0c then production 00f3e29 booted on the restored copy, smoke issues empty, originals preserved, restored data deleted.
 - **i18n:** pt sweep of 30 routes in 3 states found no French source strings; exercise names and two labels now translated in 13 languages.
 - **CI:** PR #53 head 6f50a26 green (regression + Clean browser acceptance incl. mobile WebKit).
+
+## Third candidate (PR #55, Bio-Twin v2 + planet), application tree `e0c7439d47c7c68bf46a98cbe5fba7f5c7f69aa1`, native tree `a6a5e9a8…` (18.2.0 splash, merged in PR #52)
+- **Owner authorizations (24/11 evening):** "você tem todas as autorizações"; owner set IOS_SIGNING_APPROVED_REVISION=54d29c9 and approved the ios-signing runs himself.
+- **Native 18.2.0:** signed run 45524712579 success, IPA SHA256 180ea17c…f8ff; ASC upload run 45525587237 success. Native validation: compile passed; the simulator screenshot steps hang on the xcode-27 runner (bootstatus never returns; with polling, launch works and the screenshot command hangs) — infra issue, owner chose to proceed; build is in TestFlight for owner review before App Review.
+- **Backup (01:37:44Z):** Railway console keygen + create + verify, 6 files, SHA256 98a2dbd4…fc94; copied to owner computer (hash matched); owner saved the new key separately (format checked; value never displayed).
+- **Restore and rollback drill (01:46:54Z):** candidate e0c7439d then production 7d3b230 on the restored copy, smoke issues empty, originals preserved, restored data deleted.
+- **CI:** PR #55 head 6b572aa green (regression + Clean browser acceptance incl. mobile WebKit).
