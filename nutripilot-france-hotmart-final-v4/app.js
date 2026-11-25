@@ -2005,6 +2005,54 @@ function initHolo() {
   HOLO = { raf: requestAnimationFrame(frame), ro };
 }
 
+// 22.0 · Real-life story hero: full-bleed cinematic scenes (food, people, training, 40+ life) with the app's
+// own technology layered on top — live food recognition on the plate, program readouts on each scene.
+const STORY = [
+  { id: 'nutrition', focus: 'lose', scan: [['Saumon', 4, 30, 36, 22], ['Brocoli', 42, 22, 22, 15], ['Tomate', 70, 36, 24, 17]] },
+  { id: 'menopause', focus: 'meno' },
+  { id: 'recipes', focus: 'recipes' },
+  { id: 'training', focus: 'training' },
+  { id: 'scanner' },
+  { id: 'sleep' },
+];
+let STORY_T = null;
+function storyHero(fk) {
+  const start = Math.max(0, STORY.findIndex((s) => s.focus === fk));
+  const v = MV();
+  const scenes = STORY.map((s, i) => {
+    const m = MODULES.find((x) => x.id === s.id); if (!m) return '';
+    const scan = (s.scan || []).map(([name, x, y, w, h], k) => `<span class="st-box" style="--x:${x}%;--y:${y}%;--w:${w}%;--h:${h}%;--k:${k}"><i></i><b>${esc(L(name))}</b></span>`).join('');
+    const feats = (m.features || []).slice(0, 3).map((f, k) => `<li style="--k:${k}"><span>${String(k + 1).padStart(2, '0')}</span>${esc(L(f, v))}</li>`).join('');
+    return `<figure class="st-scene ${m.tone} ${i === start ? 'on' : ''}" data-scene="${i}">
+      <img src="/artwork/${m.id}.webp" alt="" width="600" height="600" decoding="async" ${i < 2 ? '' : 'loading="lazy"'} draggable="false">
+      <span class="st-grade" aria-hidden="true"></span>
+      ${scan ? `<div class="st-scan" aria-hidden="true"><span class="st-beam"></span>${scan}<span class="st-live"><i></i>LIVE · SCAN</span></div>` : ''}
+      <figcaption><span class="st-chip"><span class="mod-ico">${icon(m.icon)}</span>${esc(L(m.name))}</span><b>${esc(modTitle(m))}</b>${feats ? `<ol>${feats}</ol>` : ''}</figcaption>
+    </figure>`;
+  }).join('');
+  return `<div class="story" data-story data-start="${start}" aria-roledescription="carousel">
+    <div class="st-bars" aria-hidden="true">${STORY.map((_, i) => `<span class="${i < start ? 'done' : i === start ? 'run' : ''}"><i></i></span>`).join('')}</div>
+    ${scenes}
+    <button class="st-tap prev" data-story-step="-1" aria-label="${esc(L('Précédent'))}"></button>
+    <button class="st-tap next" data-story-step="1" aria-label="${esc(L('Suivant'))}"></button>
+  </div>`;
+}
+function initStory() {
+  clearInterval(STORY_T); STORY_T = null;
+  const host = app.querySelector('[data-story]'); if (!host) return;
+  const scenes = [...host.querySelectorAll('.st-scene')], bars = [...host.querySelectorAll('.st-bars > span')];
+  let i = +host.dataset.start || 0, t0 = Date.now();
+  const DUR = 5200;
+  const show = (n) => {
+    i = (n + scenes.length) % scenes.length; t0 = Date.now();
+    scenes.forEach((s, k) => s.classList.toggle('on', k === i));
+    bars.forEach((b, k) => { b.className = k < i ? 'done' : k === i ? 'run' : ''; });
+  };
+  host.addEventListener('click', (e) => { const b = e.target.closest('[data-story-step]'); if (!b) return; e.preventDefault(); e.stopPropagation(); show(i + (+b.dataset.storyStep)); }, true);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  STORY_T = setInterval(() => { if (!host.isConnected) { clearInterval(STORY_T); return; } if (Date.now() - t0 >= DUR) show(i + 1); }, 250);
+}
+
 function helloScreen() {
   const fk = currentFocus();
   const f = FOCI[fk];
@@ -2012,7 +2060,7 @@ function helloScreen() {
   const sub = f ? f.sub : 'Une seule app pour la nutrition, les recettes, l’entraînement, la ménopause 40+ et le sommeil. Choisissez ce qui compte pour vous.';
   return `<div class="hello ${f ? f.tone : ''}">
     <div class="hello-top">${logo()}${loginLink('Se connecter')}</div>
-    ${holoHello(fk)}
+    ${storyHero(fk)}
     <div class="hello-copy">
       ${f ? `<span class="hello-kicker">${icon(f.ico)} ${L(f.kicker)}</span>` : ''}
       <h1>${L(title)}</h1>
@@ -9019,6 +9067,7 @@ function render() {
   const noFab = state.premium || locked || ['hello', 'goal', 'profile', 'lang', 'basics', 'saving', 'analyzing', 'onboarding', 'support', 'plan', 'paywall', 'upgrade'].includes(route);
   app.innerHTML = html + (noFab ? '' : supportBubble());
   try { initHolo(); } catch (e) { (window.__npErrors ||= []).push('holo ' + e); }
+  try { initStory(); } catch (e) { (window.__npErrors ||= []).push('story ' + e); }
   const workspace=app.querySelector('.mobile-app');
   if(workspace){
     workspace.classList.add('quantum-workspace');workspace.dataset.workspace=modHere?.id || route;
