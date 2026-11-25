@@ -1875,6 +1875,13 @@ function bioTwin(fk) {
 
 // 21.0 · Holo: real-time WebGL hologram. Thousands of particles rise from a planet and assemble a human body,
 // orbit rings turn behind it, a light scan sweeps it and the four programs orbit as tappable lights.
+
+// 21.1 · Authorial lock: no text selection, long-press callout, context menu or drag outside form fields.
+(() => {
+  const editable = (t) => t && t.closest && t.closest('input, textarea, select, [contenteditable="true"], [data-allow-select]');
+  for (const ev of ['selectstart', 'contextmenu', 'dragstart']) document.addEventListener(ev, (e) => { if (!editable(e.target)) e.preventDefault(); }, { capture: true });
+  document.addEventListener('copy', (e) => { if (!editable(document.activeElement)) e.preventDefault(); }, { capture: true });
+})();
 let HOLO = null;
 function holoHello(fk) {
   const tags = Object.entries(FOCI).map(([id, x], i) => `<button class="hx-sat ${x.tone} ${fk === id ? 'on' : ''}" data-focus="${id}" data-sat="${i}" aria-pressed="${fk === id}"><i class="hx-core"></i><span class="hx-lbl"><em>0${i + 1}</em>${esc(L(x.kicker))}</span></button>`).join('');
@@ -1955,7 +1962,7 @@ function initHolo() {
   const focusY = { lose: .2, meno: .45, recipes: .78, training: -.35 }[host.dataset.focusKey] ?? -9;
   const sats = [...host.querySelectorAll('.hx-sat')];
   const clock = host.querySelector('[data-hx-clock]'), sync = host.querySelector('[data-hx-sync]');
-  let W = 1, H = 1, dpr = Math.min(2, devicePixelRatio || 1), PV, rot = 0, vel = 0, drag = null;
+  let W = 1, H = 1, dpr = Math.min(2, devicePixelRatio || 1), PV, rot = 0, base = 0, sway = 0, vel = 0, drag = null;
   const size = () => { const r = canvas.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); gl.viewport(0, 0, canvas.width, canvas.height); PV = mul(persp(.62, W / H, .1, 30), look([0, .35, 3.5], [0, -.08, 0])); };
   size();
   const ro = new ResizeObserver(size); ro.observe(canvas);
@@ -1966,7 +1973,8 @@ function initHolo() {
   const frame = (now) => {
     if (!host.isConnected) { cancelAnimationFrame(HOLO?.raf); ro.disconnect(); HOLO = null; return; }
     const t = (now - start) / 1000;
-    if (drag == null) { vel *= .94; rot += vel + (reduce ? 0 : .0035); }
+    if (drag == null) { vel *= .94; base += vel; } else base = rot - sway;
+    sway = reduce ? 0 : Math.sin(t * .32) * .55; rot = base + sway;
     const CY = 16, c = t % CY, first = t < CY;
     let build = 1, mode = 0;
     if (reduce) build = 1;
