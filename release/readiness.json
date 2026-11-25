@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "c02a9131d597bbc9415ceb193bb4ae3a5b8ebfe0",
+  "applicationTree": "d43e2eb6762a5fc3a03495490693ba571d37f65c",
   "channels": [
     "ios"
   ],
@@ -73,10 +73,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T21:54:45Z",
+        "verifiedAt": "2026-11-25T23:21:53Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR hello-nine-neon (app ba7790e, tree c02a9131); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR hello-general-title (app 53df2d8, tree d43e2eb6); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
         ]
       },
       "expiry_alert": {
@@ -97,10 +97,11 @@
       },
       "ios_artifact": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T22:22:00Z",
+        "verifiedAt": "2026-11-25T23:22:12Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: signed IPA 18.2.0 (501) from main 54d29c9 (native tree a6a5e9a8), run 45524712579, IPA SHA256 180ea17c…f8ff (artifact zip a1f62906…1ae2 re-hashed in the browser); uploaded to App Store Connect by run 45525587237 (success); held in TestFlight for owner approval before review"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: signed IPA 18.2.0 (501) from main 54d29c9 (native tree a6a5e9a8), run 45524712579, IPA SHA256 180ea17c…f8ff (artifact zip a1f62906…1ae2 re-hashed in the browser); uploaded to App Store Connect by run 45525587237 (success); held in TestFlight for owner approval before review",
+          "2026-11-25 re-check: native tree unchanged (a6a5e9a8, enforced by the gate); build 18.2.0 (501) approved by App Review, Ready for Distribution 25/11"
         ]
       },
       "android_configuration": {
@@ -201,5 +202,5 @@
   "deferredChannels": [
     "android"
   ],
-  "productionCommit": "8c4539b294150a2a23a5c31fef294d24d6d4296a"
+  "productionCommit": "a7c9c3e3e54cdebef96e7fda8649a4761ae941c5"
 }
