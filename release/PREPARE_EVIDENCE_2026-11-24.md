@@ -45,3 +45,5 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - Tests: selection blocked (triple tap selects nothing, context menu prevented), inputs still typeable and selectable; tap sweep 429 buttons no size change; CI green on 0061e0a.
 
 ## PR #59 (real-life story hero), application tree `5e0a3f1ee11ab58cd5bce323d3976606c25815d7` — interface-only release (owner decision 25/11): changes since production 5792a0a are app.js, styles.css, sw.js, i18n only; data checks not required. CI green on 21d7dcb.
+
+## PR #60 (hello copy option B, owner-approved 15:22/15:23), application tree `41168e6af8f7e0bd151d98da190895346118ca23` — interface-only (app.js, i18n, sw.js). CI green on 586e922.
