@@ -2077,7 +2077,7 @@ function initPick9() {
 }
 
 function helloScreen() {
-  const fk = currentFocus();
+  const fk = ''; // owner decision 25/11: the entry title is fixed for everyone (ad links included)
   const f = FOCI[fk];
   const title = f ? f.title : 'Vous n’avez pas besoin d’un régime de plus. Vous avez besoin d’un système.';
   const sub = f ? f.sub : 'Des régimes qui ne tiennent pas, des entraînements abandonnés, des nuits trop courtes, la ménopause qui change tout. Le problème n’a jamais été vous : il manquait que tout fonctionne ensemble. NutriPilot est l’écosystème santé qui relie alimentation, recettes, scanner, entraînement, ménopause 40+, vitamines, compléments, sommeil et coach en un seul endroit.';
