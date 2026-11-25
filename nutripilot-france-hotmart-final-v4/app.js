@@ -1922,7 +1922,8 @@ function initHolo() {
   for (let i = 0; i < 9000; i++) { const p = onSphere(); push(p, p, 1); }
   for (let lat = 1; lat <= 6; lat++) for (let i = 0; i < 260; i++) { const v = lat * .1, u2 = i / 260 * Math.PI * 2; const p = [PC[0] + PR * Math.sin(v) * Math.cos(u2), PC[1] + PR * Math.cos(v), PC[2] + PR * Math.sin(v) * Math.sin(u2)]; push(p, p, 1); }                 // planet surface
   for (let i = 0; i < 900; i++) { const p = onSphere(PR * (1.04 + Math.random() * .05)); push(p, p, 4); } // atmosphere
-  for (let ring = 0; ring < 3; ring++) for (let i = 0; i < 1100; i++) { const th = (i / 1100) * Math.PI * 2; push([th, ring, 0], [th, ring, 0], 2); }
+  for (let ring = 0; ring < 4; ring++) { const N = ring === 3 ? 2600 : 2200; for (let i = 0; i < N; i++) { const th = (i / N) * Math.PI * 2; push([th, ring, 0], [th, ring, 0], 2); } }
+  for (let i = 0; i < 72; i++) for (let j = 0; j < 9; j++) { const th = i / 72 * Math.PI * 2; push([th, 3, .02 + j * .006], [th, 3, 1], 2); } // HUD ticks
   for (let i = 0; i < 1600; i++) { const b = body[(Math.random() * body.length) | 0]; push(onSphere(PR * 1.01), b, 5); } // energy streams
   for (let i = 0; i < 700; i++) { const p = [(Math.random() - .5) * 7, (Math.random() - .3) * 4, -1.5 - Math.random() * 3]; push(p, p, 3); } // deep stars
   const n = K.length;
@@ -1933,7 +1934,7 @@ function initHolo() {
      p=ry(uRot)*p;float h=(aB.y+.78)/1.7;vC=mix(vec3(.83,1.,.24),vec3(.49,.97,1.),h);float sd=abs(aB.y-uScan);if(sd<.05){vC=mix(vec3(1.),vC,sd/.05);sz=4.2-sd*40.;}
      if(abs(aB.y-uFocusY)<.06&&uFocusY>-5.){vC=vec3(.83,1.,.24);sz+=1.4;} vA=mix(uMode>.5?.7:.25,.95,t);if(uMode>.5)sz+=.6*(1.-t);}
    else if(aK<1.5||aK>3.5){vec3 q=aA-vec3(0.,-2.05,0.);q=ry(uTime*.05)*q;p=q+vec3(0.,-2.05,0.);p=ry(uRot*.35)*p;vC=aK>3.5?vec3(.35,.85,1.):mix(vec3(.08,.45,1.),vec3(.49,.97,1.),aR);sz=aK>3.5?2.2:2.6;vA=aK>3.5?.45:1.;if(aR>.985){vC=vec3(.83,1.,.24);sz=2.6;}float ang=acos(clamp((aA.y+2.05)/1.25,-1.,1.));float pd=abs(ang-uPulse*1.1);if(aK<1.5&&pd<.035){vC=mix(vec3(.83,1.,.24),vC,pd/.035);sz+=1.6;vA=1.;}}
-   else if(aK<2.5){float th=aA.x+uTime*(.18+aA.y*.07)*(mod(aA.y,2.)<.5?1.:-1.);float rr=1.05+aA.y*.22;vec3 q=vec3(cos(th)*rr,0.,sin(th)*rr);q=rx(.32-aA.y*.22)*ry(aA.y*.9)*q;p=ry(uRot)*q+vec3(0.,.12,0.);vC=aA.y<.5?vec3(.83,1.,.24):vec3(.49,.97,1.);sz=2.4;vA=.9;}
+   else if(aK<2.5){float ri=aA.y;float dir=mod(ri,2.)<.5?1.:-1.;float spd=.22+ri*.05;float th=aA.x;float rr=.98+ri*.2+aA.z;vec3 q=vec3(cos(th)*rr,0.,sin(th)*rr);q=rx(.36-ri*.2)*ry(ri*1.1+uTime*.03*dir)*q;p=ry(uRot)*q+vec3(0.,.1,0.);float head=fract(uTime*spd*dir/6.2832+ri*.27);float ph=fract(th/6.2832);float d=fract((head-ph)*dir+1.);float comet=pow(1.-d,3.5);vec3 base=ri<.5?vec3(.83,1.,.24):(ri<1.5?vec3(.49,.97,1.):(ri<2.5?vec3(1.,.45,.85):vec3(.55,.75,1.)));float dash=ri>.5&&ri<1.5?step(.45,fract(th*18./6.2832)):1.;vC=mix(base,vec3(1.),comet*.8);sz=2.1+comet*3.4;vA=(.55+comet*.6)*dash;if(ri>2.5){vA*=.6;if(aB.z>.5){vA=.6;sz=1.5;vC=vec3(.49,.97,1.);}}vA*=clamp(uT*1.3,.3,1.);}
    else if(aK>4.5){float f=fract(uTime*.22+aR*7.);vec3 q=aA-vec3(0.,-2.05,0.);q=ry(uTime*.05)*q;vec3 s0=q+vec3(0.,-2.05,0.);vec3 tgt=aB;p=mix(s0,tgt,f);p.x+=sin(f*9.+aR*20.)*.05*(1.-f);p=ry(uRot)*p;vC=mix(vec3(.83,1.,.24),vec3(.49,.97,1.),f);sz=2.2;vA=sin(f*3.1416)*.85*uT;}
    else {p=aA;vC=vec3(.8,.95,1.);sz=1.2+aR*1.4;vA=.25+.35*sin(uTime*1.5+aR*60.);}
    vec4 cp=uPV*vec4(p,1.);gl_Position=cp;gl_PointSize=sz*uDpr*(3.2/cp.w);}`;
@@ -1977,8 +1978,13 @@ function initHolo() {
     gl.uniformMatrix4fv(u.pv, false, PV); gl.uniform1f(u.t, build); gl.uniform1f(u.time, t); gl.uniform1f(u.scan, scan); gl.uniform1f(u.rot, rot); gl.uniform1f(u.dpr, dpr); gl.uniform1f(u.fy, focusY); gl.uniform1f(u.mode, mode); gl.uniform1f(u.pulse, (t * .35) % 1);
     gl.drawArrays(gl.POINTS, 0, n);
     sats.forEach((el, i) => {
-      const th = t * .32 + i * Math.PI / 2 + rot * .6, rr = .86;
-      const p = [Math.cos(th) * rr, .2 + Math.sin(th * 2 + i) * .18, Math.sin(th) * rr];
+      const ri = i % 2, dir = ri === 0 ? 1 : -1, rr = .98 + ri * .2;
+      const th0 = t * (.22 + ri * .05) * dir + (i < 2 ? 0 : Math.PI);
+      let q = [Math.cos(th0) * rr, 0, Math.sin(th0) * rr];
+      const ay = ri * 1.1 + t * .03 * dir, ax = .36 - ri * .2;
+      q = [q[0] * Math.cos(ay) - q[2] * Math.sin(ay), q[1], q[0] * Math.sin(ay) + q[2] * Math.cos(ay)];
+      q = [q[0], q[1] * Math.cos(ax) - q[2] * Math.sin(ax), q[1] * Math.sin(ax) + q[2] * Math.cos(ax)];
+      const p = [q[0] * Math.cos(rot) - q[2] * Math.sin(rot), q[1] + .1, q[0] * Math.sin(rot) + q[2] * Math.cos(rot)];
       const c = [PV[0] * p[0] + PV[4] * p[1] + PV[8] * p[2] + PV[12], PV[1] * p[0] + PV[5] * p[1] + PV[9] * p[2] + PV[13], 0, PV[3] * p[0] + PV[7] * p[1] + PV[11] * p[2] + PV[15]];
       const x = (c[0] / c[3] * .5 + .5) * W, y = (1 - (c[1] / c[3] * .5 + .5)) * H, front = p[2] > 0;
       el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) scale(${(front ? 1 : .78) * (el.classList.contains('on') ? 1.12 : 1)})`;
