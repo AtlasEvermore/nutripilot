@@ -1923,16 +1923,18 @@ function initHolo() {
   for (let lat = 1; lat <= 6; lat++) for (let i = 0; i < 260; i++) { const v = lat * .1, u2 = i / 260 * Math.PI * 2; const p = [PC[0] + PR * Math.sin(v) * Math.cos(u2), PC[1] + PR * Math.cos(v), PC[2] + PR * Math.sin(v) * Math.sin(u2)]; push(p, p, 1); }                 // planet surface
   for (let i = 0; i < 900; i++) { const p = onSphere(PR * (1.04 + Math.random() * .05)); push(p, p, 4); } // atmosphere
   for (let ring = 0; ring < 3; ring++) for (let i = 0; i < 1100; i++) { const th = (i / 1100) * Math.PI * 2; push([th, ring, 0], [th, ring, 0], 2); }
+  for (let i = 0; i < 1600; i++) { const b = body[(Math.random() * body.length) | 0]; push(onSphere(PR * 1.01), b, 5); } // energy streams
   for (let i = 0; i < 700; i++) { const p = [(Math.random() - .5) * 7, (Math.random() - .3) * 4, -1.5 - Math.random() * 3]; push(p, p, 3); } // deep stars
   const n = K.length;
-  const vs = `attribute vec3 aA,aB;attribute float aR,aK;uniform mat4 uPV;uniform float uT,uTime,uScan,uRot,uDpr,uFocusY;varying vec3 vC;varying float vA;
+  const vs = `attribute vec3 aA,aB;attribute float aR,aK;uniform mat4 uPV;uniform float uT,uTime,uScan,uRot,uDpr,uFocusY,uMode,uPulse;varying vec3 vC;varying float vA;
   mat3 ry(float a){float c=cos(a),s=sin(a);return mat3(c,0.,-s,0.,1.,0.,s,0.,c);} mat3 rx(float a){float c=cos(a),s=sin(a);return mat3(1.,0.,0.,0.,c,s,0.,-s,c);}
   void main(){vec3 p;float sz=2.9;vC=vec3(.49,.97,1.);vA=.9;
-   if(aK<.5){float t=clamp(uT*1.15-aR*.35,0.,1.);t=t*t*(3.-2.*t);vec3 a=aA;p=mix(a,aB,t)+vec3(sin(uTime*1.7+aR*40.),cos(uTime*1.3+aR*30.),sin(uTime+aR*20.))*.003;
+   if(aK<.5){float t=clamp(uT*1.15-aR*.35,0.,1.);t=t*t*(3.-2.*t);vec3 a=aA;if(uMode>.5){vec3 v=ry((1.-t)*7.*(aR+.4))*aB;a=vec3(v.x*(1.+(1.-t)*.9),aB.y*(1.-(1.-t)*.35)+(1.-t)*.45,v.z*(1.+(1.-t)*.9));}p=mix(a,aB,t);p=ry((1.-t)*5.*(aR+.3))*p;p.y+=sin(t*3.1416)*.35*(1.-uMode);float w=sin(aB.y*14.-uTime*4.5)*.012*t;p.x+=p.x*w*6.;p.z+=p.z*w*6.;p+=vec3(sin(uTime*1.7+aR*40.),cos(uTime*1.3+aR*30.),sin(uTime+aR*20.))*.003;
      p=ry(uRot)*p;float h=(aB.y+.78)/1.7;vC=mix(vec3(.83,1.,.24),vec3(.49,.97,1.),h);float sd=abs(aB.y-uScan);if(sd<.05){vC=mix(vec3(1.),vC,sd/.05);sz=4.2-sd*40.;}
-     if(abs(aB.y-uFocusY)<.06&&uFocusY>-5.){vC=vec3(.83,1.,.24);sz+=1.4;} vA=mix(.25,.95,t);}
-   else if(aK<1.5||aK>3.5){vec3 q=aA-vec3(0.,-2.05,0.);q=ry(uTime*.05)*q;p=q+vec3(0.,-2.05,0.);p=ry(uRot*.35)*p;vC=aK>3.5?vec3(.35,.85,1.):mix(vec3(.08,.45,1.),vec3(.49,.97,1.),aR);sz=aK>3.5?2.2:2.6;vA=aK>3.5?.45:1.;if(aR>.985){vC=vec3(.83,1.,.24);sz=2.6;}}
+     if(abs(aB.y-uFocusY)<.06&&uFocusY>-5.){vC=vec3(.83,1.,.24);sz+=1.4;} vA=mix(uMode>.5?.7:.25,.95,t);if(uMode>.5)sz+=.6*(1.-t);}
+   else if(aK<1.5||aK>3.5){vec3 q=aA-vec3(0.,-2.05,0.);q=ry(uTime*.05)*q;p=q+vec3(0.,-2.05,0.);p=ry(uRot*.35)*p;vC=aK>3.5?vec3(.35,.85,1.):mix(vec3(.08,.45,1.),vec3(.49,.97,1.),aR);sz=aK>3.5?2.2:2.6;vA=aK>3.5?.45:1.;if(aR>.985){vC=vec3(.83,1.,.24);sz=2.6;}float ang=acos(clamp((aA.y+2.05)/1.25,-1.,1.));float pd=abs(ang-uPulse*1.1);if(aK<1.5&&pd<.035){vC=mix(vec3(.83,1.,.24),vC,pd/.035);sz+=1.6;vA=1.;}}
    else if(aK<2.5){float th=aA.x+uTime*(.18+aA.y*.07)*(mod(aA.y,2.)<.5?1.:-1.);float rr=1.05+aA.y*.22;vec3 q=vec3(cos(th)*rr,0.,sin(th)*rr);q=rx(.32-aA.y*.22)*ry(aA.y*.9)*q;p=ry(uRot)*q+vec3(0.,.12,0.);vC=aA.y<.5?vec3(.83,1.,.24):vec3(.49,.97,1.);sz=2.4;vA=.9;}
+   else if(aK>4.5){float f=fract(uTime*.22+aR*7.);vec3 q=aA-vec3(0.,-2.05,0.);q=ry(uTime*.05)*q;vec3 s0=q+vec3(0.,-2.05,0.);vec3 tgt=aB;p=mix(s0,tgt,f);p.x+=sin(f*9.+aR*20.)*.05*(1.-f);p=ry(uRot)*p;vC=mix(vec3(.83,1.,.24),vec3(.49,.97,1.),f);sz=2.2;vA=sin(f*3.1416)*.85*uT;}
    else {p=aA;vC=vec3(.8,.95,1.);sz=1.2+aR*1.4;vA=.25+.35*sin(uTime*1.5+aR*60.);}
    vec4 cp=uPV*vec4(p,1.);gl_Position=cp;gl_PointSize=sz*uDpr*(3.2/cp.w);}`;
   const fs = `precision mediump float;varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-.5;float r=length(d);if(r>.5)discard;float a=pow(1.-r*2.,1.6);gl_FragColor=vec4(vC,a*vA);}`;
@@ -1944,7 +1946,7 @@ function initHolo() {
   const buf = (name, arr, size) => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW); const l = gl.getAttribLocation(prog, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, 0, 0); };
   buf('aA', A, 3); buf('aB', B, 3); buf('aR', R, 1); buf('aK', K, 1);
   const U = (k) => gl.getUniformLocation(prog, k);
-  const u = { pv: U('uPV'), t: U('uT'), time: U('uTime'), scan: U('uScan'), rot: U('uRot'), dpr: U('uDpr'), fy: U('uFocusY') };
+  const u = { pv: U('uPV'), t: U('uT'), time: U('uTime'), scan: U('uScan'), rot: U('uRot'), dpr: U('uDpr'), fy: U('uFocusY'), mode: U('uMode'), pulse: U('uPulse') };
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE); gl.disable(gl.DEPTH_TEST);
   const mul = (a, b) => { const o = new Array(16); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + j] * b[i * 4 + k]; o[i * 4 + j] = s; } return o; };
   const persp = (f, asp, n, fa) => { const t = 1 / Math.tan(f / 2); return [t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, 2 * fa * n / (n - fa), 0]; };
@@ -1964,10 +1966,15 @@ function initHolo() {
     if (!host.isConnected) { cancelAnimationFrame(HOLO?.raf); ro.disconnect(); HOLO = null; return; }
     const t = (now - start) / 1000;
     if (drag == null) { vel *= .94; rot += vel + (reduce ? 0 : .0035); }
-    const build = reduce ? 1 : Math.min(1, t / 2.6);
+    const CY = 16, c = t % CY, first = t < CY;
+    let build = 1, mode = 0;
+    if (reduce) build = 1;
+    else if (first && c < 3.2) build = c / 3.2;
+    else if (!first && c < 2.4) { build = .18 + .82 * (c / 2.4); mode = 1; }
+    else if (c > 14.2) { build = Math.max(.18, 1 - (c - 14.2) / 1.8); mode = 1; }
     const scan = -.8 + ((t * .45) % 1) * 1.75;
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.uniformMatrix4fv(u.pv, false, PV); gl.uniform1f(u.t, build); gl.uniform1f(u.time, t); gl.uniform1f(u.scan, scan); gl.uniform1f(u.rot, rot); gl.uniform1f(u.dpr, dpr); gl.uniform1f(u.fy, focusY);
+    gl.uniformMatrix4fv(u.pv, false, PV); gl.uniform1f(u.t, build); gl.uniform1f(u.time, t); gl.uniform1f(u.scan, scan); gl.uniform1f(u.rot, rot); gl.uniform1f(u.dpr, dpr); gl.uniform1f(u.fy, focusY); gl.uniform1f(u.mode, mode); gl.uniform1f(u.pulse, (t * .35) % 1);
     gl.drawArrays(gl.POINTS, 0, n);
     sats.forEach((el, i) => {
       const th = t * .32 + i * Math.PI / 2 + rot * .6, rr = .86;
