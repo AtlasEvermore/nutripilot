@@ -2058,11 +2058,11 @@ function helloAll(fk) {
   const v = MV();
   const mods = MODULES.slice(0, 9);
   const s0 = Math.max(0, mods.findIndex((m) => m.id === FOCI[fk]?.mod));
-  const card = (m) => `<div class="hp-detail-in ${m.tone}"><div class="hp-dh"><span class="mod-ico">${icon(m.icon)}</span><div><span class="hp-k">${esc(L(m.name))}</span><b>${esc(modTitle(m))}</b></div></div><p>${esc(L(m.sub, v))}</p><ul>${(m.features || []).map((f) => `<li>${esc(L(f, v))}</li>`).join('')}</ul></div>`;
+  const card = (m, i) => `<div class="hp-detail-in ${m.tone}"><span class="hp-wm" aria-hidden="true">${icon(m.icon)}</span><i class="hp-scan" aria-hidden="true"></i><span class="hp-num" aria-hidden="true">0${i + 1}<small>/0${mods.length}</small></span><div class="hp-dh"><span class="mod-ico">${icon(m.icon)}</span><div><span class="hp-k">${esc(L(m.name))}</span><b>${esc(modTitle(m))}</b></div></div><p>${esc(L(m.sub, v))}</p><ul>${(m.features || []).map((f, j) => `<li style="--j:${j}">${esc(L(f, v))}</li>`).join('')}</ul></div>`;
   return `<section class="hello-pick9" data-pick9 aria-label="${esc(L('Les 9 modules, sans limite'))}">
     <div class="hp-head"><span class="hp-count"><i></i>${mods.length}</span><div><h2>${L('Tout NutriPilot, en un coup d’œil.')}</h2><p>${L('Les 9 modules, sans limite')}</p></div></div>
-    <div class="hp-grid" role="tablist">${mods.map((m, i) => `<button class="hp-chip ${m.tone} ${i === s0 ? 'on' : ''}" role="tab" aria-selected="${i === s0}" data-pick9="${i}" style="--i:${i}"><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.short || m.name))}</b></button>`).join('')}</div>
-    <div class="hp-detail" aria-live="polite">${mods.map((m, i) => `<div class="hp-pane ${i === s0 ? 'on' : ''}" data-pane="${i}">${card(m)}</div>`).join('')}</div>
+    <div class="hp-grid" role="tablist">${mods.map((m, i) => `<button class="hp-chip ${m.tone} ${i === s0 ? 'on' : ''}" role="tab" aria-selected="${i === s0}" data-pick9="${i}" style="--i:${i}"><i class="hp-idx">0${i + 1}</i><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.short || m.name))}</b></button>`).join('')}</div>
+    <div class="hp-detail" aria-live="polite">${mods.map((m, i) => `<div class="hp-pane ${i === s0 ? 'on' : ''}" data-pane="${i}">${card(m, i)}</div>`).join('')}</div>
   </section>`;
 }
 function initPick9() {
