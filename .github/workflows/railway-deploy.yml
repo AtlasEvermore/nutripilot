@@ -1,0 +1,49 @@
+name: Railway production deploy
+on:
+  workflow_dispatch:
+    inputs:
+      commit: { description: 'Merged main commit to deploy (40 hex)', required: true }
+permissions: { contents: read }
+concurrency: { group: railway-production, cancel-in-progress: false }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ inputs.commit }}', fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Candidate must be the tip of main with green CI
+        env: { GH_TOKEN: '${{ github.token }}', COMMIT: '${{ inputs.commit }}' }
+        run: |
+          set -euo pipefail
+          [[ "$COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "commit must be 40 hex"; exit 1; }
+          git fetch -q origin main
+          [ "$(git rev-parse origin/main)" = "$COMMIT" ] || { echo "Only the current tip of main can be deployed"; exit 1; }
+          for i in $(seq 1 60); do
+            S=$(gh api repos/${{ github.repository }}/commits/$COMMIT/check-runs --jq '[.check_runs[]|select(.name=="regression" or .name=="Clean browser acceptance")|.conclusion]|join(",")')
+            case "$S" in "success,success") break;; *failure*|*cancelled*) echo "CI failed: $S"; exit 1;; esac
+            sleep 20
+          done
+          [ "$S" = "success,success" ] || { echo "CI not green: $S"; exit 1; }
+      - name: Release gate (prepare)
+        run: node ops/release-gate.mjs prepare
+      - name: Deploy on Railway and wait for SUCCESS
+        env: { RAILWAY_TOKEN: '${{ secrets.RAILWAY_TOKEN }}', COMMIT: '${{ inputs.commit }}' }
+        run: |
+          set -euo pipefail
+          [ -n "$RAILWAY_TOKEN" ] || { echo "RAILWAY_TOKEN secret missing"; exit 1; }
+          q(){ curl -fsS https://backboard.railway.com/graphql/v2 -H "Authorization: Bearer $RAILWAY_TOKEN" -H 'content-type: application/json' --data "$1"; }
+          SVC=c36f9e95-c32e-41f0-b026-44a8e90b21b3; ENV=782f73bb-f192-4308-bb26-4a48cae07f04
+          ID=$(q "{\"query\":\"mutation{serviceInstanceDeployV2(serviceId:\\\"$SVC\\\",environmentId:\\\"$ENV\\\",commitSha:\\\"$COMMIT\\\")}\"}" | node -pe 'JSON.parse(require("fs").readFileSync(0)).data.serviceInstanceDeployV2')
+          echo "deployment $ID"
+          for i in $(seq 1 90); do
+            ST=$(q "{\"query\":\"query{deployment(id:\\\"$ID\\\"){status}}\"}" | node -pe 'JSON.parse(require("fs").readFileSync(0)).data.deployment.status')
+            echo "status $ST"; case "$ST" in SUCCESS) break;; FAILED|CRASHED|REMOVED) exit 1;; esac; sleep 10
+          done
+          [ "$ST" = SUCCESS ]
+      - name: Live check
+        run: |
+          set -euo pipefail
+          curl -fsS https://app.atlasevermore.com/api/health | node -e 'const h=JSON.parse(require("fs").readFileSync(0));if(!h.ok||!h.persistence?.writable)process.exit(1);console.log("health ok", h.version)'
