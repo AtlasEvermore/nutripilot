@@ -3264,3 +3264,10 @@ html.aura-lite .nx-ring,html.aura-lite .nx-h1,html.aura-lite .nx-h2{animation:no
 .bt-link.on .bt-anchor{fill:#d4ff3d;transform-box:fill-box;transform-origin:center;animation:btAnchor 1.6s ease-in-out infinite}
 @keyframes btAnchor{50%{transform:scale(1.8);opacity:.6}}
 @media (prefers-reduced-motion:reduce){.bio-twin .bt-scan,.bt-sp,.bt-floor,.bt-link.on .bt-anchor{animation:none}}
+/* 20.3 · Bio-Twin planet: the body stands on a living planet horizon */
+.bio-twin .bt-svg{overflow:hidden;border-radius:0 0 40% 40%/0 0 12% 12%}
+.bt-meridians{transform-box:view-box;transform-origin:150px 415px;animation:btSpinY 14s linear infinite}
+@keyframes btSpinY{from{transform:scaleX(1)}50%{transform:scaleX(-1)}to{transform:scaleX(1)}}
+.bt-city{fill:#d4ff3d;animation:btTw 4s ease-in-out var(--d) infinite}
+.bt-rim{filter:drop-shadow(0 0 6px #7ef9ff) drop-shadow(0 0 14px rgba(34,225,255,.6))}
+@media (prefers-reduced-motion:reduce){.bt-meridians,.bt-city{animation:none}}
