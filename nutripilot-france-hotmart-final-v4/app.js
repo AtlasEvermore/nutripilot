@@ -2056,8 +2056,8 @@ function initStory() {
 function helloScreen() {
   const fk = currentFocus();
   const f = FOCI[fk];
-  const title = f ? f.title : 'Mincir, s’entraîner, bien manger et vivre la ménopause sereinement.';
-  const sub = f ? f.sub : 'Une seule app pour la nutrition, les recettes, l’entraînement, la ménopause 40+ et le sommeil. Choisissez ce qui compte pour vous.';
+  const title = f ? f.title : 'Vous n’avez pas besoin d’un régime de plus. Vous avez besoin d’un système.';
+  const sub = f ? f.sub : 'Des régimes qui ne tiennent pas, des entraînements abandonnés, des nuits trop courtes, la ménopause qui change tout. Le problème n’a jamais été vous : il manquait que tout fonctionne ensemble. NutriPilot est l’écosystème santé qui relie alimentation, recettes, scanner, entraînement, ménopause 40+, vitamines, compléments, sommeil et coach en un seul endroit.';
   return `<div class="hello ${f ? f.tone : ''}">
     <div class="hello-top">${logo()}${loginLink('Se connecter')}</div>
     ${storyHero(fk)}
