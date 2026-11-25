@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "41168e6af8f7e0bd151d98da190895346118ca23",
+  "applicationTree": "80ee2b8a29a9a704fb043dcc62b7de48af2b97e7",
   "channels": [
     "ios"
   ],
@@ -73,10 +73,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T18:33:57Z",
+        "verifiedAt": "2026-11-25T19:47:08Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #60 head 586e922 (application tree 41168e6a) passes regression and Clean browser acceptance incl. mobile WebKit; interface-only release relative to production a08a051"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #62 (app 487e869, tree 80ee2b8a); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
         ]
       },
       "expiry_alert": {
@@ -201,5 +201,5 @@
   "deferredChannels": [
     "android"
   ],
-  "productionCommit": "a08a05117ddb575c2303a3b3e0555cf5c8fd0825"
+  "productionCommit": "b89780eafe22e7399c08368717f86f395fcb8d9e"
 }

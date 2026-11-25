@@ -3379,3 +3379,77 @@ input::selection,textarea::selection{background:rgba(212,255,61,.35)}
 .st-tap{position:absolute;z-index:5;top:12%;bottom:30%;width:34%;padding:0;border:0;background:transparent}
 .st-tap.prev{left:0}.st-tap.next{right:0}
 @media (prefers-reduced-motion:reduce){.st-scene.on img,.st-beam,.st-scene.on .st-box,.st-scene.on figcaption li{animation:none}.st-box,.st-scene figcaption li{opacity:1;transform:none}}
+/* 22.1 · Hello: all nine programs */
+.hello-all{margin:18px 0 6px;padding:16px 14px 14px;border-radius:24px;background:linear-gradient(180deg,rgba(18,28,62,.9),rgba(6,10,26,.95));border:1px solid rgba(126,249,255,.16)}
+.ha-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.ha-count{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font:800 22px/1 Orbitron,var(--font,system-ui);color:#0a0f1c;background:linear-gradient(135deg,#d4ff3d,#22e1ff);box-shadow:0 0 22px -6px #22e1ff}
+.ha-head h2{margin:0;font-size:17px;line-height:1.2;color:#fff;letter-spacing:-.01em}
+.ha-head p{margin:2px 0 0;font-size:13px;color:rgba(214,236,255,.72);font-weight:600}
+.ha-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ha-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-height:118px;padding:11px 11px 10px;text-align:left;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015));color:#fff;transition:transform .15s,border-color .2s}
+.ha-tile:active{transform:scale(.97)}
+.ha-tile .mod-ico{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--mc,#2e7d32);box-shadow:0 0 16px -6px var(--mc,#2e7d32)}
+.ha-tile .mod-ico svg{width:17px;height:17px}
+.ha-tile b{font-size:14px;line-height:1.15;font-weight:800}
+.ha-tile small{font-size:11.5px;line-height:1.3;color:rgba(214,236,255,.72);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ha-tile em{position:absolute;top:10px;right:10px;font-style:normal;display:inline-flex;align-items:center;gap:3px;font:700 10px/1 Orbitron,monospace;color:#7ef9ff}
+.ha-tile em i{font-style:normal;font-size:14px;color:#d4ff3d}
+.ha-tile:last-child:nth-child(odd){grid-column:1/-1;min-height:0}
+/* 22.2 · Nine-program console: neon, numbered, scanning */
+.hello-all{position:relative;overflow:hidden;isolation:isolate;padding:18px 14px 14px;border-radius:26px;border:1px solid rgba(126,249,255,.28);background:radial-gradient(120% 60% at 50% 0%,rgba(34,225,255,.16),transparent 60%),linear-gradient(180deg,#0b1533,#040816);box-shadow:0 0 0 1px rgba(212,255,61,.06) inset,0 30px 60px -30px rgba(0,0,0,.9),0 0 40px -18px rgba(34,225,255,.6)}
+.hello-all::before{content:"";position:absolute;inset:0;z-index:-1;background-image:linear-gradient(rgba(126,249,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(126,249,255,.07) 1px,transparent 1px);background-size:22px 22px;-webkit-mask-image:linear-gradient(180deg,#000,transparent 70%);mask-image:linear-gradient(180deg,#000,transparent 70%)}
+.hello-all::after{content:"";position:absolute;left:0;right:0;top:-40%;height:40%;z-index:-1;background:linear-gradient(180deg,transparent,rgba(212,255,61,.10),transparent);animation:haSweep 6s linear infinite}
+@keyframes haSweep{to{top:110%}}
+.ha-head h2{font-family:Orbitron,var(--font,system-ui);font-size:15px;letter-spacing:.02em;text-transform:uppercase;background:linear-gradient(100deg,#fff 20%,#bff8ff 55%,#d4ff3d);-webkit-background-clip:text;background-clip:text;color:transparent}
+html[lang=ja] .ha-head h2,html[lang=ko] .ha-head h2,html[lang=zh] .ha-head h2,html[lang=ar] .ha-head h2{font-family:inherit;text-transform:none}
+.ha-count{position:relative}
+.ha-count i{position:absolute;inset:-5px;border-radius:17px;border:1px dashed rgba(126,249,255,.6);animation:omSpin 14s linear infinite}
+.ha-tile{overflow:hidden;border:1px solid rgba(126,249,255,.18);background:linear-gradient(160deg,rgba(20,40,80,.75),rgba(6,12,30,.9));box-shadow:inset 0 1px 0 rgba(255,255,255,.06);animation:haIn .5s calc(var(--i)*60ms) both}
+@keyframes haIn{from{opacity:0;transform:translateY(10px) scale(.98)}}
+.ha-tile::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,var(--mc,#22e1ff),transparent 45%,transparent 60%,rgba(212,255,61,.6));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.7;pointer-events:none}
+.ha-tile .mod-ico{position:relative;box-shadow:0 0 0 1px rgba(255,255,255,.2) inset,0 0 20px -4px var(--mc,#2e7d32)}
+.ha-tile .mod-ico::after{content:"";position:absolute;inset:-4px;border-radius:13px;border:1px solid var(--mc,#22e1ff);opacity:.45}
+.ha-no{position:absolute;right:10px;bottom:8px;font:800 22px/1 Orbitron,monospace;color:rgba(126,249,255,.12);letter-spacing:-.02em;pointer-events:none}
+.ha-tile em{background:rgba(4,8,20,.6);border:1px solid rgba(126,249,255,.25);border-radius:999px;padding:3px 7px}
+.ha-sheen{position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.10) 50%,transparent 60%);transform:translateX(-120%);animation:haSheen 5s ease-in-out calc(1.2s + var(--i)*.25s) infinite;pointer-events:none}
+@keyframes haSheen{0%,70%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+.ha-tile:active{border-color:#d4ff3d}
+@media (prefers-reduced-motion:reduce){.hello-all::after,.ha-count i,.ha-tile,.ha-sheen{animation:none}}
+/* 22.3 · Nine program chips with inline description */
+.hello-all,.ha-grid{display:none}
+.hello-pick9{position:relative;margin:16px 0 6px;padding:16px 12px 12px;border-radius:26px;overflow:hidden;isolation:isolate;border:1px solid rgba(126,249,255,.26);background:radial-gradient(120% 60% at 50% 0%,rgba(34,225,255,.16),transparent 60%),linear-gradient(180deg,#0b1533,#040816);box-shadow:0 30px 60px -30px rgba(0,0,0,.9),0 0 40px -18px rgba(34,225,255,.55)}
+.hello-pick9::before{content:"";position:absolute;inset:0;z-index:-1;background-image:linear-gradient(rgba(126,249,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(126,249,255,.07) 1px,transparent 1px);background-size:22px 22px;-webkit-mask-image:linear-gradient(180deg,#000,transparent 65%);mask-image:linear-gradient(180deg,#000,transparent 65%)}
+.hp-head{display:flex;align-items:center;gap:12px;margin:0 2px 12px}
+.hp-count{position:relative;flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font:800 21px/1 Orbitron,var(--font,system-ui);color:#0a0f1c;background:linear-gradient(135deg,#d4ff3d,#22e1ff);box-shadow:0 0 22px -6px #22e1ff}
+.hp-count i{position:absolute;inset:-5px;border-radius:17px;border:1px dashed rgba(126,249,255,.6);animation:omSpin 14s linear infinite}
+.hp-head h2{margin:0;font:800 14.5px/1.2 Orbitron,var(--font,system-ui);letter-spacing:.02em;text-transform:uppercase;background:linear-gradient(100deg,#fff 20%,#bff8ff 55%,#d4ff3d);-webkit-background-clip:text;background-clip:text;color:transparent}
+html[lang=ja] .hp-head h2,html[lang=ko] .hp-head h2,html[lang=zh] .hp-head h2,html[lang=ar] .hp-head h2{font-family:inherit;text-transform:none}
+.hp-head p{margin:3px 0 0;font-size:12.5px;font-weight:600;color:rgba(214,236,255,.72)}
+.hp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.hp-chip{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:84px;padding:10px 6px 9px;border-radius:16px;border:1px solid rgba(126,249,255,.16);background:linear-gradient(160deg,rgba(20,40,80,.7),rgba(6,12,30,.9));color:#fff;text-align:center;transition:transform .15s,border-color .25s,box-shadow .25s,background .25s;animation:haIn .45s calc(var(--i)*45ms) both}
+.hp-chip .mod-ico{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:var(--mc,#2e7d32);box-shadow:0 0 0 1px rgba(255,255,255,.2) inset,0 0 18px -6px var(--mc,#2e7d32);transition:transform .25s}
+.hp-chip .mod-ico svg{width:19px;height:19px}
+.hp-chip b{font-size:11.5px;line-height:1.15;font-weight:800;letter-spacing:-.01em;hyphens:auto;overflow-wrap:break-word}
+.hp-chip:active{transform:scale(.96)}
+.hp-chip.on{border-color:var(--mc,#d4ff3d);background:linear-gradient(160deg,color-mix(in srgb,var(--mc,#22e1ff) 28%,#0b1533),rgba(6,12,30,.95));box-shadow:0 0 0 1px var(--mc,#d4ff3d),0 0 26px -8px var(--mc,#d4ff3d)}
+.hp-chip.on .mod-ico{transform:scale(1.1)}
+.hp-chip.on::after{content:"";position:absolute;left:50%;bottom:-9px;width:12px;height:12px;transform:translateX(-50%) rotate(45deg);background:#0d1836;border-right:1px solid var(--mc,#d4ff3d);border-bottom:1px solid var(--mc,#d4ff3d)}
+.hp-detail{margin-top:12px}
+.hp-pane{display:none}
+.hp-pane.on{display:block;animation:hpIn .35s ease-out}
+@keyframes hpIn{from{opacity:0;transform:translateY(8px)}}
+.hp-detail-in{padding:14px;border-radius:18px;border:1px solid var(--mc,#22e1ff);background:linear-gradient(160deg,rgba(13,24,54,.95),rgba(5,9,24,.95));box-shadow:0 0 30px -14px var(--mc,#22e1ff)}
+.hp-dh{display:flex;align-items:center;gap:10px}
+.hp-dh .mod-ico{flex:none;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:var(--mc,#2e7d32);box-shadow:0 0 20px -6px var(--mc,#2e7d32)}
+.hp-dh .mod-ico svg{width:21px;height:21px}
+.hp-k{display:block;font:700 9.5px/1 Orbitron,monospace;letter-spacing:.18em;text-transform:uppercase;color:#7ef9ff;margin-bottom:4px}
+.hp-dh b{font-size:17px;line-height:1.15;color:#fff}
+.hp-detail-in p{margin:10px 0 8px;color:rgba(214,236,255,.85);font-size:14px;line-height:1.4}
+.hp-detail-in ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.hp-detail-in li{position:relative;padding-left:22px;font-size:13.5px;line-height:1.35;color:#eaf6ff}
+.hp-detail-in li::before{content:"";position:absolute;left:4px;top:6px;width:8px;height:8px;border-radius:2px;background:#d4ff3d;box-shadow:0 0 8px #d4ff3d;transform:rotate(45deg)}
+@media (prefers-reduced-motion:reduce){.hp-count i,.hp-chip,.hp-pane.on{animation:none}}
+/* 22.4 · Story: no caption ghosting during the crossfade */
+.st-scene figcaption,.st-scene .st-scan{opacity:0;visibility:hidden;transition:opacity .2s ease,visibility 0s linear .2s}
+.st-scene.on figcaption,.st-scene.on .st-scan{opacity:1;visibility:visible;transition:opacity .45s ease .55s,visibility 0s}
+.st-scene:not(.on) figcaption *{animation:none!important}
