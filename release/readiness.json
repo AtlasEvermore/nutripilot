@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "a6e123e5459f839273bc5264b77654150dfaccbc",
+  "applicationTree": "41da7fb1705493bbcf6e70eabbb00f0c4b70a95e",
   "channels": [
     "ios"
   ],
@@ -9,26 +9,26 @@
     "prepare": {
       "hosting_access": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T17:05:00Z",
+        "verifiedAt": "2026-11-25T16:42:39Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: Railway HOBBY ACTIVE; deployment 38f6b8c2 SUCCESS on 00f3e29 (17:04Z); /api/health 200 18.1.0, persistence writable"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: Railway HOBBY ACTIVE; deployment 41a0fc20 SUCCESS on aed95cf; 38 service variables (names unchanged)"
         ]
       },
       "independent_backup": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T01:37:44.979Z",
+        "verifiedAt": "2026-11-25T16:44:25.724Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized backup 20261125T013744Z (keygen + create + verify), 6 files, SHA256 98a2dbd4…fc94, copied to the owner computer outside Railway (hash matched); owner saved the new 64-hex key separately, format checked, key opened the backup"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: owner-authorized backup 20261125T164425Z (keygen + create + verify), 6 files, SHA256 7a7d6437…73df, copied to the owner computer outside Railway (hash matched); owner saved the new key separately (format checked), key opened the backup"
         ]
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T03:01:21Z",
+        "verifiedAt": "2026-11-25T16:57:14Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: candidate tree a6e123e5 restored the 01:37Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed; restored data deleted"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: candidate tree 41da7fb1 restored the 16:44Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed; restored data deleted"
         ]
       },
       "new_credentials_stored": {
@@ -41,10 +41,10 @@
       },
       "ai_billing_limits": {
         "status": "verified",
-        "verifiedAt": "2026-11-24T16:09:00Z",
+        "verifiedAt": "2026-11-25T16:58:30Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: OpenAI prepaid US$5.00, auto-reload OFF; AI limits unchanged (gpt-5-mini, subscribers only, 10/user/day, 300/day, 5000/month)"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: OpenAI prepaid US$5.00, auto-reload OFF; Railway AI limits unchanged (gpt-5-mini, subscribers only, 10/user/day, 300/day, 5000/month)"
         ]
       },
       "email_delivery": {
@@ -65,18 +65,18 @@
       },
       "rollback_migration": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T03:01:21Z",
+        "verifiedAt": "2026-11-25T16:57:14Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: production commit 13b2f90 booted on the restored copy after the candidate, smoke issues empty; rollback = redeploy e4779229 keeping /data"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: production commit aed95cf booted on the restored copy after the candidate, smoke issues empty; rollback = redeploy 41a0fc20 keeping /data"
         ]
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T03:01:21Z",
+        "verifiedAt": "2026-11-25T16:58:30Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #56 head 560fb06 (application tree a6e123e5, native tree a6a5e9a8) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #57 head 0061e0a (application tree 41da7fb1, native tree a6a5e9a8) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
         ]
       },
       "expiry_alert": {

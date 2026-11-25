@@ -3334,3 +3334,10 @@ html:not([lang=ja]):not([lang=ko]):not([lang=zh]):not([lang=ar]) .hello .hello-c
 .hx-sat.flip .hx-lbl{align-items:flex-end}
 .hx-sat.flip.back .hx-lbl{transform:translateX(6px)}
 .hx-sat .hx-lbl{max-width:42vw;overflow:hidden;text-overflow:ellipsis}
+/* 21.1 · Authorial lock: nothing on the page is selectable or long-press copyable, except form fields */
+html,body,#app,#app *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-user-drag:none}
+img,svg,canvas,video{-webkit-user-drag:none;user-drag:none;pointer-events:auto}
+input,textarea,select,[contenteditable="true"],[data-allow-select],input *,textarea *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}
+::selection{background:transparent}
+input::selection,textarea::selection{background:rgba(212,255,61,.35)}
+#app input,#app textarea,#app select,#app [contenteditable="true"],#app [data-allow-select],body input,body textarea{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}

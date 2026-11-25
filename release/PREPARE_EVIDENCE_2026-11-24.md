@@ -36,3 +36,10 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - CI: PR #56 head 7c6663c green (regression + Clean browser acceptance incl. mobile WebKit). Orbitron font added (OFL) at /fonts/orbitron.woff2.
 - Final tree after animation cycle (9351b439): drill re-run 2026-11-25T02:45:32Z, smoke issues empty; CI green on 5fe09ec.
 - Final tree with orbit redesign (a6e123e5): drill re-run 2026-11-25T03:01:21Z against production 13b2f90, smoke issues empty; CI green on 560fb06.
+
+## Fifth candidate (PR #57, selection lock + front-facing hologram), application tree `41da7fb1705493bbcf6e70eabbb00f0c4b70a95e`
+- Owner request 25/11 13:39: remove copy/select on the app. Owner said "você tem todas as autorizações" (24/11) and saved the new backup key (COD3) on 25/11 13:56.
+- Backup 20261125T164425Z: Railway console keygen + create + verify, 6 files, SHA256 7a7d6437…73df, copied to the owner computer (hash matched).
+- Drill 16:57Z: candidate then production aed95cf on the restored copy, smoke issues empty, originals preserved, restored data deleted.
+- AI billing 16:58Z: OpenAI US$5.00, auto-reload OFF; limits unchanged. Hosting: Railway HOBBY ACTIVE, 41a0fc20 SUCCESS on aed95cf.
+- Tests: selection blocked (triple tap selects nothing, context menu prevented), inputs still typeable and selectable; tap sweep 429 buttons no size change; CI green on 0061e0a.
