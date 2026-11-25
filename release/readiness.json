@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "9351b4395d626cc147d62ab4d4d274c83105a52b",
+  "applicationTree": "a6e123e5459f839273bc5264b77654150dfaccbc",
   "channels": [
     "ios"
   ],
@@ -25,10 +25,10 @@
       },
       "restore_drill": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T02:45:32Z",
+        "verifiedAt": "2026-11-25T03:01:21Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: candidate tree 9351b439 restored the 01:37Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed; restored data deleted"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: candidate tree a6e123e5 restored the 01:37Z snapshot in isolation; smoke issues empty; originals preserved; production not accessed; restored data deleted"
         ]
       },
       "new_credentials_stored": {
@@ -65,7 +65,7 @@
       },
       "rollback_migration": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T02:45:32Z",
+        "verifiedAt": "2026-11-25T03:01:21Z",
         "verifiedBy": "development-agent",
         "evidence": [
           "release/PREPARE_EVIDENCE_2026-11-24.md: production commit 13b2f90 booted on the restored copy after the candidate, smoke issues empty; rollback = redeploy e4779229 keeping /data"
@@ -73,10 +73,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T02:45:32Z",
+        "verifiedAt": "2026-11-25T03:01:21Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #56 head 5fe09ec (application tree 9351b439, native tree a6a5e9a8) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR #56 head 560fb06 (application tree a6e123e5, native tree a6a5e9a8) passes regression and Clean browser acceptance incl. mobile WebKit; deploy only the merged green main commit"
         ]
       },
       "expiry_alert": {
