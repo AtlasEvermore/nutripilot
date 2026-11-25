@@ -2053,6 +2053,16 @@ function initStory() {
   STORY_T = setInterval(() => { if (!host.isConnected) { clearInterval(STORY_T); return; } if (Date.now() - t0 >= DUR) show(i + 1); }, 250);
 }
 
+// 22.1 · Hello: everything included — the nine programs, each opening its full topic sheet.
+function helloAll() {
+  const v = MV();
+  const mods = MODULES.slice(0, 9);
+  return `<section class="hello-all" aria-label="${esc(L('Les 9 modules, sans limite'))}">
+    <div class="ha-head"><span class="ha-count"><i></i>${mods.length}</span><div><h2>${L('Tout NutriPilot, en un coup d’œil.')}</h2><p>${L('Les 9 modules, sans limite')}</p></div></div>
+    <div class="ha-grid">${mods.map((m, i) => `<button class="ha-tile ${m.tone}" data-nexus="${m.id}" style="--i:${i}"><span class="ha-no">${String(i + 1).padStart(2, '0')}</span><span class="mod-ico">${icon(m.icon)}</span><b>${esc(L(m.short || m.name))}</b><small>${esc(L(m.sub, v))}</small><em>${(m.features || []).length} <i>›</i></em><span class="ha-sheen" aria-hidden="true"></span></button>`).join('')}</div>
+  </section>`;
+}
+
 function helloScreen() {
   const fk = currentFocus();
   const f = FOCI[fk];
@@ -2066,8 +2076,8 @@ function helloScreen() {
       <h1>${L(title)}</h1>
       <p>${L(sub)}</p>
     </div>
-    <div class="hello-pick" role="radiogroup" aria-label="${L('Votre objectif')}">${Object.entries(FOCI).map(([id, x]) => `<button class="${x.tone} ${fk === id ? 'on' : ''}" role="radio" aria-checked="${fk === id}" data-focus="${id}"><span class="mod-ico">${icon(x.ico)}</span>${L(x.kicker)}</button>`).join('')}</div>
     ${f ? `<ul class="hello-points">${f.points.map(([ico, a, b]) => `<li><span class="mod-ico">${icon(ico)}</span><span><b>${L(a)}</b><small>${L(b)}</small></span></li>`).join('')}</ul>` : ''}
+    ${helloAll()}
     <div class="hello-cta">
       <button class="btn btn-lime btn-wide btn-xl" data-hello-start>${L('Créer mon programme')}</button>
       <p>${L('Nutrition, entraînement et bien-être, dans une seule app.')}</p>
