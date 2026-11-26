@@ -54,3 +54,4 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - Hello: nine-module picker restyled as monochrome HUD (owner-approved 18:54), tree `c02a9131d597bbc9415ceb193bb4ae3a5b8ebfe0` — interface-only relative to production 8c4539b.
 - Hello: fixed ecosystem title for everyone (owner decision 20:21), tree `d43e2eb6762a5fc3a03495490693ba571d37f65c` — interface-only relative to production a7c9c3e.
 - Hello: story hero rebuilt as HUD product demos with orbits (owner-approved 21:39), tree `d663bcdf3a50527b1d9811b7f0e2e49a6c4c486c` — interface-only relative to production b57d04f.
+- Fixes (owner-requested 21:43): goal steppers never squeezed, numeric profile fields normalized, plans table fits 320px; audit of 30 routes x 3 languages x 3 widths clean, 429-tap sweep clean, tree `b8ddd36881f5a3ae4917a6fb322a0bae86476c0a` — interface-only relative to production 099cf90.
