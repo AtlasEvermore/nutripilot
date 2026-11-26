@@ -3492,3 +3492,45 @@ html[lang=ja] .hp-head h2,html[lang=ko] .hp-head h2,html[lang=zh] .hp-head h2,ht
 .hello-pick9 .hp-chip .mod-ico{box-shadow:0 0 0 1px rgba(126,249,255,.45) inset,0 0 16px -4px rgba(34,225,255,.7)!important;background:radial-gradient(circle,rgba(126,249,255,.16),rgba(126,249,255,.02) 70%)!important}
 .hello-pick9 .hp-chip.on .mod-ico{box-shadow:0 0 0 1px rgba(212,255,61,.7) inset,0 0 22px -2px rgba(212,255,61,.6)!important;background:radial-gradient(circle,rgba(212,255,61,.22),transparent 70%)!important}
 .hello-pick9 .hp-dh .mod-ico{box-shadow:0 0 0 1px rgba(126,249,255,.6) inset,0 0 24px -4px #22e1ff!important;background:radial-gradient(circle,rgba(126,249,255,.2),transparent 70%)!important}
+/* 22.6 · HUD story: live product demos */
+.story{background:repeating-linear-gradient(0deg,rgba(126,249,255,.035) 0 1px,transparent 1px 4px),radial-gradient(90% 55% at 50% 28%,rgba(34,225,255,.16),transparent 70%),linear-gradient(180deg,#06112a,#01040c);border:1px solid rgba(126,249,255,.28);box-shadow:0 30px 60px -30px #000,0 0 50px -22px #22e1ff}
+.story::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(126,249,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(126,249,255,.06) 1px,transparent 1px);background-size:26px 26px;-webkit-mask-image:radial-gradient(80% 60% at 50% 35%,#000,transparent);mask-image:radial-gradient(80% 60% at 50% 35%,#000,transparent)}
+.st-hud{position:absolute;inset:0}
+.st-vis{position:absolute;left:4%;right:4%;top:9%;width:92%;height:auto;overflow:visible;filter:drop-shadow(0 0 10px rgba(34,225,255,.35))}
+.sv-num{font-family:Orbitron,var(--font,system-ui);font-weight:700;letter-spacing:.01em}
+.sv-mono{font-family:ui-monospace,Menlo,monospace;font-weight:600;letter-spacing:.16em}
+.sh-c{position:absolute;width:26px;height:26px;border:3px solid #d4ff3d;z-index:2}
+.sh-c.tl{left:14px;top:26px;border-right:0;border-bottom:0}.sh-c.br{right:14px;bottom:14px;border-left:0;border-top:0;opacity:.5}
+.sh-tag{position:absolute;left:48px;top:32px;font:600 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:#7ef9ff;text-shadow:0 0 10px rgba(34,225,255,.8)}
+.sh-live{position:absolute;right:18px;top:30px;display:flex;align-items:center;gap:6px;font:700 10px/1 ui-monospace,monospace;letter-spacing:.2em;color:#d4ff3d}
+.sh-live i{width:7px;height:7px;border-radius:50%;background:#d4ff3d;box-shadow:0 0 10px #d4ff3d;animation:shBlink 1.2s steps(2) infinite}
+@keyframes shBlink{50%{opacity:.2}}
+.sh-scan{position:absolute;left:0;right:0;top:12%;height:2px;background:linear-gradient(90deg,transparent,#7ef9ff,transparent);box-shadow:0 0 16px #22e1ff;opacity:0}
+.st-scene.on .sh-scan{animation:shScan 2.8s .2s ease-in-out 2}
+@keyframes shScan{0%{transform:translateY(0);opacity:0}15%,85%{opacity:.9}100%{transform:translateY(260px);opacity:0}}
+.st-scene .st-grade{background:linear-gradient(180deg,transparent 0%,transparent 50%,rgba(2,6,16,.85) 72%,rgba(2,6,16,.96) 100%)}
+.sv-draw{stroke-dasharray:1;stroke-dashoffset:1}
+.st-scene.on .sv-draw{animation:svDraw 1.6s calc(.25s + var(--k,0)*.2s) cubic-bezier(.3,.7,.2,1) forwards}
+@keyframes svDraw{to{stroke-dashoffset:calc(1 - var(--f))}}
+.st-scene.on .sv-loop{animation:svDraw 1.3s .2s linear forwards,svPulse 1.3s 1.5s ease-in-out infinite}
+@keyframes svPulse{50%{opacity:.45}}
+.sv-grow,.sv-rise{transform-box:fill-box;transform:scaleX(0);transform-origin:0 50%}
+.sv-rise{transform:scaleY(0);transform-origin:50% 100%}
+.st-scene.on .sv-grow{animation:svGrow 1.1s calc(.5s + var(--k)*.18s) cubic-bezier(.3,.7,.2,1) forwards}
+.st-scene.on .sv-rise{animation:svRise .9s calc(.4s + var(--k)*.18s) cubic-bezier(.3,.8,.2,1.15) forwards}
+@keyframes svGrow{to{transform:scaleX(var(--f))}}
+@keyframes svRise{to{transform:scaleY(var(--f))}}
+.sv-pop{opacity:0;transform-box:fill-box;transform-origin:50% 50%}
+.st-scene.on .sv-pop{animation:svPop .45s calc(.35s + var(--k)*.12s) cubic-bezier(.2,.9,.3,1.3) forwards}
+@keyframes svPop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+.sv-sweep{filter:drop-shadow(0 0 6px #22e1ff)}
+.st-scene.on .sv-sweep{animation:svSweep 1.6s ease-in-out infinite alternate}
+@keyframes svSweep{to{transform:translateY(76px)}}
+@media (prefers-reduced-motion:reduce){.sv-draw{stroke-dashoffset:calc(1 - var(--f))}.sv-grow{transform:scaleX(var(--f))}.sv-rise{transform:scaleY(var(--f))}.sv-pop{opacity:1}.st-scene.on .sv-draw,.st-scene.on .sv-grow,.st-scene.on .sv-rise,.st-scene.on .sv-pop,.st-scene.on .sh-scan,.st-scene.on .sv-sweep,.sh-live i{animation:none}}
+.st-vis{left:50%;right:auto;top:9%;width:auto;height:44%;transform:translateX(-50%)}
+.story .st-chip{border:1px solid rgba(126,249,255,.45);background:rgba(2,10,24,.7)}.story .st-chip .mod-ico{background:radial-gradient(circle,rgba(126,249,255,.25),rgba(126,249,255,.05))!important;color:#7ef9ff;box-shadow:0 0 0 1px rgba(126,249,255,.6) inset,0 0 12px -2px #22e1ff}
+.st-vis{top:7%;height:50%}
+.sv-comet{filter:drop-shadow(0 0 6px currentColor)}
+.sv-spin{transform-box:view-box;transform-origin:200px 140px;animation:svSpin 24s linear infinite}
+@keyframes svSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.sv-spin{animation:none}}
