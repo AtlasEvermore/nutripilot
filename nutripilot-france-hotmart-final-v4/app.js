@@ -2015,6 +2015,52 @@ const STORY = [
   { id: 'scanner' },
   { id: 'sleep' },
 ];
+// 22.6 · HUD story visuals: live product demos instead of photographs (vector, crisp on every screen).
+function stVis(id) {
+  const C = '#7ef9ff', Lm = '#d4ff3d';
+  const ring = (cx, cy, r, f, col, w = 10, k = 0) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(126,249,255,.12)" stroke-width="${w}"/><circle class="sv-draw" style="--f:${f};--k:${k}" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" pathLength="1" transform="rotate(-90 ${cx} ${cy})"/>`;
+  const num = (x, y, t, sz = 34, col = '#fff', a = 'middle') => `<text x="${x}" y="${y}" text-anchor="${a}" class="sv-num" font-size="${sz}" fill="${col}">${t}</text>`;
+  const mono = (x, y, t, col = C, a = 'middle', sz = 11) => `<text x="${x}" y="${y}" text-anchor="${a}" class="sv-mono" font-size="${sz}" fill="${col}">${t}</text>`;
+  let body = '';
+  if (id === 'nutrition') {
+    body = ring(200, 140, 108, .86, Lm, 15) + ring(200, 140, 84, .72, C, 9, 1) + ring(200, 140, 66, .6, '#3fd7ff', 7, 2)
+      + num(200, 146, '1 640', 44) + mono(200, 172, '/ 1 850 KCAL', 'rgba(214,236,255,.7)')
+      + [[52, '132 g', .8], [200, '168 g', .64], [348, '54 g', .5]].map(([x, t, f], k) => `<rect x="${x - 46}" y="290" width="92" height="6" rx="3" fill="rgba(126,249,255,.15)"/><rect class="sv-grow" style="--f:${f};--k:${k}" x="${x - 46}" y="290" width="92" height="6" rx="3" fill="${k ? C : Lm}"/>${num(x, 280, t, 18)}`).join('');
+  } else if (id === 'menopause') {
+    const pts = [[40, 90], [86, 112], [132, 104], [178, 150], [224, 172], [270, 196], [316, 214], [362, 236]];
+    body = [0, 1, 2, 3].map((k) => `<line x1="30" x2="372" y1="${80 + k * 55}" y2="${80 + k * 55}" stroke="rgba(126,249,255,.1)"/>`).join('')
+      + `<path d="M${pts.map((p) => p.join(',')).join(' L')} L362,262 L40,262 Z" fill="url(#svFill)" opacity=".5"/>`
+      + `<path class="sv-draw" style="--f:1" d="M${pts.map((p) => p.join(',')).join(' L')}" fill="none" stroke="${C}" stroke-width="3" pathLength="1"/>`
+      + pts.map(([x, y], k) => `<circle class="sv-pop" style="--k:${k}" cx="${x}" cy="${y}" r="${k === 7 ? 7 : 4}" fill="${k === 7 ? Lm : C}"/>${mono(x, 284, String(k + 1).padStart(2, '0'), 'rgba(126,249,255,.6)')}`).join('')
+      + `<g class="sv-pop" style="--k:9"><rect x="276" y="40" width="96" height="44" rx="8" fill="rgba(2,10,24,.8)" stroke="${Lm}"/>${num(324, 72, '−62 %', 22, Lm)}</g>`;
+  } else if (id === 'recipes') {
+    body = ring(200, 140, 112, .65, C, 7) + `<circle cx="200" cy="140" r="88" fill="rgba(126,249,255,.05)" stroke="rgba(126,249,255,.35)" stroke-dasharray="3 6"/>`
+      + num(200, 150, '18:00', 52) + mono(200, 178, 'MIN', 'rgba(214,236,255,.7)')
+      + [['32 g', 70], ['520', 200], ['9 g', 330]].map(([t, x], k) => `<g class="sv-pop" style="--k:${k + 3}"><rect x="${x - 52}" y="272" width="104" height="36" rx="18" fill="rgba(2,10,24,.75)" stroke="${k === 1 ? Lm : 'rgba(126,249,255,.5)'}"/>${num(x, 296, k === 1 ? t + ' kcal' : t, 16, k === 1 ? Lm : '#fff')}</g>`).join('');
+  } else if (id === 'training') {
+    const ecg = 'M20,110 L120,110 L136,80 L152,140 L168,40 L184,170 L200,110 L380,110';
+    body = `<path class="sv-draw sv-loop" style="--f:1" d="${ecg}" fill="none" stroke="${Lm}" stroke-width="3" pathLength="1"/>`
+      + num(380, 64, '128', 40, '#fff', 'end') + mono(380, 84, 'BPM', Lm, 'end')
+      + [.55, .7, .85, 1].map((f, k) => `<rect x="${60 + k * 78}" y="190" width="48" height="90" rx="6" fill="rgba(126,249,255,.1)"/><rect class="sv-rise" style="--f:${f};--k:${k}" x="${60 + k * 78}" y="190" width="48" height="90" rx="6" fill="${k === 3 ? Lm : C}"/>${mono(84 + k * 78, 300, '10×', 'rgba(214,236,255,.8)')}`).join('')
+      + num(30, 64, '4 × 10', 30, '#fff', 'start') + mono(30, 84, '12 KG', C, 'start');
+  } else if (id === 'scanner') {
+    body = `<rect x="118" y="24" width="164" height="276" rx="26" fill="rgba(2,10,24,.6)" stroke="rgba(126,249,255,.55)" stroke-width="2"/>`
+      + Array.from({ length: 22 }, (_, k) => `<rect x="${144 + k * 5.2}" y="92" width="${k % 3 ? 2 : 3.4}" height="74" fill="#eaf8ff" opacity=".85"/>`).join('')
+      + `<rect class="sv-sweep" x="130" y="88" width="140" height="3" fill="${C}"/>`
+      + `<g class="sv-pop" style="--k:3"><circle cx="200" cy="226" r="40" fill="rgba(212,255,61,.12)" stroke="${Lm}" stroke-width="3"/>${num(200, 238, '82', 34, Lm)}</g>`
+      + `<path d="M104,70 v-24 h24 M296,70 v-24 h-24 M104,250 v24 h24 M296,250 v24 h-24" fill="none" stroke="${Lm}" stroke-width="3"/>`;
+  } else if (id === 'sleep') {
+    const hyp = 'M30,120 H80 V200 H130 V250 H180 V160 H220 V250 H270 V180 H310 V120 H370';
+    body = `<path d="M338,34 A28,28 0 1 0 362,78 A22,22 0 1 1 338,34 Z" fill="rgba(126,249,255,.15)" stroke="${C}" stroke-width="2.5"/>`
+      + [120, 160, 200, 250].map((y) => `<line x1="30" x2="370" y1="${y}" y2="${y}" stroke="rgba(126,249,255,.1)"/>`).join('')
+      + `<path class="sv-draw" style="--f:1" d="${hyp}" fill="none" stroke="${C}" stroke-width="3" pathLength="1"/>`
+      + num(30, 74, '7 h 42', 40, '#fff', 'start') + mono(30, 94, '23:10 → 06:52', Lm, 'start');
+  }
+  const orbit = (rx, ry, rot, dur, col, rev) => { const d = `M${200 - rx},140 a${rx},${ry} 0 1,${rev ? 0 : 1} ${rx * 2},0 a${rx},${ry} 0 1,${rev ? 0 : 1} -${rx * 2},0`; return `<g transform="rotate(${rot} 200 140)"><path d="${d}" fill="none" stroke="${col}" stroke-opacity=".35" stroke-width="1.2" stroke-dasharray="2 5"/><circle r="4.5" fill="${col}" class="sv-comet"><animateMotion dur="${dur}s" repeatCount="indefinite" path="${d}"/></circle><circle r="2.5" fill="#fff" opacity=".8"><animateMotion dur="${dur}s" begin="-${dur / 2}s" repeatCount="indefinite" path="${d}"/></circle></g>`; };
+  const orbs = `<g class="sv-orbs">${orbit(190, 56, -16, 7, C)}${orbit(176, 46, 22, 9.5, Lm, 1)}<circle class="sv-spin" cx="200" cy="140" r="150" fill="none" stroke="rgba(126,249,255,.22)" stroke-width="1" stroke-dasharray="1 9 22 9"/></g>`;
+  body = orbs + body;
+  return `<svg class="st-vis" viewBox="0 0 400 320" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><defs><linearGradient id="svFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22e1ff" stop-opacity=".45"/><stop offset="1" stop-color="#22e1ff" stop-opacity="0"/></linearGradient></defs>${body}</svg>`;
+}
 let STORY_T = null;
 function storyHero(fk) {
   const start = Math.max(0, STORY.findIndex((s) => s.focus === fk));
@@ -2024,9 +2070,8 @@ function storyHero(fk) {
     const scan = (s.scan || []).map(([name, x, y, w, h], k) => `<span class="st-box" style="--x:${x}%;--y:${y}%;--w:${w}%;--h:${h}%;--k:${k}"><i></i><b>${esc(L(name))}</b></span>`).join('');
     const feats = (m.features || []).slice(0, 3).map((f, k) => `<li style="--k:${k}"><span>${String(k + 1).padStart(2, '0')}</span>${esc(L(f, v))}</li>`).join('');
     return `<figure class="st-scene ${m.tone} ${i === start ? 'on' : ''}" data-scene="${i}">
-      <img src="/artwork/${m.id}.webp" alt="" width="600" height="600" decoding="async" ${i < 2 ? '' : 'loading="lazy"'} draggable="false">
+      <div class="st-hud" aria-hidden="true"><i class="sh-c tl"></i><i class="sh-c br"></i><span class="sh-tag">NUTRIPILOT · 0${i + 1}/0${STORY.length}</span><span class="sh-live"><i></i>LIVE</span><span class="sh-scan"></span>${stVis(s.id)}</div>
       <span class="st-grade" aria-hidden="true"></span>
-      ${scan ? `<div class="st-scan" aria-hidden="true"><span class="st-beam"></span>${scan}<span class="st-live"><i></i>LIVE · SCAN</span></div>` : ''}
       <figcaption><span class="st-chip"><span class="mod-ico">${icon(m.icon)}</span>${esc(L(m.name))}</span><b>${esc(modTitle(m))}</b>${feats ? `<ol>${feats}</ol>` : ''}</figcaption>
     </figure>`;
   }).join('');
