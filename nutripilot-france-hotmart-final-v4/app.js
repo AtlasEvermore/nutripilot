@@ -774,6 +774,8 @@ let pendingPlanSwap = null;
 
 // Older versions pre-filled 70 kg → 62 kg for everyone: never show those as the person's numbers.
 function migrateState(s) {
+  // Numeric profile fields saved in an old or invalid format fall back to safe defaults (never 0 kcal or NaN on screen).
+  if (s.profile && typeof s.profile === 'object') for (const [k, d] of [['activity', 1.375], ['speed', 0.35], ['mealsPerDay', 3]]) { if (!(Number(s.profile[k]) > 0)) s.profile[k] = d; else s.profile[k] = Number(s.profile[k]); }
   if (Array.isArray(s.changes)) { const old = new Date(Date.now() - 35 * 86400000).toISOString().slice(0, 10); s.changes = s.changes.filter((c) => c && c.day >= old).slice(0, 60); }
   if (s.dayTimes && typeof s.dayTimes === 'object') { const old = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10); s.dayTimes = Object.fromEntries(Object.entries(s.dayTimes).filter(([d]) => d >= old)); }
   if (Array.isArray(s.coach)) s.coach = s.coach.filter((m) => m && !m.pending && (m.text || '').trim() && m.text !== '…');
@@ -2350,7 +2352,7 @@ function calculatePlan(data = onboardingState.data) {
   const base = 10 * weight + 6.25 * height - 5 * age;
   const sexOffset = p.sex === 'male' ? 5 : p.sex === 'female' ? -161 : -78;
   const bmr = base + sexOffset;
-  const tdee = bmr * Number(p.activity || 1.375);
+  const tdee = bmr * (Number(p.activity) || 1.375);
   let kcal = tdee;
   let warning = '';
 

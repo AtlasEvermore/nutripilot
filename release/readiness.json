@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "d663bcdf3a50527b1d9811b7f0e2e49a6c4c486c",
+  "applicationTree": "b8ddd36881f5a3ae4917a6fb322a0bae86476c0a",
   "channels": [
     "ios"
   ],
@@ -73,10 +73,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-26T00:40:44Z",
+        "verifiedAt": "2026-11-26T01:09:56Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR hello-hud-story (app bce9e77, tree d663bcdf); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR fix-overflow-sweep (app a027f2f, tree b8ddd368); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
         ]
       },
       "expiry_alert": {
@@ -202,5 +202,5 @@
   "deferredChannels": [
     "android"
   ],
-  "productionCommit": "b57d04fb006bdf149c3d3f938b138623858fb690"
+  "productionCommit": "099cf900a135d0b11272e1b9697a93cb9143d8f5"
 }
