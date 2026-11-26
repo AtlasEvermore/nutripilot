@@ -53,3 +53,4 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - Hello: static focus cards removed, nine-module picker opens on the visitor's focus (owner-approved 18:31), tree `7fb92678215f2e646b93e64d3bd527ba49d118bd` — interface-only relative to production 1bfa375.
 - Hello: nine-module picker restyled as monochrome HUD (owner-approved 18:54), tree `c02a9131d597bbc9415ceb193bb4ae3a5b8ebfe0` — interface-only relative to production 8c4539b.
 - Hello: fixed ecosystem title for everyone (owner decision 20:21), tree `d43e2eb6762a5fc3a03495490693ba571d37f65c` — interface-only relative to production a7c9c3e.
+- Hello: story hero rebuilt as HUD product demos with orbits (owner-approved 21:39), tree `d663bcdf3a50527b1d9811b7f0e2e49a6c4c486c` — interface-only relative to production b57d04f.
