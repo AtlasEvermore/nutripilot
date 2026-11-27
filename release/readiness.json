@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "b8ddd36881f5a3ae4917a6fb322a0bae86476c0a",
+  "applicationTree": "3461eae8b8cf367648607e6f20dee3eb15678349",
   "channels": [
     "ios"
   ],
@@ -9,10 +9,11 @@
     "prepare": {
       "hosting_access": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T16:42:39Z",
+        "verifiedAt": "2026-11-27T15:34:53Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: Railway HOBBY ACTIVE; deployment 41a0fc20 SUCCESS on aed95cf; 38 service variables (names unchanged)"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: Railway HOBBY ACTIVE; deployment 41a0fc20 SUCCESS on aed95cf; 38 service variables (names unchanged)",
+          "2026-11-27: Production health run 46011450245 (13:56Z) green on published version, assets and providers (only open item: owner-scheduled independent backup); last Railway deploy a047845 SUCCESS via the GitHub deploy workflow"
         ]
       },
       "independent_backup": {
@@ -73,10 +74,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-26T01:09:56Z",
+        "verifiedAt": "2026-11-27T15:33:45Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR fix-overflow-sweep (app a027f2f, tree b8ddd368); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR meta-web (app 23f02a5, tree 3461eae8); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
         ]
       },
       "expiry_alert": {
@@ -97,11 +98,12 @@
       },
       "ios_artifact": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T23:22:12Z",
+        "verifiedAt": "2026-11-27T15:34:53Z",
         "verifiedBy": "development-agent",
         "evidence": [
           "release/PREPARE_EVIDENCE_2026-11-24.md: signed IPA 18.2.0 (501) from main 54d29c9 (native tree a6a5e9a8), run 45524712579, IPA SHA256 180ea17c…f8ff (artifact zip a1f62906…1ae2 re-hashed in the browser); uploaded to App Store Connect by run 45525587237 (success); held in TestFlight for owner approval before review",
-          "2026-11-25 re-check: native tree unchanged (a6a5e9a8, enforced by the gate); build 18.2.0 (501) approved by App Review, Ready for Distribution 25/11"
+          "2026-11-25 re-check: native tree unchanged (a6a5e9a8, enforced by the gate); build 18.2.0 (501) approved by App Review, Ready for Distribution 25/11",
+          "2026-11-27 re-check: native tree unchanged (a6a5e9a8, enforced by the gate); 18.2.0 (501) live on the App Store"
         ]
       },
       "android_configuration": {
@@ -202,5 +204,5 @@
   "deferredChannels": [
     "android"
   ],
-  "productionCommit": "099cf900a135d0b11272e1b9697a93cb9143d8f5"
+  "productionCommit": "a047845f6045b016592b6eb449e84cde025b2d34"
 }
