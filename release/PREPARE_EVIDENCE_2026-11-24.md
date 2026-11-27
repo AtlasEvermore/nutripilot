@@ -58,3 +58,4 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - Meta funnel events + RevenueCat attribution ids in the web app (owner-requested 27/11; inert on web and on the current iPhone build), tree `3461eae8b8cf367648607e6f20dee3eb15678349` — interface-only relative to production a047845.
 - Entry layout fix + always-visible start button + monthly-first paywall (owner-approved 13:02 27/11); audit clean, 429-tap sweep clean, tree `4db2c48b70557a6a72968b9b2aeb2bff6fa46a0c` — interface-only relative to production bff9acf.
 - + personal goal suggestion (owner request 13:09), tree `90cb6361f1e13f8261889007b0714f22527973f2`.
+- Evolution screen (ranks + monthly medals, owner-approved 13:43 27/11), computed client-side from existing logs (no data change); audit clean incl. evolution, 429-tap sweep clean, tree `01b23769b73900f78424cebfb5482a19d82cb5d1` — interface-only relative to production 97a4d46.

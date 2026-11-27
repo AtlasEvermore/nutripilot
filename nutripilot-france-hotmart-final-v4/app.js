@@ -1284,7 +1284,7 @@ function mealTypeFromHour() {
   return 'Dîner';
 }
 
-const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang', 'menopause', 'plans', 'goal', 'profile', 'modules', 'scanner', 'nutrients', 'supplements', 'sleep', 'diary', 'targets'];
+const EXPLORE_ROUTES = ['app', 'hub', 'program', 'recipes', 'shopping', 'guides', 'training', 'progress', 'coach', 'planner', 'insights', 'tour', 'support', 'settings', 'onboarding', 'analyzing', 'plan', 'paywall', 'access', 'legal', 'lang', 'menopause', 'plans', 'goal', 'profile', 'modules', 'scanner', 'nutrients', 'supplements', 'sleep', 'diary', 'targets', 'evolution'];
 let langNext = '';
 function guardRoute() {
   if (!routeAllowed()) route = 'app';
@@ -1309,7 +1309,7 @@ function guardRoute() {
 }
 
 function routeAllowed() {
-  return ['hello', 'app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support', 'menopause', 'plans', 'goal', 'profile', 'modules', 'scanner', 'nutrients', 'supplements', 'sleep', 'diary', 'targets'].includes(route);
+  return ['hello', 'app', 'program', 'planner', 'recipes', 'shopping', 'guides', 'coach', 'insights', 'progress', 'settings', 'legal', 'onboarding', 'analyzing', 'plan', 'paywall', 'upgrade', 'access', 'training', 'lang', 'basics', 'saving', 'hub', 'tour', 'support', 'menopause', 'plans', 'goal', 'profile', 'modules', 'scanner', 'nutrients', 'supplements', 'sleep', 'diary', 'targets', 'evolution'].includes(route);
 }
 
 async function init() {
@@ -4481,6 +4481,91 @@ function badgeList() {
     ['🍽️', '50 repas suivis', state.meals.length >= 50],
   ];
 }
+// ── Evolution: ranks (Cadet → Legend) and monthly stages, computed only from what the person already logs.
+const RANKS = [
+  { id: 'cadet', name: 'Cadet', xp: 0, c1: '#9aa7b4', c2: '#3b4652', glow: '#7ef9ff', wings: 0, crown: 0 },
+  { id: 'pilot', name: 'Pilote', xp: 4000, c1: '#d4ff3d', c2: '#3d5210', glow: '#d4ff3d', wings: 1, crown: 0 },
+  { id: 'captain', name: 'Capitaine', xp: 12500, c1: '#5aa8ff', c2: '#10264f', glow: '#7ef9ff', wings: 2, crown: 0 },
+  { id: 'commander', name: 'Commandant', xp: 25000, c1: '#c9b8ff', c2: '#2c2252', glow: '#b48cff', wings: 2, crown: 1 },
+  { id: 'ace', name: 'As', xp: 45000, c1: '#ffd36b', c2: '#5a3a07', glow: '#ffcf4d', wings: 3, crown: 1 },
+  { id: 'legend', name: 'Légende', xp: 75000, c1: '#eafcff', c2: '#1c3b4a', glow: '#7ef9ff', wings: 3, crown: 2 },
+];
+const STAGES = [['Bronze', 300, '#e08a4c', '#4a220c'], ['Argent', 1000, '#dfe7ee', '#46525e'], ['Or', 2000, '#ffd36b', '#5a3a07'], ['Platine', 3500, '#9ff3ea', '#174a4a'], ['Diamant', 5000, '#bfe9ff', '#13324f']];
+const XP_RULES = [['Noter un repas', 10], ['Terminer une séance', 40], ['Journée dans l’objectif de calories', 25], ['Nuit de sommeil notée', 10], ['Série de 7 jours', 150]];
+function xpByDay() {
+  const out = {}; const add = (d, n) => { if (d) out[d] = (out[d] || 0) + n; };
+  const perDay = {}; for (const m of state.meals || []) perDay[m.day] = (perDay[m.day] || 0) + 1;
+  for (const [d, n] of Object.entries(perDay)) add(d, Math.min(n, 6) * 10);
+  for (const w of state.workoutLog || []) add(w.day, 40);
+  for (const [d, e] of Object.entries(state.sleepLog || {})) if (sleepDuration(e)) add(d, 10);
+  const goal = Number(state.profile?.dailyKcal) || 0;
+  if (goal) for (const d of Object.keys(perDay)) { const k = totals(d).kcal; if (k && Math.abs(k - goal) <= goal * 0.1) add(d, 25); }
+  const days = Object.keys(perDay).sort(); let run = 0, prev = '';
+  for (const d of days) { run = prev && addDaysFrom(prev, 1) === d ? run + 1 : 1; if (run % 7 === 0) add(d, 150); prev = d; }
+  return out;
+}
+function addDaysFrom(day, n) { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() + n); return todayKey(d); }
+function evolution() {
+  const byDay = xpByDay(); const total = Object.values(byDay).reduce((a, b) => a + b, 0);
+  let i = 0; while (i < RANKS.length - 1 && total >= RANKS[i + 1].xp) i += 1;
+  const month = todayKey().slice(0, 7); const monthXp = Object.entries(byDay).filter(([d]) => d.startsWith(month)).reduce((a, [, n]) => a + n, 0);
+  const from = addDays(-27); const recent = Object.entries(byDay).filter(([d]) => d >= from).reduce((a, [, n]) => a + n, 0);
+  const next = RANKS[i + 1]; const weeks = next && recent > 0 ? Math.max(1, Math.ceil((next.xp - total) / (recent / 4))) : 0;
+  return { total, rank: i, level: Math.floor(total / 800) + 1, monthXp, stage: STAGES.reduce((acc, s, k) => (monthXp >= s[1] ? k : acc), -1), next, weeks };
+}
+let crestSeq = 0;
+function rankCrest(r, size = 120) {
+  const id = `cr${crestSeq += 1}`; const g = `url(#m${id})`;
+  const wings = Array.from({ length: r.wings }, (_, k) => `<path d="M${30 - k * 7},${70 + k * 8} L${6 - k * 6},${58 + k * 10} L${24 - k * 6},${86 + k * 6} Z" fill="${g}" stroke="${r.c1}" stroke-width=".8"/><path d="M${170 + k * 7},${70 + k * 8} L${194 + k * 6},${58 + k * 10} L${176 + k * 6},${86 + k * 6} Z" fill="${g}" stroke="${r.c1}" stroke-width=".8"/>`).join('');
+  const crown = r.crown ? Array.from({ length: r.crown * 2 + 1 }, (_, k) => { const x = 100 + (k - r.crown) * 14; const h = k === r.crown ? 22 : 14; return `<path d="M${x - 5},34 L${x},${34 - h} L${x + 5},34 Z" fill="${g}" stroke="${r.c1}" stroke-width=".8"/>`; }).join('') : '';
+  const pips = RANKS.indexOf(r) + 1;
+  return `<svg class="rank-crest" viewBox="0 0 200 220" width="${size}" height="${Math.round(size * 1.1)}" aria-hidden="true"><defs><linearGradient id="m${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".18" stop-color="${r.c1}"/><stop offset=".55" stop-color="${r.c2}"/><stop offset=".8" stop-color="${r.c1}"/><stop offset="1" stop-color="${r.c2}"/></linearGradient><linearGradient id="i${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1834"/><stop offset="1" stop-color="#02050e"/></linearGradient><radialGradient id="g${id}"><stop offset="0" stop-color="${r.glow}" stop-opacity=".5"/><stop offset="1" stop-color="${r.glow}" stop-opacity="0"/></radialGradient></defs>
+    <circle class="rc-halo" cx="100" cy="112" r="92" fill="url(#g${id})"/>${wings}${crown}
+    <path d="M100,30 L166,56 L160,132 Q150,176 100,200 Q50,176 40,132 L34,56 Z" fill="${g}" stroke="#fff" stroke-opacity=".5" stroke-width="1.2"/>
+    <path d="M100,44 L152,65 L147,129 Q138,164 100,184 Q62,164 53,129 L48,65 Z" fill="url(#i${id})" stroke="${r.c1}" stroke-width="2"/>
+    <path d="M100,52 L144,70 L140,126 Q132,156 100,174 Q68,156 60,126 L56,70 Z" fill="none" stroke="${r.glow}" stroke-opacity=".35" stroke-dasharray="2 5"/>
+    <g transform="rotate(-26 100 112)"><ellipse cx="100" cy="112" rx="40" ry="14" fill="none" stroke="${r.glow}" stroke-width="2.4"/></g>
+    <path d="M84,132 V92 L116,132 V92" fill="none" stroke="${r.glow}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".35"/>
+    <path d="M84,132 V92 L116,132 V92" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="138" cy="99" r="4" fill="${r.glow}"/>
+    ${Array.from({ length: pips }, (_, k) => `<path d="M${100 - (pips - 1) * 7 + k * 14 - 5},194 l5,-5 l5,5" fill="none" stroke="${r.c1}" stroke-width="2"/>`).join('')}</svg>`;
+}
+function stageMedal([, , c1, c2], size = 58) {
+  const id = `md${crestSeq += 1}`;
+  return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="${c1}"/><stop offset=".7" stop-color="${c2}"/><stop offset="1" stop-color="${c1}"/></linearGradient></defs><circle cx="60" cy="60" r="56" fill="url(#${id})"/><circle cx="60" cy="60" r="46" fill="#050b1c" stroke="${c1}" stroke-width="2"/>${Array.from({ length: 24 }, (_, k) => `<line x1="60" y1="8" x2="60" y2="13" stroke="#0008" stroke-width="2" transform="rotate(${k * 15} 60 60)"/>`).join('')}<circle cx="60" cy="60" r="38" fill="none" stroke="${c1}" stroke-opacity=".4" stroke-dasharray="2 4"/><path d="M60,34 l7,16 17,2 -13,11 4,17 -15,-9 -15,9 4,-17 -13,-11 17,-2z" fill="${c1}" stroke="#fff" stroke-opacity=".6"/></svg>`;
+}
+let evoTab = 'rank';
+function evolutionCard() {
+  const e = evolution(); const r = RANKS[e.rank];
+  return `<button class="evo-card" data-go="evolution">${rankCrest(r, 64)}<span><small>${L('Mon grade')}</small><b>${L(r.name)}</b><em>${fmtInt(e.total)} XP · ${L('Niveau {n}', { n: e.level })}</em></span>${icon('chevron')}</button>`;
+}
+function fmtInt(n) { return Math.round(n).toLocaleString(locale()); }
+function evolutionScreen() {
+  const e = evolution(); const r = RANKS[e.rank]; const nx = e.next;
+  const pct = nx ? Math.max(2, Math.min(100, ((e.total - r.xp) / (nx.xp - r.xp)) * 100)) : 100;
+  const monthName = new Date().toLocaleDateString(locale(), { month: 'long' });
+  const stageNext = STAGES[e.stage + 1];
+  const head = `<div class="app-head"><div class="app-head-row"><button class="icon-btn" data-nav-back aria-label="${L('Retour')}">${icon('back')}</button><h1>${L('Évolution')}</h1><span></span></div></div>`;
+  const seg = `<div class="evo-seg" role="tablist"><button class="${evoTab === 'rank' ? 'on' : ''}" data-evo-tab="rank" role="tab" aria-selected="${evoTab === 'rank'}">${L('Grade')}</button><button class="${evoTab === 'stage' ? 'on' : ''}" data-evo-tab="stage" role="tab" aria-selected="${evoTab === 'stage'}">${L('Étape du mois')}</button></div>`;
+  const rankView = `<div class="evo-hero"><span class="evo-hud">NUTRIPILOT · ${String(e.rank + 1).padStart(2, '0')}/0${RANKS.length}</span><span class="evo-live"><i></i>LIVE</span>
+      <div class="evo-crest">${rankCrest(r, 150)}</div><b class="evo-rank">${L(r.name)}</b><span class="evo-lvl">${L('Niveau {n}', { n: e.level })}</span>
+      <div class="evo-xp"><b>${fmtInt(e.total)}</b><small>${L('XP au total')}</small><div class="evo-bar"><i style="width:${pct}%"></i></div>
+        <div class="evo-ends"><span>${L(r.name)} · ${fmtInt(r.xp)}</span><span>${nx ? `${L(nx.name)} · ${fmtInt(nx.xp)}` : L('Grade maximal')}</span></div>
+        <p>${nx ? (e.weeks ? L('À votre rythme des 4 dernières semaines, vous devenez {r} dans ~{n} semaines.', { r: L(nx.name), n: e.weeks }) : L('Chaque repas noté, chaque séance et chaque nuit comptent : commencez aujourd’hui.')) : L('Vous avez atteint le grade le plus haut. Respect.')}</p></div></div>
+    <div class="section-label"><h3>${L('Les 6 grades')}</h3></div>
+    <div class="evo-ladder">${RANKS.map((x, k) => `<div class="${k > e.rank ? 'lock' : ''} ${k === e.rank ? 'me' : ''}">${rankCrest(x, 52)}<span>${L(x.name)}</span><small>${fmtInt(x.xp)}</small></div>`).join('')}</div>`;
+  const stageView = `<div class="evo-hero evo-month"><span class="evo-hud">${esc(monthName.toUpperCase())}</span><span class="evo-live"><i></i>LIVE</span>
+      <div class="evo-crest">${e.stage >= 0 ? stageMedal(STAGES[e.stage], 170) : `<div class="evo-empty">${stageMedal(STAGES[0], 170)}</div>`}</div>
+      <b class="evo-rank">${e.stage >= 0 ? L(STAGES[e.stage][0]) : L('Pas encore de médaille')}</b>
+      <div class="evo-xp"><b>${fmtInt(e.monthXp)}</b><small>${L('XP ce mois-ci')}</small><div class="evo-bar"><i style="width:${stageNext ? Math.max(2, Math.min(100, e.monthXp / stageNext[1] * 100)) : 100}%"></i></div>
+        <div class="evo-ends"><span>${e.stage >= 0 ? L(STAGES[e.stage][0]) : '0'}</span><span>${stageNext ? `${L(stageNext[0])} · ${fmtInt(stageNext[1])}` : L('Médaille maximale')}</span></div><p>${L('Le compteur du mois repart à zéro le 1er. Votre grade, lui, ne redescend jamais.')}</p></div></div>
+    <div class="section-label"><h3>${L('Médailles de {m}', { m: monthName })}</h3></div>
+    <div class="evo-medals">${STAGES.map((st, k) => `<div class="${k > e.stage ? 'lock' : ''}">${stageMedal(st)}<span>${L(st[0])}</span><small>${fmtInt(st[1])}</small></div>`).join('')}</div>`;
+  return `<div class="mobile-app evolution-screen">${head}<div class="screen">${seg}${evoTab === 'rank' ? rankView : stageView}
+    <div class="section-label"><h3>${L('Comment gagner des XP')}</h3></div>
+    <div class="evo-rules">${XP_RULES.map(([a, n]) => `<div><span>${L(a)}</span><b>+${n} XP</b></div>`).join('')}</div>
+    </div>${bottom('progress')}</div>`;
+}
 function achievements() {
   return `<div class="achievement-grid">${badgeList().map(([ico, label, unlocked]) => `<div class="achievement ${unlocked ? '' : 'locked'}"><span>${ico}</span><b>${esc(L(label))}</b></div>`).join('')}</div>`;
 }
@@ -4604,6 +4689,7 @@ function progressScreen() {
       <div class="section-label"><h3>${L('Photos de progression')}</h3><span class="fine">${L('Restent sur cet appareil')}</span></div>
       <div id="photo-strip" class="photo-strip"><label class="photo-add">${icon('camera')}<span>${L('Ajouter')}</span><input type="file" accept="image/*" id="progress-photo" hidden></label></div>
 
+      ${evolutionCard()}
       <div class="section-label"><h3>${L('Badges')}</h3><span class="fine">${badges.filter((b) => b[2]).length}/${badges.length}</span></div>
       ${achievements()}
       <div class="insight"><strong>${L('Ne corrigez pas votre alimentation sur une seule pesée.')}</strong>${L('Eau, sel, digestion, sommeil et cycle peuvent déplacer le poids sans refléter une variation équivalente de masse grasse.')}</div>
@@ -9149,6 +9235,7 @@ function render() {
   else if (route === 'coach') html = coachScreen();
   else if (route === 'insights') html = insights();
   else if (route === 'progress') html = progressScreen();
+  else if (route === 'evolution') html = evolutionScreen();
   else if (route === 'plans') html = plansScreen();
   else if (route === 'goal') html = goalScreen();
   else if (route === 'profile') html = profileScreen();
@@ -9551,6 +9638,7 @@ function bind() {
     if (button.dataset.tgAuto !== undefined) { state.profile = calculatePlan({ ...state.profile, manualTargets: null }); delete state.profile.manualTargets; saveState(); toast('Calcul automatique rétabli ✓'); return render(); }
 
     if (button.dataset.moduleBuy) return viewModulePlans(button.dataset.moduleBuy);
+    if (button.dataset.evoTab) { evoTab = button.dataset.evoTab; return render(); }
     if (button.dataset.openGoal !== undefined) return openGoal(route === 'goal' ? 'progress' : route);
     if (button.dataset.openProfile !== undefined) return openProfile();
     if (button.dataset.goalBack !== undefined) { goalDraft = null; return nav(goalReturn && goalReturn !== 'goal' ? goalReturn : 'progress'); }
