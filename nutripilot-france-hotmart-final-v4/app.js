@@ -1133,12 +1133,39 @@ function track(name, params = {}) {
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event: name, ...params });
   try { window.fbq?.('trackCustom', name, params); } catch {}
+  metaEvent(name, params);
   if (FUNNEL.has(name)) {
     try {
       const body = JSON.stringify({ name, lang: lang(), detail: params.plan || params.focus || params.source || params.feature || params.from || '' });
       if (!navigator.sendBeacon?.('/api/event', new Blob([body], { type: 'application/json' }))) fetch('/api/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => {});
     } catch { /* analytics must never break the app */ }
   }
+}
+// Meta app events (iPhone app only): funnel steps for app-promotion campaigns. Trials and subscriptions are NOT sent
+// from here: RevenueCat sends them to Meta from its server (exact revenue, renewals, no duplicates).
+const META_STD = { CompleteQuiz: 'fb_mobile_complete_registration', PlansView: 'fb_mobile_content_view', ViewPlans: 'fb_mobile_content_view', InitiateCheckout: 'fb_mobile_initiated_checkout' };
+function metaEvent(name, params = {}) {
+  const M = window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins?.MetaBridge : null;
+  if (!M || (!META_STD[name] && !FUNNEL.has(name)) || /Trial|Premium|Purchase/.test(name)) return;
+  const clean = {}; for (const [k, v] of Object.entries(params || {})) if (['string', 'number'].includes(typeof v)) clean[k] = String(v).slice(0, 80);
+  if (META_STD[name]) clean.fb_content_type = name;
+  M.logEvent({ name: META_STD[name] || name, params: clean }).catch(() => {});
+}
+// Asks App Tracking Transparency once (after the person chose to start), then gives RevenueCat the ids Meta needs
+// to tie trials and subscriptions back to the ad that brought the install.
+async function metaLink(askTracking) {
+  const M = window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins?.MetaBridge : null;
+  const P = window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins?.Purchases : null;
+  if (!M) return;
+  try {
+    let st = await M.status();
+    if (!st?.configured) return;
+    if (askTracking && st.att === 'notDetermined') st = await M.requestTracking();
+    if (P && NativeBilling.started) {
+      await P.collectDeviceIdentifiers().catch(() => {});
+      if (st.anonymousId) await P.setFBAnonymousID({ fbAnonymousID: st.anonymousId }).catch(() => {});
+    }
+  } catch { /* attribution must never break the app */ }
 }
 const FUNNEL = new Set(['SelectLanguage', 'BasicsDone', 'SelectTrack', 'StartQuiz', 'CompleteQuiz', 'PlansView', 'PlanChosen', 'ViewPaywall', 'PaywallFromFeature', 'PaywallFromLesson', 'InitiateCheckout', 'Lead', 'PremiumActivated', 'MealSaved', 'SosOpen', 'MenoReport', 'WorkoutDone', 'WeekPlanGenerated', 'StartFunnel', 'SelectFocus', 'TrialStart', 'TrialEnded', 'TrialSignIn', 'CopilotAsk', 'CopilotApply', 'CopilotUndo', 'CopilotProSummary']);
 
@@ -2624,6 +2651,7 @@ const NativeBilling = {
     this.started = true;
     try {
       await P.configure({ apiKey: key });
+      metaLink(!!state.helloSeen);
       if (this.email() && this.token()) await P.logIn({ appUserID: await this.appUserIdFor(this.email()) });
       // Revalidate any purchase this device holds: an e-mail account, or a device purchase made without one.
       if (this.token()) this.silentCheck();
@@ -9325,6 +9353,7 @@ function bind() {
       state.helloSeen = true;
       if (FOCI[state.focus]) state.profile.track = FOCI[state.focus].track;
       saveState(false);
+      metaLink(true);
       track('StartFunnel', { focus: state.focus || 'all' });
       return nav('basics');
     }
