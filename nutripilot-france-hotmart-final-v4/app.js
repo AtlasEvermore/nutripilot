@@ -3898,7 +3898,7 @@ function paywall() {
   if (!periods.includes(selectedPeriod)) selectedPeriod = periods[0] || 'annual';
   const trial = Billing.trialFor(plan, selectedPeriod);
   const periodLabel = selectedPeriod === 'annual' ? L('an') : L('mois');
-  const proj = (state.onboarding || p.goalSet || state.basicsFilled?.target) && p.weight && p.target ? projection(p) : null;
+  const proj = (goalSet() || state.basicsFilled?.target) && p.weight && p.target && Number(p.target) !== Number(p.weight) ? projection(p) : null;
   const price = money(lp(plan, selectedPeriod));
   const terms = trial
     ? L('{days} jours gratuits, puis {price} / {period}. Renouvellement automatique, annulable à tout moment dans les réglages de votre compte {store}, au moins 24 h avant la fin de l’essai ou de la période en cours.', { days: trial, price, period: periodLabel, store: esc(Billing.store()) })
@@ -7619,6 +7619,15 @@ function weightKnown() {
   const p = state.profile || {};
   return Boolean((state.onboarding && !p.estimated) || state.basicsFilled?.weight || p.goalSet || (state.weights || []).length);
 }
+// Starting suggestion for someone who has not chosen a target yet: follows their own goal and height (never a fixed number).
+function suggestTarget(w) {
+  const p = state.profile || {}; const h = Number(p.height) / 100;
+  if (p.goal === 'gain') return round1(w + 3);
+  if (p.goal === 'maintain') return round1(w);
+  const healthyMax = h > 1 ? 24.9 * h * h : 0;
+  const drop = healthyMax && w > healthyMax ? Math.min(w - healthyMax, w * 0.1) : Math.min(3, w * 0.04);
+  return round1(Math.max(w - drop, h > 1 ? 18.5 * h * h : w * 0.9));
+}
 function goalSet() {
   const p = state.profile || {};
   return Boolean(p.goalSet || (state.onboarding && !p.estimated && Number(p.target)));
@@ -7640,7 +7649,7 @@ function goalWeeks(weight, target, speed) {
 function initGoalDraft() {
   const p = state.profile || {};
   const w = weightKnown() ? round1(lastWeight() || p.weight) : '';
-  goalDraft = { weight: w || '', target: goalSet() ? round1(p.target) : (w ? round1(w - 5) : ''), speed: Number(p.speed) || 0.35, height: (state.basicsFilled?.height || state.onboarding) ? Number(p.height) || '' : '' };
+  goalDraft = { weight: w || '', target: goalSet() ? round1(p.target) : (w ? suggestTarget(w) : ''), speed: Number(p.speed) || 0.35, height: (state.basicsFilled?.height || state.onboarding) ? Number(p.height) || '' : '' };
 }
 function openGoal(from) {
   goalReturn = from || route;
