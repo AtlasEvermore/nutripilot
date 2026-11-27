@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "18.1.0",
-  "applicationTree": "90cb6361f1e13f8261889007b0714f22527973f2",
+  "applicationTree": "01b23769b73900f78424cebfb5482a19d82cb5d1",
   "channels": [
     "ios"
   ],
@@ -75,10 +75,10 @@
       },
       "ci_gate_prepared": {
         "status": "verified",
-        "verifiedAt": "2026-11-27T16:11:04Z",
+        "verifiedAt": "2026-11-27T16:52:33Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: PR v1830-polish (app bc88c77, tree 4db2c48b); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: PR evolution (app b175a77, tree 01b23769); the Railway deploy workflow refuses any commit that is not the tip of main with regression and Clean browser acceptance green"
         ]
       },
       "expiry_alert": {
@@ -205,5 +205,5 @@
   "deferredChannels": [
     "android"
   ],
-  "productionCommit": "bff9acf3d83caeacdf89579a665956ea9c214716"
+  "productionCommit": "97a4d465fcade5dccdbdca4e9f7a11c9b5f8b0c5"
 }
