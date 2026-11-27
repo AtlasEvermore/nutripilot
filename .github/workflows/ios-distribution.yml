@@ -40,8 +40,8 @@ jobs:
       - name: Prepare the native app before loading signing credentials
         working-directory: native
         env:
-          META_APP_ID: ${{ secrets.META_APP_ID }}
-          META_CLIENT_TOKEN: ${{ secrets.META_CLIENT_TOKEN }}
+          META_APP_ID: '1137860819016399'  # public identifier (shipped inside the app)
+          META_CLIENT_TOKEN: '21e39b198b9d3a1dd9e5503b2c0c38a9'  # Meta client token: public by design, embedded in the IPA
           REQUIRE_META: '1'
         run: |
           set -euo pipefail
