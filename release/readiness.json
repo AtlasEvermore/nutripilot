@@ -42,10 +42,11 @@
       },
       "ai_billing_limits": {
         "status": "verified",
-        "verifiedAt": "2026-11-25T16:58:30Z",
+        "verifiedAt": "2026-11-27T15:38:09Z",
         "verifiedBy": "development-agent",
         "evidence": [
-          "release/PREPARE_EVIDENCE_2026-11-24.md: OpenAI prepaid US$5.00, auto-reload OFF; Railway AI limits unchanged (gpt-5-mini, subscribers only, 10/user/day, 300/day, 5000/month)"
+          "release/PREPARE_EVIDENCE_2026-11-24.md: OpenAI prepaid US$5.00, auto-reload OFF; Railway AI limits unchanged (gpt-5-mini, subscribers only, 10/user/day, 300/day, 5000/month)",
+          "2026-11-27: OpenAI billing overview read in the owner's browser (owner opened it): prepaid balance US$5.00, auto-reload OFF; Railway AI limits unchanged"
         ]
       },
       "email_delivery": {
