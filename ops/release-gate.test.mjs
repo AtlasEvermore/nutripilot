@@ -84,6 +84,10 @@ test('interface-only releases skip the data backup checks; server changes still 
   assert.equal(isInterfaceOnly(['nutripilot-france-hotmart-final-v4/app.js', 'nutripilot-france-hotmart-final-v4/styles.css', 'release/readiness.json']), true);
   assert.equal(isInterfaceOnly(['nutripilot-france-hotmart-final-v4/app.js', 'nutripilot-france-hotmart-final-v4/server.mjs']), false);
   assert.equal(isInterfaceOnly(['nutripilot-france-hotmart-final-v4/ops/backup-cli.mjs']), false);
+  // Owner decision 27/11: iPhone-shell changes skip data gates; server code still never does.
+  assert.equal(isInterfaceOnly(['native/plugins/meta/Package.swift', 'native/scripts/configure-native.mjs', 'native/package.json', '.github/workflows/ios-distribution.yml']), true);
+  assert.equal(isInterfaceOnly(['native/plugins/meta/Package.swift', 'nutripilot-france-hotmart-final-v4/server.mjs']), false);
+  assert.equal(isInterfaceOnly(['.github/workflows/railway-deploy.yml']), false);
   assert.equal(isInterfaceOnly(['native/capacitor.config.json']), false);
   assert.equal(isInterfaceOnly([]), false);
   const ids = requirementsFor('prepare', ['ios'], { interfaceOnly: true }).map(([id]) => id);

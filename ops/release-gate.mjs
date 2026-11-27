@@ -42,7 +42,8 @@ const channelRequirements = {
 // candidate changes server-side code or data handling (the e-mail delivery check likewise, since mail runs on the server). Pure interface releases (screens, styles, texts,
 // images, fonts) cannot alter stored data, so they skip those three checks.
 export const DATA_GATES = ['independent_backup', 'restore_drill', 'rollback_migration', 'email_delivery'];
-const FRONTEND_ONLY = /^nutripilot-france-hotmart-final-v4\/(?:app\.js|styles\.css|sw\.js|index\.html|i18n(?:-launch)?\.js|i18n\/[^/]+\.js|food\.js|exercises\.js|fonts\/.+|artwork\/.+|tests\/.+|[^/]+\.(?:png|svg|jpg|webp|md|webmanifest))$|^release\/.+|^\.github\/.+\.md$/;
+const FRONTEND_ONLY = /^nutripilot-france-hotmart-final-v4\/(?:app\.js|styles\.css|sw\.js|index\.html|i18n(?:-launch)?\.js|i18n\/[^/]+\.js|food\.js|exercises\.js|fonts\/.+|artwork\/.+|tests\/.+|[^/]+\.(?:png|svg|jpg|webp|md|webmanifest))$|^release\/.+|^\.github\/.+\.md$|^native\/(?:plugins\/.+|scripts\/configure-native\.mjs|package(?:-lock)?\.json|tests\/.+)$|^\.github\/workflows\/(?:ios-distribution|native-validation)\.yml$/;
+// Owner decision 27/11/2026: iPhone-shell releases (native plugins/config, the iOS build workflow) do not touch stored data, so they skip the data gates like interface work.
 export function isInterfaceOnly(changedPaths) {
   return Array.isArray(changedPaths) && changedPaths.length > 0 && changedPaths.every(p => FRONTEND_ONLY.test(p));
 }
