@@ -56,3 +56,5 @@ Owner authorizations (chat, 2026-11-24): 09:06 BRT "autorizo o terminal do Railw
 - Hello: story hero rebuilt as HUD product demos with orbits (owner-approved 21:39), tree `d663bcdf3a50527b1d9811b7f0e2e49a6c4c486c` — interface-only relative to production b57d04f.
 - Fixes (owner-requested 21:43): goal steppers never squeezed, numeric profile fields normalized, plans table fits 320px; audit of 30 routes x 3 languages x 3 widths clean, 429-tap sweep clean, tree `b8ddd36881f5a3ae4917a6fb322a0bae86476c0a` — interface-only relative to production 099cf90.
 - Meta funnel events + RevenueCat attribution ids in the web app (owner-requested 27/11; inert on web and on the current iPhone build), tree `3461eae8b8cf367648607e6f20dee3eb15678349` — interface-only relative to production a047845.
+- Entry layout fix + always-visible start button + monthly-first paywall (owner-approved 13:02 27/11); audit clean, 429-tap sweep clean, tree `4db2c48b70557a6a72968b9b2aeb2bff6fa46a0c` — interface-only relative to production bff9acf.
+- + personal goal suggestion (owner request 13:09), tree `90cb6361f1e13f8261889007b0714f22527973f2`.

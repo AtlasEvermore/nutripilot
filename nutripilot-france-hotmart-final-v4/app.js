@@ -2053,7 +2053,7 @@ function stVis(id) {
   let body = '';
   if (id === 'nutrition') {
     body = ring(200, 140, 108, .86, Lm, 15) + ring(200, 140, 84, .72, C, 9, 1) + ring(200, 140, 66, .6, '#3fd7ff', 7, 2)
-      + num(200, 146, '1 640', 44) + mono(200, 172, '/ 1 850 KCAL', 'rgba(214,236,255,.7)')
+      + num(200, 146, '1 640', 36) + mono(200, 172, '/ 1 850 KCAL', 'rgba(214,236,255,.7)')
       + [[52, '132 g', .8], [200, '168 g', .64], [348, '54 g', .5]].map(([x, t, f], k) => `<rect x="${x - 46}" y="290" width="92" height="6" rx="3" fill="rgba(126,249,255,.15)"/><rect class="sv-grow" style="--f:${f};--k:${k}" x="${x - 46}" y="290" width="92" height="6" rx="3" fill="${k ? C : Lm}"/>${num(x, 280, t, 18)}`).join('');
   } else if (id === 'menopause') {
     const pts = [[40, 90], [86, 112], [132, 104], [178, 150], [224, 172], [270, 196], [316, 214], [362, 236]];
@@ -3026,7 +3026,7 @@ function findPlan(tier) {
   return Billing.plans().find((x) => x.tier === tier);
 }
 let selectedTier = '';
-let selectedPeriod = 'annual';
+let selectedPeriod = 'monthly'; // owner decision 27/11: monthly first and pre-selected (annual shown below with its saving)
 
 // Owned modules come from the subscription ids, e.g. "training_monthly,recipes_annual".
 // Legacy single plans keep what they used to include; unknown ids (older customers) keep full access.
@@ -3894,21 +3894,22 @@ function paywall() {
   const reco = findPlan(recommendedTier());
   const choices = [reco, kit].filter((x, i, a) => x && a.findIndex((y) => y?.tier === x.tier) === i);
   if (!choices.some((x) => x.tier === plan.tier)) choices.unshift(plan);
-  const periods = ['annual', 'monthly'].filter((k) => plan[k] && sellable({ monthly: plan[k] }));
+  const periods = ['monthly', 'annual'].filter((k) => plan[k] && sellable({ monthly: plan[k] }));
   if (!periods.includes(selectedPeriod)) selectedPeriod = periods[0] || 'annual';
   const trial = Billing.trialFor(plan, selectedPeriod);
   const periodLabel = selectedPeriod === 'annual' ? L('an') : L('mois');
-  const proj = (state.onboarding || p.goalSet || state.basicsFilled?.target) && p.weight && p.target ? projection(p) : null;
+  const proj = (goalSet() || state.basicsFilled?.target) && p.weight && p.target && Number(p.target) !== Number(p.weight) ? projection(p) : null;
   const price = money(lp(plan, selectedPeriod));
   const terms = trial
     ? L('{days} jours gratuits, puis {price} / {period}. Renouvellement automatique, annulable à tout moment dans les réglages de votre compte {store}, au moins 24 h avant la fin de l’essai ou de la période en cours.', { days: trial, price, period: periodLabel, store: esc(Billing.store()) })
     : L('{price} / {period}. Renouvellement automatique, annulable à tout moment.', { price, period: periodLabel });
+  const annualSavePct = (pl) => { const m = lp(pl, 'monthly'), a = lp(pl, 'annual'); return m > 0 && a > 0 ? Math.max(0, Math.round((1 - a / (m * 12)) * 100)) : 0; };
   const periodCard = (k) => {
     const t = Billing.trialFor(plan, k);
     const on = selectedPeriod === k;
     const annual = k === 'annual';
     return `<button class="pw-period ${on ? 'on' : ''} ${annual ? 'best' : ''}" role="radio" aria-checked="${on}" data-period="${k}">
-      ${annual ? `<span class="pwp-badge">${L('Annuel')}</span>` : ''}
+      ${annual && annualSavePct(plan) ? `<span class="pwp-badge">${L('économisez {p}', { p: `${annualSavePct(plan)} %` })}</span>` : ''}
       <span class="pwp-radio"></span>
       <span class="pwp-main"><b>${L(annual ? 'Annuel' : 'Mensuel')}</b>${t ? `<em>${L('{n} jours gratuits', { n: t })}</em>` : ''}</span>
       <span class="pwp-price"><b>${money(lp(plan, k))}</b><small>${unitOf(k)}</small>${annual ? `<i>${L('soit {p} / mois', { p: money(lp(plan, 'annual') / 12) })}</i>` : ''}</span>
@@ -4704,7 +4705,7 @@ function choosePlanBtn(x, mine) {
   return `<button class="btn ${x.kind === 'complete' ? 'btn-lime' : 'btn-primary'}" data-choose-plan="${esc(x.tier)}">${L('Choisir')}</button>`;
 }
 function storePlansScreen(kit, ownsAll) {
-  const periods = ['annual', 'monthly'].filter((k) => kit[k] && sellable({ monthly: kit[k] }));
+  const periods = ['monthly', 'annual'].filter((k) => kit[k] && sellable({ monthly: kit[k] }));
   if (!periods.includes(selectedPeriod)) selectedPeriod = periods[0] || 'annual';
   const trial = Billing.trialFor(kit, selectedPeriod);
   const price = money(lp(kit, selectedPeriod));
@@ -4787,8 +4788,8 @@ function plansScreen() {
       ${state.premium ? `<div class="ph-mine">${icon('check')} <span>${L('Votre formule')} : <b>${esc(planLabel())}</b></span></div>` : ''}
       <section class="plans-config"><p>${L('Chaque option est un abonnement à part : choisissez-en une.')}</p>${picker ? `<details class="plan-location" ${planLocationOpen ? 'open' : ''}><summary>${L('Pays')} / ${L('Devise de paiement')} <b>${esc(currency())}</b></summary>${picker}</details>` : ''}</section>
       <div class="period-toggle slim" role="tablist">
-        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')}</button>
         <button class="${selectedPeriod === 'monthly' ? 'active' : ''}" data-period="monthly">${L('Mensuel')}</button>
+        <button class="${selectedPeriod === 'annual' ? 'active' : ''}" data-period="annual">${L('Annuel')}</button>
       </div>
       ${kit ? `<button class="kit-row" ${ownsAll ? 'disabled' : `data-choose-plan="complete"`}>
         <span class="kr-txt"><small>${L('Kit complet')} · ${esc(L(kit.badge))}</small><b>${L('Les 9 modules et le coach')}</b><span class="kit-modules">${PAID_MODULES.map(m => `<i>${icon(m.icon)}${L(m.short || m.name)}</i>`).join('')}</span><span class="kit-action">${L(ownsAll ? 'Votre formule' : 'Choisir cette formule')}${icon('chevron')}</span></span>
@@ -7618,6 +7619,15 @@ function weightKnown() {
   const p = state.profile || {};
   return Boolean((state.onboarding && !p.estimated) || state.basicsFilled?.weight || p.goalSet || (state.weights || []).length);
 }
+// Starting suggestion for someone who has not chosen a target yet: follows their own goal and height (never a fixed number).
+function suggestTarget(w) {
+  const p = state.profile || {}; const h = Number(p.height) / 100;
+  if (p.goal === 'gain') return round1(w + 3);
+  if (p.goal === 'maintain') return round1(w);
+  const healthyMax = h > 1 ? 24.9 * h * h : 0;
+  const drop = healthyMax && w > healthyMax ? Math.min(w - healthyMax, w * 0.1) : Math.min(3, w * 0.04);
+  return round1(Math.max(w - drop, h > 1 ? 18.5 * h * h : w * 0.9));
+}
 function goalSet() {
   const p = state.profile || {};
   return Boolean(p.goalSet || (state.onboarding && !p.estimated && Number(p.target)));
@@ -7639,7 +7649,7 @@ function goalWeeks(weight, target, speed) {
 function initGoalDraft() {
   const p = state.profile || {};
   const w = weightKnown() ? round1(lastWeight() || p.weight) : '';
-  goalDraft = { weight: w || '', target: goalSet() ? round1(p.target) : (w ? round1(w - 5) : ''), speed: Number(p.speed) || 0.35, height: (state.basicsFilled?.height || state.onboarding) ? Number(p.height) || '' : '' };
+  goalDraft = { weight: w || '', target: goalSet() ? round1(p.target) : (w ? suggestTarget(w) : ''), speed: Number(p.speed) || 0.35, height: (state.basicsFilled?.height || state.onboarding) ? Number(p.height) || '' : '' };
 }
 function openGoal(from) {
   goalReturn = from || route;

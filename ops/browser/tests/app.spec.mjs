@@ -69,6 +69,8 @@ test('Every module image loads and discovery leads to its own space before Plans
   await page.locator('.lock-overlay [data-module-buy]').click();
   await expect(page.locator('.plans-page')).toBeVisible();
   await expect(page.locator('[data-plans-tab="modules"]')).toHaveAttribute('aria-selected','true');
+  // Owner decision 27/11: monthly is shown first and pre-selected; the annual price is one tap away.
+  await page.locator('[data-period="annual"]').first().click();
   await expect(page.locator('.kit-row')).toContainText('299,00');
   await testInfo.attach('plans', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
 });
@@ -409,6 +411,8 @@ test('In the iPhone app Plans shows only the real store subscription, with store
   await seed(page); await page.goto('/#plans');
   await expect(page.locator('.holo-plan')).toBeVisible();
   await expect(page.locator('.plans-tabs, [data-plans-tab], [data-build-mod], .price-table')).toHaveCount(0);
+  await expect(page.locator('.hp-price')).toContainText('49,90');
+  await page.locator('[data-period="annual"]').first().click();
   await expect(page.locator('.hp-price')).toContainText('299,90');
   await expect(page.locator('[data-restore]').first()).toBeVisible();
   await expect(page.locator('.legal-links a[href^="/terms"]')).toHaveCount(1);

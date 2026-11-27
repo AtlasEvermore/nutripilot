@@ -3546,3 +3546,15 @@ html[lang=ja] .hp-head h2,html[lang=ko] .hp-head h2,html[lang=zh] .hp-head h2,ht
 @media (max-width:380px){.cmp2-row{grid-template-columns:minmax(0,1fr) repeat(6,24px);gap:2px;font-size:11.5px}.cmp2-row b{width:22px;height:22px;border-radius:7px}.cmp2-row b svg,.cmp2-row b .ico{width:12px;height:12px}.cmp2-row>span{min-width:0;overflow-wrap:anywhere}}
 .gp-num{padding:6px!important;gap:5px!important}.gp-num .gp-step{width:36px!important;height:34px!important}.gp-num input{min-width:0}
 @media (max-width:360px){.gp-pair{grid-template-columns:1fr!important}.gp-mid{padding:0!important;grid-auto-flow:column;justify-content:center;align-items:center}.gp-mid .gp-arrow{transform:rotate(90deg)}}
+/* 22.7 · Story layout: visual on top, caption below (never overlapping, any phone size) */
+.story{aspect-ratio:auto;display:grid}
+.st-scene{position:relative;inset:auto;grid-area:1/1;display:flex;flex-direction:column}
+.st-hud{position:relative;inset:auto;flex:none;height:clamp(250px,72vw,330px)}
+.st-vis{top:40px;height:calc(100% - 52px)}
+.st-scene figcaption{position:relative;left:auto;right:auto;bottom:auto;margin:0 16px 18px}
+.st-scene .st-grade{display:none}
+.sh-c.br{bottom:auto;top:calc(clamp(250px,72vw,330px) - 34px)}
+/* 22.8 · "Começar" always visible on the entry screen */
+.hello{padding-bottom:calc(150px + var(--safe))}
+.hello-cta{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0;padding:22px max(18px,calc((100vw - 560px)/2)) calc(12px + var(--safe));background:linear-gradient(180deg,rgba(2,6,16,0),#02060f 34%)}
+.hello-cta p{background:none}
