@@ -15,6 +15,10 @@ const BUILD = /^[1-9]\d*$/.test(rawBuild) && Number(rawBuild) <= 2100000000 ? ra
 const at = process.argv.indexOf('--platform');
 const platform = at < 0 ? 'all' : process.argv[at+1];
 if (!['all','ios','android'].includes(platform) || !/^\d+\.\d+\.\d+$/.test(VERSION) || (rawBuild && !BUILD)) { console.error('Invalid platform, APP_VERSION or BUILD_NUMBER'); process.exit(2); }
+// Meta (Facebook) SDK for app-promotion campaigns. Both values come from developers.facebook.com → the NutriPilot app.
+const META_APP_ID = process.env.META_APP_ID || '';
+const META_CLIENT_TOKEN = process.env.META_CLIENT_TOKEN || '';
+if ((META_APP_ID && !/^\d{5,20}$/.test(META_APP_ID)) || (META_CLIENT_TOKEN && !/^[a-f0-9]{32}$/i.test(META_CLIENT_TOKEN)) || (!META_APP_ID !== !META_CLIENT_TOKEN)) { console.error('Invalid META_APP_ID / META_CLIENT_TOKEN (both are needed together)'); process.exit(2); }
 const targets = new Set(platform === 'all' ? ['ios','android'] : [platform]);
 const problems = [];
 const done = [];
@@ -52,6 +56,18 @@ const IOS_KEYS = {
   CFBundleDisplayName: 'NutriPilot',
   // Let the window resize during multitasking and fold/unfold transitions.
   UIRequiresFullScreen: false,
+  // App Tracking Transparency (asked once, by the Meta bridge): lets Meta measure which ads bring installs and subscriptions.
+  NSUserTrackingUsageDescription: 'Your data is used to measure which of our ads brought you to NutriPilot, so we can show the app to people it can help. It is never sold.',
+  ...(META_APP_ID ? {
+    FacebookAppID: META_APP_ID,
+    FacebookClientToken: META_CLIENT_TOKEN,
+    FacebookDisplayName: 'NutriPilot',
+    // Installs/app opens are reported by the bridge (activateApp); purchases come from RevenueCat server-side, so no duplicates.
+    FacebookAutoLogAppEventsEnabled: false,
+    // Turned on at runtime only when the user allows tracking.
+    FacebookAdvertiserIDCollectionEnabled: false,
+    FBSDKAutoLogProductImprovementEnabled: false,
+  } : {}),
 };
 const plistValue = (v) => (typeof v === 'boolean' ? `<${v}/>` : `<string>${v}</string>`);
 const hasIos = edit(plist, (xml) => {
@@ -68,6 +84,8 @@ const hasIos = edit(plist, (xml) => {
   else out = out.replace(/<\/dict>\s*<\/plist>\s*$/, `\t<key>UISupportedInterfaceOrientations</key>\n\t${orientations}\n</dict>\n</plist>\n`);
   // App-Bound Domains: lets the service worker run inside the iPhone app (instant start, works offline).
   if (!out.includes('<key>WKAppBoundDomains</key>')) out = out.replace(/<\/dict>\s*<\/plist>\s*$/, '\t<key>WKAppBoundDomains</key>\n\t<array>\n\t\t<string>app.atlasevermore.com</string>\n\t</array>\n</dict>\n</plist>\n');
+  // SKAdNetwork: Meta's ad-network ids, so iOS can attribute installs even when tracking is refused.
+  if (META_APP_ID && !out.includes('<key>SKAdNetworkItems</key>')) out = out.replace(/<\/dict>\s*<\/plist>\s*$/, '\t<key>SKAdNetworkItems</key>\n\t<array>\n' + ['v9wttpbfk9', 'n38lu8286q'].map((id) => `\t\t<dict>\n\t\t\t<key>SKAdNetworkIdentifier</key>\n\t\t\t<string>${id}.skadnetwork</string>\n\t\t</dict>\n`).join('') + '\t</array>\n</dict>\n</plist>\n');
   // 64-bit only (every iPhone that runs iOS 15).
   out = out.replace(/(<key>UIRequiredDeviceCapabilities<\/key>\s*<array>\s*)<string>armv7<\/string>/, '$1<string>arm64</string>');
   return out;
@@ -112,6 +130,7 @@ if (hasAndroid) {
 
 }
 
+if (CHECK && targets.has('ios') && process.env.REQUIRE_META === '1' && !META_APP_ID) problems.push('META_APP_ID / META_CLIENT_TOKEN missing: Meta campaigns could not measure installs');
 if (CHECK) {
   console.log(problems.length ? `Missing (${problems.length}):\n- ${problems.join('\n- ')}\nRun: npm run configure` : '✓ Native configuration checks passed; signing, purchases and store review are separate');
   process.exit(problems.length ? 1 : 0);
