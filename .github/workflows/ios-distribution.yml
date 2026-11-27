@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 40
     environment: ios-signing
     env:
-      APP_VERSION: '18.2.0'
+      APP_VERSION: '18.3.0'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,6 +39,10 @@ jobs:
         run: python3 -m unittest discover -s ops -p 'test_ios_distribution.py'
       - name: Prepare the native app before loading signing credentials
         working-directory: native
+        env:
+          META_APP_ID: '1137860819016399'  # public identifier (shipped inside the app)
+          META_CLIENT_TOKEN: '21e39b198b9d3a1dd9e5503b2c0c38a9'  # Meta client token: public by design, embedded in the IPA
+          REQUIRE_META: '1'
         run: |
           set -euo pipefail
           sudo xcode-select -s /Applications/Xcode_27.1.app/Contents/Developer

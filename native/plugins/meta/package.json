@@ -1,0 +1,8 @@
+{
+  "name": "nutripilot-meta",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NutriPilot bridge to the Meta (Facebook) SDK: installs/app opens for app-promotion campaigns, App Tracking Transparency, anonymous id for RevenueCat.",
+  "main": "index.js",
+  "capacitor": { "ios": { "src": "ios" } }
+}
